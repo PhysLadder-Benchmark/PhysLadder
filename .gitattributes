@@ -11,4 +11,4 @@
 *.stl binary
 *.STL binary
 # Vendor source hashes must remain byte-for-byte identical.
-robot_task_framework/assets/r5/R5a/** -text -whitespace
+assets/r5/R5a/** -text -whitespace

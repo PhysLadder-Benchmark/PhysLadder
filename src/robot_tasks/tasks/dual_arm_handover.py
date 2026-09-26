@@ -7,7 +7,7 @@ class DualArmHandover:
     """L2-02: donor grasp -> overlapping support -> donor release -> stable receiver.
 
     StationeryBench provides a real-robot task reference, not a locally validated
-    force-transfer simulation. No handover experiment was run in sim_feasibility.
+    force-transfer simulation. This task remains unimplemented and unvalidated.
     """
 
     def build_scene(self, backend: Backend, config: TaskConfig) -> None:

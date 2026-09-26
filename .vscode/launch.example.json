@@ -85,7 +85,7 @@
                 "configs/checks/r5_motion.toml",
                 "--gui"
             ],
-            "cwd": "${workspaceFolder}/robot_task_framework",
+            "cwd": "${workspaceFolder}",
             "console": "integratedTerminal",
             "subProcess": true,
             "justMyCode": true,
