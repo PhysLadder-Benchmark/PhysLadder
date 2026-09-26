@@ -1,0 +1,24 @@
+{
+  "source_file": "gemini_pro_supplier.stp",
+  "source_url": "https://my.feishu.cn/drive/folder/VWd4fcP9xlrawpdkDeEcZH2JnIg",
+  "source_sha256": "2653c1c87c2e5aea20c398e74b36374f11da4cc39a8bd1523bfd543396f43243",
+  "source_units": "mm",
+  "source_bbox_center_mm": [
+    -2.4726887204451486e-12,
+    -16.449999949994954,
+    0.44999451452851247
+  ],
+  "dimensions_m": [
+    0.11980000019999502,
+    0.0585000000999901,
+    0.038300000517357956
+  ],
+  "vertices": 339984,
+  "triangles": 440758,
+  "cadquery_version": "2.8.0",
+  "tessellation_tolerance_mm": 0.15,
+  "angular_tolerance_rad": 0.15,
+  "usd_sha256": "79ae6c261d4447ea47f889d45858786d273eac1debcc49b6569ff332b0b4b006",
+  "appearance": "uniform neutral colour; CAD surfaces preserved, original materials not reproduced",
+  "physics": "visual only; no collision, mass or sensor optics inferred from CAD"
+}

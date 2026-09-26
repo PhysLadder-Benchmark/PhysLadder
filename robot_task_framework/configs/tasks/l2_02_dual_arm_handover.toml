@@ -1,0 +1,29 @@
+# R5 asset description is available; simulation/control remain unimplemented.
+schema_version = 2
+
+[task]
+id = "L2-02"
+instruction = "将左臂夹持的物体交给右臂，确认右臂稳定接住后再释放左臂，避免物体滑落。"
+
+[task.parameters]
+# TODO: actual object geometry/material, grip regions, load transfer, hold time.
+object_type = "rigid_test_object_to_be_confirmed"
+
+[robot]
+profile = "../robots/r5.toml"
+active_arms = ["left", "right"]
+
+[runtime]
+seed = 0
+max_steps = 100
+max_wall_time_s = 120.0
+physics_dt_s = 0.004166666666666667
+control_dt_s = 0.1
+
+[observation]
+cameras = ["overview", "left_wrist", "right_wrist"]
+include_robot_state = true
+include_feedback = true
+
+[recording]
+save_rgb = true

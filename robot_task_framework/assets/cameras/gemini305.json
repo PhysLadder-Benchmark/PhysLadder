@@ -1,0 +1,24 @@
+{
+  "source_file": "gemini305_v1.1.stp",
+  "source_url": "https://doc.orbbec.com/attachments/18",
+  "source_sha256": "a00db4e6cad32a86b32f65b7949b2c42a05c99bc0a85b522229584776aad120e",
+  "source_units": "mm",
+  "source_bbox_center_mm": [
+    18.348581685021497,
+    10.437766717886701,
+    -17.178175306974527
+  ],
+  "dimensions_m": [
+    0.04203539324582311,
+    0.0252778735411114,
+    0.04203439720999679
+  ],
+  "vertices": 245038,
+  "triangles": 343075,
+  "cadquery_version": "2.8.0",
+  "tessellation_tolerance_mm": 0.15,
+  "angular_tolerance_rad": 0.15,
+  "usd_sha256": "e677a6467712d49fe6697c341d0073ccba8804a15dedfd1c8b026ab9aa9ff36e",
+  "appearance": "uniform neutral colour; CAD surfaces preserved, original materials not reproduced",
+  "physics": "visual only; no collision, mass or sensor optics inferred from CAD"
+}

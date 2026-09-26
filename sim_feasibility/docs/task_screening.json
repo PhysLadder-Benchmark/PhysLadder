@@ -1,0 +1,218 @@
+[
+  {
+    "id": "L1-01",
+    "task": "圆柱插孔",
+    "conclusion": "可行性较强",
+    "qualification": "可行性较强",
+    "reference": "RoboDojo `insert_tubes`；SoftVTBench 底层 Factory `PegInsert` 有 8 mm 轴孔配置",
+    "gap_and_test": "改成单件、规定配合间隙；验证对准能进、错位被挡，不能穿模。RoboDojo 原版是三根试管；Factory 配置更接近精密轴孔。",
+    "runtime_status": "未跑完整任务"
+  },
+  {
+    "id": "L1-02",
+    "task": "异形块嵌槽",
+    "conclusion": "可行性较强",
+    "qualification": "可行性较强",
+    "reference": "Agent as Policy 有真实装配案例；RoboDojo 提供接触任务框架",
+    "gap_and_test": "本轮未找到可直接启动的同款仿真任务；需制作简单异形块和凹槽，验证凹槽碰撞形状及错误姿态。",
+    "runtime_status": "未跑完整任务"
+  },
+  {
+    "id": "L1-03",
+    "task": "插头插接",
+    "conclusion": "可行性较强",
+    "qualification": "可行性较强",
+    "reference": "RoboDojo `plug_in_charger` 有任务和资产配置",
+    "gap_and_test": "只覆盖原表要求的低插入力、未通电版本；核实插头与孔的碰撞几何、插接深度及释放保持。不能据此覆盖带卡扣拔出。",
+    "runtime_status": "未跑完整任务"
+  },
+  {
+    "id": "L1-04",
+    "task": "薄片入槽",
+    "conclusion": "可行性较强",
+    "qualification": "可行性较强",
+    "reference": "RoboDojo `deposit_coin` 提供薄刚体进入狭槽的近似实现",
+    "gap_and_test": "硬币替换为目标薄片；验证薄物体不会穿透、卡边，增加进入接收区的评分。薄片弯曲不在这个版本内。",
+    "runtime_status": "未跑完整任务"
+  },
+  {
+    "id": "L1-05",
+    "task": "钥匙插锁",
+    "conclusion": "可行性较强",
+    "qualification": "可行性较强",
+    "reference": "RoboDojo `insert_key` 有钥匙、锁孔和位置姿态评分",
+    "gap_and_test": "原版指令还要求交接和转动；按本项目改成仅插入，锁体固定，明确深度。不能原样照搬指令和总分。",
+    "runtime_status": "未跑完整任务"
+  },
+  {
+    "id": "L1-06",
+    "task": "工具柄定点抓取",
+    "conclusion": "可行性较强",
+    "qualification": "可行性较强",
+    "reference": "RoboDojo `general_pickup`、`store_tools_in_toolbox` 可借鉴抓放框架",
+    "gap_and_test": "补刷子或刮板资产、有效柄部标注和接触区域判定；不能只用抬起高度代替抓对位置。",
+    "runtime_status": "未跑完整任务"
+  },
+  {
+    "id": "L1-07",
+    "task": "挂环上钩",
+    "conclusion": "可行性较强",
+    "qualification": "可行性较强",
+    "reference": "RoboDojo `hang_mugs` 可借鉴环状把手与支架接触",
+    "gap_and_test": "替换为刚性环和开口钩；验证孔洞未被凸包填平、释放后真实承重，补持续稳定判据。",
+    "runtime_status": "未跑完整任务"
+  },
+  {
+    "id": "L1-08",
+    "task": "刚性积木定姿堆叠",
+    "conclusion": "可行性较强",
+    "qualification": "可行性较强",
+    "reference": "RoboDojo `stack_blocks`、`build_tower` 提供任务；RoboICL 使用其中的搭塔环境",
+    "gap_and_test": "增加目标朝向误差及释放后稳定时间；先选少量积木，避免把长程规划混入首轮机制验证。",
+    "runtime_status": "未跑完整任务"
+  },
+  {
+    "id": "L2-01",
+    "task": "双臂拔笔帽",
+    "conclusion": "可行性较强",
+    "qualification": "可行性较强",
+    "reference": "StationeryBench `uncap_marker` 提供真机设置及评分",
+    "gap_and_test": "仿真须新建套筒配合、摩擦和拔出阻力；先验证不同阻力下的脱出力与滑脱。真机案例不是现成仿真资产。",
+    "runtime_status": "未跑完整任务"
+  },
+  {
+    "id": "L2-02",
+    "task": "双臂夹持力交接",
+    "conclusion": "可行性较强",
+    "qualification": "可行性较强",
+    "reference": "StationeryBench `ruler_handover` 可参考交接流程",
+    "gap_and_test": "新建两侧夹持、载荷转移及接触力记录；验证接收侧支撑不足会掉落，不能用固定约束“粘住”物体。若保留“不压坏”，需另定义刚性试件的过力阈值。",
+    "runtime_status": "未跑完整任务"
+  },
+  {
+    "id": "L2-03",
+    "task": "固定接触点的抽取与支撑",
+    "conclusion": "可行性较强",
+    "qualification": "可行性较强",
+    "reference": "StationeryBench `middle_sticky_pad` 提供真机任务与过程评分",
+    "gap_and_test": "先按刚性叠块建模，校验摩擦、支撑和倾倒；原版不包含逐页纸张变形模型。",
+    "runtime_status": "未跑完整任务"
+  },
+  {
+    "id": "L2-04",
+    "task": "持碗动态负载保持",
+    "conclusion": "可行性较强",
+    "qualification": "可行性较强",
+    "reference": "StationeryBench `pour_paperclips`、RoboDojo `pour_balls_into_vase` 可借鉴",
+    "gap_and_test": "按原表用固定脚本倒入刚性颗粒，先测载荷变化和持碗稳定性；原文没有要求液体，无需先引入流体。力变化须可记录。",
+    "runtime_status": "未跑完整任务"
+  },
+  {
+    "id": "L2-06",
+    "task": "夹面包",
+    "conclusion": "短期内难以实现",
+    "qualification": "短期内难以实现（按真实压坏判断）",
+    "reference": "SoftVTBench 有柔性糕点配置、压缩标定及过形变指标；README 所列资产目录本次返回 404",
+    "gap_and_test": "本机自建 FEM 立方体已验证软硬差异与回弹，但未覆盖面包不可逆压溃、掉屑或破裂。若接受“超过形变阈值”为代理标准，可另列弹性体夹持版本。",
+    "runtime_status": "未跑完整任务"
+  },
+  {
+    "id": "L2-07",
+    "task": "已知方向的变阻力抽屉推拉",
+    "conclusion": "可行性较强",
+    "qualification": "可行性较强",
+    "reference": "SoftVTBench 底层有 `Isaac-Open-Drawer-Franka-IK-IL-v0`，含滑轨、摩擦和开合评分",
+    "gap_and_test": "增加阻力档位、力记录和停止判据；原配置不是变阻力评测，需确认修改后的阻力确实影响执行。",
+    "runtime_status": "未跑完整任务"
+  },
+  {
+    "id": "L2-08",
+    "task": "恒力擦拭平面",
+    "conclusion": "可行性较强",
+    "qualification": "可行性较强",
+    "reference": "现成刚体接触、摩擦与力读数可构建；未找到同款完整任务",
+    "gap_and_test": "新建压紧工具与表面；验证力读数、摩擦响应及接触丢失。此处只测接触力跟踪，不含污渍去除。",
+    "runtime_status": "未跑完整任务"
+  },
+  {
+    "id": "L2-09",
+    "task": "弹性件定点按压",
+    "conclusion": "可行性较强",
+    "qualification": "可行性较强",
+    "reference": "PhysX 弹簧驱动；SoftVTBench 压缩方法可参考",
+    "gap_and_test": "首版可选真实可采购的弹簧按钮，建弹簧关节并测力—位移；若选任意柔性材料，需再做材料参数和形变验证。",
+    "runtime_status": "未跑完整任务"
+  },
+  {
+    "id": "L3-03",
+    "task": "自主抓持与重抓的旋拧瓶盖",
+    "conclusion": "短期内难以实现",
+    "qualification": "短期内难以实现",
+    "reference": "GPT-Policy 有真机开瓶盖案例",
+    "gap_and_test": "未确认可直接运行的同款螺纹瓶盖仿真；需螺纹或经过校准的等效约束、滑移、旋松和脱离。预先松盖或按角度删除约束会改变题目。",
+    "runtime_status": "未跑完整任务"
+  },
+  {
+    "id": "L3-04",
+    "task": "带卡扣翻盖盒的开启与扣合",
+    "conclusion": "短期内难以实现",
+    "qualification": "短期内难以实现",
+    "reference": "StationeryBench `eraser_from_box` 是翻盖盒任务",
+    "gap_and_test": "原版是可直接抬起的铰链盖，不能证明卡扣解锁与扣合。需卡扣弹性和接触状态验证；简化成无卡扣盒另算一个任务。",
+    "runtime_status": "未跑完整任务"
+  },
+  {
+    "id": "L3-05",
+    "task": "对准、啮合并旋入螺丝",
+    "conclusion": "可行性较强",
+    "qualification": "可行性较强（有代码基础，本机机制未验证）",
+    "reference": "RoboDojo `fasten_screws`；SoftVTBench 底层注册了 `Isaac-Factory-NutThread-IK-v0`，含 M16 螺纹资产配置；已取得一组 SDF 螺母和螺栓",
+    "gap_and_test": "本机修正导入缩放后接触稳定，但当前试验未得到可靠旋转推进，暂不进入首批。需继续核查配合几何、轴线、约束与驱动，再补终态评分未覆盖的旋转—推进判据。滑牙／材料损伤版本仍属短期困难。",
+    "runtime_status": "未跑完整任务"
+  },
+  {
+    "id": "L3-06",
+    "task": "剥橘子",
+    "conclusion": "短期内难以实现",
+    "qualification": "短期内难以实现",
+    "reference": "指定参考库中未找到完整对应实现",
+    "gap_and_test": "果皮与果肉的粘连、剥离前沿、断裂及果肉损伤；一般软体模型不足以覆盖这些判据。",
+    "runtime_status": "未跑完整任务"
+  },
+  {
+    "id": "L3-07",
+    "task": "贴纸／胶带剥离",
+    "conclusion": "短期内难以实现",
+    "qualification": "短期内难以实现",
+    "reference": "指定参考库中未找到完整对应实现",
+    "gap_and_test": "薄膜弯曲、界面粘附和剥离力随角度变化；不能用一串按位移自动断开的约束直接代表真实粘附。",
+    "runtime_status": "未跑完整任务"
+  },
+  {
+    "id": "L3-08",
+    "task": "柔性布面拉链开合",
+    "conclusion": "短期内难以实现",
+    "qualification": "短期内难以实现",
+    "reference": "RoboDojo 布料任务只能借鉴布面形变",
+    "gap_and_test": "还需要拉链齿啮合、滑块、布面受力与脱齿／卡死机制；叠布成功不代表拉链可用。",
+    "runtime_status": "未跑完整任务"
+  },
+  {
+    "id": "L3-09",
+    "task": "带卡扣连接器解锁拔出",
+    "conclusion": "短期内难以实现",
+    "qualification": "短期内难以实现",
+    "reference": "GPT-Policy 插拔插头、RoboDojo 插充电器可参考流程",
+    "gap_and_test": "还需要压扣形变、解锁状态和拔出阻力联动，验证“未按扣不能正常拔出”；一般插接任务未覆盖。",
+    "runtime_status": "未跑完整任务"
+  },
+  {
+    "id": "L3-10",
+    "task": "柔性密封圈入槽",
+    "conclusion": "短期内难以实现",
+    "qualification": "短期内难以实现",
+    "reference": "SoftVTBench 可借鉴柔性体及形变记录",
+    "gap_and_test": "需要细长环的自接触、槽边接触、摩擦、扭转与可靠入槽判断；现有柔性糕点不能直接迁移为密封圈装配。",
+    "runtime_status": "未跑完整任务"
+  }
+]

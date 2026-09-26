@@ -1,0 +1,58 @@
+# Python and local environments
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.conda/
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+build/
+dist/
+
+# Credentials and private local configuration (examples remain versioned)
+.env
+.env.*
+!.env.example
+*.local.toml
+*.local.json
+*.pem
+*.key
+/robot_task_framework/configs/models/gpt.toml
+/robot_task_framework/configs/runtime/windows.json
+
+# Per-machine editor configuration; see .vscode/*.example.json
+/.vscode/*
+!/.vscode/*.example.json
+*.code-workspace
+.idea/
+
+# Generated simulations, downloads and machine-specific evidence
+/robot_task_framework/runs/
+/robot_task_framework/reports/
+/robot_task_framework/assets/cameras/source/
+/sim_feasibility/assets/
+/sim_feasibility/third_party/
+/sim_feasibility/results/
+/sim_feasibility/envs/*_freeze.txt
+*.log
+# This is an immutable vendor source file covered by the R5 source lock.
+!/robot_task_framework/assets/r5/R5a/export.log
+*.tmp
+*.download
+*.part
+
+# One-off browser inspection tools, unrelated to robot execution
+/sim_feasibility/tools/read_feishu.ps1
+/sim_feasibility/tools/list_chrome_tabs.ps1
+
+# OS metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
+*~

@@ -1,0 +1,11 @@
+name: isaac51
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python=3.11
+  - pip
+  - pip:
+      - --extra-index-url https://pypi.nvidia.com
+      - wheel==0.45.1
+      - isaacsim[all,extscache]==5.1.0.0

@@ -1,0 +1,14 @@
+* text=auto
+*.py text eol=lf
+*.toml text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.ps1 text eol=lf
+*.usdc binary
+*.usd binary
+*.stl binary
+*.STL binary
+# Vendor source hashes must remain byte-for-byte identical.
+robot_task_framework/assets/r5/R5a/** -text -whitespace

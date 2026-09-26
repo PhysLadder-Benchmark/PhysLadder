@@ -1,0 +1,42 @@
+# Development only: same physical check, with time for interactive breakpoints.
+schema_version = 2
+
+[task]
+id = "R5-MOTION-DEBUG"
+instruction = "Interactive R5 motion debugging; not a formal benchmark result."
+
+[robot]
+profile = "../robots/r5_sim.toml"
+active_arms = ["left", "right"]
+
+[runtime]
+seed = 0
+max_steps = 1000
+max_wall_time_s = 43200.0
+physics_dt_s = 0.004166666666666667
+control_dt_s = 0.08333333333333333
+
+[observation]
+cameras = ["overview"]
+include_robot_state = true
+include_feedback = true
+
+[recording]
+save_rgb = true
+
+[simulation]
+asset_directory = "../../build/r5"
+headless = true
+graphics_backend = "d3d12"
+width = 960
+height = 720
+fps = 12
+arm_stiffness = 1500.0
+arm_damping = 80.0
+finger_stiffness = 2000.0
+finger_damping = 40.0
+self_collision = false
+solver_position_iterations = 32
+solver_velocity_iterations = 0
+camera_position = [1.5, -1.6, 1.2]
+camera_target = [0.2, 0.0, 0.3]

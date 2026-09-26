@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "repository": "https://github.com/ARXroboticsX/ARX_Model",
+  "commit": "74386441845f12af4da203843b6400951d6c5530",
+  "description": "Unmodified manufacturer R5a description; actual hardware revision and calibration not yet confirmed.",
+  "files": [
+    {
+      "path": "R5a/CMakeLists.txt",
+      "source_path": "R5/R5a/CMakeLists.txt",
+      "git_blob_sha1": "9403c40bc9a837cc7e59d32ef4c63f9999e69529"
+    },
+    {
+      "path": "R5a/config/joint_names_R5a.yaml",
+      "source_path": "R5/R5a/config/joint_names_R5a.yaml",
+      "git_blob_sha1": "942cc1bfc625c83ffbedc95d63c258de1650b5af"
+    },
+    {
+      "path": "R5a/export.log",
+      "source_path": "R5/R5a/export.log",
+      "git_blob_sha1": "680f89c62b3bb42ae4773afcd3cf902dfef0ea05"
+    },
+    {
+      "path": "R5a/launch/display.launch",
+      "source_path": "R5/R5a/launch/display.launch",
+      "git_blob_sha1": "de0eae80a00ea251cf8a3829ba85edc511ac38a7"
+    },
+    {
+      "path": "R5a/launch/gazebo.launch",
+      "source_path": "R5/R5a/launch/gazebo.launch",
+      "git_blob_sha1": "31affaf889df228919126f16f3401bcece0861ef"
+    },
+    {
+      "path": "R5a/meshes/base_link.STL",
+      "source_path": "R5/R5a/meshes/base_link.STL",
+      "git_blob_sha1": "687c9f51959e9087e3c0574d97ed64ba3a3360d6"
+    },
+    {
+      "path": "R5a/meshes/link1.STL",
+      "source_path": "R5/R5a/meshes/link1.STL",
+      "git_blob_sha1": "ca19d43b58c5c094b91eb857e49d4e45c19b879d"
+    },
+    {
+      "path": "R5a/meshes/link2.STL",
+      "source_path": "R5/R5a/meshes/link2.STL",
+      "git_blob_sha1": "4d4a819530da83eb11d4cc239a51b9ffea949a89"
+    },
+    {
+      "path": "R5a/meshes/link3.STL",
+      "source_path": "R5/R5a/meshes/link3.STL",
+      "git_blob_sha1": "60cd45d48b4a5cad59ca1bb8768f719070f0e3c7"
+    },
+    {
+      "path": "R5a/meshes/link4.STL",
+      "source_path": "R5/R5a/meshes/link4.STL",
+      "git_blob_sha1": "0097143b34fee9900668f2e1f4b8ad97d5203597"
+    },
+    {
+      "path": "R5a/meshes/link5.STL",
+      "source_path": "R5/R5a/meshes/link5.STL",
+      "git_blob_sha1": "b3717eb7495ade023de4f6b4e121cad54e89fc34"
+    },
+    {
+      "path": "R5a/meshes/link6.STL",
+      "source_path": "R5/R5a/meshes/link6.STL",
+      "git_blob_sha1": "d00fe58185f7592551db5d30e693fae72d44524d"
+    },
+    {
+      "path": "R5a/meshes/link7.STL",
+      "source_path": "R5/R5a/meshes/link7.STL",
+      "git_blob_sha1": "3bd6a8c8faa8ba8abc728c8832ed2800d7c72945"
+    },
+    {
+      "path": "R5a/meshes/link8.STL",
+      "source_path": "R5/R5a/meshes/link8.STL",
+      "git_blob_sha1": "f653150a4cd14882b659a5590844b4dd6961e085"
+    },
+    {
+      "path": "R5a/package.xml",
+      "source_path": "R5/R5a/package.xml",
+      "git_blob_sha1": "64e61a1a793cf4471f7149bf2509e013c7d5ec3d"
+    },
+    {
+      "path": "R5a/urdf/R5a.csv",
+      "source_path": "R5/R5a/urdf/R5a.csv",
+      "git_blob_sha1": "779751c329dd0cb17afa5023415419468f350e79"
+    },
+    {
+      "path": "R5a/urdf/R5a.urdf",
+      "source_path": "R5/R5a/urdf/R5a.urdf",
+      "git_blob_sha1": "6528b9b26da0cb87f2d09bcc405383ad09f06242"
+    }
+  ]
+}

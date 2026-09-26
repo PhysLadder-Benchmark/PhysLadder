@@ -1,0 +1,10 @@
+name: sim-research
+channels:
+  - conda-forge
+dependencies:
+  - pip
+  - python=3.11
+  - pyyaml
+  - pip:
+      - usd-core
+      - matplotlib

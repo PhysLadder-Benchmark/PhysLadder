@@ -1,0 +1,7 @@
+third_party/
+assets/
+results/
+__pycache__/
+*.pyc
+.env
+.conda/

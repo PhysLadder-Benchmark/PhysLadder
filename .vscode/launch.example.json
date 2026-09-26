@@ -1,0 +1,120 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "R5: run_motion_check GUI (WSL)",
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "WINDOWS_WSL_HOST",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "D:\\path\\to\\GPT_Benchmark"
+                }
+            ],
+            "justMyCode": true,
+            "subProcess": false,
+            "preLaunchTask": "R5: start Windows debugger from WSL"
+        },
+        {
+            "name": "R5: Cartesian check GUI (WSL)",
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "WINDOWS_WSL_HOST",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "D:\\path\\to\\GPT_Benchmark"
+                }
+            ],
+            "justMyCode": true,
+            "subProcess": false,
+            "preLaunchTask": "R5: start Cartesian debugger from WSL"
+        },
+        {
+            "name": "R5: Interaction check GUI (WSL)",
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "WINDOWS_WSL_HOST",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "D:\\path\\to\\GPT_Benchmark"
+                }
+            ],
+            "justMyCode": true,
+            "subProcess": false,
+            "preLaunchTask": "R5: start Interaction debugger from WSL"
+        },
+        {
+            "name": "R5: GPT check GUI (WSL)",
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "WINDOWS_WSL_HOST",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "D:\\path\\to\\GPT_Benchmark"
+                }
+            ],
+            "justMyCode": true,
+            "subProcess": false,
+            "preLaunchTask": "R5: start GPT debugger from WSL"
+        },
+        {
+            "name": "R5: check-r5 GUI (Windows)",
+            "type": "debugpy",
+            "request": "launch",
+            "python": "D:\\conda\\envs\\isaac51\\python.exe",
+            "module": "robot_tasks",
+            "args": [
+                "check-r5",
+                "--config",
+                "configs/checks/r5_motion.toml",
+                "--gui"
+            ],
+            "cwd": "${workspaceFolder}/robot_task_framework",
+            "console": "integratedTerminal",
+            "subProcess": true,
+            "justMyCode": true,
+            "env": {
+                "CONDA_PREFIX": "D:\\conda\\envs\\isaac51",
+                "PATH": "D:\\conda\\envs\\isaac51;D:\\conda\\envs\\isaac51\\Scripts;D:\\conda\\envs\\isaac51\\Library\\bin;${env:PATH}",
+                "PYTHONNOUSERSITE": "1",
+                "PYTHONUTF8": "1",
+                "TEMP": "D:\\research_runtime\\gpt_benchmark\\tmp",
+                "TMP": "D:\\research_runtime\\gpt_benchmark\\tmp",
+                "TMPDIR": "D:\\research_runtime\\gpt_benchmark\\tmp",
+                "PIP_CACHE_DIR": "D:\\research_runtime\\gpt_benchmark\\python\\pip-cache",
+                "PYTHONPYCACHEPREFIX": "D:\\research_runtime\\gpt_benchmark\\python\\bytecode",
+                "CUDA_CACHE_PATH": "D:\\research_runtime\\gpt_benchmark\\nvidia\\ComputeCache",
+                "WARP_CACHE_PATH": "D:\\research_runtime\\gpt_benchmark\\nvidia\\warp\\Cache\\1.8.2",
+                "OPTIX_CACHE_PATH": "D:\\research_runtime\\gpt_benchmark\\nvidia\\OptixCache",
+                "HF_HOME": "D:\\research_runtime\\gpt_benchmark\\models\\huggingface",
+                "TORCH_HOME": "D:\\research_runtime\\gpt_benchmark\\models\\torch",
+                "MPLCONFIGDIR": "D:\\research_runtime\\gpt_benchmark\\python\\matplotlib",
+                "NUMBA_CACHE_DIR": "D:\\research_runtime\\gpt_benchmark\\python\\numba",
+                "XDG_CACHE_HOME": "D:\\research_runtime\\gpt_benchmark\\cache"
+            }
+        },
+        {
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        }
+    ]
+}

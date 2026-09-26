@@ -1,0 +1,48 @@
+# 临时工程参数：用户允许先估算。未经过现场标定，不可作为真机内外参。
+schema_version = 1
+calibration_status = "provisional_uncalibrated"
+notes = "Supplier CAD housing; nominal RGB FOV converted to pinhole intrinsics. Zero distortion, optical-centre offsets and mounts are engineering assumptions. No physical camera noise/exposure, housing mass/collision or final 3D-printed bracket. Replace after on-site calibration."
+
+[cameras.overview]
+model = "Wheeltec Gemini Pro / Orbbec Gemini module"
+parent = "world"
+resolution = [640, 480]
+# fx=w/(2*tan(HFOV/2)), fy=h/(2*tan(VFOV/2)); principal point at image centre.
+intrinsics = [444.508041, 444.798040, 320.0, 240.0]
+distortion = [0.0, 0.0, 0.0, 0.0, 0.0]
+intrinsics_source = "Nominal RGB FOV H71.5 V56.7: https://orbbec.com.cn/index/Product/info.html?cate=38&id=16 ; 640x480 engineering mode, no per-device calibration."
+# xyz metres + scalar-first quaternion; optical axes are USD: -Z forward, +Y up.
+optical_pose_wxyz = [1.1, -1.2, 1.15, 0.850207268, 0.443135882, 0.131363231, 0.252035500]
+pose_source = "Assumed world pose looking at [0.32,0,0.15] with world +Z up. Not measured."
+asset = "../../assets/cameras/gemini_pro.usdc"
+asset_pose_wxyz = [0.0, 0.0, 0.035, 0.707106781, 0.707106781, 0.0, 0.0]
+asset_pose_source = "Assumed optical centre at housing front; centred CAD +Y mapped to camera +Z. Optical offset/sign not surveyed."
+clipping_m = [0.005, 20.0]
+
+[cameras.left_wrist]
+model = "Orbbec Gemini 305 USB"
+parent = "left"
+resolution = [640, 400]
+intrinsics = [298.404828, 296.512194, 320.0, 200.0]
+distortion = [0.0, 0.0, 0.0, 0.0, 0.0]
+intrinsics_source = "Nominal full RGB FOV H94 V68: https://www.orbbec.com/gemini-305/ ; half-resolution 640x400 synthetic stream. Native sensor/channel and actual hardware mode pending."
+optical_pose_wxyz = [0.095000000, 0.000000000, 0.160000000, 0.700785981, 0.094334559, -0.094334559, -0.700785981]
+pose_source = "Assumed pose relative to left R5 link6, aiming at local [0.18,0,-0.15], image up toward link +X. Not hand-eye calibrated."
+asset = "../../assets/cameras/gemini305.usdc"
+asset_pose_wxyz = [0.0, 0.0, 0.018, 0.707106781, 0.707106781, 0.0, 0.0]
+asset_pose_source = "Assumed housing-front optical centre; centred CAD +Y mapped to camera +Z. Left/right imager offset not calibrated."
+clipping_m = [0.005, 20.0]
+
+[cameras.right_wrist]
+model = "Orbbec Gemini 305 USB"
+parent = "right"
+resolution = [640, 400]
+intrinsics = [298.404828, 296.512194, 320.0, 200.0]
+distortion = [0.0, 0.0, 0.0, 0.0, 0.0]
+intrinsics_source = "Nominal full RGB FOV H94 V68: https://www.orbbec.com/gemini-305/ ; half-resolution 640x400 synthetic stream. Native sensor/channel and actual hardware mode pending."
+optical_pose_wxyz = [0.095000000, 0.000000000, 0.160000000, 0.700785981, 0.094334559, -0.094334559, -0.700785981]
+pose_source = "Assumed pose relative to right R5 link6, aiming at local [0.18,0,-0.15], image up toward link +X. Not hand-eye calibrated."
+asset = "../../assets/cameras/gemini305.usdc"
+asset_pose_wxyz = [0.0, 0.0, 0.018, 0.707106781, 0.707106781, 0.0, 0.0]
+asset_pose_source = "Assumed housing-front optical centre; centred CAD +Y mapped to camera +Z. Left/right imager offset not calibrated."
+clipping_m = [0.005, 20.0]

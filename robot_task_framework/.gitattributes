@@ -1,0 +1,6 @@
+# Preserve manufacturer bytes exactly for the source-lock integrity checks.
+assets/r5/R5a/** -text -whitespace
+*.py text eol=lf
+*.toml text eol=lf
+*.md text eol=lf
+*.ps1 text eol=lf
