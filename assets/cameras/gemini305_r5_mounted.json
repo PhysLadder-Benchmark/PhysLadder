@@ -1,0 +1,71 @@
+{
+  "calibration_status": "provisional_uncalibrated",
+  "assembly_frame": "Gemini305 centred CAD frame; assembly loaded using asset_pose_wxyz",
+  "source_files": [
+    "gemini305.json",
+    "r5_wrist_camera_mount.json"
+  ],
+  "installation_reference": "User video 20260927-190354.mp4; same local orientation assumed for both arms",
+  "dependencies_sha256": {
+    "gemini305.usdc": "e677a6467712d49fe6697c341d0073ccba8804a15dedfd1c8b026ab9aa9ff36e",
+    "r5_wrist_camera_mount.usdc": "f1328a814bc131b523ce6ce31f002ebca7fdaf04d9dffa8ec5c12d38c1d3c86e"
+  },
+  "usd_sha256": "18ea0405714e57311812a0dddf067719282d8e370fbb350070c2c48a26246499",
+  "measured_from_cad": {
+    "bracket_mount_holes_spacing_mm": 20.0,
+    "bracket_camera_mount_midpoint_m": [
+      0.07304060454840496,
+      0.0,
+      0.08805748742925484
+    ],
+    "bracket_camera_face_normal": [
+      0.7738402097265065,
+      0.0,
+      -0.6333808726275497
+    ],
+    "housing_depth_m": 0.0252778735411114
+  },
+  "engineering_assumptions": {
+    "bracket_original_cad_to_link6_pose_wxyz": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    "housing_rear_mount": "Housing back plane centred on bracket hole pair; small in-plane manufacturing alignment not reproduced",
+    "optical_centre_forward_of_housing_centre_m": 0.014,
+    "image_right_in_link6": [
+      0,
+      -1,
+      0
+    ],
+    "same_local_mount_both_arms": true
+  },
+  "housing_centre_in_link6_m": [
+    0.08282112202965183,
+    0.0,
+    0.08005222662843585
+  ],
+  "optical_pose_in_link6_wxyz": [
+    0.09365488496582293,
+    0.0,
+    0.07118489441165016,
+    0.6390189497635321,
+    0.3027454076333984,
+    -0.3027454076333984,
+    -0.639018949763532
+  ],
+  "bracket_centred_cad_in_assembly_wxyz": [
+    -1.8674188300593642e-08,
+    0.01911164264379643,
+    0.03778627817743175,
+    0.23778130197383768,
+    -0.6659279633951609,
+    0.6659279633951609,
+    0.23778130197383768
+  ],
+  "physics": "visual only; no added mass, collision or calibrated optics"
+}

@@ -1,0 +1,24 @@
+{
+  "source_file": "r5_wrist_camera_mount.stp",
+  "source_url": "User-supplied 摄像头固定座新(1).stp; installation reference 20260927-190354.mp4",
+  "source_sha256": "5b2e7d6fb591022998b13bdfd803204d5500607b26224b4fd542a054d730fba8",
+  "source_units": "mm",
+  "source_bbox_center_mm": [
+    44.09865863258929,
+    1.867418830059364e-05,
+    62.91663409390163
+  ],
+  "dimensions_m": [
+    0.08119731748032302,
+    0.0570000373483766,
+    0.08919446818671364
+  ],
+  "vertices": 5302,
+  "triangles": 5180,
+  "cadquery_version": "2.8.0",
+  "tessellation_tolerance_mm": 0.15,
+  "angular_tolerance_rad": 0.15,
+  "usd_sha256": "f1328a814bc131b523ce6ce31f002ebca7fdaf04d9dffa8ec5c12d38c1d3c86e",
+  "appearance": "uniform neutral colour; CAD surfaces preserved, original materials not reproduced",
+  "physics": "visual only; no collision, mass or sensor optics inferred from CAD"
+}

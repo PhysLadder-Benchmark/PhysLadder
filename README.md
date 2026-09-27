@@ -15,13 +15,14 @@
 .\tools\run_r5_check.ps1 -Check cameras -Gui
 ```
 
-或在 Windows Isaac 环境运行 `python -m robot_tasks check-r5-cameras --gui`。
+或在 Windows Isaac 环境运行 `python -m robot_tasks check cameras --gui`。
 校验位于 `src/robot_tasks/integrationtest/camera_check.py`；结果目录中有三路各自的 MP4、GIF、PNG、
 合并预览 `three_views.png`、相机跟随测量及配置快照。该校验不调用 GPT；只验证三张图能进入现有模型输入组装流程。
-现有 `check-r5-gpt` 和 GPT 调试配置已启用这份三路配置，模型收到的是同一仿真时刻的三张 RGB 图像。
+现有 `check gpt` 和 GPT 调试配置已启用这份三路配置，模型收到的是同一仿真时刻的三张 RGB 图像。
 
 相机共享代码位于 `cameras/profile.py`（配置读取与校验）和 `cameras/isaac_rig.py`（挂载、渲染及读取）。
-相机外壳当前仅参与视觉，不附加质量或碰撞；最终支架、现场内外参和曝光等参数仍待实测。
+腕部相机已加入用户提供的白色固定座 CAD，两侧暂按相同方向安装；装配位姿和光心偏移仍是估计值。
+外壳与固定座仅参与视觉，不附加质量或碰撞；现场内外参和曝光等参数仍待实测。
 CAD 来源和转换方法见 [assets/cameras/README.md](assets/cameras/README.md)。
 
 ## 开发安装
@@ -29,6 +30,44 @@ CAD 来源和转换方法见 [assets/cameras/README.md](assets/cameras/README.md
 克隆 `https://github.com/TuojingAI/GPT_Benchmark.git` 后，直接在仓库根目录 `GPT_Benchmark/` 安装和运行。
 Python 源码位于 `src/robot_tasks/`，配置、厂家资产、测试和工具均位于同一仓库根目录下。
 本项目使用源码检出的可编辑安装；首次使用或切换环境时运行一次，之后修改 `.py` 文件立即生效。
+
+## 按名称运行
+
+在已激活的 Isaac Sim Python 环境中，任务名会自动解析到默认配置与任务实现：
+
+```bash
+python -m robot_tasks list
+python -m robot_tasks inspect L1-01
+python -m robot_tasks dry-run L1-01
+python -m robot_tasks run L1-01 --gui
+
+# 同一任务使用不同实验参数；配置中的 task.id 必须仍为 L1-01。
+python -m robot_tasks run L1-01 --config configs/tasks/l1_01_cylinder_insertion.toml --gui
+
+# 工程检查名称与默认配置也由注册表解析。
+python -m robot_tasks list --checks
+python -m robot_tasks check gpt --gui
+python -m robot_tasks check cameras --gui
+```
+
+`run` 默认使用 GPT，可用 `--policy scripted` 切换策略；指定模型配置用 `--model-config`。
+当前 L1-01、L2-02 仍是未实现的任务模板，`run` 会在启动仿真、创建模型策略前明确报错。
+可运行的 GPT 控制链路仍是 `check gpt`；它是工程检查，不产生正式任务成功率。
+原来的 `check-r5*`、`check-gpt-api` 命令已统一替换为 `check <名称>`；仅传 `run --config ...` 的用法仍保留。
+WSL 调用 Windows Isaac 环境时继续使用 `tools/run_r5_check.ps1 -Check gpt -Gui`，F5 调试入口也已同步。
+
+| 文件 | 职责 |
+|---|---|
+| `cli.py` | 通用命令参数与结果展示；不维护具体任务或检查分支 |
+| `registry.py` | 正式任务 ID、默认配置、实现类和实现状态 |
+| `execution.py` | 预检查、创建任务／机器人／策略，交给公共 `runner.py` 执行 |
+| `integrationtest/registry.py` | 检查名称、普通／调试默认配置、实现入口与前置校验；CLI、子进程及调试器共用 |
+
+增加同类实验时新增 TOML；新增任务类型时实现 Task 并加入 `TASKS`。
+新增工程检查时在 `integrationtest/` 实现检查函数并加入 `CHECKS`，无需改 CLI、子进程、调试器或 PowerShell。
+配置覆盖不能切换任务类型；任务或检查名称与配置不匹配时，执行前报错。
+
+## 本机配置
 
 首次克隆先将 `configs/models/gpt.example.toml` 复制为 `gpt.toml`，将
 `configs/runtime/windows.example.json` 复制为 `windows.json`，已有配置不覆盖。
@@ -143,7 +182,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/run_r5_check.ps1
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/run_r5_check.ps1 -Check cartesian -Gui
 # 已激活 isaac51 环境时，也可以直接运行：
-python -m robot_tasks check-r5-cartesian --config configs/checks/r5_cartesian.toml --gui
+python -m robot_tasks check cartesian --config configs/checks/r5_cartesian.toml --gui
 ```
 
 WSL 终端通过 Windows 启动器运行同一流程：
@@ -206,7 +245,7 @@ feedback = robot.feedback()
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/run_r5_check.ps1 -Check interaction -Gui
 # 已激活 isaac51 环境时：
-python -m robot_tasks check-r5-interaction --config configs/checks/r5_interaction.toml --gui
+python -m robot_tasks check interaction --config configs/checks/r5_interaction.toml --gui
 ```
 
 检查依次运行左臂抓放、右臂抓放和“不闭合夹爪”的反例。机器人经 IK 和位置驱动完成接近、
@@ -223,7 +262,7 @@ python -m robot_tasks check-r5-interaction --config configs/checks/r5_interactio
 
 ## 在 WSL 的 VS Code 中单步调试
 
-打开仓库根目录 `GPT_Benchmark`，在运行与调试列表选择 **R5: run_motion_check GUI (WSL)**，按 F5。
+打开仓库根目录 `GPT_Benchmark`，在运行与调试列表选择 **R5: Joint check GUI (WSL)**，按 F5。
 后台任务通过现有 PowerShell 启动器运行 Windows `isaac51`，调试器连接后自动停在
 `src/robot_tasks/integrationtest/debug_motion.py` 调用检查函数前。F11 进入函数，F10 逐行执行；
 也可以直接在 `integrationtest/motion_check.py` 内下断点。
@@ -239,7 +278,7 @@ python -m robot_tasks check-r5-interaction --config configs/checks/r5_interactio
 本机 Windows 环境已安装 `debugpy`。`.vscode/launch.json` 中的 `pathMappings` 把 Windows 源码路径
 映射到 WSL 下同一份文件。调试端口 5678 只绑定当前 Windows 的 WSL 虚拟网卡地址；
 若 WSL 重启后网关变化，用 `ip -4 route show default` 检查，并同步修改 `launch.json` 的 `connect.host`
-与 `tasks.json` 的 `-DebugHost`。Windows 本地窗口仍可使用原有 **R5: check-r5 GUI (Windows)** 配置。
+与 `tasks.json` 的 `-DebugHost`。Windows 本地窗口仍可使用原有 **R5: Joint check GUI (Windows)** 配置。
 
 实现参考：[VS Code Python 远程调试](https://code.visualstudio.com/docs/python/debugging#_remote-script-debugging-with-ssh)。
 
@@ -320,11 +359,12 @@ GPT_Benchmark/
 ├── src/robot_tasks/        Python 包源码，可编辑安装后通过 robot_tasks 导入
 │   ├── paths.py            源码检出的项目根目录与资源定位
 │   ├── runtime.py          科研运行目录配置及实际存储路径审计
-│   ├── cli.py              list / validate-robot / inspect / dry-run / check-r5 / run
+│   ├── cli.py              按名称解析 list / inspect / dry-run / check / run 等命令
 │   ├── config.py           配置读取与基础校验
 │   ├── types.py            观测、动作、反馈、评分的数据结构
 │   ├── interfaces.py       模块之间的接口约定
-│   ├── registry.py         任务名称、编号、证据和实现状态
+│   ├── registry.py         任务 ID、默认配置、实现类、证据和实现状态
+│   ├── execution.py        校验运行条件、组装组件并调用公共执行循环
 │   ├── runner.py           一次完整试验的执行循环
 │   ├── recording.py        配置快照、逐步日志和 RGB 帧保存
 │   ├── backends/           Isaac Sim 后端、渲染配置、占位后端
@@ -381,13 +421,13 @@ $taskPython = 'D:\conda\envs\isaac51\python.exe'
 & $taskPython -m robot_tasks validate-robot --profile configs/robots/r5.toml --require-ready
 
 # 检查任务引用的机器人配置，不启动仿真
-& $taskPython -m robot_tasks inspect --config configs/tasks/l1_01_cylinder_insertion.toml
+& $taskPython -m robot_tasks inspect L1-01
 
 # 插孔模板的占位流程自检
-& $taskPython -m robot_tasks dry-run --config configs/tasks/l1_01_cylinder_insertion.toml
+& $taskPython -m robot_tasks dry-run L1-01
 
 # 双臂交接模板的占位流程自检
-& $taskPython -m robot_tasks dry-run --config configs/tasks/l2_02_dual_arm_handover.toml
+& $taskPython -m robot_tasks dry-run L2-02
 ```
 
 WSL 中进入同一目录，使用 `/root/miniforge3/envs/sim-research/bin/python -m robot_tasks ...` 即可。
@@ -399,10 +439,10 @@ WSL 中进入同一目录，使用 `/root/miniforge3/envs/sim-research/bin/pytho
 真实仿真的统一入口已保留：
 
 ```powershell
-& $taskPython -m robot_tasks run --config configs/tasks/l1_01_cylinder_insertion.toml --policy scripted
+& $taskPython -m robot_tasks run L1-01 --gui
 ```
 
-当前 `run` 会先检查完整任务配置；存在未确认项时以退出码 `2` 报告缺项。具体任务场景、任务策略及评分仍未实现；三路 RGB 已在独立集成检查中接通。基础机器人验证请使用独立的 `check-r5` 入口。`--policy gpt --model-config configs/models/gpt.toml` 已接模型策略，但不会替代尚未实现的任务场景；模型链路验证使用 `check-gpt-api` 和 `check-r5-gpt`。
+当前 `run` 会先拒绝未实现的任务；已实现任务再核查仿真运行条件，失败时退出码为 `2`。具体任务场景、任务策略及评分仍未实现；三路 RGB 已在独立集成检查中接通。基础机器人验证使用 `check joint`，模型链路验证使用 `check api` 和 `check gpt`。
 
 ## GPT 接口与 R5 闭环
 
@@ -422,8 +462,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/run_r5_check.ps1 -Chec
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/run_r5_check.ps1 -Check gpt -Gui
 ```
 
-已激活环境也可用 `python -m robot_tasks check-gpt-api` 或
-`python -m robot_tasks check-r5-gpt --gui`。VS Code 的 WSL 窗口选择
+已激活环境也可用 `python -m robot_tasks check api` 或
+`python -m robot_tasks check gpt --gui`。VS Code 的 WSL 窗口选择
 **R5: GPT check GUI (WSL)**，F5 后自动停在调试入口，F11 进入闭环；可在
 `GPTPolicy.act()`、`ResponsesClient.generate()` 和 `R5Adapter.apply()` 设置断点。
 

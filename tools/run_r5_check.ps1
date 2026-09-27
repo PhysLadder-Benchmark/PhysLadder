@@ -1,9 +1,10 @@
 param(
     [string]$TaskPython = 'D:\conda\envs\isaac51\python.exe',
-    [string]$Config = 'configs/checks/r5_motion.toml',
+    [string]$Config,
+    [string]$ModelConfig,
     [switch]$Gui,
     [switch]$Debugger,
-    [ValidateSet('joint', 'cartesian', 'interaction', 'gpt', 'api', 'cameras')][string]$Check = 'joint',
+    [string]$Check = 'joint',
     [string]$DebugHost = '127.0.0.1',
     [ValidateRange(1, 65535)][int]$DebugPort = 5678
 )
@@ -28,38 +29,15 @@ try {
     $env:OMNI_KIT_DISABLE_TELEMETRY = '1'
     # Existing local Isaac installation already accepted its EULA during setup.
     $env:OMNI_KIT_ACCEPT_EULA = 'YES'
-    $taskCommand = 'check-r5'
-    if ($Check -eq 'cartesian') {
-        $taskCommand = 'check-r5-cartesian'
-        if (-not $PSBoundParameters.ContainsKey('Config')) { $Config = 'configs/checks/r5_cartesian.toml' }
-    }
-    if ($Check -eq 'interaction') {
-        $taskCommand = 'check-r5-interaction'
-        if (-not $PSBoundParameters.ContainsKey('Config')) { $Config = 'configs/checks/r5_interaction.toml' }
-    }
-    if ($Check -eq 'gpt' -or $Check -eq 'api') {
-        $taskCommand = 'check-r5-gpt'
-        if ($Check -eq 'api') { $taskCommand = 'check-gpt-api' }
-        if (-not $PSBoundParameters.ContainsKey('Config')) { $Config = 'configs/checks/r5_gpt.toml' }
-    }
-    if ($Check -eq 'cameras') {
-        $taskCommand = 'check-r5-cameras'
-        if (-not $PSBoundParameters.ContainsKey('Config')) { $Config = 'configs/checks/r5_cameras.toml' }
-    }
-    $taskArguments = @('-m', 'robot_tasks', $taskCommand, '--config', $Config)
+    # Names, defaults and implementations belong to the Python registry.
+    $taskArguments = @('-m', 'robot_tasks', 'check', $Check)
     if ($Debugger) {
-        if ($Check -eq 'api') { throw 'API-only check does not use the simulator debugger' }
-        if (-not $PSBoundParameters.ContainsKey('Config')) {
-            $Config = 'configs/checks/r5_motion_debug.toml'
-            if ($Check -eq 'cartesian') { $Config = 'configs/checks/r5_cartesian_debug.toml' }
-            if ($Check -eq 'interaction') { $Config = 'configs/checks/r5_interaction_debug.toml' }
-            if ($Check -eq 'gpt') { $Config = 'configs/checks/r5_gpt_debug.toml' }
-            if ($Check -eq 'cameras') { $Config = 'configs/checks/r5_cameras.toml' }
-        }
-        $taskArguments = @('-Xfrozen_modules=off', '-m', 'robot_tasks.integrationtest.debug_motion', '--config', $Config,
+        $taskArguments = @('-Xfrozen_modules=off', '-m', 'robot_tasks.integrationtest.debug_motion',
                            '--listen-host', $DebugHost, '--port', "$DebugPort", '--check', $Check)
     }
-    if ($Gui -and $Check -ne 'api') { $taskArguments += '--gui' }
+    if ($PSBoundParameters.ContainsKey('Config')) { $taskArguments += @('--config', $Config) }
+    if ($PSBoundParameters.ContainsKey('ModelConfig')) { $taskArguments += @('--model-config', $ModelConfig) }
+    if ($Gui) { $taskArguments += '--gui' }
     & $TaskPython @taskArguments
     $taskExitCode = $LASTEXITCODE
 }
