@@ -1,4 +1,4 @@
-"""Control contracts without Kit; actual motion is checked by check-r5."""
+"""Control contracts without Kit; actual motion is checked by check joint."""
 
 from dataclasses import replace
 import hashlib

@@ -4,6 +4,7 @@
 
 | 文件 | 职责 |
 |---|---|
+| `registry.py` | 检查名称、默认／调试配置、实现函数与前置校验的唯一注册位置 |
 | `motion_check.py` | 双臂关节、夹爪、同步运动和复位 |
 | `cartesian_check.py` | TCP、IK、实际位姿、不可达目标拒绝和恢复 |
 | `interaction_check.py` | 抓起方块、搬运、释放；左右臂正例和不闭爪反例 |
@@ -16,8 +17,10 @@
 | `simulation_process.py`、`simulation_worker.py` | 进程隔离、超时、退出码与结果联合校验 |
 | `debug_motion.py` | WSL → Windows 调试连接，F11 进入对应检查 |
 
-从框架根目录运行 `python -m robot_tasks check-r5-interaction --gui`。已有 `check-r5` 和
-`check-r5-cartesian` 命令保持不变。配置位于 `configs/checks/`；不需要 ROS、本地 GPT 或真实机器人连接。
+从框架根目录运行 `python -m robot_tasks check interaction --gui`。关节与末端检查分别为
+`check joint`、`check cartesian`。默认配置由本目录 `registry.py` 指定，可用 `--config` 覆盖；
+配置中的任务 ID 必须与选中的检查匹配。普通运行、子进程与 F5 调试共享同一注册表。
+配置位于 `configs/checks/`；不需要 ROS、本地 GPT 或真实机器人连接。
 
 交互控制流程是：配置中的已知位姿 → 分段末端目标 → R5 IK → 关节／夹爪位置驱动 → PhysX →
 机器人状态与 RGB 回读。独立评分器读取方块真实位姿、速度和双指接触力；这些物体测量不作为视觉识别结果。
@@ -32,12 +35,12 @@
 `result.json` 中的 `passed` 表示集成检查符合预期；反例的 `interaction_success=false`、`passed=true`
 表示“不闭爪无法抓取”被正确识别。`task_evaluated=false` 表示没有对正式测评任务或模型进行评估。
 
-GPT 校验入口为 `python -m robot_tasks check-gpt-api` 和 `python -m robot_tasks check-r5-gpt --gui`。
+GPT 校验入口为 `python -m robot_tasks check api` 和 `python -m robot_tasks check gpt --gui`。
 前者使用明确标注的测试色块；后者使用真实仿真 RGB，检查抬高左 TCP 20 mm、打开夹爪至 60 mm 和停止。
 后者不是接触任务测评；始终保留 `task_evaluated=false`。模型配置在 `configs/models/gpt.toml`，
 Token 从 `OPENAI_API_KEY` 读取。物理在请求期间暂停，模型调用耗时单独记录，不算入仿真录像时间。
 模型请求、JSON 解析和 RGB 编码等共享实现位于 `policies/`，与这些工程验收入口分开。
 
-`python -m robot_tasks check-r5-cameras --gui` 使用真实型号 CAD 和临时相机参数校验三路观测。
+`python -m robot_tasks check cameras --gui` 使用真实型号 CAD 和临时相机参数校验三路观测。
 `configs/cameras/r5_orbbec_provisional.toml` 内的 `provisional_uncalibrated` 表示内外参未经现场标定。
 该配置也由 GPT 集成检查使用；普通关节／抓放检查保留原来的单路工程相机配置。

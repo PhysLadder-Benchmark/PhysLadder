@@ -42,19 +42,25 @@ class CameraProfileTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 intrinsics_from_fov(*args)
 
-    def test_wrist_optical_axis_points_forward_and_down(self):
-        spec = load_camera_rig(PROFILE).select(("left_wrist",))[0]
-        transform = pose_transform(spec.optical_pose_wxyz)
-        forward = -transform[:3, 2]
-        self.assertGreater(forward[0], 0)
-        self.assertLess(forward[2], 0)
-        target = np.array([0.18, 0, -0.15]) - transform[:3, 3]
-        target /= np.linalg.norm(target)
-        np.testing.assert_allclose(forward, target, atol=1e-8)
+    def test_wrist_views_cover_grasp_region(self):
+        # Validate usable geometry, rather than one hard-coded look-at point.
+        for spec in load_camera_rig(PROFILE).select(("left_wrist", "right_wrist")):
+            with self.subTest(camera=spec.name):
+                transform = pose_transform(spec.optical_pose_wxyz)
+                forward = -transform[:3, 2]
+                self.assertGreater(forward[0], 0)
+                self.assertLess(forward[2], 0)
+                fx, fy, cx, cy = spec.intrinsics
+                for point in ((0.14, 0, 0), (0.16, -0.025, 0), (0.16, 0.025, 0)):
+                    x, y, z = transform[:3, :3].T @ (np.asarray(point) - transform[:3, 3])
+                    self.assertLess(z, -spec.clipping_m[0])  # USD forward is -Z.
+                    u, v = cx + fx * x / -z, cy - fy * y / -z
+                    self.assertTrue(0 < u < spec.resolution[0])
+                    self.assertTrue(0 < v < spec.resolution[1])
 
     def test_malformed_and_unearned_calibration_are_rejected(self):
         content = PROFILE.read_text(encoding="utf-8")
-        for relative in ("../../assets/cameras/gemini_pro.usdc", "../../assets/cameras/gemini305.usdc"):
+        for relative in ("../../assets/cameras/gemini_pro.usdc", "../../assets/cameras/gemini305_r5_mounted.usda"):
             content = content.replace(relative, (PROFILE.parent / relative).resolve().as_posix())
         cases = (
             ('calibration_status = "provisional_uncalibrated"', 'calibration_status = "calibrated"', "provisional_uncalibrated"),

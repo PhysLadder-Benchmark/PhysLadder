@@ -24,13 +24,14 @@ from .interaction_scene import InteractionScene, InteractionSettings
 from .video import MotionVideo
 
 
-def run_gpt_check(config_path: Path, output_root: Path, *, gui=False, run_directory=None):
+def run_gpt_check(config_path: Path, output_root: Path, *, gui=False, run_directory=None,
+                  model_path: Path | None = None):
     config = load_config(config_path)
     audit = require_cartesian_sim_ready(config.robot)
     if config.arms != ("left", "right") or not config.include_robot_state or not config.include_feedback:
         raise ValueError("GPT integration fixture requires both R5 arms, robot state and feedback")
     options = config.raw["gpt_check"]
-    settings = load_gpt_settings(config.source.parent / options["model_config"])
+    settings = load_gpt_settings(model_path if model_path is not None else config.source.parent / options["model_config"])
     read_api_key(settings.api_key_env)  # Fail before launching Kit if credentials are missing.
     action_steps = options["max_action_steps"]
     if type(action_steps) is not int or not 1 <= action_steps <= config.max_steps:

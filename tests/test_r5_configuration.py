@@ -205,13 +205,13 @@ class R5ConfigurationTests(unittest.TestCase):
                 self.assertTrue(report["asset_and_bindings_valid"])
                 self.assertFalse(report["execution_configuration_ready"])
 
-    def test_run_rejects_unconfigured_robot_before_creating_simulator_or_policy(self):
-        with patch("robot_tasks.cli.IsaacSimBackend") as backend, \
-                patch("robot_tasks.cli.GPTPolicy") as policy, redirect_stderr(io.StringIO()) as error:
+    def test_run_rejects_unimplemented_task_before_creating_simulator_or_policy(self):
+        with patch("robot_tasks.execution.IsaacSimBackend") as backend, \
+                patch("robot_tasks.execution.GPTPolicy") as policy, redirect_stderr(io.StringIO()) as error:
             with self.assertRaises(SystemExit) as raised:
                 main(["run", "--config", str(INSERTION), "--policy", "gpt"])
             self.assertEqual(raised.exception.code, 2)
-            self.assertIn("not ready for execution", error.getvalue())
+            self.assertIn("not implemented", error.getvalue())
             backend.assert_not_called()
             policy.assert_not_called()
 

@@ -12,10 +12,17 @@ from ..recording import write_json
 from ..types import Feedback, Observation, PolicyInput, RGBFrame
 
 
-def run_gpt_api_check(config_path: Path, model_path: Path, output_root: Path) -> tuple[Path, dict]:
-    config, settings = load_config(config_path), load_gpt_settings(model_path)
-    output = output_root / ("GPT_api_" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ_") + uuid4().hex[:8])
-    output.mkdir(parents=True, exist_ok=False)
+def run_gpt_api_check(config_path: Path, output_root: Path, *, model_path: Path | None = None,
+                      gui: bool = False, run_directory: Path | None = None) -> tuple[Path, dict]:
+    if gui:
+        raise ValueError("API-only check does not start a simulation GUI")
+    config = load_config(config_path)
+    settings = load_gpt_settings(model_path if model_path is not None
+                                 else config.source.parent / config.raw["gpt_check"]["model_config"])
+    output = run_directory or output_root / ("GPT_api_" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ_") + uuid4().hex[:8])
+    output.mkdir(parents=True, exist_ok=run_directory is not None)
+    if any(p.name != "process.log" for p in output.iterdir()):
+        raise ValueError("API-check output must be a new directory")
     policy = GPTPolicy(config, settings)
     # A declared synthetic fixture, never represented as a simulated robot image.
     frame = RGBFrame("color_fixture", 0.0, 64, 64, bytes((240, 10, 10)) * (64 * 64))

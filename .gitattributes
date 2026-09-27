@@ -6,6 +6,7 @@
 *.yaml text eol=lf
 *.json text eol=lf
 *.ps1 text eol=lf
+*.usda text eol=lf
 *.usdc binary
 *.usd binary
 *.stl binary

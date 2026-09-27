@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "R5: run_motion_check GUI (WSL)",
+            "name": "R5: Joint check GUI (WSL)",
             "type": "debugpy",
             "request": "attach",
             "connect": {
@@ -74,13 +74,14 @@
             "preLaunchTask": "R5: start GPT debugger from WSL"
         },
         {
-            "name": "R5: check-r5 GUI (Windows)",
+            "name": "R5: Joint check GUI (Windows)",
             "type": "debugpy",
             "request": "launch",
             "python": "D:\\conda\\envs\\isaac51\\python.exe",
             "module": "robot_tasks",
             "args": [
-                "check-r5",
+                "check",
+                "joint",
                 "--config",
                 "configs/checks/r5_motion.toml",
                 "--gui"

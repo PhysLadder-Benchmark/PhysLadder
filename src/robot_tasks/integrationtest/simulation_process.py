@@ -1,4 +1,4 @@
-"""Keep native simulator lifetime separate from the CLI and its exit status."""
+"""Run a registered check in an isolated process with a wall-time watchdog."""
 
 from datetime import datetime, timezone
 import json
@@ -9,10 +9,9 @@ import sys
 import threading
 from uuid import uuid4
 
-from ..config import load_config
 from ..paths import PROJECT_ROOT
 from ..recording import write_json
-from ..robots.audit import require_cartesian_sim_ready, require_joint_sim_ready
+from .registry import get_check
 
 
 def completed_check(output: Path, returncode: int) -> bool:
@@ -25,20 +24,21 @@ def completed_check(output: Path, returncode: int) -> bool:
             and result.get("status") == "completed" and result.get("passed") is True)
 
 
-def run_motion_process(config_path: Path, output_root: Path, *, gui: bool = False,
-                       check: str = "joint") -> tuple[Path, bool]:
-    if check not in {"joint", "cartesian", "interaction", "gpt", "cameras"}:
-        raise ValueError(f"Unknown R5 integration check: {check}")
-    config = load_config(config_path)
-    (require_joint_sim_ready if check == "joint" else require_cartesian_sim_ready)(config.robot)
-    prefix = {"joint": "R5_motion_", "cartesian": "R5_cartesian_", "interaction": "R5_interaction_",
-              "gpt": "R5_gpt_", "cameras": "R5_cameras_"}[check]
-    output = output_root / (prefix + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ_") + uuid4().hex[:8])
+def run_check_process(name: str, output_root: Path, *, config_path: Path | None = None,
+                      gui: bool = False, model_config: Path | None = None) -> tuple[Path, bool]:
+    spec = get_check(name)
+    spec.validate_options(gui=gui, model_config=model_config)
+    config = spec.load_config(config_path)
+    if spec.preflight is not None:
+        spec.preflight(config.robot)
+    output = output_root / (spec.output_prefix + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ_") + uuid4().hex[:8])
     output.mkdir(parents=True, exist_ok=False)
     command = [sys.executable, "-m", "robot_tasks.integrationtest.simulation_worker", "--config", str(config.source),
-               "--run-directory", str(output), "--check", check]
+               "--run-directory", str(output.resolve()), "--check", spec.name]
     if gui:
         command.append("--gui")
+    if model_config is not None:
+        command.extend(("--model-config", str(model_config.resolve())))
     environment = dict(os.environ, PYTHONUTF8="1", PYTHONUNBUFFERED="1")
     timed_out = threading.Event()
     with (output / "process.log").open("w", encoding="utf-8") as log:

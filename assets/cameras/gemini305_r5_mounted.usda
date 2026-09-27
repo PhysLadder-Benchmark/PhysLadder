@@ -1,0 +1,39 @@
+#usda 1.0
+(
+    customLayerData = {
+        string assembly_frame = "Gemini305 centred CAD frame"
+        string mount_registration = "Bracket CAD axes provisionally aligned with R5 link6; not measured"
+        string optical_offset = "14 mm forward from housing centre; assumed"
+        string purpose = "visual_only_uncalibrated"
+    }
+    defaultPrim = "WristCamera"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "WristCamera"
+{
+    def Xform "Housing" (
+        prepend references = @./gemini305.usdc@
+    )
+    {
+        over "Geometry"
+        {
+            color3f[] primvars:displayColor = [(0.65, 0.66, 0.68)]
+        }
+    }
+
+    def Xform "Bracket" (
+        prepend references = @./r5_wrist_camera_mount.usdc@
+    )
+    {
+        quatd xformOp:orient = (0.23778130197383768, -0.6659279633951609, 0.6659279633951609, 0.23778130197383768)
+        double3 xformOp:translate = (-1.8674188300593642e-8, 0.01911164264379643, 0.03778627817743175)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+
+        over "Geometry"
+        {
+            color3f[] primvars:displayColor = [(0.88, 0.88, 0.84)]
+        }
+    }
+}
