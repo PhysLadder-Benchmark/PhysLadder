@@ -4,6 +4,51 @@
 
 当前提供两个待实现的任务模板：**L1-01 圆柱插孔**、**L2-02 双臂夹持力交接**。集成校验结果不代表正式测评任务成功率。
 
+## Windows / Linux 共用运行方式
+
+共享实验配置保持一致；本机只配置 Python、缓存和输出目录。启动器需要 Python 3.11+，
+使用已有 Isaac Sim 环境，不自动安装依赖或更改驱动。Windows 默认 D3D12，Linux/WSL 默认 Vulkan。
+
+复制 `configs/runtime/local.example.toml` 为 `configs/runtime/local.toml`（已被 Git 忽略），
+填写本机 Isaac Sim Python 路径，或者激活该环境并保留 `python = "current"`。
+Windows 路径推荐使用正斜杠，例如 `D:/conda/envs/isaac51/python.exe`。
+相对路径以本机配置文件所在目录为基准；配置中不得放实验参数、模型参数或密钥。
+
+在仓库根目录运行（Linux 用 `python3`，Windows 用 `python`）：
+
+```bash
+python3 tools/launch.py list --checks
+python3 tools/launch.py check joint --gui
+python3 tools/launch.py check cameras --gui
+python3 tools/launch.py check interaction --gui
+```
+
+`cameras` 展示双臂和腕部相机装配；`interaction` 仍使用 master 原有的总览相机抓放场景。
+去掉 `--gui` 则后台运行。`--output` 可覆盖本机默认输出目录。
+Windows 普通检查也支持原来的 `tools/run_r5_check.ps1 -Check joint -Gui`；显式 `-TaskPython`
+优先，没有新配置时保留旧默认 Python 路径。未显式配置缓存目录时，现有 Windows
+`windows.json` 仍有效；Linux 不依赖这个文件。调试入口继续采用原 Windows 调试流程。
+
+模型继续使用原有 `configs/models/gpt.example.toml` 模板，填写真实服务地址和模型 ID，
+在终端设置其指定的 API 密钥环境变量后运行：
+
+```bash
+python3 tools/launch.py check api --model-config /path/to/model.toml
+python3 tools/launch.py check gpt --model-config /path/to/model.toml --gui
+```
+
+模型 API、验收规则、实验参数均沿用 master；不包含 `active_agent` 或 `codex_cli` 通道。
+从此前本地版本迁移时，旧模型配置中的 `transport` 字段不再支持，请按原始模型模板配置。
+正式插孔和双臂交接任务仍是模板。工程检查结束后 `runtime_config.json` 记录环境路径，
+`config.toml`、结果和日志记录实验；不记录 API 密钥。
+
+仅保留两个可选环境覆盖：`GPT_BENCHMARK_PYTHON` 指定解释器，
+`GPT_BENCHMARK_RUNTIME_CONFIG` 指定另一份本机配置。原来的 `doctor` 命令、
+运行配置里的模型/图形后端/重试字段及 `--runtime-config` 全局选项已移出最小版本。
+
+软件回归在 Windows/Ubuntu CI 执行；真实 GPU 仿真仍需双方各自验证。
+双方比较实验时应使用一致的实验配置、模型设置和兼容的 Isaac Sim 版本。
+
 ## 三路相机与临时参数
 
 第三视角为轮趣 Gemini Pro（奥比 Gemini 模组），两路腕部为 Gemini 305，外壳使用供应商／官方 STEP 转换的 USD。

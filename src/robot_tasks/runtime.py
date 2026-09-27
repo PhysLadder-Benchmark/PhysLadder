@@ -1,8 +1,4 @@
-"""Process-local research storage. Never replace HOME, USERPROFILE or AppData.
-
-Windows entry points share the same D-drive manifest as the PowerShell launcher.
-WSL already lives in D:\\wsl\\Ubuntu\\ext4.vhdx; Linux paths are left intact.
-"""
+"""Portable runtime storage with optional legacy Windows D-drive configuration."""
 
 from dataclasses import dataclass
 import json
@@ -17,11 +13,41 @@ from .paths import PROJECT_ROOT
 STORAGE_CONFIG = PROJECT_ROOT / "configs/runtime/windows.json"
 
 
+def _modern_storage_selected():
+    from .runtime_config import load_runtime
+    return load_runtime().cache_explicit
+
+
+def snapshot_runtime_config(output: Path) -> None:
+    from .runtime_config import load_runtime
+    settings = load_runtime()
+    report = {"platform": sys.platform, "python": sys.executable,
+              "configured_python": settings.python, "cache_dir": str(settings.cache_dir),
+              "output_dir": str(settings.output_dir), "config_source": str(settings.source)}
+    legacy = sys.platform == "win32" and STORAGE_CONFIG.is_file() and not settings.cache_explicit
+    report["storage_mode"] = "legacy_windows" if legacy else "portable"
+    if legacy:
+        report["cache_dir"] = None  # Legacy manifest supplies several independent cache paths.
+        report["storage_config_source"] = str(STORAGE_CONFIG)
+    (output / "runtime_config.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+
+
+def snapshot_storage_config(output: Path) -> None:
+    """Linux runs do not depend on a private Windows drive configuration."""
+    target = output / "storage_config.json"
+    if sys.platform == "win32" and STORAGE_CONFIG.is_file() and not _modern_storage_selected():
+        target.write_bytes(STORAGE_CONFIG.read_bytes())
+    else:
+        target.write_text(json.dumps({"platform": sys.platform,
+                                      "windows_storage_configured": False}, indent=2), encoding="utf-8")
+
+
 @dataclass(frozen=True)
 class RuntimeStorage:
     root: Path
     kit_root: Path
     environment: dict[str, str]
+    legacy: bool = True
 
     def kit_arguments(self) -> list[str]:
         return ["--portable-root", str(self.kit_root)]
@@ -29,8 +55,16 @@ class RuntimeStorage:
 
 def configure_windows_storage() -> RuntimeStorage | None:
     """Configure before importing native libraries/debugpy or starting Kit."""
-    if sys.platform != "win32":
-        return None
+    if sys.platform != "win32" or not STORAGE_CONFIG.is_file() or _modern_storage_selected():
+        from .runtime_config import load_runtime
+        root = load_runtime().cache_dir
+        kit = root / "kit"
+        warp = root / "warp"
+        kit.mkdir(parents=True, exist_ok=True)
+        warp.mkdir(parents=True, exist_ok=True)
+        environment = {"WARP_CACHE_PATH": str(warp)}
+        os.environ.update(environment)
+        return RuntimeStorage(root, kit, environment, legacy=False)
     data = json.loads(STORAGE_CONFIG.read_text(encoding="utf-8"))
     root = Path(data["root"]).resolve()
     if root.drive.upper() != "D:":
@@ -61,6 +95,9 @@ def storage_report(storage: RuntimeStorage | None, *, kit_started: bool = False)
     paths = {"project": str(PROJECT_ROOT.resolve()), "python": str(Path(sys.executable).resolve()),
              "tempfile": str(Path(tempfile.gettempdir()).resolve()), "kit_root": str(storage.kit_root),
              **{name: str(Path(value).resolve()) for name, value in storage.environment.items()}}
+    if not storage.legacy:
+        return {"platform": sys.platform, "windows_storage_configured": False,
+                "runtime_root": str(storage.root), "paths": paths}
     data = json.loads(STORAGE_CONFIG.read_text(encoding="utf-8"))
     for entry in data["junctions"]:
         alias = Path(os.environ[entry["base"]]) / entry["source"]

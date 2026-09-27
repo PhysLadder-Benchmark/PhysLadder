@@ -10,6 +10,31 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# Normal checks share the cross-platform Python launcher. Keep the legacy debugger below.
+if (-not $Debugger) {
+    $taskBootstrap = if (Test-Path -LiteralPath $TaskPython -PathType Leaf) { $TaskPython } else { 'python' }
+    $taskOldPython = $env:GPT_BENCHMARK_PYTHON
+    if ($PSBoundParameters.ContainsKey('TaskPython')) {
+        $taskBootstrap = $TaskPython
+        $env:GPT_BENCHMARK_PYTHON = $TaskPython
+    } elseif (-not $env:GPT_BENCHMARK_PYTHON -and -not $env:GPT_BENCHMARK_RUNTIME_CONFIG -and
+              -not (Test-Path "$PSScriptRoot/../configs/runtime/local.toml") -and
+              (Test-Path -LiteralPath $TaskPython -PathType Leaf)) {
+        # Preserve the old default when no modern runtime selection exists.
+        $env:GPT_BENCHMARK_PYTHON = $TaskPython
+    }
+    try {
+        $taskArguments = @("$PSScriptRoot/launch.py", 'check', $Check)
+        if ($Config) { $taskArguments += @('--config', $Config) }
+        if ($ModelConfig) { $taskArguments += @('--model-config', $ModelConfig) }
+        if ($Gui) { $taskArguments += '--gui' }
+        & $taskBootstrap @taskArguments
+        $taskCode = $LASTEXITCODE
+    } finally {
+        $env:GPT_BENCHMARK_PYTHON = $taskOldPython
+    }
+    exit $taskCode
+}
 . "$PSScriptRoot\research_storage.ps1"
 $taskProject = Split-Path -Parent $PSScriptRoot
 $taskEnvironment = Split-Path -Parent $TaskPython

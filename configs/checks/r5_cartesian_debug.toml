@@ -26,7 +26,6 @@ save_rgb = true
 [simulation]
 asset_directory = "../../build/r5"
 headless = true
-graphics_backend = "d3d12"
 width = 960
 height = 720
 fps = 12

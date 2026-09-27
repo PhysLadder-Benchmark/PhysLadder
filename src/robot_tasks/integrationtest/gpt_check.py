@@ -18,7 +18,7 @@ from ..recording import write_json
 from ..robots.adapters import R5Adapter
 from ..robots.audit import require_cartesian_sim_ready
 from ..robots.transforms import pose_errors
-from ..runtime import STORAGE_CONFIG
+from ..runtime import snapshot_storage_config
 from ..types import Observation, PolicyInput
 from .interaction_scene import InteractionScene, InteractionSettings
 from .video import MotionVideo
@@ -48,7 +48,7 @@ def run_gpt_check(config_path: Path, output_root: Path, *, gui=False, run_direct
     (output / "config.toml").write_bytes(config.source.read_bytes())
     (output / "robot_profile.toml").write_bytes(config.robot.source.read_bytes())
     (output / "asset_source.lock.json").write_bytes(config.robot.asset_lock.read_bytes())
-    (output / "storage_config.json").write_bytes(STORAGE_CONFIG.read_bytes())
+    snapshot_storage_config(output)
     if simulation.camera_profile:
         (output / "camera_profile.toml").write_bytes((config.source.parent / simulation.camera_profile).read_bytes())
     write_json(output / "asset_audit.json", audit.as_dict())
