@@ -5,6 +5,7 @@ import numpy as np
 from ..robots.transforms import transform_pose
 from ..types import RGBFrame
 from .profile import CameraRigProfile
+from . import RGBNotReady
 
 
 def _set_pose(prim, pose):
@@ -56,6 +57,8 @@ class IsaacCameraRig:
         frames = []
         for spec in self.specs:
             data = np.asarray(self.annotators[spec.name].get_data())
+            if data.size == 0:
+                raise RGBNotReady(f"{spec.name}: RGB buffer is not ready")
             width, height = spec.resolution
             if data.ndim != 3 or data.shape[:2] != (height, width) or data.shape[2] not in {3, 4}:
                 raise RuntimeError(f"{spec.name}: invalid RGB dimensions {data.shape}")

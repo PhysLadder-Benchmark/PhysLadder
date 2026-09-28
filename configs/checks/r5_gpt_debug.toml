@@ -27,7 +27,6 @@ save_rgb = true
 camera_profile = "../cameras/r5_orbbec_provisional.toml"
 asset_directory = "../../build/r5"
 headless = true
-graphics_backend = "d3d12"
 width = 640
 height = 480
 fps = 12

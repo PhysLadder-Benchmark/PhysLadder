@@ -4,6 +4,56 @@
 
 另有两个待实现的任务模板：**L1-01 圆柱插孔**、**L2-02 双臂夹持力交接**。集成校验结果不代表正式测评任务成功率。
 
+## Windows / Linux 共用运行方式
+
+共享实验配置保持一致；本机只配置 Python、缓存和输出目录。启动器需要 Python 3.11+，
+使用已有 Isaac Sim 环境，不自动安装依赖或更改驱动。Windows 默认 D3D12，Linux/WSL 默认 Vulkan。
+这里按实际运行 Isaac Sim 的 Python 所在系统选择；从 WSL 经 PowerShell 启动 Windows Python 时仍默认 D3D12。
+
+复制 `configs/runtime/local.example.toml` 为 `configs/runtime/local.toml`（已被 Git 忽略），
+填写本机 Isaac Sim Python 路径，或者激活该环境并保留 `python = "current"`。
+Windows 路径推荐使用正斜杠，例如 `D:/conda/envs/isaac51/python.exe`。
+相对路径以本机配置文件所在目录为基准；配置中不得放实验参数、模型参数或密钥。
+
+在仓库根目录运行（Linux 用 `python3`，Windows 用 `python`）：
+
+```bash
+python3 tools/launch.py list --checks
+python3 tools/launch.py check joint --gui
+python3 tools/launch.py check cameras --gui
+python3 tools/launch.py check interaction --gui
+```
+
+`cameras` 展示双臂和腕部相机装配；`interaction` 仍使用 master 原有的总览相机抓放场景。
+去掉 `--gui` 则后台运行。`--output` 可覆盖本机默认输出目录。
+Windows 普通检查也支持原来的 `tools/run_r5_check.ps1 -Check joint -Gui`；显式 `-TaskPython`
+优先，没有新配置时保留旧默认 Python 路径。未显式配置缓存目录时，现有 Windows
+`windows.json` 仍有效；Linux 不依赖这个文件。调试入口继续采用原 Windows 调试流程。
+示例中的 `cache_dir = "auto"` 也属于显式配置，会改用系统用户缓存目录。
+需要保留旧 D 盘缓存布局时，省略该字段；需要新的布局时填写自己的 D 盘缓存目录。
+
+模型继续使用原有 `configs/models/gpt.example.toml` 模板，填写真实服务地址和模型 ID，
+在终端设置其指定的 API 密钥环境变量后运行：
+
+```bash
+python3 tools/launch.py check api --model-config /path/to/model.toml
+python3 tools/launch.py check gpt --model-config /path/to/model.toml --gui
+python3 tools/launch.py run GPT-PICK-PLACE --model-config /path/to/model.toml --gui
+```
+
+跨平台入口共用现有模型 API、任务配置和评分实现；不包含 `active_agent` 或 `codex_cli` 通道。
+从此前本地版本迁移时，旧模型配置中的 `transport` 字段不再支持，请按原始模型模板配置。
+正式插孔和双臂交接任务仍是模板。GPT 抬手检查和抓放任务共用执行与记录模块，
+通过 `run` 或 `check` 启动均保存 `runtime_config.json` 和 `storage_config.json` 环境快照；
+`config.toml`、结果和日志记录实验，不记录 API 密钥。
+
+仅保留两个可选环境覆盖：`GPT_BENCHMARK_PYTHON` 指定解释器，
+`GPT_BENCHMARK_RUNTIME_CONFIG` 指定另一份本机配置。原来的 `doctor` 命令、
+运行配置里的模型/图形后端/重试字段及 `--runtime-config` 全局选项已移出最小版本。
+
+软件回归在 Windows/Ubuntu CI 执行；真实 GPU 仿真仍需双方各自验证。
+双方比较实验时应使用一致的实验配置、模型设置和兼容的 Isaac Sim 版本。
+
 ## 三路相机与临时参数
 
 第三视角为轮趣 Gemini Pro（奥比 Gemini 模组），两路腕部为 Gemini 305，外壳使用供应商／官方 STEP 转换的 USD。
@@ -112,7 +162,7 @@ F5 选择 **R5: GPT pick-place GUI (WSL)**。它运行同一任务实现，可�
 每个回合独立保存 `episode.jsonl`、配置快照、决策时的三路图像以及 `video/<相机名>/motion.mp4` 和 GIF。
 这些是当前仿真与临时相机配置下的测试，不代表真机抓放能力。
 
-本机本轮验证：Windows 与 WSL 各通过 102 项离线测试；真实接口的抬手检查经 3 次调用通过。
+GPT 抓放接入时的本机历史验证：Windows 与 WSL 各通过 102 项离线测试；真实接口的抬手检查经 3 次调用通过。
 抓放完整试跑经 40 次调用、37 次动作执行、3 次动作拒绝后达到调用上限，`success=false`，没有系统错误；
 这证明流程与结果记录已接通，**尚不是 GPT 成功抓放的证据**。详细记录在本机
 `reports/gpt_pick_place_validation.json`，三路录像位于
@@ -120,9 +170,10 @@ F5 选择 **R5: GPT pick-place GUI (WSL)**。它运行同一任务实现，可�
 
 ## 本机配置
 
-首次克隆先将 `configs/models/gpt.example.toml` 复制为 `gpt.toml`，将
-`configs/runtime/windows.example.json` 复制为 `windows.json`，已有配置不覆盖。
-模型服务地址和本机 D 盘路径在复制后的文件中填写，两份本机配置均由 Git 忽略。
+首次克隆先将 `configs/models/gpt.example.toml` 复制为 `gpt.toml`，填写模型服务地址与模型 ID。
+跨平台运行按上文配置 `configs/runtime/local.toml`；沿用本项目原有 Windows D 盘布局或调试入口时，
+再将 `configs/runtime/windows.example.json` 复制为 `windows.json` 并填写本机路径。
+已有配置不覆盖，这些本机配置均由 Git 忽略，Linux 无需准备 `windows.json`。
 VS Code 的 `launch.json`、`tasks.json`、`settings.json` 也只保留本地版本；
 仓库提交对应的 `*.example.json`，使用前替换示例项目路径、Conda 路径和 `WINDOWS_WSL_HOST`。
 下文中的本地历史结果位于忽略的 `runs/`、`reports/`，首次克隆需重新运行检查生成。

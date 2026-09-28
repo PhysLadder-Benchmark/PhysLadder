@@ -5,7 +5,9 @@ from copy import deepcopy
 from dataclasses import replace
 import io
 import json
+import os
 from pathlib import Path
+import sys
 import tempfile
 import unittest
 from unittest.mock import Mock, patch
@@ -233,6 +235,20 @@ class EpisodeExecutionTests(unittest.TestCase):
         self.assertNotIn("0.38", config.instruction)
         with self.assertRaisesRegex(ValueError, "Unknown arm"):
             decode_action('{"commands":[{"arm":"right","kind":"gripper","values":[0.06],"frame":"world"}],"request_stop":false}', config)
+
+    def test_shared_episode_records_runtime_without_a_windows_manifest(self):
+        local = self.root / "runtime.toml"
+        local.write_text('[paths]\ncache_dir="cache"\noutput_dir="episodes"', encoding="utf-8")
+        with patch.dict(os.environ, {"GPT_BENCHMARK_RUNTIME_CONFIG": str(local)}), \
+                patch("robot_tasks.runtime.STORAGE_CONFIG", self.root / "missing_windows.json"):
+            path, result, _, _ = self.run_case(NoopPolicy(self.config.control_dt_s))
+        self.assertEqual(result["status"], "finished")
+        runtime = json.loads((path / "runtime_config.json").read_text())
+        storage = json.loads((path / "storage_config.json").read_text())
+        self.assertEqual(runtime["python"], sys.executable)
+        self.assertEqual(runtime["cache_dir"], str(self.root / "cache"))
+        self.assertEqual(runtime["storage_mode"], "portable")
+        self.assertFalse(storage["windows_storage_configured"])
 
     def test_motion_goal_and_prompt_share_changed_parameters(self):
         config = load_config(ROOT / "configs/checks/r5_gpt.toml")

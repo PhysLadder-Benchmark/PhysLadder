@@ -9,6 +9,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from .config import TaskConfig
+from .runtime import snapshot_runtime_config, snapshot_storage_config
 from .types import Observation
 
 
@@ -24,6 +25,10 @@ class EpisodeRecorder:
         self.directory.mkdir(parents=True, exist_ok=run_directory is not None)
         if any(p.name != "process.log" for p in self.directory.iterdir()):
             raise ValueError("Episode output must be a fresh directory")
+        # Both direct task runs and engineering checks use this recorder.
+        # Save before Kit starts, since fast shutdown can end the worker process.
+        snapshot_runtime_config(self.directory)
+        snapshot_storage_config(self.directory)
         self.save_rgb = config.save_rgb
         config_bytes = config.source.read_bytes()
         (self.directory / "config.toml").write_bytes(config_bytes)

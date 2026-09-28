@@ -16,7 +16,7 @@ from ..backends.settings import SimulationSettings
 from ..config import load_config
 from ..video import MotionVideo
 from ..recording import write_json
-from ..runtime import STORAGE_CONFIG
+from ..runtime import snapshot_storage_config
 from ..robots.adapters import R5Adapter
 from ..robots.audit import require_cartesian_sim_ready
 from ..robots.kinematics import IKError
@@ -41,9 +41,9 @@ def run_cartesian_check(config_path: Path, output_root: Path, *, gui: bool = Fal
         raise ValueError("Cartesian-check output must be a new directory")
     print(f"R5_CHECK_OUTPUT {output}", flush=True)
     for source, name in ((config.source, "config.toml"), (config.robot.source, "robot_profile.toml"),
-                         (STORAGE_CONFIG, "storage_config.json"),
                          (config.robot.asset_lock, "asset_source.lock.json")):
         shutil.copyfile(source, output / name)
+    snapshot_storage_config(output)
     write_json(output / "asset_audit.json", audit.as_dict())
     write_json(output / "manifest.json", {
         "kind": "r5_cartesian_integration", "robot": "R5a", "task_evaluated": False,
