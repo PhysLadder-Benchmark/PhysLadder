@@ -116,7 +116,8 @@ class EpisodeExecutionTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
+        # Runtime snapshots use resolved paths, even if Windows TEMP is an alias.
+        self.root = Path(self.temp.name).resolve()
         base = load_config(ROOT / 'configs/tasks/l1_01_cylinder_insertion.toml')
         self.config = replace(base, raw={**base.raw, "execution": {
             "max_action_steps": 8, "completion_samples": 2, "wait_steps": 3, "max_decisions": 4}})

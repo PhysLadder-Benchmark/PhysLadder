@@ -14,7 +14,8 @@ class RuntimeConfigTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
+        # Match the config loader's canonical directory, including 8.3 aliases.
+        self.root = Path(self.temp.name).resolve()
         # These tests clear the environment; Windows then has no user-directory
         # variables. Model a home directory without depending on the host user.
         home = patch('robot_tasks.runtime_config.Path.home', return_value=self.root / 'user')

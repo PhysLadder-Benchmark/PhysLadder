@@ -26,7 +26,8 @@ class NamedEntryTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.directory = Path(self.temp.name)
+        # Windows TEMP can use an 8.3 alias; the CLI returns resolved paths.
+        self.directory = Path(self.temp.name).resolve()
 
     def config_variant(self, task="L1-01", *, task_id=None):
         spec = TASKS[task]
