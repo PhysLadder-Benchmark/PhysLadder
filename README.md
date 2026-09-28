@@ -100,7 +100,7 @@ python -m robot_tasks check gpt --gui
 python -m robot_tasks check cameras --gui
 ```
 
-`run` 默认使用 GPT，可用 `--policy scripted` 切换策略；指定模型配置用 `--model-config`。
+`run` 当前使用 GPT 策略；指定模型配置用 `--model-config`。不调用 GPT 的脚本抓放检查使用 `check interaction`。
 当前 L1-01、L2-02 仍是未实现的任务模板，`run` 会在启动仿真、创建模型策略前明确报错。
 `run GPT-PICK-PLACE` 运行自主单臂抓放；`check gpt` 保留基础动作检查。单次结果不能代表总体成功率。
 原来的 `check-r5*`、`check-gpt-api` 命令已统一替换为 `check <名称>`；仅传 `run --config ...` 的用法仍保留。
@@ -159,14 +159,37 @@ F5 选择 **R5: GPT pick-place GUI (WSL)**。它运行同一任务实现，可�
 
 运行隔离沿用原机制：新的场景、机器人、任务评分器和 GPT 策略；回合开始清空对话、计数器及执行状态，
 不读取之前的运行结果。一个回合内保留有限历史以支持纠错。单次命令是独立 Python 进程，`check` 入口另带子进程 watchdog。
-每个回合独立保存 `episode.jsonl`、配置快照、决策时的三路图像以及 `video/<相机名>/motion.mp4` 和 GIF。
+每个回合的报告、评分、配置、日志和录像统一保存在 `runs/<回合目录>/`，运行结束自动生成 `report.md`。
+成功、失败和服务异常都生成报告；原始评分以 `result.json` 为准，不把工程检查通过算作任务成功。
+动作结束时的 TCP 跟踪误差与物体放置误差分别呈现，缺失测量不填成零。
+
+```text
+runs/<回合目录>/
+├── report.md               结果、误差、调用／超时统计及录像链接
+├── result.json             原始任务评分或工程检查结果
+├── episode.jsonl           决策、反馈、逐控制周期记录和评分
+├── config.toml             本回合配置；机器人、相机配置也保存在同目录
+├── instruction.txt         实际使用的任务指令
+├── frames/<相机名>/         决策时的原始 RGB
+└── video/<相机名>/          motion.mp4 和预览 GIF
+```
+
+不调用模型、不重跑仿真，也可为已有回合补生成报告：
+
+```bash
+python -m robot_tasks.reporting runs/<回合目录>
+```
+
+脚本工程检查同样生成 `report.md`；其逐步记录为 `motion.jsonl`，具体录像布局见报告中的链接。
 这些是当前仿真与临时相机配置下的测试，不代表真机抓放能力。
 
 GPT 抓放接入时的本机历史验证：Windows 与 WSL 各通过 102 项离线测试；真实接口的抬手检查经 3 次调用通过。
 抓放完整试跑经 40 次调用、37 次动作执行、3 次动作拒绝后达到调用上限，`success=false`，没有系统错误；
-这证明流程与结果记录已接通，**尚不是 GPT 成功抓放的证据**。详细记录在本机
-`reports/gpt_pick_place_validation.json`，三路录像位于
-`runs/R5_gpt_pick_place_20260927T124321Z_88558a0b/video/`。这些运行产物由 Git 忽略，其他机器需自行复跑。
+这证明了当时流程与结果记录已接通。后续启用坐标／TCP 图像标记的 IK 试跑以 15 次调用完成抓放，
+最终目标偏差约 1.15 厘米；这是单回合成功记录，不代表稳定成功率。
+两次回合分别位于本机 `runs/R5_gpt_pick_place_20260927T124321Z_88558a0b/` 与
+`runs/R5_gpt_pick_place_20260928T060414Z_3f865fba/`；实际成功录像与报告见本机运行目录。
+这些运行产物由 Git 忽略，其他机器需自行复跑。
 
 ## 本机配置
 
@@ -469,6 +492,7 @@ GPT_Benchmark/
 │   ├── execution.py        校验运行条件、组装组件并调用公共执行循环
 │   ├── runner.py           一次完整试验的执行循环
 │   ├── recording.py        配置快照、逐步日志和 RGB 帧保存
+│   ├── reporting.py        从本回合记录生成 report.md，不重新评分
 │   ├── backends/           Isaac Sim 后端、渲染配置、占位后端
 │   ├── cameras/            相机配置、USD 挂载和 RGB 采集
 │   ├── robots/profile.py   类型化机器人配置读取
@@ -484,10 +508,10 @@ GPT_Benchmark/
 │   └── tasks/              场景、复位、成功与失败判定
 ├── tests/                  资产、配置、执行生命周期与证据检查
 ├── tools/                  固定版本资产下载、Windows 启动与框架检查
-├── reports/                离线校验报告
+├── reports/                历史调研／跨回合分析；任务报告随回合保存在 runs/
 ├── environment.yml         可选轻量 Conda 环境定义
 ├── pyproject.toml          src 包发现、构建和命令行入口
-└── runs/                   运行后自动生成的记录
+└── runs/                   每回合的测评报告、原始结果、日志、配置与录像
 ```
 
 | 模块 | 当前状态 | 后续填什么 |
@@ -584,7 +608,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/run_r5_check.ps1 -Chec
 独立检查实际位姿和夹爪变化；模型说“完成”不能让检查自动通过。**这不是自主抓取或强接触任务成功率。**
 
 两种 GPT 入口共用 `runner.run_episode()`；每轮执行模型目标，最多等待 `execution.max_action_steps` 个控制周期，再把实际反馈提供给模型。
-等待 API 时物理时间暂停；录像按仿真时间播放，实际耗时另存。默认最多 6 次调用、保留 2 轮历史，
+等待 API 时物理时间暂停；录像按仿真时间播放，实际耗时另存。基础抬手检查默认最多 6 次调用，抓放任务默认 40 次；原始配置保留 2 轮历史，
 请求超时 90 秒。没有自动重试、自动修复动作或脚本替模型补动作。IK 不可达等由适配器原子拒绝的动作不会执行，拒绝反馈交回模型重新决策并记录次数。格式错误、非单位四元数、越界、拒答、
 未完整结束的响应和接口错误均停止本轮并留记录。`structured_output=true` 会发送 JSON Schema，
 本地仍独立校验；中转服务不一定完整保留上游参数，不能仅凭 HTTP 200 判断格式约束生效。
@@ -605,7 +629,7 @@ API-only 输出位于 `runs/GPT_api_*/`，图片是测试色块，不是真实�
 - **执行顺序：**打开后端 → 初始化机器人 → 搭场景 → 复位 → 读取观测 → 策略动作 → 机器人执行 → 物理步进 → 新观测与评分，循环直到终止。
 - **动作：**关节位置、末端位姿或夹爪总开口；双臂命令放在同一 `Action` 中，在同一次物理步进前应用。具体 SDK 转换、关节限制和 IK 留给机器人适配层。尚未定义力控接口。
 - **单位：**距离用米，角度用弧度，时间用秒；位姿四元数顺序固定为 `w,x,y,z`。夹爪开口指两指总距离。
-- **模型可见信息：**相机 RGB；可配置是否提供机器人状态和执行反馈。GPT 接收当前采样的 RGB PNG 图片和最多两轮历史观测／动作；这是视频抽帧，不是原生视频流。模型配置可修改历史长度与图片尺寸。
+- **模型可见信息：**相机 RGB；可配置是否提供机器人状态和执行反馈。原始配置保留当前图片和最多两轮历史；优化配置可保留本回合全部文字，仅保留最近两轮历史图片。这是视频抽帧，不是原生视频流。相机标定数据和图像标记分别通过明确开关提供。
 - **评分信息：**物体真值位姿、接触力等走 `EvaluationState`，不传进策略输入。若将力觉提供给 GPT，需显式扩展观测协议。
 - **停止：**策略声称完成不等于成功。成功必须来自任务评分器；已启动评估的任务超时或提前停止记失败，服务／仿真异常与未实现模板另行记录。
 - **时间预算：**区分物理时间和墙钟时间。模型请求有 socket 超时和返回后的总耗时检查，超时结果不执行；仿真 CLI 子进程另有总墙钟 watchdog。等待 API 期间仿真不推进，因此不能据此评价真实动态响应。
@@ -652,3 +676,64 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/check_framework.ps1
 缓存、仿真构建产物、录像、逐次结果、机器审计报告、原始相机 STEP、
 本机模型渠道／路径配置和个人调试配置由 `.gitignore` 排除。
 厂家资产保留来源与文件哈希，并沿用其原始使用条款；本仓库不为第三方资产重新授予许可。
+
+## GPT 控制优化与对照
+
+默认抓放沿用 IK 执行，已开启桌面坐标与实测 TCP 的图像标记。以下配置具有相同任务、初态、评分和默认 40 次调用预算：
+
+| 配置（位于 `configs/tasks/`） | 内容 |
+|---|---|
+| `gpt_single_arm_pick_place.toml` | 默认：保留本回合文字历史、R5 操作说明、指定坐标轴、先移动再开合夹爪，以及图像标记 |
+| `gpt_single_arm_pick_place_optimized.toml` | 保留本回合文字历史、R5 操作说明、指定坐标轴、先移动再开合夹爪 |
+| `gpt_single_arm_pick_place_calibrated.toml` | 优化配置 + 向模型提供虚拟相机内外参 |
+| `gpt_single_arm_pick_place_visual_aids.toml` | 与默认相同；优化配置 + 图像标记，不额外发送相机内外参数值 |
+
+```bash
+python -m robot_tasks run GPT-PICK-PLACE --gui
+python -m robot_tasks check gpt --config configs/checks/r5_gpt_optimized.toml
+python -m robot_tasks check cameras
+```
+
+WSL 开发、Windows 运行 Isaac 时，继续使用现有 PowerShell 入口。例如：
+
+```bash
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(wslpath -w ./tools/run_r5_check.ps1)" -Check gpt-pick-place -Gui
+```
+
+`[policy_options]` 的五个开关可单独调整，不必同时启用所有优化。`sparse_eef` 使用绝对世界坐标；
+`x_m/y_m/z_m` 为 null 时保留最新实测值。角度采用 `Rz(yaw) Ry(pitch) Rx(roll) R_reference`，
+全零时 R5 TCP 的 +X 向下、夹爪闭合轴沿世界 +Y；三个角度都为 null 时直接保留实测四元数。
+`gripper_width_m=null` 保留已有夹爪驱动目标。内部仍转换成同一 `Action`，不执行模型生成的程序。
+
+`execution.gripper_timing="after_motion"` 会在同一条命令的机械臂运动到位并稳定后执行夹爪目标。
+动作超时取消尚未执行的开合，避免在下一轮等待时意外释放物体。反馈包含目标／实测 TCP、各轴剩余误差、
+夹爪开口误差和执行阶段；“夹爪没合到目标”不会自动判为已抓到物体。
+
+三路相机默认在同一物理状态完成两轮渲染后读取，空缓冲仍有限重试。`check cameras` 还会在物理暂停时移动临时标记，
+检查画面更新和像素投影误差。记录的相机参数来自虚拟场景，并非现场手眼标定；只有 `camera_calibration=true` 才传给模型，
+图像缩放时同步缩放内参。单个像素与内外参仍不足以确定未知物体深度。
+
+图像标记使用虚拟相机内外参，将已知桌面世界坐标和实测末端位置投影到三路图像上。
+标记不读取物体真值、不标出目标答案，也不代表物体检测结果；遮挡处的投影不能当作可见物体。
+`visual_aids=true` 与 `camera_calibration=false` 可以同时使用：模型看到带标记的图像，但不收到相机参数表。
+标记仅作用于模型输入，原始 RGB 与录像保持原样；逐次调用记录包含标记开关和输入图像哈希。
+
+正式对照应固定布局、相机、模型与预算，每次独立复位，并重复多次。可先用以下工具汇总已有记录：
+
+```bash
+python -m robot_tasks.integrationtest.compare_runs runs/<原始回合> runs/<优化回合>
+```
+
+它同时保留失败和基础设施异常，报告调用数、超时、末端误差、耗时和配置差异；少量工程试跑不能证明成功率改善。
+推理强度仍在模型配置中设置，调用数与时间预算在任务配置中设置，应作为独立实验条件。
+
+此前未开启图像标记的 IK 工程试跑中，`low` 推理强度用 21 次调用完成一次抓放（约 524 秒，3 次动作拒绝、8 次动作超时）；
+`medium`、100 次上限的另一回合在第 23 次调用主动停止，物体已搬运，但距目标中心约 3.4 厘米，超出 2.5 厘米阈值，判为失败。
+三路相机投影检查误差均小于 1 像素。这些是单次试跑，不能据此确认成功率改善或某个组件的独立贡献；真机手眼标定仍需现场数据。
+
+开启图像标记后，保持上述 `medium`、100 次上限及相同任务条件的一次 IK 抓放用 15 次调用完成，耗时约 458 秒。
+方块最高抬起约 11.27 厘米，水平搬运约 13.89 厘米，最终误差约 1.15 厘米；0 次动作拒绝、8 次动作超时。
+三路录像均完整，45 张模型输入图像的标记与记录哈希均已核对。这仍只是单次工程验证，不能据此估计成功率。
+
+实现参考：[RoboProbe 的动作接口](https://github.com/RoboProbe/RoboProbe/tree/main/policy/RoboDojo_Agent_L3_Inspect_EEF)、
+[Responses 会话状态](https://developers.openai.com/api/docs/guides/conversation-state)。本项目仍使用 R5，不复制参考项目的 X5／Franka 参数。

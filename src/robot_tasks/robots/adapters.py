@@ -1,4 +1,4 @@
-from ..config import TaskConfig
+from ..config import ExecutionSettings, TaskConfig
 from ..interfaces import Backend
 from ..types import Action, ArmState, Feedback
 from .audit import require_joint_sim_ready
@@ -30,8 +30,8 @@ class R5Adapter(RobotAdapter):
     """Dual-arm R5 SIMULATION adapter; never connects to the real robot SDK.
 
     The manufacturer description and names are configured in config.robot.
-    Cartesian goals use bounded IK, then the same joint physics drives.
-    No straight-line Cartesian path, collision planning, or force control is implied.
+    Cartesian goals use bounded IK followed by joint physics drives.
+    This adapter does not provide collision-free path planning or force control.
     """
 
     def __init__(self) -> None:
@@ -43,6 +43,10 @@ class R5Adapter(RobotAdapter):
         self.kinematics = None
         self.cartesian_targets = {}
         self.rejection = None
+        self.pending_grippers = {}
+        self.motion_arms = set()
+        self.motion_stable_s = 0.0
+        self.execution = ExecutionSettings()
 
     def initialize(self, backend: Backend, config: TaskConfig) -> None:
         from ..backends.isaacsim import IsaacSimBackend
@@ -50,10 +54,13 @@ class R5Adapter(RobotAdapter):
         if not isinstance(backend, IsaacSimBackend):
             raise TypeError("R5Adapter requires IsaacSimBackend; it never connects to real hardware")
         self.config, self.backend = config, backend
+        self.execution = ExecutionSettings.from_config(config)
         if config.robot.tcp_pose_wxyz is not None:
             from .kinematics import R5Kinematics
             self.kinematics = R5Kinematics(config.robot)
         self.instances = backend.add_r5(config.robot)
+        backend.scene_report["ik_solver"] = "numerical"
+        backend.before_physics_step = self.before_physics_step
 
     def reset(self, seed: int) -> None:
         import numpy as np
@@ -62,6 +69,9 @@ class R5Adapter(RobotAdapter):
         profile = self.config.robot
         self.cartesian_targets.clear()
         self.rejection = None
+        self.pending_grippers.clear()
+        self.motion_arms.clear()
+        self.motion_stable_s = 0.0
         ordered = profile.joint_names + profile.gripper.joint_names
         limits = {limit.joint: limit for limit in profile.operating_limits}
         width = sum(profile.gripper.width_limits_m) / 2
@@ -92,8 +102,16 @@ class R5Adapter(RobotAdapter):
         try:
             if not isinstance(action, Action):
                 raise ValueError("Expected an Action")
-            measured = ({name: state.joint_positions_rad for name, state in self.state().items()}
-                        if any(c.kind == "cartesian_pose" for c in action.commands) else None)
+            # Validate executable fields before solving and changing drive targets.
+            from ..runner import validate_action
+            validate_action(action, self.config, require_control_duration=False)
+            if not action.commands:
+                plan_targets(self.config.robot, self.config.arms, action, self.targets)
+                return
+            needs_state = any(c.kind == "cartesian_pose" for c in action.commands)
+            states = self.state() if needs_state else {}
+            measured = ({name: state.joint_positions_rad for name, state in states.items()}
+                        if needs_state else None)
             planned = plan_targets(self.config.robot, self.config.arms, action, self.targets,
                                    kinematics=self.kinematics, measured_positions=measured)
             cartesian_targets = dict(self.cartesian_targets)
@@ -105,8 +123,27 @@ class R5Adapter(RobotAdapter):
                     cartesian_targets.pop(command.arm, None)
         except ValueError as exc:
             # Retain previous targets for BOTH arms, expose feedback, and propagate the error.
-            self.rejection = Feedback("rejected", str(exc))
+            from .kinematics import IKError
+            metrics = {"reason_code": "invalid_target", "requested_commands": [
+                {"arm": c.arm, "kind": c.kind, "values": c.values, "frame": c.frame} for c in getattr(action, "commands", ())]}
+            if isinstance(exc, IKError):
+                from dataclasses import asdict
+                metrics.update(reason_code=exc.result.reason, ik=asdict(exc.result))
+            self.rejection = Feedback("rejected", str(exc), metrics)
             raise
+        self.pending_grippers = {}
+        self.motion_arms = {c.arm for c in action.commands if c.kind != "gripper"}
+        if self.execution.gripper_timing == "after_motion":
+            for c in action.commands:
+                if c.kind == "gripper" and c.arm in self.motion_arms:
+                    self.pending_grippers[c.arm] = planned[c.arm][6:]
+                    planned[c.arm] = planned[c.arm][:6] + self.targets[c.arm][6:]
+        self.motion_stable_s = 0.0
+        self._send_targets(planned)
+        self.cartesian_targets = cartesian_targets
+        self.rejection = None
+
+    def _send_targets(self, planned):
         changed = {name: target for name, target in planned.items() if target != self.targets[name]}
         if changed:
             import numpy as np
@@ -119,9 +156,22 @@ class R5Adapter(RobotAdapter):
                     joint_positions=np.array(target), joint_indices=self.indices[name],
                 ))
         self.targets = planned
-        self.cartesian_targets = cartesian_targets
-        if action.commands:
-            self.rejection = None
+
+    def before_physics_step(self, dt_s: float) -> None:
+        if self.pending_grippers:
+            feedback = self._tracking_feedback()
+            motion_ready = all(feedback.metrics["arms"][name]["motion_reached"] for name in self.motion_arms)
+            self.motion_stable_s = self.motion_stable_s + dt_s if motion_ready else 0.0
+            if self.motion_stable_s >= self.execution.completion_samples * self.config.control_dt_s:
+                targets = dict(self.targets)
+                for name, fingers in self.pending_grippers.items():
+                    targets[name] = targets[name][:6] + fingers
+                self.pending_grippers.clear()
+                self._send_targets(targets)
+
+    def on_action_timeout(self) -> None:
+        """Never trigger a deferred grip after its action budget has expired."""
+        self.pending_grippers.clear()
 
     def state(self) -> dict[str, ArmState]:
         import math
@@ -150,8 +200,13 @@ class R5Adapter(RobotAdapter):
             return Feedback("not_initialized", "R5 state is unavailable before reset")
         if self.rejection is not None:
             return self.rejection
+        return self._tracking_feedback()
+
+    def _tracking_feedback(self) -> Feedback:
+        """Controller feedback independent of the last policy-request rejection."""
         errors = {}
         tcp_errors = {}
+        details = {}
         settled = True
         for name, state in self.state().items():
             target = self.targets[name]
@@ -163,11 +218,27 @@ class R5Adapter(RobotAdapter):
                 if state.tcp_pose_world_wxyz is None:
                     return Feedback("error", f"{name}: measured TCP pose is unavailable")
                 position_error, orientation_error = pose_errors(state.tcp_pose_world_wxyz, self.cartesian_targets[name])
-                tcp_errors[name] = {"position_error_m": position_error, "orientation_error_rad": orientation_error}
+                tcp_errors[name] = {"position_error_m": position_error, "orientation_error_rad": orientation_error,
+                                    "requested_pose_world_wxyz": self.cartesian_targets[name],
+                                    "measured_pose_world_wxyz": state.tcp_pose_world_wxyz,
+                                    "remaining_xyz_m": tuple(t - q for t, q in zip(
+                                        self.cartesian_targets[name][:3], state.tcp_pose_world_wxyz[:3]))}
+            arm_settled = all(abs(v) < 0.02 for v in state.joint_velocities_rad_s)
+            cartesian_reached = name not in tcp_errors or (position_error < .005 and orientation_error < .02)
+            desired_width = joints_to_width(self.config.robot, self.pending_grippers.get(name, target[6:]))
+            details[name] = {"motion_reached": arm_error < .015 and arm_settled and cartesian_reached,
+                             "joint_error_max_rad": arm_error, "finger_error_max_m": finger_error,
+                             "requested_gripper_width_m": desired_width,
+                             "measured_gripper_width_m": state.gripper_width_m,
+                             "gripper_width_error_m": (None if state.gripper_width_m is None else desired_width - state.gripper_width_m),
+                             "gripper_reached": finger_error < .0015 and name not in self.pending_grippers,
+                             "gripper_pending": name in self.pending_grippers}
             settled = settled and all(abs(v) < 0.02 for v in state.joint_velocities_rad_s)
             settled = settled and all(abs(v) < 0.003 for v in state.finger_velocities_m_s)
         complete = settled and all(arm < 0.015 and finger < 0.0015 for arm, finger in errors.values())
         complete = complete and all(error["position_error_m"] < 0.005 and error["orientation_error_rad"] < 0.02
                                     for error in tcp_errors.values())
+        complete = complete and not self.pending_grippers
         return Feedback("completed" if complete else "executing", f"Joint tracking errors (rad, m): {errors}",
-                        {"tcp": tcp_errors})
+                        {"tcp": tcp_errors, "arms": details,
+                         "phase": "motion_before_gripper" if self.pending_grippers else "target_tracking"})

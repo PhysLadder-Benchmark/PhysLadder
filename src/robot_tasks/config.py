@@ -45,6 +45,7 @@ class ExecutionSettings:
     settle_steps: int = 0
     stop_steps: int = 0
     max_decisions: int | None = None
+    gripper_timing: str = "simultaneous"
 
     @classmethod
     def from_config(cls, config: TaskConfig) -> "ExecutionSettings":
@@ -53,6 +54,8 @@ class ExecutionSettings:
         if unknown:
             raise ValueError(f"Unknown execution settings: {sorted(unknown)}")
         result = cls(**data)
+        if result.gripper_timing not in {"simultaneous", "after_motion"}:
+            raise ValueError("execution.gripper_timing must be simultaneous or after_motion")
         for name in ("max_action_steps", "completion_samples", "wait_steps", "settle_steps", "stop_steps"):
             value = getattr(result, name)
             minimum = 0 if name in {"settle_steps", "stop_steps"} else 1
@@ -96,6 +99,8 @@ def load_config(path: Path) -> TaskConfig:
     source = path.expanduser().resolve()
     with source.open("rb") as f:
         raw = tomllib.load(f)
+    if "planner" in raw:
+        raise ValueError("Only built-in R5 IK is supported; remove the obsolete [planner] section")
     required = {"schema_version", "task", "robot", "runtime", "observation", "recording"}
     if not required.issubset(raw):
         raise ValueError(f"Missing config sections: {sorted(required - raw.keys())}")

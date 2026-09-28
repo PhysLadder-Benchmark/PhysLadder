@@ -17,6 +17,13 @@ def write_json(path: Path, value: dict) -> None:
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")
 
 
+def finish_run(directory: Path, result: dict) -> None:
+    """Flush the result and its readable report before native process shutdown."""
+    from .reporting import write_run_report
+    write_json(directory / "result.json", result)
+    write_run_report(directory)
+
+
 class EpisodeRecorder:
     def __init__(self, root: Path, config: TaskConfig, mode: str, step_limit: int,
                  *, run_directory: Path | None = None):
@@ -82,7 +89,8 @@ class EpisodeRecorder:
                 target.write_bytes(header + frame.data)
                 saved_path = relative.as_posix()
             frames.append({"camera": frame.camera, "time_s": frame.timestamp_s,
-                           "width": frame.width, "height": frame.height, "path": saved_path})
+                           "width": frame.width, "height": frame.height, "path": saved_path,
+                           "calibration": frame.calibration})
         return {"time_s": observation.time_s, "rgb": frames,
                 "robot": {k: asdict(v) for k, v in observation.robot.items()},
                 "feedback": asdict(observation.feedback)}
@@ -97,3 +105,5 @@ class EpisodeRecorder:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         manifest["video_status"] = result["video_status"]
         write_json(manifest_path, manifest)
+        from .reporting import write_run_report
+        write_run_report(self.directory)

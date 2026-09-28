@@ -68,6 +68,8 @@ def run_check_process(name: str, output_root: Path, *, config_path: Path | None 
     passed = completed_check(output, returncode) and not timed_out.is_set()
     write_json(output / "process.json", {"returncode": returncode, "passed": passed,
                                         "timed_out": timed_out.is_set(), "worker_pid": process.pid})
+    from ..reporting import write_run_report
+    write_run_report(output)
     print("R5_PROCESS_RESULT " + json.dumps({"output": str(output), "passed": passed,
                                             "returncode": returncode}), flush=True)
     return output, passed

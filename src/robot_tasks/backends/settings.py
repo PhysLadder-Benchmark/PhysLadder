@@ -26,6 +26,7 @@ class SimulationSettings:
     camera_position: tuple[float, ...] = (1.5, -1.6, 1.2)
     camera_target: tuple[float, ...] = (0.2, 0.0, 0.3)
     camera_profile: str = ""  # Relative to episode config; empty keeps legacy overview.
+    capture_render_passes: int = 2
 
     @classmethod
     def from_config(cls, config: TaskConfig) -> "SimulationSettings":
@@ -39,6 +40,8 @@ class SimulationSettings:
         result = cls(asset_directory=(config.source.parent / directory).resolve(), **data)
         if not isinstance(result.camera_profile, str):
             raise ValueError("simulation.camera_profile must be a path string")
+        if type(result.capture_render_passes) is not int or not 1 <= result.capture_render_passes <= 8:
+            raise ValueError("capture_render_passes must be in [1, 8]")
         if result.graphics_backend not in {"vulkan", "d3d12"}:
             raise ValueError("graphics_backend must be vulkan or d3d12")
         for name in ("headless", "self_collision"):

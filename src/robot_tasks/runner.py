@@ -13,12 +13,12 @@ from .recording import EpisodeRecorder
 from .types import Action, Assessment, EvaluationState, Feedback, InvalidPolicyAction, Observation, PolicyInput
 
 
-def validate_action(action: Action, config: TaskConfig) -> None:
+def validate_action(action: Action, config: TaskConfig, *, require_control_duration: bool = True) -> None:
     if not isinstance(action, Action):
         raise ValueError("Policy must return Action")
     if not math.isfinite(action.duration_s) or action.duration_s <= 0:
         raise ValueError("Action duration must be positive and finite")
-    if not math.isclose(action.duration_s, config.control_dt_s, abs_tol=1e-9):
+    if require_control_duration and not math.isclose(action.duration_s, config.control_dt_s, abs_tol=1e-9):
         raise ValueError("This scaffold uses a fixed control_dt_s per action")
     if action.request_stop and action.commands:
         raise ValueError("A stop request cannot contain commands")
@@ -208,8 +208,11 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                     break
             if action.commands and not completed and feedback.status == "executing":
                 timeouts += 1
-                feedback = Feedback("action_timeout", "Target did not settle within the per-action budget; "
-                                    "targets are still held. Inspect the images and choose how to proceed.",
+                cancel_pending = getattr(robot, "on_action_timeout", None)
+                if cancel_pending is not None:
+                    cancel_pending()
+                feedback = Feedback("action_timeout", "Target did not settle within the per-action budget. "
+                                    "Inspect measured state and images before choosing the next action.",
                                     {**feedback.metrics, "last_status": feedback.status})
             observation = observe()
             recorder.event({"event": "transition", "step": step,
@@ -273,7 +276,12 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
         if not dry_run:
             print("R5_EPISODE_RESULT " + json.dumps({"output": str(recorder.directory), **result}), flush=True)
         try:
-            backend.close()
+            try:
+                close_robot = getattr(robot, "close", None)
+                if close_robot is not None:
+                    close_robot()
+            finally:
+                backend.close()
         except Exception as exc:
             result.update(status="error", termination_reason="cleanup_error", success=None, task_evaluated=False,
                           error=f"{error or ''} close: {type(exc).__name__}: {exc}")

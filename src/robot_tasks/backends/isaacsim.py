@@ -8,6 +8,7 @@ from ..types import EvaluationState, RGBFrame
 from ..cameras import RGBNotReady
 from ..runtime import configure_windows_storage, storage_report
 from .settings import SimulationSettings
+from .scene_geometry import BENCH_POSITION, BENCH_SIZE
 
 
 class IsaacSimBackend:
@@ -22,6 +23,8 @@ class IsaacSimBackend:
         self.runtime_storage = None
         self.camera_profile = self.camera_rig = None
         self.camera_names = ()
+        self._capture_id = 0
+        self.before_physics_step = None
 
     def open(self, config: TaskConfig) -> None:
         if self.app is not None:
@@ -64,8 +67,8 @@ class IsaacSimBackend:
             scene_api = PhysxSchema.PhysxSceneAPI.Apply(physics.get_current_physics_scene_prim())
             scene_api.CreateMinVelocityIterationCountAttr(0)
             self.world.scene.add(FixedCuboid(
-                prim_path="/World/Bench", name="bench", position=np.array([0.25, 0, -0.03]),
-                scale=np.array([1.5, 1.65, 0.06]), size=1.0, color=np.array([0.24, 0.29, 0.34]),
+                prim_path="/World/Bench", name="bench", position=np.array(BENCH_POSITION),
+                scale=np.array(BENCH_SIZE), size=1.0, color=np.array([0.24, 0.29, 0.34]),
             ))
             UsdLux.DomeLight.Define(self.world.stage, "/World/Light").CreateIntensityAttr(1100)
             if self.camera_profile is None:
@@ -199,6 +202,8 @@ class IsaacSimBackend:
         if not self.app.is_running():
             raise RuntimeError("Simulation window was closed")
         for _ in range(count):
+            if self.before_physics_step is not None:
+                self.before_physics_step(self._physics_dt)
             self.world.step(render=False)
 
     def capture_rgb(self) -> tuple[RGBFrame, ...]:
@@ -206,9 +211,18 @@ class IsaacSimBackend:
         if self._rgb is None and self.camera_rig is None:
             raise RuntimeError("Camera has not been initialized")
         timestamp = self.time_s()
+        self._capture_id += 1
         # First-use shader/render-product initialization may finish after the first
         # render on Linux. Retry empty buffers only, without advancing physics.
         attempts = 8
+        # Flush render latency at the SAME physics state. Readiness alone does not
+        # establish freshness. The camera integration check verifies pixel changes.
+        passes = getattr(self.settings, "capture_render_passes", 1)
+        for _ in range(passes - 1):
+            self.world.render()
+            self._rep.orchestrator.step(delta_time=0.0, pause_timeline=False, rt_subframes=2)
+            if not math.isclose(self.time_s(), timestamp, abs_tol=1e-9):
+                raise RuntimeError("RGB capture unexpectedly advanced the simulation clock")
         for attempt in range(attempts):
             self.world.render()
             self._rep.orchestrator.step(delta_time=0.0, pause_timeline=False, rt_subframes=2)
@@ -216,7 +230,7 @@ class IsaacSimBackend:
                 raise RuntimeError("RGB capture unexpectedly advanced the simulation clock")
             try:
                 if self.camera_rig is not None:
-                    return self.camera_rig.read(timestamp)
+                    return self.camera_rig.read(timestamp, self._capture_id)
                 data = np.asarray(self._rgb.get_data())
                 if data.size == 0:
                     raise RGBNotReady("overview: RGB buffer is not ready")
@@ -258,6 +272,7 @@ class IsaacSimBackend:
             self._rgb = self._render_product = self._rep = None
             self.camera_profile = self.camera_rig = None
             self.camera_names = ()
+            self.before_physics_step = None
             self.articulations.clear()
             self.ee_views.clear()
             if app is not None:
