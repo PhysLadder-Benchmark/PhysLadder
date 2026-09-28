@@ -5,6 +5,7 @@ from pathlib import Path
 
 from ..config import TaskConfig
 from ..types import EvaluationState, RGBFrame
+from ..cameras import RGBNotReady
 from ..runtime import configure_windows_storage, storage_report
 from .settings import SimulationSettings
 
@@ -205,17 +206,29 @@ class IsaacSimBackend:
         if self._rgb is None and self.camera_rig is None:
             raise RuntimeError("Camera has not been initialized")
         timestamp = self.time_s()
-        self.world.render()
-        self._rep.orchestrator.step(delta_time=0.0, pause_timeline=False, rt_subframes=2)
-        if not math.isclose(self.time_s(), timestamp, abs_tol=1e-9):
-            raise RuntimeError("RGB capture unexpectedly advanced the simulation clock")
-        if self.camera_rig is not None:
-            return self.camera_rig.read(timestamp)
-        data = np.asarray(self._rgb.get_data())
-        if data.ndim != 3 or data.shape[:2] != (self.settings.height, self.settings.width):
-            raise RuntimeError(f"Camera returned invalid RGB dimensions: {data.shape}")
-        rgb = np.ascontiguousarray(data[..., :3], dtype=np.uint8)
-        return (RGBFrame("overview", timestamp, self.settings.width, self.settings.height, rgb.tobytes()),)
+        # First-use shader/render-product initialization may finish after the first
+        # render on Linux. Retry empty buffers only, without advancing physics.
+        attempts = 8
+        for attempt in range(attempts):
+            self.world.render()
+            self._rep.orchestrator.step(delta_time=0.0, pause_timeline=False, rt_subframes=2)
+            if not math.isclose(self.time_s(), timestamp, abs_tol=1e-9):
+                raise RuntimeError("RGB capture unexpectedly advanced the simulation clock")
+            try:
+                if self.camera_rig is not None:
+                    return self.camera_rig.read(timestamp)
+                data = np.asarray(self._rgb.get_data())
+                if data.size == 0:
+                    raise RGBNotReady("overview: RGB buffer is not ready")
+                if (data.ndim != 3 or data.shape[:2] != (self.settings.height, self.settings.width)
+                        or data.shape[2] not in {3, 4}):
+                    raise RuntimeError(f"Camera returned invalid RGB dimensions: {data.shape}")
+                rgb = np.ascontiguousarray(data[..., :3], dtype=np.uint8)
+                return (RGBFrame("overview", timestamp, self.settings.width, self.settings.height, rgb.tobytes()),)
+            except RGBNotReady:
+                if attempt == attempts - 1:
+                    raise
+                print(f"R5_RGB_WARMUP retry={attempt + 1}", flush=True)
 
     def time_s(self) -> float:
         return 0.0 if self.world is None else float(self.world.current_time)

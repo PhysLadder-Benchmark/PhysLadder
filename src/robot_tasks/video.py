@@ -1,8 +1,8 @@
-"""Video evidence shared by the simulator integration checks."""
+"""Real camera-frame recording shared by tasks and integration checks."""
 
 from pathlib import Path
 
-from ..backends.settings import SimulationSettings
+from .backends.settings import SimulationSettings
 
 
 class MotionVideo:

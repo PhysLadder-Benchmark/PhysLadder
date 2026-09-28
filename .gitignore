@@ -48,3 +48,5 @@ dist/
 Thumbs.db
 Desktop.ini
 *~
+
+/configs/runtime/local.toml

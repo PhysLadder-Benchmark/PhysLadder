@@ -4,6 +4,10 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 
+class InvalidPolicyAction(ValueError):
+    """A model returned an invalid executable action, not a service failure."""
+
+
 @dataclass(frozen=True)
 class RGBFrame:
     camera: str

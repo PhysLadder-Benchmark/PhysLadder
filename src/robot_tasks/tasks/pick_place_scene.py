@@ -1,4 +1,4 @@
-"""A small contact scene for integration checks, not a benchmark task asset."""
+"""Shared physical cube scene for the GPT task and scripted integration checks."""
 
 from dataclasses import dataclass
 import math
@@ -24,9 +24,15 @@ class InteractionSettings:
     lift_threshold_m: float = 0.07
     placement_tolerance_m: float = 0.025
     stability_s: float = 1.0
+    contact_threshold_n: float = 0.05
+    placement_height_tolerance_m: float = 0.006
+    placement_speed_m_s: float = 0.02
+    placement_angular_speed_rad_s: float = 0.2
+    gripper_open_tolerance_m: float = 0.003
+    inactive_joint_tolerance_rad: float = 0.01
 
     @classmethod
-    def from_config(cls, config: TaskConfig) -> "InteractionSettings":
+    def from_config(cls, config: TaskConfig, *, scripted: bool = True) -> "InteractionSettings":
         data = dict(config.raw.get("interaction", {}))
         unknown = set(data) - set(cls.__dataclass_fields__)
         if unknown:
@@ -37,12 +43,15 @@ class InteractionSettings:
             if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0:
                 raise ValueError(f"interaction.{name} must be finite and positive")
         lower, upper = config.robot.gripper.width_limits_m
-        if not lower <= result.closed_width_m < result.cube_size_m < result.open_width_m <= upper:
-            raise ValueError("The object must fit the configured open/closed R5 gripper widths")
-        if not result.cube_size_m / 2 < result.grasp_tcp_z_m < result.cube_size_m:
-            raise ValueError("Grasp TCP must lie in the upper half of this cube")
-        if not result.grasp_tcp_z_m + result.lift_threshold_m < result.lift_z_m <= result.approach_z_m:
-            raise ValueError("Lift height must exceed the lift criterion and remain below approach")
+        if not lower < result.cube_size_m < result.open_width_m <= upper:
+            raise ValueError("The object must fit the R5 gripper width limits")
+        if scripted:
+            if not lower <= result.closed_width_m < result.cube_size_m:
+                raise ValueError("Scripted closed width must be smaller than the object")
+            if not result.cube_size_m / 2 < result.grasp_tcp_z_m < result.cube_size_m:
+                raise ValueError("Grasp TCP must lie in the upper half of this cube")
+            if not result.grasp_tcp_z_m + result.lift_threshold_m < result.lift_z_m <= result.approach_z_m:
+                raise ValueError("Lift height must exceed the lift criterion and remain below approach")
         if result.transfer_y_m <= 2 * result.placement_tolerance_m:
             raise ValueError("Source and destination acceptance regions must be separate")
         return result
@@ -115,7 +124,7 @@ class InteractionScene:
             "finger_contact_api": "RigidPrim.get_contact_force_matrix(dt=physics_dt_s)",
             "contact_sample_rate_hz": 1 / config.control_dt_s,
             "object_attached": False, "object_kinematic": False,
-            "ground_truth_use": "Script uses configured source/target; measured cube state and contacts are evaluator-only.",
+            "ground_truth_use": "Measured cube state and contacts are evaluator-only. The scripted check separately uses known geometry.",
         }
 
     def source(self, arm: str) -> tuple[float, float, float]:

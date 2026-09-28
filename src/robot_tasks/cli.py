@@ -79,7 +79,7 @@ def _task_arguments(parser) -> None:
 
 
 def _output_argument(parser) -> None:
-    parser.add_argument("--output", type=Path, default=Path("runs"))
+    parser.add_argument("--output", type=Path, default=None)
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -89,7 +89,7 @@ def create_parser() -> argparse.ArgumentParser:
     listing.add_argument("--checks", action="store_true", help="列出工程检查")
     listing.set_defaults(handler=_list)
 
-    check = sub.add_parser("check", help="按名称运行工程检查，不产生正式任务成功率")
+    check = sub.add_parser("check", help="按名称运行工程检查或单回合任务闭环验证")
     check.add_argument("name", choices=tuple(CHECKS))
     check.add_argument("--config", type=Path, help="覆盖检查的默认配置")
     check.add_argument("--model-config", type=Path, help="覆盖使用模型的检查所引用的模型配置")
@@ -124,11 +124,24 @@ def create_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    from .runtime import configure_windows_storage
-    configure_windows_storage()
+    import signal
+    def interrupt(signum, frame):
+        raise KeyboardInterrupt
+    previous = signal.signal(signal.SIGBREAK, interrupt) if hasattr(signal, "SIGBREAK") else None
+    try:
+        return _main(argv)
+    finally:
+        if hasattr(signal, "SIGBREAK"):
+            signal.signal(signal.SIGBREAK, previous)
+
+
+def _main(argv: list[str] | None = None) -> int:
     parser = create_parser()
     args = parser.parse_args(argv)
     try:
+        if hasattr(args, "output") and args.output is None and args.command != "validate-robot":
+            from .runtime_config import load_runtime
+            args.output = load_runtime().output_dir
         return args.handler(args)
     except (ValueError, KeyError, OSError, TypeError, ModelError) as exc:
         parser.error(f"Configuration/framework error: {exc}")

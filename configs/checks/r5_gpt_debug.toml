@@ -2,7 +2,7 @@ schema_version = 2
 
 [task]
 id = "R5-GPT"
-instruction = "Integration check only. Use the left R5 arm (blue support). First move its TCP 0.02 metres upward along world Z from its initial measured pose, retaining X/Y and orientation. After movement completes, open the left gripper to 0.06 metres. Observe the execution feedback before each next decision. When both are achieved, request_stop=true with no commands. Keep the right arm still. Do not touch the cube or table."
+instruction = "Integration check only. Use the {arm} R5 arm. First move its TCP {lift_delta_m} metres upward along world Z from its initial measured pose, retaining X/Y and orientation. After movement completes, open the {arm} gripper to {gripper_width_m} metres. Observe the execution feedback before each next decision. When both are achieved, request_stop=true with no commands. Keep the other arm still. Do not touch the cube or table."
 
 [robot]
 profile = "../robots/r5_sim.toml"
@@ -27,7 +27,6 @@ save_rgb = true
 camera_profile = "../cameras/r5_orbbec_provisional.toml"
 asset_directory = "../../build/r5"
 headless = true
-graphics_backend = "d3d12"
 width = 640
 height = 480
 fps = 12
@@ -59,4 +58,19 @@ stability_s = 1.0
 
 [gpt_check]
 model_config = "../models/gpt.toml"
+
+[execution]
 max_action_steps = 120
+completion_samples = 3
+wait_steps = 12
+settle_steps = 12
+stop_steps = 0
+
+[motion_goal]
+arm = "left"
+lift_delta_m = 0.02
+gripper_width_m = 0.06
+position_tolerance_m = 0.005
+orientation_tolerance_rad = 0.02
+gripper_tolerance_m = 0.002
+inactive_joint_tolerance_rad = 0.01

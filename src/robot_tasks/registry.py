@@ -7,6 +7,7 @@ from .config import TaskConfig, load_config
 from .paths import PROJECT_ROOT
 from .tasks.cylinder_insertion import CylinderInsertion
 from .tasks.dual_arm_handover import DualArmHandover
+from .tasks.pick_place import SingleArmPickPlace
 
 
 @dataclass(frozen=True)
@@ -21,6 +22,11 @@ class TaskSpec:
 
 
 TASKS = {
+    "GPT-PICK-PLACE": TaskSpec(
+        "GPT-PICK-PLACE", "GPT 单臂方块抓放", SingleArmPickPlace, 1, True,
+        "GPT 自主选择动作；实测接触、抬起、释放与稳定放置独立评分",
+        PROJECT_ROOT / "configs/tasks/gpt_single_arm_pick_place.toml",
+    ),
     "L1-01": TaskSpec(
         "L1-01", "圆柱插孔", CylinderInsertion, 1, False,
         "已做重力落入/碰撞基础实验；完整机械臂任务未实现",

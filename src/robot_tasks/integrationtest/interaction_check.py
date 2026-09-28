@@ -20,11 +20,11 @@ from ..recording import write_json
 from ..robots.adapters import R5Adapter
 from ..robots.audit import require_cartesian_sim_ready
 from ..robots.transforms import pose_errors
-from ..runtime import STORAGE_CONFIG
+from ..runtime import snapshot_storage_config
 from ..types import Action, ArmCommand
-from .interaction_metrics import lifted, placed
-from .interaction_scene import InteractionScene, InteractionSettings
-from .video import MotionVideo
+from ..tasks.pick_place_metrics import lifted, placed
+from ..tasks.pick_place_scene import InteractionScene, InteractionSettings
+from ..video import MotionVideo
 
 
 def run_interaction_check(config_path: Path, output_root: Path, *, gui: bool = False,
@@ -45,8 +45,9 @@ def run_interaction_check(config_path: Path, output_root: Path, *, gui: bool = F
         raise ValueError("Interaction-check output must be a new directory")
     print(f"R5_CHECK_OUTPUT {output}", flush=True)
     for source, name in ((config.source, "config.toml"), (config.robot.source, "robot_profile.toml"),
-                         (STORAGE_CONFIG, "storage_config.json"), (config.robot.asset_lock, "asset_source.lock.json")):
+                         (config.robot.asset_lock, "asset_source.lock.json")):
         shutil.copyfile(source, output / name)
+    snapshot_storage_config(output)
     write_json(output / "asset_audit.json", audit.as_dict())
     write_json(output / "manifest.json", {
         "kind": "r5_pick_place_integration", "robot": "R5a", "benchmark_evaluated": False,

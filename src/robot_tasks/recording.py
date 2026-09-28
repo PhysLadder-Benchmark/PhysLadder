@@ -9,6 +9,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from .config import TaskConfig
+from .runtime import snapshot_runtime_config, snapshot_storage_config
 from .types import Observation
 
 
@@ -17,10 +18,17 @@ def write_json(path: Path, value: dict) -> None:
 
 
 class EpisodeRecorder:
-    def __init__(self, root: Path, config: TaskConfig, mode: str, step_limit: int):
+    def __init__(self, root: Path, config: TaskConfig, mode: str, step_limit: int,
+                 *, run_directory: Path | None = None):
         name = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-        self.directory = root / f"{config.task_id}_{mode}_{name}_{uuid4().hex[:8]}"
-        self.directory.mkdir(parents=True, exist_ok=False)
+        self.directory = run_directory or root / f"{config.task_id}_{mode}_{name}_{uuid4().hex[:8]}"
+        self.directory.mkdir(parents=True, exist_ok=run_directory is not None)
+        if any(p.name != "process.log" for p in self.directory.iterdir()):
+            raise ValueError("Episode output must be a fresh directory")
+        # Both direct task runs and engineering checks use this recorder.
+        # Save before Kit starts, since fast shutdown can end the worker process.
+        snapshot_runtime_config(self.directory)
+        snapshot_storage_config(self.directory)
         self.save_rgb = config.save_rgb
         config_bytes = config.source.read_bytes()
         (self.directory / "config.toml").write_bytes(config_bytes)
@@ -28,6 +36,9 @@ class EpisodeRecorder:
         (self.directory / "robot_profile.toml").write_bytes(robot_profile_bytes)
         source_lock_bytes = config.robot.asset_lock.read_bytes()
         (self.directory / "asset_source.lock.json").write_bytes(source_lock_bytes)
+        camera_profile = config.raw.get("simulation", {}).get("camera_profile")
+        if camera_profile:
+            (self.directory / "camera_profile.toml").write_bytes((config.source.parent / camera_profile).read_bytes())
         package = Path(__file__).parent
         sources = {
             str(p.relative_to(package)): hashlib.sha256(p.read_bytes()).hexdigest()
@@ -46,8 +57,13 @@ class EpisodeRecorder:
             "python": platform.python_version(), "platform": platform.platform(),
             "source_sha256": sources,
             "units": {"distance": "m", "angle": "rad", "time": "s", "quaternion": "wxyz"},
-            "video_status": "not_implemented",
+            "video_status": "pending",
+            "instruction": config.instruction,
+            "physics_during_inference": "paused",
+            "execution": config.raw.get("execution", {}),
+            "episode_isolation": "fresh scene/robot/task; policy history reset; unique output; no previous results loaded",
         })
+        (self.directory / "instruction.txt").write_text(config.instruction, encoding="utf-8")
 
     def observation(self, observation: Observation, step: int) -> dict:
         frames = []
@@ -77,7 +93,7 @@ class EpisodeRecorder:
 
     def finish(self, result: dict) -> None:
         write_json(self.directory / "result.json", result)
-
-    def export_video(self) -> None:
-        # TODO: encode real RGB frames, keeping actual time and camera metadata.
-        raise NotImplementedError("GIF/MP4 export is reserved for real task rendering")
+        manifest_path = self.directory / "manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["video_status"] = result["video_status"]
+        write_json(manifest_path, manifest)

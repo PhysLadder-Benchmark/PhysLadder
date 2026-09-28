@@ -35,6 +35,39 @@ class TaskConfig:
         return self.robot.asset_path
 
 
+@dataclass(frozen=True)
+class ExecutionSettings:
+    """Control ticks, not model calls or raw physics substeps."""
+
+    max_action_steps: int = 1
+    completion_samples: int = 1
+    wait_steps: int = 1
+    settle_steps: int = 0
+    stop_steps: int = 0
+    max_decisions: int | None = None
+
+    @classmethod
+    def from_config(cls, config: TaskConfig) -> "ExecutionSettings":
+        data = dict(config.raw.get("execution", {}))
+        unknown = set(data) - set(cls.__dataclass_fields__)
+        if unknown:
+            raise ValueError(f"Unknown execution settings: {sorted(unknown)}")
+        result = cls(**data)
+        for name in ("max_action_steps", "completion_samples", "wait_steps", "settle_steps", "stop_steps"):
+            value = getattr(result, name)
+            minimum = 0 if name in {"settle_steps", "stop_steps"} else 1
+            if type(value) is not int or not minimum <= value <= config.max_steps:
+                raise ValueError(f"execution.{name} must be an integer in [{minimum}, max_steps]")
+        if result.completion_samples > result.max_action_steps:
+            raise ValueError("completion_samples cannot exceed max_action_steps")
+        if result.settle_steps >= config.max_steps:
+            raise ValueError("settle_steps must leave an action budget")
+        if result.max_decisions is not None and (type(result.max_decisions) is not int
+                                               or not 1 <= result.max_decisions <= 1000):
+            raise ValueError("execution.max_decisions must be in [1, 1000]")
+        return result
+
+
 def _names(value: object, label: str) -> tuple[str, ...]:
     if not isinstance(value, list) or not value or any(
         not isinstance(v, str) or not v.replace("_", "").isalnum() for v in value
@@ -89,6 +122,8 @@ def load_config(path: Path) -> TaskConfig:
     ratio = control_dt / physics_dt
     if not math.isclose(ratio, round(ratio), abs_tol=1e-6) or ratio < 1:
         raise ValueError("control_dt_s must be an integer multiple of physics_dt_s")
+    if "save_video" in raw["recording"]:
+        _boolean(raw["recording"]["save_video"], "save_video")
     return TaskConfig(
         source=source, raw=raw, task_id=task["id"], instruction=task["instruction"],
         robot=profile, arms=arms, cameras=_names(observation["cameras"], "cameras"),

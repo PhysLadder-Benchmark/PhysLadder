@@ -63,6 +63,8 @@ def run_check_process(name: str, output_root: Path, *, config_path: Path | None 
                 raise
             finally:
                 timer.cancel()
+    from ..runtime import snapshot_runtime_config
+    snapshot_runtime_config(output)
     passed = completed_check(output, returncode) and not timed_out.is_set()
     write_json(output / "process.json", {"returncode": returncode, "passed": passed,
                                         "timed_out": timed_out.is_set(), "worker_pid": process.pid})
