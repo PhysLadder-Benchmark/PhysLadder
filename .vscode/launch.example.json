@@ -74,6 +74,24 @@
             "preLaunchTask": "R5: start GPT debugger from WSL"
         },
         {
+            "name": "R5: GPT pick-place GUI (WSL)",
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "WINDOWS_WSL_HOST",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}",
+                    "remoteRoot": "D:\\path\\to\\GPT_Benchmark"
+                }
+            ],
+            "justMyCode": true,
+            "subProcess": false,
+            "preLaunchTask": "R5: start GPT pick-place debugger from WSL"
+        },
+        {
             "name": "R5: Joint check GUI (Windows)",
             "type": "debugpy",
             "request": "launch",

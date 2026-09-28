@@ -89,7 +89,7 @@ def create_parser() -> argparse.ArgumentParser:
     listing.add_argument("--checks", action="store_true", help="列出工程检查")
     listing.set_defaults(handler=_list)
 
-    check = sub.add_parser("check", help="按名称运行工程检查，不产生正式任务成功率")
+    check = sub.add_parser("check", help="按名称运行工程检查或单回合任务闭环验证")
     check.add_argument("name", choices=tuple(CHECKS))
     check.add_argument("--config", type=Path, help="覆盖检查的默认配置")
     check.add_argument("--model-config", type=Path, help="覆盖使用模型的检查所引用的模型配置")

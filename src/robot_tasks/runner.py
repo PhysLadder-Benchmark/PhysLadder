@@ -1,14 +1,16 @@
 """Common episode lifecycle. It does not know any task-specific success rule."""
 
 import math
+import json
+from collections.abc import Callable
 import time
-from dataclasses import asdict
+from dataclasses import asdict, replace
 from pathlib import Path
 
-from .config import TaskConfig
+from .config import ExecutionSettings, TaskConfig
 from .interfaces import Backend, Policy, Robot, Task
 from .recording import EpisodeRecorder
-from .types import Action, Assessment, Feedback, Observation, PolicyInput
+from .types import Action, Assessment, EvaluationState, Feedback, InvalidPolicyAction, Observation, PolicyInput
 
 
 def validate_action(action: Action, config: TaskConfig) -> None:
@@ -18,6 +20,8 @@ def validate_action(action: Action, config: TaskConfig) -> None:
         raise ValueError("Action duration must be positive and finite")
     if not math.isclose(action.duration_s, config.control_dt_s, abs_tol=1e-9):
         raise ValueError("This scaffold uses a fixed control_dt_s per action")
+    if action.request_stop and action.commands:
+        raise ValueError("A stop request cannot contain commands")
     seen = set()
     for command in action.commands:
         if command.arm not in config.arms:
@@ -34,7 +38,7 @@ def validate_action(action: Action, config: TaskConfig) -> None:
         if command.kind == "cartesian_pose":
             if len(command.values) != 7 or command.frame not in {"world", "robot_base"}:
                 raise ValueError("Pose needs xyz + quaternion(wxyz), and an explicit supported frame")
-            norm = sum(v * v for v in command.values[3:])
+            norm = math.sqrt(sum(v * v for v in command.values[3:]))
             if not math.isclose(norm, 1.0, abs_tol=1e-3):
                 raise ValueError("Pose quaternion must be normalized")
         if command.kind == "gripper" and (len(command.values) != 1 or command.values[0] < 0):
@@ -43,46 +47,122 @@ def validate_action(action: Action, config: TaskConfig) -> None:
     # actual robot. They MUST also be validated by Robot.apply before execution.
 
 
+class EpisodeLimit(Exception):
+    """A recorded experimental limit, not a simulator/service failure."""
+
+
 def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                 policy: Policy, output_root: Path, *, dry_run: bool = False,
-                step_limit: int | None = None) -> tuple[Path, dict]:
+                step_limit: int | None = None, run_directory: Path | None = None,
+                record_video: bool = False,
+                summarize: Callable[[dict], dict] | None = None) -> tuple[Path, dict]:
+    """One fresh episode. Task truth is evaluated separately from policy inputs.
+
+    max_steps counts control ticks, including settling and final observation.
+    A target is sent once, then held until completion or its execution budget.
+    """
     limit = config.max_steps if step_limit is None else step_limit
     if type(limit) is not int or not 0 < limit <= config.max_steps:
         raise ValueError("step_limit must be in [1, max_steps]")
+    options = ExecutionSettings() if dry_run else ExecutionSettings.from_config(config)
     mode = "dry_run" if dry_run else "simulation"
-    recorder = EpisodeRecorder(output_root, config, mode, limit)
+    recorder = EpisodeRecorder(output_root, config, mode, limit, run_directory=run_directory)
     start = time.monotonic()
     assessment = Assessment("not_evaluated", "Episode has not been evaluated")
-    completed_steps = 0
+    ticks = decisions = executed = timeouts = rejected = 0
     status, reason, error = "error", "startup", None
+    videos = {}
+    feedback = Feedback("not_initialized")
+    initial = final = {}
+    stopped = ready = False
+    final_time = 0.0
+
+    def budget():
+        if time.monotonic() - start >= config.max_wall_time_s:
+            raise EpisodeLimit("wall_time_limit")
+        if ticks >= limit:
+            raise EpisodeLimit("max_steps")
 
     def observe() -> Observation:
-        feedback = robot.feedback() if config.include_feedback else Feedback("not_provided")
         return Observation(backend.time_s(), backend.capture_rgb(),
-                           robot.state() if config.include_robot_state else {}, feedback)
+                           robot.state() if config.include_robot_state else {},
+                           feedback if config.include_feedback else Feedback("not_provided"))
+
+    def evaluate() -> None:
+        nonlocal assessment
+        state = EvaluationState({**backend.evaluation_state().values,
+                                 "simulation_time_s": backend.time_s(), "robot": robot.state()})
+        assessment = task.evaluate(state, robot.feedback())
+        if dry_run and assessment.status != "not_evaluated":
+            assessment = Assessment("not_evaluated", "Rejected task score during dry-run")
+            raise ValueError("Dry-run must never produce a task score")
+
+    def tick(*, phase="execution", score=True):
+        nonlocal ticks, feedback
+        budget()
+        backend.step(config.control_dt_s)
+        ticks += 1
+        feedback = robot.feedback()
+        # Rejection describes the last requested action. Existing drive targets
+        # may still be observed during an explicit wait or final settling.
+        if feedback.status == "error":
+            raise RuntimeError(f"Robot execution failed: {feedback.message}")
+        if score:
+            evaluate()
+        if videos:
+            for frame in backend.capture_rgb():
+                videos[frame.camera].add(frame)
+        if not dry_run:
+            recorder.event({"event": "physics", "tick": ticks, "phase": phase,
+                            "time_s": backend.time_s(), "feedback": asdict(feedback),
+                            "robot": {k: asdict(v) for k, v in robot.state().items()},
+                            "evaluation": asdict(assessment)})
 
     try:
         policy_metadata = getattr(policy, "run_metadata", None)
         if policy_metadata is not None:
             recorder.event({"event": "policy_configuration", "configuration": policy_metadata})
         backend.open(config)
-        task.build_scene(backend, config)
         robot.initialize(backend, config)
+        task.build_scene(backend, config)
         backend.reset(config.seed)
         task.reset(backend, config.seed)
         robot.reset(config.seed)
         policy.reset(config.seed)
+        feedback = robot.feedback()
+        if record_video and not dry_run:
+            from .backends.settings import SimulationSettings
+            from .video import MotionVideo
+            settings = SimulationSettings.from_config(config)
+            if not math.isclose(config.control_dt_s * settings.fps, 1.0, abs_tol=1e-9):
+                raise ValueError("Video requires one frame per control tick")
+            for frame in backend.capture_rgb():
+                directory = recorder.directory / "video" / frame.camera
+                directory.mkdir(parents=True)
+                videos[frame.camera] = MotionVideo(directory, replace(settings, width=frame.width, height=frame.height))
+        for _ in range(options.settle_steps):
+            tick(phase="settle", score=False)
+        initial = {k: asdict(v) for k, v in robot.state().items()}
+        if not dry_run:
+            evaluate()  # Establish evaluator reference state after settling, before any model action.
+        ready = True
         scene_report = getattr(backend, "scene_report", None)
         if scene_report:
-            recorder.event({"event": "simulation_configuration", "configuration": scene_report})
+            from .recording import write_json
+            write_json(recorder.directory / "scene.json", scene_report)
+            write_json(recorder.directory / "import.json", getattr(backend, "import_report", {}))
+            backend.save_scene(recorder.directory / "scene.usda")
         observation = observe()
         recorder.event({"event": "reset", "observation": recorder.observation(observation, 0)})
-        status, reason = "finished", "max_steps"
-        for step in range(1, limit + 1):
-            if time.monotonic() - start >= config.max_wall_time_s:
-                reason = "wall_time_limit"
-                break
+        status, reason = "finished", "model_call_limit"
+        policy_limit = getattr(getattr(policy, "settings", None), "max_calls", config.max_steps)
+        decision_limit = min(options.max_decisions or policy_limit, policy_limit)
+        for step in range(1, decision_limit + 1):
+            budget()
+            decisions = step
             t0 = time.monotonic()
+            if not dry_run:
+                print(f"R5_POLICY_REQUEST {step}", flush=True)
             try:
                 action = policy.act(PolicyInput(config.instruction, observation, step))
             finally:
@@ -91,57 +171,113 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                     recorder.event({"event": "model_exchange", "step": step, "exchange": exchange})
             policy_time_s = time.monotonic() - t0
             validate_action(action, config)
-            if time.monotonic() - start >= config.max_wall_time_s:
-                reason = "wall_time_limit"
-                break
+            if not dry_run:
+                recorder.event({"event": "decision", "step": step, "action": asdict(action),
+                                "policy_time_s": policy_time_s})
+            budget()  # Never execute a response that arrived after the wall-time deadline.
             if action.request_stop:
+                stopped = True
                 reason = "policy_requested_stop"
+                for _ in range(options.stop_steps):
+                    tick(phase="final_observation")
                 break
-            robot.apply(action)
-            backend.step(action.duration_s)
-            completed_steps = step
-            feedback = robot.feedback()
+            try:
+                robot.apply(action)
+            except ValueError:
+                feedback = robot.feedback()
+                if feedback.status != "rejected":
+                    raise
+                rejected += 1
+                observation = observe()
+                recorder.event({"event": "action_rejected", "step": step, "action": asdict(action),
+                                "observation": recorder.observation(observation, step)})
+                # The adapter rejects the whole action atomically. Do not clip,
+                # repair, move, reset, or score an unchanged physics timestamp.
+                continue
+            executed += bool(action.commands)
+            stable = 0
+            completed = False
+            action_ticks = options.max_action_steps if action.commands else options.wait_steps
+            for _ in range(action_ticks):
+                tick()
+                stable = stable + 1 if feedback.status == "completed" else 0
+                if action.commands and stable >= options.completion_samples:
+                    completed = True
+                    break
+                if assessment.status == "failed":
+                    break
+            if action.commands and not completed and feedback.status == "executing":
+                timeouts += 1
+                feedback = Feedback("action_timeout", "Target did not settle within the per-action budget; "
+                                    "targets are still held. Inspect the images and choose how to proceed.",
+                                    {**feedback.metrics, "last_status": feedback.status})
             observation = observe()
-            assessment = (
-                Assessment("not_evaluated", "Execution rejected or failed")
-                if feedback.status in {"error", "rejected"}
-                else task.evaluate(backend.evaluation_state(), feedback)
-            )
-            if dry_run and assessment.status != "not_evaluated":
-                assessment = Assessment("not_evaluated", "Rejected task score during dry-run")
-                raise ValueError("Dry-run must never produce a task score")
             recorder.event({"event": "transition", "step": step,
                             "action": asdict(action), "policy_time_s": policy_time_s,
                             "observation": recorder.observation(observation, step),
                             "evaluation": asdict(assessment)})
-            if feedback.status in {"error", "rejected"}:
-                status = "error"
-                reason = "execution_error"
-                break
             if assessment.status in {"succeeded", "failed"}:
                 reason = "task_terminal"
                 break
+            if ticks >= limit:
+                reason = "max_steps"
+                break
+        if not dry_run:
+            recorder.event({"event": "final_observation",
+                            "observation": recorder.observation(observe(), decisions + 1)})
         if dry_run and status == "finished":
             status = "dry_run_complete"
+    except EpisodeLimit as exc:
+        status, reason = ("dry_run_complete" if dry_run else "finished"), str(exc)
+    except InvalidPolicyAction as exc:
+        status, reason, error = "finished", "invalid_model_action", str(exc)
     except NotImplementedError as exc:
         status, reason, error = "implementation_missing", "stub_reached", str(exc)
-    except Exception as exc:
+    except (Exception, KeyboardInterrupt) as exc:
         status, reason, error = "error", "exception", f"{type(exc).__name__}: {exc}"
     finally:
         try:
-            backend.close()
-        except Exception as exc:
-            status, reason = "error", "cleanup_error"
-            error = (error + "; " if error else "") + f"close: {type(exc).__name__}: {exc}"
-        evaluated = not dry_run and status == "finished" and assessment.status in {"succeeded", "failed"}
+            final_time = backend.time_s()
+            if ready:
+                final = {k: asdict(v) for k, v in robot.state().items()}
+        except Exception:
+            pass
+        for video in videos.values():
+            try:
+                video.close()
+            except Exception as exc:
+                status, reason, error = "error", "recording_error", f"{type(exc).__name__}: {exc}"
+        evaluated = (not dry_run and ready and status == "finished"
+                     and assessment.status in {"running", "succeeded", "failed"})
+        if evaluated and assessment.status == "running":
+            assessment = Assessment("failed", f"Episode ended before success: {reason}", assessment.metrics)
         result = {
             "task_id": config.task_id, "mode": mode, "status": status,
-            "termination_reason": reason, "completed_steps": completed_steps,
-            "wall_time_s": time.monotonic() - start,
+            "termination_reason": reason, "completed_steps": ticks, "decisions": decisions,
+            "model_calls": getattr(policy, "calls", 0), "executed_actions": executed,
+            "action_timeouts": timeouts, "rejected_actions": rejected, "policy_requested_stop": stopped,
+            "false_completion": bool(stopped and evaluated and assessment.status != "succeeded"),
+            "wall_time_s": time.monotonic() - start, "simulation_time_s": final_time,
             "task_evaluated": evaluated,
             "success": (assessment.status == "succeeded") if evaluated else None,
             "assessment": asdict(assessment), "error": error,
-            "video_status": "not_implemented",
+            "initial_robot": initial, "final_robot": final,
+            "video_status": "recorded" if videos else "not_requested",
+            "videos": {name: {"path": f"video/{name}/motion.mp4", "frames": video.count}
+                       for name, video in videos.items()},
         }
+        if summarize is not None:
+            result = summarize(result)
+        result = json.loads(json.dumps(result, allow_nan=False))
         recorder.finish(result)
+        if not dry_run:
+            print("R5_EPISODE_RESULT " + json.dumps({"output": str(recorder.directory), **result}), flush=True)
+        try:
+            backend.close()
+        except Exception as exc:
+            result.update(status="error", termination_reason="cleanup_error", success=None, task_evaluated=False,
+                          error=f"{error or ''} close: {type(exc).__name__}: {exc}")
+            if "passed" in result:
+                result.update(passed=False, task_success=None)
+            recorder.finish(result)
     return recorder.directory, result

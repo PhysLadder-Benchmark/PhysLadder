@@ -222,15 +222,17 @@ class GPTPolicyTests(unittest.TestCase):
 
     def test_runner_retains_rejected_call_and_never_moves_or_claims_success(self):
         self.client.generate.return_value = ModelReply('{"wrong":true}', SETTINGS.model, "id", {}, 1)
-        policy = GPTPolicy(self.config, SETTINGS, client=self.client)
+        config = replace(self.config, raw={**self.config.raw, "execution": {"settle_steps": 0}})
+        policy = GPTPolicy(config, SETTINGS, client=self.client)
         backend, robot = MockBackend(), MockRobot()
         with tempfile.TemporaryDirectory() as directory, patch.object(robot, "apply") as apply:
-            path, result = run_episode(self.config, backend, robot, MockTask(), policy, Path(directory))
+            path, result = run_episode(config, backend, robot, MockTask(), policy, Path(directory))
             events = [json.loads(line) for line in (path / "episode.jsonl").read_text().splitlines()]
         apply.assert_not_called()
         self.assertEqual(backend.time_s(), 0)
         self.assertIsNone(result["success"])
-        self.assertEqual(result["status"], "error")
+        self.assertEqual(result["status"], "finished")
+        self.assertEqual(result["termination_reason"], "invalid_model_action")
         self.assertEqual(events[0]["event"], "policy_configuration")
         self.assertEqual(events[-1]["exchange"]["status"], "rejected")
 

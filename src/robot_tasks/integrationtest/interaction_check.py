@@ -22,9 +22,9 @@ from ..robots.audit import require_cartesian_sim_ready
 from ..robots.transforms import pose_errors
 from ..runtime import STORAGE_CONFIG
 from ..types import Action, ArmCommand
-from .interaction_metrics import lifted, placed
-from .interaction_scene import InteractionScene, InteractionSettings
-from .video import MotionVideo
+from ..tasks.pick_place_metrics import lifted, placed
+from ..tasks.pick_place_scene import InteractionScene, InteractionSettings
+from ..video import MotionVideo
 
 
 def run_interaction_check(config_path: Path, output_root: Path, *, gui: bool = False,

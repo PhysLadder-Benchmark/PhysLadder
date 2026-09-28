@@ -18,7 +18,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'R5 asset validation failed' }
     foreach ($taskConfig in @(
         'configs/tasks/l1_01_cylinder_insertion.toml',
-        'configs/tasks/l2_02_dual_arm_handover.toml'
+        'configs/tasks/l2_02_dual_arm_handover.toml',
+        'configs/tasks/gpt_single_arm_pick_place.toml'
     )) {
         & $TaskPython -m robot_tasks inspect --config $taskConfig
         if ($LASTEXITCODE -ne 0) { throw "Invalid configuration: $taskConfig" }

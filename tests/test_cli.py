@@ -77,7 +77,7 @@ class NamedEntryTests(unittest.TestCase):
 
     def test_adding_a_registered_task_needs_no_cli_change(self):
         path = self.config_variant(task_id="TEST-NEW")
-        factory = Mock(return_value=MockTask())
+        factory = Mock(return_value=MockTask(), spec=[])
         spec = replace(TASKS["L1-01"], task_id="TEST-NEW", default_config=path,
                        factory=factory, implemented=True)
         policy_factory = Mock(side_effect=lambda config, model: NoopPolicy(config.control_dt_s))
@@ -86,6 +86,7 @@ class NamedEntryTests(unittest.TestCase):
                 patch.dict("robot_tasks.execution.POLICIES", {"fixture": policy_factory}), \
                 patch("robot_tasks.execution.IsaacSimBackend", return_value=backend), \
                 patch("robot_tasks.execution.R5Adapter", return_value=MockRobot()), \
+                patch("robot_tasks.runner.print"), \
                 redirect_stdout(io.StringIO()) as output:
             code = main(["run", spec.task_id, "--policy", "fixture", "--gui", "--output", str(self.directory)])
         self.assertEqual(code, 0)

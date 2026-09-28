@@ -14,7 +14,7 @@ from uuid import uuid4
 from ..backends.isaacsim import IsaacSimBackend
 from ..backends.settings import SimulationSettings
 from ..config import load_config
-from .video import MotionVideo
+from ..video import MotionVideo
 from ..recording import write_json
 from ..runtime import STORAGE_CONFIG
 from ..robots.adapters import R5Adapter

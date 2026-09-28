@@ -58,6 +58,12 @@ class CheckSpec:
 _CONFIGS = PROJECT_ROOT / "configs/checks"
 
 CHECKS = {
+    "gpt-pick-place": CheckSpec(
+        "gpt-pick-place", "GPT 单臂抓放任务的全链路检查", ("GPT-PICK-PLACE",),
+        PROJECT_ROOT / "configs/tasks/gpt_single_arm_pick_place.toml",
+        "gpt_pick_place_check:run_gpt_pick_place_check", "R5_gpt_pick_place_",
+        require_cartesian_sim_ready, uses_model=True,
+    ),
     "joint": CheckSpec(
         "joint", "R5 关节与夹爪", ("R5-MOTION", "R5-MOTION-DEBUG"),
         _CONFIGS / "r5_motion.toml", "motion_check:run_motion_check", "R5_motion_",

@@ -20,8 +20,8 @@ from ..robots.adapters import R5Adapter
 from ..robots.audit import require_cartesian_sim_ready
 from ..robots.transforms import pose_errors, pose_transform, transform_pose
 from ..types import Action, ArmCommand
-from .interaction_scene import InteractionScene, InteractionSettings
-from .video import MotionVideo
+from ..tasks.pick_place_scene import InteractionScene, InteractionSettings
+from ..video import MotionVideo
 
 
 def run_camera_check(config_path: Path, output_root: Path, *, gui=False, run_directory=None):

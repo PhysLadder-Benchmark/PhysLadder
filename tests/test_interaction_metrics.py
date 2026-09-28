@@ -6,8 +6,8 @@ from pathlib import Path
 import unittest
 
 from robot_tasks.config import load_config
-from robot_tasks.integrationtest.interaction_metrics import lifted, placed
-from robot_tasks.integrationtest.interaction_scene import InteractionSettings
+from robot_tasks.tasks.pick_place_metrics import lifted, placed
+from robot_tasks.tasks.pick_place_scene import InteractionSettings
 
 
 class InteractionMetricsTests(unittest.TestCase):

@@ -6,7 +6,7 @@ import math
 from ..config import TaskConfig
 from ..robots.control import width_to_joints
 from ..runner import validate_action
-from ..types import Action, ArmCommand
+from ..types import Action, ArmCommand, InvalidPolicyAction
 
 
 def action_schema(arms: tuple[str, ...]) -> dict:
@@ -34,6 +34,13 @@ def _unique_object(pairs):
 
 def decode_action(text: str, config: TaskConfig) -> Action:
     """Reject malformed/extra fields; never repair, clip, eval or execute code."""
+    try:
+        return _decode_action(text, config)
+    except ValueError as exc:
+        raise InvalidPolicyAction(str(exc)) from exc
+
+
+def _decode_action(text: str, config: TaskConfig) -> Action:
     try:
         document = json.loads(text, object_pairs_hook=_unique_object)
     except (ValueError, TypeError):

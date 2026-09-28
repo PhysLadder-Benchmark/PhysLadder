@@ -8,12 +8,10 @@
 | `motion_check.py` | 双臂关节、夹爪、同步运动和复位 |
 | `cartesian_check.py` | TCP、IK、实际位姿、不可达目标拒绝和恢复 |
 | `interaction_check.py` | 抓起方块、搬运、释放；左右臂正例和不闭爪反例 |
-| `interaction_scene.py` | 自由刚体、目标区、接触材料、接触读数及回合复位 |
-| `interaction_metrics.py` | 根据实际物体运动、接触和释放后稳定性评分 |
 | `gpt_api_check.py` | 一次真实 API 图片请求与动作格式检查，不启动机器人 |
-| `gpt_check.py` | GPT 基于渲染 RGB 控制 R5 末端和夹爪，并读取执行反馈 |
+| `gpt_check.py` | 参数化抬手检查；执行循环复用公共 runner |
+| `gpt_pick_place_check.py` | GPT 单臂抓放全链路入口；复用注册任务、执行循环与独立评分 |
 | `camera_check.py` | 三路 RGB、左右腕部独立跟随、同步时间戳及模型输入打包；不调用 API |
-| `video.py` | 同一批真实相机帧的 MP4 与 GIF 输出 |
 | `simulation_process.py`、`simulation_worker.py` | 进程隔离、超时、退出码与结果联合校验 |
 | `debug_motion.py` | WSL → Windows 调试连接，F11 进入对应检查 |
 
@@ -44,3 +42,10 @@ Token 从 `OPENAI_API_KEY` 读取。物理在请求期间暂停，模型调用�
 `python -m robot_tasks check cameras --gui` 使用真实型号 CAD 和临时相机参数校验三路观测。
 `configs/cameras/r5_orbbec_provisional.toml` 内的 `provisional_uncalibrated` 表示内外参未经现场标定。
 该配置也由 GPT 集成检查使用；普通关节／抓放检查保留原来的单路工程相机配置。
+
+`check gpt-pick-place` 运行 `GPT-PICK-PLACE` 任务，配置在 `configs/tasks/gpt_single_arm_pick_place.toml`。
+它与 `run GPT-PICK-PLACE` 使用同一任务实现，区别是增加独立工作进程和 watchdog，并提供已有 F5 调试入口。
+该入口会评估本次抓放（`task_evaluated=true`，无服务／仿真错误时），`passed` 要求真实抓放成功。
+
+共享方块场景和物理判据移到 `tasks/pick_place_scene.py`、`tasks/pick_place_metrics.py`，
+公共执行在 `runner.py`，录像编码在 `video.py`。集成检查复用生产代码，不持有另一套抓放实现。

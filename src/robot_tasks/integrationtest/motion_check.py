@@ -19,7 +19,7 @@ from ..runtime import STORAGE_CONFIG
 from ..robots.adapters import R5Adapter
 from ..robots.audit import require_joint_sim_ready
 from ..types import Action, ArmCommand
-from .video import MotionVideo
+from ..video import MotionVideo
 
 
 def run_motion_check(config_path: Path, output_root: Path, *, gui: bool = False,
