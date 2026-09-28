@@ -129,6 +129,7 @@ class R5KinematicsTests(unittest.TestCase):
 
     def test_cartesian_completion_requires_measured_tcp_accuracy(self):
         robot = R5Adapter()
+        robot.config = self.config
         robot.targets = self.targets
         target = self.kin.forward(self.home, "left")
         robot.cartesian_targets = {"left": target}

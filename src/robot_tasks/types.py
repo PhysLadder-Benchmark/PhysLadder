@@ -15,6 +15,7 @@ class RGBFrame:
     width: int
     height: int
     data: bytes  # Packed RGB8; renderer-specific tensors stay in the backend.
+    calibration: dict | None = None  # Actual simulated camera; disclosure to policy is opt-in.
 
 
 @dataclass(frozen=True)

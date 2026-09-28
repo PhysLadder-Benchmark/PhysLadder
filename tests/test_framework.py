@@ -41,6 +41,10 @@ class FrameworkTests(unittest.TestCase):
                 self.assertIsNone(result["success"])
                 self.assertTrue(backend.closed)
                 self.assertEqual(json.loads((path / "result.json").read_text()), result)
+                report = (path / "report.md").read_text(encoding="utf-8")
+                self.assertIn("未评估", report)
+                self.assertIn("(<episode.jsonl>)", report)
+                self.assertIn("(<frames>)", report)
                 events = [json.loads(s) for s in (path / "episode.jsonl").read_text().splitlines()]
                 self.assertEqual(len(events), 4)  # reset + 3 transitions
                 self.assertEqual(set(events[0]["observation"]["robot"]), set(config.arms))

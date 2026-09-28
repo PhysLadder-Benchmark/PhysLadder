@@ -85,6 +85,14 @@ wait_steps = 12
 settle_steps = 12
 stop_steps = 12
 max_decisions = 40
+gripper_timing = "after_motion"
 
 [policy]
 model_config = "../models/gpt.toml"
+
+[policy_options]
+retain_text_history = true
+operating_notes = true
+action_interface = "sparse_eef"
+camera_calibration = false
+visual_aids = true

@@ -10,7 +10,6 @@ from .config import ExecutionSettings, TaskConfig
 from .paths import PROJECT_ROOT
 from .policies.gpt import GPTPolicy
 from .policies.model_config import load_gpt_settings, read_api_key
-from .policies.scripted import ScriptedPolicy
 from .registry import TaskSpec
 from .robots.adapters import R5Adapter
 from .robots.audit import require_cartesian_sim_ready
@@ -28,13 +27,7 @@ def _gpt_policy(config: TaskConfig, model_config: Path | None):
     return GPTPolicy(config, settings)
 
 
-def _scripted_policy(config: TaskConfig, model_config: Path | None):
-    if model_config is not None:
-        raise ValueError("--model-config is only used with --policy gpt")
-    return ScriptedPolicy()
-
-
-POLICIES = {"gpt": _gpt_policy, "scripted": _scripted_policy}
+POLICIES = {"gpt": _gpt_policy}
 
 
 def execute_task(spec: TaskSpec, config: TaskConfig, output_root: Path, *, policy_name: str = "gpt",

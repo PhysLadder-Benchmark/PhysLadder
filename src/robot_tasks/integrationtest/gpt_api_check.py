@@ -8,7 +8,7 @@ from uuid import uuid4
 from ..config import load_config
 from ..policies.gpt import GPTPolicy, encode_frame
 from ..policies.model_config import load_gpt_settings
-from ..recording import write_json
+from ..recording import finish_run, write_json
 from ..types import Feedback, Observation, PolicyInput, RGBFrame
 
 
@@ -42,5 +42,5 @@ def run_gpt_api_check(config_path: Path, output_root: Path, *, model_path: Path 
     except Exception as exc:
         result["error"] = f"{type(exc).__name__}: {exc}"
     write_json(output / "model_exchange.json", policy.last_exchange)
-    write_json(output / "result.json", result)
+    finish_run(output, result)
     return output, result

@@ -145,6 +145,7 @@ class R5ControlTests(unittest.TestCase):
 
     def test_passing_through_target_at_speed_is_not_motion_completion(self):
         robot = R5Adapter()
+        robot.config = self.config
         robot.targets = self.targets
         states = {name: ArmState(joint_positions_rad=target[:6], finger_positions_m=target[6:],
                                  joint_velocities_rad_s=(0.0,) * 6, finger_velocities_m_s=(0.0, 0.0))

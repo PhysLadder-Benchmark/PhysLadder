@@ -15,7 +15,7 @@ from PIL import Image
 from ..backends.isaacsim import IsaacSimBackend
 from ..backends.settings import SimulationSettings
 from ..config import load_config
-from ..recording import write_json
+from ..recording import finish_run, write_json
 from ..robots.adapters import R5Adapter
 from ..robots.audit import require_cartesian_sim_ready
 from ..robots.transforms import pose_errors, pose_transform, transform_pose
@@ -131,6 +131,9 @@ def run_camera_check(config_path: Path, output_root: Path, *, gui=False, run_dir
         stationary = pose_errors(snapshots["initial"]["right_wrist"], snapshots["left_moved"]["right_wrist"])[0]
         result.update(status="completed", cameras=checks, unmoved_wrist_drift_m=stationary,
                       passed=all(c["passed"] for c in checks.values()) and stationary < 0.001 and image_count == 3)
+        from .perception_probe import check_camera_projection
+        result["projection_and_freshness"] = check_camera_projection(backend)
+        result["passed"] = result["passed"] and result["projection_and_freshness"]["passed"]
         write_json(output / "scene.json", backend.scene_report)
         backend.save_scene(output / "scene.usda")
         # A labelled preview; raw per-camera PNGs and videos retain their original sizes.
@@ -153,7 +156,7 @@ def run_camera_check(config_path: Path, output_root: Path, *, gui=False, run_dir
             except Exception as exc:
                 result.update(status="error", passed=False, video_error=str(exc))
         result["wall_time_s"] = time.monotonic() - start
-        write_json(output / "result.json", result)
+        finish_run(output, result)
         print("R5_CHECK_RESULT " + json.dumps(result), flush=True)
         backend.close()
     return output, result

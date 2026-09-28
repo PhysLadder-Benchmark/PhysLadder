@@ -16,7 +16,7 @@ import numpy as np
 from ..backends.isaacsim import IsaacSimBackend
 from ..backends.settings import SimulationSettings
 from ..config import load_config
-from ..recording import write_json
+from ..recording import finish_run, write_json
 from ..robots.adapters import R5Adapter
 from ..robots.audit import require_cartesian_sim_ready
 from ..robots.transforms import pose_errors
@@ -190,7 +190,7 @@ def run_interaction_check(config_path: Path, output_root: Path, *, gui: bool = F
         except Exception as exc:
             result.update(status="error", passed=False, video_error=str(exc))
         result["wall_time_s"] = time.monotonic() - start
-        write_json(output / "result.json", result)
+        finish_run(output, result)
         print("R5_CHECK_RESULT " + json.dumps(result), flush=True)
         backend.close()
     return output, result

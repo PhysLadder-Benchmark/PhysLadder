@@ -6,6 +6,7 @@ from ..robots.transforms import transform_pose
 from ..types import RGBFrame
 from .profile import CameraRigProfile
 from . import RGBNotReady
+from .geometry import calibration_metadata
 
 
 def _set_pose(prim, pose):
@@ -53,8 +54,9 @@ class IsaacCameraRig:
                                            "camera_prim": self.paths[spec.name]}
         return report
 
-    def read(self, timestamp: float) -> tuple[RGBFrame, ...]:
+    def read(self, timestamp: float, capture_id: int = 0) -> tuple[RGBFrame, ...]:
         frames = []
+        poses = self.world_poses()
         for spec in self.specs:
             data = np.asarray(self.annotators[spec.name].get_data())
             if data.size == 0:
@@ -63,7 +65,8 @@ class IsaacCameraRig:
             if data.ndim != 3 or data.shape[:2] != (height, width) or data.shape[2] not in {3, 4}:
                 raise RuntimeError(f"{spec.name}: invalid RGB dimensions {data.shape}")
             rgb = np.ascontiguousarray(data[..., :3], dtype=np.uint8)
-            frames.append(RGBFrame(spec.name, timestamp, width, height, rgb.tobytes()))
+            metadata = calibration_metadata(spec, poses[spec.name], timestamp, capture_id)
+            frames.append(RGBFrame(spec.name, timestamp, width, height, rgb.tobytes(), metadata))
         return tuple(frames)
 
     def world_poses(self) -> dict[str, tuple[float, ...]]:
