@@ -13,3 +13,6 @@
 *.STL binary
 # Vendor source hashes must remain byte-for-byte identical.
 assets/r5/R5a/** -text -whitespace
+# Pinned appearance downloads include the upstream LICENSE, not just binaries.
+assets/appearance/r5/** -text -whitespace
+assets/appearance/textures/** -text -whitespace
