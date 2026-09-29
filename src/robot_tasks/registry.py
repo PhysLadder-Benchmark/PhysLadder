@@ -5,7 +5,6 @@ from pathlib import Path
 
 from .config import TaskConfig, load_config
 from .paths import PROJECT_ROOT
-from .tasks.cylinder_insertion import CylinderInsertion
 from .tasks.dual_arm_handover import DualArmHandover
 from .tasks.pick_place import SingleArmPickPlace
 
@@ -15,7 +14,7 @@ class TaskSpec:
     task_id: str
     name: str
     factory: type
-    arm_count: int
+    active_arm_counts: tuple[int, ...]
     implemented: bool
     evidence: str
     default_config: Path
@@ -23,17 +22,12 @@ class TaskSpec:
 
 TASKS = {
     "GPT-PICK-PLACE": TaskSpec(
-        "GPT-PICK-PLACE", "GPT 单臂方块抓放", SingleArmPickPlace, 1, True,
+        "GPT-PICK-PLACE", "GPT 单臂方块抓放", SingleArmPickPlace, (1,), True,
         "GPT 自主选择动作；实测接触、抬起、释放与稳定放置独立评分",
         PROJECT_ROOT / "configs/tasks/gpt_single_arm_pick_place.toml",
     ),
-    "L1-01": TaskSpec(
-        "L1-01", "圆柱插孔", CylinderInsertion, 1, False,
-        "已做重力落入/碰撞基础实验；完整机械臂任务未实现",
-        PROJECT_ROOT / "configs/tasks/l1_01_cylinder_insertion.toml",
-    ),
     "L2-02": TaskSpec(
-        "L2-02", "双臂夹持力交接", DualArmHandover, 2, False,
+        "L2-02", "双臂夹持力交接", DualArmHandover, (2,), False,
         "仅有参考任务调研；本地双臂交接未验证",
         PROJECT_ROOT / "configs/tasks/l2_02_dual_arm_handover.toml",
     ),
@@ -44,8 +38,8 @@ def get_spec(config: TaskConfig) -> TaskSpec:
     if config.task_id not in TASKS:
         raise ValueError(f"Unknown task ID: {config.task_id}")
     spec = TASKS[config.task_id]
-    if len(config.arms) != spec.arm_count:
-        raise ValueError(f"{spec.task_id} requires {spec.arm_count} arm(s)")
+    if len(config.arms) not in spec.active_arm_counts:
+        raise ValueError(f"{spec.task_id} permits active arm counts {spec.active_arm_counts}")
     return spec
 
 

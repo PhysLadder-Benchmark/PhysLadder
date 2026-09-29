@@ -20,7 +20,7 @@ from robot_tasks.robots.urdf import read_urdf
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = ROOT / "configs/robots/r5.toml"
-INSERTION = ROOT / "configs/tasks/l1_01_cylinder_insertion.toml"
+PICK_PLACE = ROOT / "configs/tasks/gpt_single_arm_pick_place.toml"
 HANDOVER = ROOT / "configs/tasks/l2_02_dual_arm_handover.toml"
 
 
@@ -95,13 +95,13 @@ class R5ConfigurationTests(unittest.TestCase):
             require_robot_ready(self.profile)
 
     def test_tasks_select_active_arms_without_replacing_the_r5_platform(self):
-        for config_path, active in ((INSERTION, ("left",)), (HANDOVER, ("left", "right"))):
+        for config_path, active in ((PICK_PLACE, ("left",)), (HANDOVER, ("left", "right"))):
             with self.subTest(config=config_path.name):
                 config = load_config(config_path)
                 self.assertEqual(config.robot_model, "r5")
                 self.assertEqual(config.robot.available_arms, ("left", "right"))
                 self.assertEqual(config.arms, active)
-                self.assertEqual(config.robot.source, PROFILE)
+                self.assertEqual(config.robot.asset_path, self.profile.asset_path)
                 self.assertEqual(config.cameras, ("overview", "left_wrist", "right_wrist"))
 
     def test_asset_resolution_is_independent_of_working_directory(self):
@@ -115,14 +115,14 @@ class R5ConfigurationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "requires ARX R5"):
             load_robot_profile(path)
         path = self.directory / "legacy.toml"
-        path.write_text(INSERTION.read_text(encoding="utf-8").replace(
+        path.write_text(PICK_PLACE.read_text(encoding="utf-8").replace(
             "schema_version = 2", "schema_version = 1"), encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "schema_version = 2"):
             load_config(path)
 
     def test_unknown_active_arm_and_legacy_robot_fields_are_rejected(self):
-        content = INSERTION.read_text(encoding="utf-8").replace(
-            '"../robots/r5.toml"', json.dumps(PROFILE.as_posix()))
+        content = PICK_PLACE.read_text(encoding="utf-8").replace(
+            '"../robots/r5_sim.toml"', json.dumps(PROFILE.as_posix()))
         for changed, message in (
             (content.replace('active_arms = ["left"]', 'active_arms = ["arm"]'), "subset"),
             (content.replace('[robot]', '[robot]\nmodel = "r5"'), "only profile and active_arms"),
@@ -209,7 +209,7 @@ class R5ConfigurationTests(unittest.TestCase):
         with patch("robot_tasks.execution.IsaacSimBackend") as backend, \
                 patch("robot_tasks.execution.GPTPolicy") as policy, redirect_stderr(io.StringIO()) as error:
             with self.assertRaises(SystemExit) as raised:
-                main(["run", "--config", str(INSERTION), "--policy", "gpt"])
+                main(["run", "--config", str(HANDOVER), "--policy", "gpt"])
             self.assertEqual(raised.exception.code, 2)
             self.assertIn("not implemented", error.getvalue())
             backend.assert_not_called()

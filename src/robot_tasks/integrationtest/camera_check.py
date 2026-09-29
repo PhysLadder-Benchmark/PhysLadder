@@ -106,7 +106,12 @@ def run_camera_check(config_path: Path, output_root: Path, *, gui=False, run_dir
         class CaptureClient:
             def generate(self, **kwargs):
                 self.messages = kwargs["messages"]
-                return ModelReply(text='{"commands":[],"request_stop":true}', model="fixture",
+                document = {"commands": [], "request_stop": True}
+                if config.include_depth:
+                    document["depth_queries"] = []
+                if config.raw.get("policy_options", {}).get("decision_notes", False):
+                    document["note"] = "Offline camera input check; no task action requested."
+                return ModelReply(text=json.dumps(document), model="fixture",
                                   response_id="camera_check", usage={}, latency_s=0.0)
 
         client = CaptureClient()
@@ -115,6 +120,35 @@ def run_camera_check(config_path: Path, output_root: Path, *, gui=False, run_dir
         last_input = client.messages[-1]["content"]
         image_count = sum(item["type"] == "input_image" for item in last_input)
         result["gpt_input"] = {"image_count": image_count, "frames": policy.last_exchange["frames"], "api_called": False}
+        if config.include_depth:
+            from ..cameras.depth import depth_array, depth_metadata, encode_depth_preview, resolve_depth_queries
+            from ..types import DepthQuery
+            depth_checks = {}
+            for frame in frames:
+                values = depth_array(frame)
+                metadata = depth_metadata(frame)
+                valid_pixels = np.argwhere(np.isfinite(values))
+                passed = len(valid_pixels) > 0
+                if passed:
+                    # Reproject one observed surface; never use a task object's pose.
+                    v, u = map(int, valid_pixels[len(valid_pixels) // 2])
+                    query = DepthQuery(frame.camera, u, v, frame.width, frame.height)
+                    measurement, = resolve_depth_queries((frame,), (query,))
+                    from ..cameras.geometry import project_world
+                    projected = project_world([measurement["point_world_m"]],
+                        frame.calibration["T_world_camera_pose_wxyz"],
+                        frame.calibration["intrinsics_fx_fy_cx_cy"], frame.calibration["distortion"])[0]
+                    error = float(np.linalg.norm(projected - [u, v]))
+                    metadata["backprojection_roundtrip_error_px"] = error
+                    passed = error < 1e-4
+                directory = output / frame.camera
+                np.save(directory / "depth.npy", values, allow_pickle=False)
+                preview, display = encode_depth_preview(frame, (frame.width, frame.height))
+                (directory / "depth.png").write_bytes(preview)
+                depth_checks[frame.camera] = {**metadata, "preview": display, "passed": passed}
+            result["depth"] = {"cameras": depth_checks, "passed": all(v["passed"] for v in depth_checks.values()),
+                               "hardware_emulated": False,
+                               "scope": "rendered buffers, pairing and coordinate math; not hardware accuracy"}
         checks = {}
         for name in config.cameras:
             motion = pose_errors(snapshots["initial"][name], snapshots["right_moved"][name])[0]
@@ -130,7 +164,9 @@ def run_camera_check(config_path: Path, output_root: Path, *, gui=False, run_dir
             }
         stationary = pose_errors(snapshots["initial"]["right_wrist"], snapshots["left_moved"]["right_wrist"])[0]
         result.update(status="completed", cameras=checks, unmoved_wrist_drift_m=stationary,
-                      passed=all(c["passed"] for c in checks.values()) and stationary < 0.001 and image_count == 3)
+                      passed=all(c["passed"] for c in checks.values()) and stationary < 0.001
+                      and image_count == len(config.cameras) * (2 if config.include_depth else 1)
+                      and result.get("depth", {}).get("passed", True))
         from .perception_probe import check_camera_projection
         result["projection_and_freshness"] = check_camera_projection(backend)
         result["passed"] = result["passed"] and result["projection_and_freshness"]["passed"]

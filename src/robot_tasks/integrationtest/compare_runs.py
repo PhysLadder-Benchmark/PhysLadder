@@ -15,6 +15,8 @@ def summarize(directory: Path) -> dict:
         config = tomllib.load(stream)
     events = [json.loads(line) for line in (directory / "episode.jsonl").read_text(encoding="utf-8").splitlines()]
     policy = next((e["configuration"] for e in events if e["event"] == "policy_configuration"), {})
+    scene_path = directory / "scene.json"
+    scene = json.loads(scene_path.read_text(encoding="utf-8")) if scene_path.is_file() else {}
     errors, calls = [], []
     for event in events:
         if event["event"] == "transition":
@@ -28,7 +30,7 @@ def summarize(directory: Path) -> dict:
             "reasoning_effort": policy.get("provider", {}).get("reasoning_effort"),
             "options": policy.get("options", {}),
             "gripper_timing": config.get("execution", {}).get("gripper_timing", "simultaneous"),
-            "ik_solver": config.get("execution", {}).get("ik_solver", "numerical"),
+            "ik_solver": scene.get("ik_solver", config.get("execution", {}).get("ik_solver", "not_recorded")),
             "budgets": {"calls": config.get("execution", {}).get("max_decisions"),
                         "control_ticks": config["runtime"]["max_steps"], "wall_s": config["runtime"]["max_wall_time_s"]},
             "robot_profile_sha256": manifest["robot_profile_sha256"], "object_and_scoring": config.get("interaction", {}),

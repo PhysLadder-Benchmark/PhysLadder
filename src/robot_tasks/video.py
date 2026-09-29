@@ -6,7 +6,9 @@ from .backends.settings import SimulationSettings
 
 
 class MotionVideo:
-    """Stream MP4; keep a smaller GIF preview from the same rendered frames."""
+    """Stream every frame to MP4; bound the memory of a whole-episode GIF preview."""
+
+    preview_limit = 240
 
     def __init__(self, output: Path, settings: SimulationSettings):
         import cv2
@@ -16,6 +18,9 @@ class MotionVideo:
         if not self.writer.isOpened():
             raise RuntimeError("Unable to open MP4 encoder")
         self.frames = []
+        self.preview_indices = []
+        self.preview_stride = 2
+        self.last_pixels = None
         self.count = 0
         self.first_pixels = None
         self.maximum_pixel_change = 0.0
@@ -35,17 +40,35 @@ class MotionVideo:
         self.maximum_pixel_change = max(self.maximum_pixel_change,
             float(np.abs(pixels.astype(float) - self.first_pixels.astype(float)).mean()))
         self.writer.write(cv2.cvtColor(pixels, cv2.COLOR_RGB2BGR))
-        preview = Image.fromarray(pixels)
-        if self.count % 2 == 0:
+        self.last_pixels = pixels.copy()
+        if self.count % self.preview_stride == 0:
+            preview = Image.fromarray(pixels)
             preview.thumbnail((640, 480))
-            self.frames.append(preview)
+            self.frames.append(preview.quantize(colors=128))
+            self.preview_indices.append(self.count)
+            if len(self.frames) > self.preview_limit:
+                # Increase sampling interval across the WHOLE episode. Never
+                # discard only the beginning or select frames by task outcome.
+                self.frames = self.frames[::2]
+                self.preview_indices = self.preview_indices[::2]
+                self.preview_stride *= 2
         self.count += 1
         if self.count % self.settings.fps == 0:
             Image.fromarray(pixels).save(self.output / "latest_frame.png")
 
     def close(self):
+        from PIL import Image
         self.writer.release()
         if self.frames:
+            if self.preview_indices[-1] != self.count - 1:
+                preview = Image.fromarray(self.last_pixels)
+                preview.thumbnail((640, 480))
+                self.frames.append(preview.quantize(colors=128))
+                self.preview_indices.append(self.count - 1)
+            durations = [max(10, round(1000 * (b - a) / self.settings.fps))
+                         for a, b in zip(self.preview_indices, self.preview_indices[1:] + [self.count])]
             self.frames[0].save(self.output / "motion.gif", save_all=True, append_images=self.frames[1:],
-                                duration=round(2000 / self.settings.fps), loop=0)
+                                duration=durations, loop=0)
         self.frames.clear()
+        self.preview_indices.clear()
+        self.last_pixels = None

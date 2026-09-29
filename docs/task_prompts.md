@@ -18,14 +18,14 @@
 
 力控类任务的提示分清“操作目标”和“接口实现”：仅凭 RGB 与位姿可尝试可见的稳定操作，不能据此报告精确控力能力；需要力信号的任务必须先接入真实可用的观测与控制能力。文中的实现条件均不是已完成声明。
 
-当前 `check gpt` 用于抬高末端与打开夹爪的工程检查；`run GPT-PICK-PLACE` 已接入完整的 GPT 单臂抓放。下列其他任务仍需实现相应场景、复位、评分与停止处理，不能只替换 instruction 就视为已实现。接口本身的动作 JSON 也不能靠文字新增字段。正式任务的调用与时间预算应另外设置，不沿用基础检查的短调用预算来评价复杂操作。
+当前 `check gpt` 用于抬高末端与打开夹爪的工程检查；`run GPT-PICK-PLACE` 已接入完整的 GPT 单臂抓放。其余任务仍需实现相应场景、复位、评分与停止处理，不能只替换 instruction 就视为已实现。接口本身的动作 JSON 也不能靠文字新增字段。正式任务的调用与时间预算应另外设置，不沿用基础检查的短调用预算来评价复杂操作。
 
 ## 共用执行约定
 
 ```text
 You control an ARX R5 robot with two-finger grippers to complete the task below. Use the provided RGB images, robot state, execution feedback, and available history to choose grasp locations, approach directions, action order, and recovery actions. Use only the arms and action interfaces enabled for this episode.
 
-Return only the JSON required by the system action contract, without explanations, code, or additional fields. Follow the declared coordinate frames, units, and action limits. End-effector poses are absolute targets, and quaternions must have unit length. When retaining orientation, preserve the measured orientation from feedback. Arms without new commands retain their previous targets. request_stop ends decision-making; it does not automatically open grippers or retract the robot.
+Return only the JSON required by the system action contract, without code, undeclared fields or text outside the JSON. If the contract includes a note, use one or two brief sentences to describe the visible situation and purpose of this decision. Follow the declared coordinate frames, units, and action limits. End-effector poses are absolute targets, and quaternions must have unit length. When retaining orientation, preserve the measured orientation from feedback. Arms without new commands retain their previous targets. request_stop ends decision-making; it does not automatically open grippers or retract the robot.
 
 Identify the current task stage and the information needed for the next action. When a view is occluded, first use the other available views. If visibility remains insufficient, adjust the viewpoint or object pose while preserving established support. Do not treat visual estimates as exact measurements or assume access to depth, force, tactile signals, or ground-truth object coordinates that have not been provided.
 
@@ -39,18 +39,6 @@ Actively complete subsequent steps and recoverable errors within the episode bud
 ## L1：任务相关 Affordance 与几何操作
 
 本组使用统一基础控制设置，主要保留自主选取操作部位、姿态与几何对准。提示提供操作原则，不指定抓点真值或预制轨迹。插花为新增柔性候选，最终分层需结合实际物体确认。
-
-### L1-01 圆柱插孔
-
-运行前填写：圆柱与孔的可见标识、公开的插入深度／就位标记、释放后保持时间。实现条件：低阻力配合、真实孔洞碰撞几何和插入评分。
-
-```text
-Insert {{cylinder_id}} into {{target_hole_id}} to {{insertion_depth_or_seating_marker}}. After releasing and withdrawing the gripper, the cylinder must remain seated for {{hold_time_s}} seconds. Keep the hole fixture in place. Use the low-resistance fit without bending parts, tipping the fixture, or modifying either part.
-
-Choose a grasp that leaves the insertion end unobstructed and enough exposed length to reach the required depth. Use multiple views to identify the cylinder axis, hole entrance, and tilt. Perform the main orientation alignment outside the entrance, then approach and insert incrementally along the hole axis.
-
-If the cylinder catches an edge, tilts, or moves the fixture, retract to a position where alignment can be corrected, then adjust lateral position or orientation. Do not keep pressing while misaligned. Once seating evidence is present, gradually release, withdraw, and observe stability again. Confirm that the fixture supports the cylinder independently of the gripper.
-```
 
 ### L1-02 异形块嵌槽
 

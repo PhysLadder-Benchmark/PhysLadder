@@ -6,6 +6,7 @@ Partial output can never become a robot action.
 
 from dataclasses import dataclass
 import json
+import re
 import time
 from urllib.error import HTTPError, URLError
 from urllib.request import HTTPRedirectHandler, Request, build_opener
@@ -20,6 +21,58 @@ class ModelError(RuntimeError):
 class _NoRedirect(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None
+
+
+def _safe_error_field(value, secret: str, *, limit: int = 512) -> str | None:
+    """Only short scalar diagnostics; never dump a request, headers or HTML."""
+    if not isinstance(value, (str, int, float)) or isinstance(value, bool):
+        return None
+    text = str(value).replace(secret, "[REDACTED]") if secret else str(value)
+    text = re.sub(r"(?i)\bBearer\s+[^\s\"'<>]+", "Bearer [REDACTED]", text)
+    text = re.sub(r"\bsk-[A-Za-z0-9_-]+", "[REDACTED]", text)
+    text = " ".join("".join(c if c.isprintable() else " " for c in text).split())
+    return text[:limit] if text else None
+
+
+def http_error_message(error: HTTPError, secret: str) -> str:
+    """Keep a bounded, redacted reason from an HTTP rejection before closing it.
+
+    A 429 alone cannot distinguish account quota, token rate limits or a relay's
+    capacity. Record what the provider actually says without classifying it.
+    """
+    details = {}
+    try:
+        headers = error.headers or {}
+        for header, name in (("Retry-After", "retry_after"), ("x-request-id", "request_id")):
+            value = _safe_error_field(headers.get(header), secret, limit=128)
+            if value is not None:
+                details[name] = value
+        try:
+            raw = error.read(16385)
+            if len(raw) > 16384:
+                details["body_status"] = "too_large"
+            else:
+                document = json.loads(raw)
+                if isinstance(document, dict):
+                    payload = document.get("error", document)
+                    if isinstance(payload, str):
+                        payload = {"message": payload}
+                    if isinstance(payload, dict):
+                        for key in ("type", "code", "message"):
+                            value = _safe_error_field(payload.get(key), secret)
+                            if value is not None:
+                                details[key] = value
+                    if not any(key in details for key in ("type", "code", "message")):
+                        details["body_status"] = "no_error_fields"
+                else:
+                    details["body_status"] = "unrecognized_json"
+        except (ValueError, UnicodeError):
+            details["body_status"] = "non_json_or_empty"
+        except (OSError, TimeoutError):
+            details["body_status"] = "unreadable"
+    finally:
+        error.close()
+    return f"Responses HTTP {error.code}; provider_error=" + json.dumps(details, ensure_ascii=False, allow_nan=False)
 
 
 @dataclass(frozen=True)
@@ -132,9 +185,7 @@ class ResponsesClient:
                 raise ModelError("Provider output contains a credential; output discarded")
             return reply
         except HTTPError as exc:
-            code = exc.code
-            exc.close()
-            raise ModelError(f"Responses HTTP {code}; check endpoint, model access and provider settings") from None
+            raise ModelError(http_error_message(exc, secret)) from None
         except (URLError, OSError, TimeoutError):
             raise ModelError("Responses transport failed or timed out; no action accepted") from None
         except (ValueError, TypeError, AttributeError, KeyError):

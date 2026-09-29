@@ -20,7 +20,8 @@ class FrameworkTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.output = Path(self.temp.name)
-        self.config = load_config(ROOT / "configs/tasks/l1_01_cylinder_insertion.toml")
+        self.config = replace(load_config(ROOT / "configs/tasks/gpt_single_arm_pick_place.toml"),
+                              control_dt_s=0.1, include_depth=False, save_depth=False)
 
     def run_mock(self, *, config=None, backend=None, task=None, policy=None, dry_run=True):
         config = config or self.config
@@ -31,7 +32,7 @@ class FrameworkTests(unittest.TestCase):
         )
 
     def test_dry_run_persists_evidence_but_never_task_success(self):
-        for name in ("l1_01_cylinder_insertion.toml", "l2_02_dual_arm_handover.toml"):
+        for name in ("gpt_single_arm_pick_place.toml", "l2_02_dual_arm_handover.toml"):
             with self.subTest(name=name):
                 config = load_config(ROOT / "configs/tasks" / name)
                 backend = MockBackend()
@@ -49,7 +50,7 @@ class FrameworkTests(unittest.TestCase):
                 self.assertEqual(len(events), 4)  # reset + 3 transitions
                 self.assertEqual(set(events[0]["observation"]["robot"]), set(config.arms))
                 self.assertEqual(len(events[-1]["observation"]["rgb"]), len(config.cameras))
-                self.assertAlmostEqual(events[-1]["observation"]["time_s"], 0.3)
+                self.assertAlmostEqual(events[-1]["observation"]["time_s"], 3 * config.control_dt_s)
                 self.assertEqual(len(list(path.rglob("*.ppm"))), 4 * len(config.cameras))
                 self.assertEqual((path / "robot_profile.toml").read_bytes(), config.robot.source.read_bytes())
                 self.assertEqual((path / "asset_source.lock.json").read_bytes(), config.robot.asset_lock.read_bytes())
@@ -139,8 +140,8 @@ class FrameworkTests(unittest.TestCase):
         self.assertIsNone(result["success"])
 
     def test_task_arm_count_must_match(self):
-        bad = replace(self.config, task_id="L2-02")
-        with self.assertRaisesRegex(ValueError, "requires 2"):
+        bad = replace(self.config, task_id="L2-02", arms=("left",))
+        with self.assertRaisesRegex(ValueError, "active arm counts"):
             get_spec(bad)
 
 

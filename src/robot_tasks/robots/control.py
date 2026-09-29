@@ -7,7 +7,7 @@ from ..types import Action
 from .profile import RobotProfile
 
 if TYPE_CHECKING:
-    from .kinematics import R5Kinematics
+    from .lula import R5LulaKinematics
 
 
 def width_to_joints(profile: RobotProfile, width: float) -> tuple[float, float]:
@@ -31,7 +31,7 @@ def joints_to_width(profile: RobotProfile, positions: tuple[float, ...]) -> floa
 
 def plan_targets(profile: RobotProfile, active_arms: tuple[str, ...], action: Action,
                  previous: dict[str, tuple[float, ...]], *,
-                 kinematics: "R5Kinematics | None" = None,
+                 kinematics: "R5LulaKinematics | None" = None,
                  measured_positions: dict[str, tuple[float, ...]] | None = None) -> dict[str, tuple[float, ...]]:
     """Validate the entire bimanual action before changing either arm's targets."""
     if (not isinstance(action, Action) or isinstance(action.duration_s, bool)

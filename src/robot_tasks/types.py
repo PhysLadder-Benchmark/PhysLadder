@@ -9,6 +9,22 @@ class InvalidPolicyAction(ValueError):
 
 
 @dataclass(frozen=True)
+class DepthFrame:
+    """RGB-aligned optical-axis depth, metres, packed little-endian float32.
+
+    NaN denotes an invalid/no-return pixel. This is ideal rendered depth, not
+    an emulation of a particular hardware stereo sensor.
+    """
+
+    camera: str
+    timestamp_s: float
+    width: int
+    height: int
+    data: bytes
+    capture_id: int
+
+
+@dataclass(frozen=True)
 class RGBFrame:
     camera: str
     timestamp_s: float
@@ -16,6 +32,7 @@ class RGBFrame:
     height: int
     data: bytes  # Packed RGB8; renderer-specific tensors stay in the backend.
     calibration: dict | None = None  # Actual simulated camera; disclosure to policy is opt-in.
+    depth: DepthFrame | None = None  # Same render product and capture as RGB.
 
 
 @dataclass(frozen=True)
@@ -55,10 +72,21 @@ class ArmCommand:
 
 
 @dataclass(frozen=True)
+class DepthQuery:
+    camera: str
+    u: int  # Pixel in the RGB image actually sent to the model.
+    v: int
+    image_width: int
+    image_height: int
+
+
+@dataclass(frozen=True)
 class Action:
     commands: tuple[ArmCommand, ...]
     duration_s: float
     request_stop: bool = False  # Policy stopping is NOT an evaluator success.
+    depth_queries: tuple[DepthQuery, ...] = ()  # Read-only; cannot accompany motion or stop.
+    note: str = ""  # Brief model observation/action rationale; never executable or a success label.
 
 
 @dataclass(frozen=True)
@@ -82,3 +110,4 @@ class Assessment:
     status: Literal["not_evaluated", "running", "succeeded", "failed"]
     reason: str
     metrics: dict = field(default_factory=dict)
+    retryable: bool = False  # Explicit task failure eligible for an opt-in scene reset.

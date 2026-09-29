@@ -22,6 +22,11 @@ def validate_action(action: Action, config: TaskConfig, *, require_control_durat
         raise ValueError("This scaffold uses a fixed control_dt_s per action")
     if action.request_stop and action.commands:
         raise ValueError("A stop request cannot contain commands")
+    if action.depth_queries:
+        from .cameras.depth import validate_depth_queries
+        if not config.include_depth or not config.include_feedback or action.commands or action.request_stop:
+            raise ValueError("Depth queries require RGB-D/feedback and cannot accompany motion or stop")
+        validate_depth_queries(action.depth_queries, config.cameras)
     seen = set()
     for command in action.commands:
         if command.arm not in config.arms:
@@ -56,10 +61,11 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                 step_limit: int | None = None, run_directory: Path | None = None,
                 record_video: bool = False,
                 summarize: Callable[[dict], dict] | None = None) -> tuple[Path, dict]:
-    """One fresh episode. Task truth is evaluated separately from policy inputs.
+    """One fresh run. Task truth is evaluated separately from policy inputs.
 
     max_steps counts control ticks, including settling and final observation.
     A target is sent once, then held until completion or its execution budget.
+    Opt-in failed attempts reset physics, never policy history or global budgets.
     """
     limit = config.max_steps if step_limit is None else step_limit
     if type(limit) is not int or not 0 < limit <= config.max_steps:
@@ -69,13 +75,18 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
     recorder = EpisodeRecorder(output_root, config, mode, limit, run_directory=run_directory)
     start = time.monotonic()
     assessment = Assessment("not_evaluated", "Episode has not been evaluated")
-    ticks = decisions = executed = timeouts = rejected = 0
+    ticks = decisions = executed = timeouts = rejected = invalid_model_actions = 0
     status, reason, error = "error", "startup", None
     videos = {}
     feedback = Feedback("not_initialized")
     initial = final = {}
     stopped = ready = False
     final_time = 0.0
+    attempts = []
+    reset_count = 0
+    attempt_open = False
+    attempt_start_decision = attempt_start_tick = 0
+    pending_reset_notice = ""
 
     def budget():
         if time.monotonic() - start >= config.max_wall_time_s:
@@ -114,9 +125,71 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                 videos[frame.camera].add(frame)
         if not dry_run:
             recorder.event({"event": "physics", "tick": ticks, "phase": phase,
+                            "attempt": len(attempts) + 1,
                             "time_s": backend.time_s(), "feedback": asdict(feedback),
                             "robot": {k: asdict(v) for k, v in robot.state().items()},
                             "evaluation": asdict(assessment)})
+
+    def finish_attempt(outcome: str, termination: str) -> None:
+        nonlocal attempt_open
+        if not options.retry_failed_attempts or not attempt_open:
+            return
+        entry = {"attempt": len(attempts) + 1, "status": outcome,
+                 "termination_reason": termination,
+                 "decision_start": attempt_start_decision + 1 if decisions > attempt_start_decision else None,
+                 "decision_end": decisions, "decisions": decisions - attempt_start_decision,
+                 "tick_start": attempt_start_tick, "tick_end": ticks,
+                 "assessment": asdict(assessment)}
+        attempts.append(entry)
+        attempt_open = False
+        recorder.event({"event": "attempt_end", **entry})
+
+    def retry_failed_attempt() -> bool:
+        nonlocal assessment, feedback, observation, reset_count, attempt_open
+        nonlocal attempt_start_decision, attempt_start_tick, stopped, reason
+        nonlocal pending_reset_notice
+        if not (options.retry_failed_attempts and assessment.status == "failed" and assessment.retryable):
+            return False
+        finish_attempt("failed", "task_failure")
+        if decisions >= decision_limit:
+            return False
+        budget()
+        # Do not spend the remaining physics budget resetting without another action.
+        if ticks + options.settle_steps >= limit:
+            raise EpisodeLimit("max_steps")
+        failed_reason = assessment.reason
+        recorder.event({"event": "attempt_reset_started", "step": decisions, "tick": ticks,
+                        "failed_attempt": len(attempts), "reason": failed_reason})
+        assessment = Assessment("not_evaluated", "Resetting after a failed attempt")
+        backend.reset(config.seed)
+        task.reset(backend, config.seed)
+        robot.reset(config.seed)  # Clears queued targets and restores both arms.
+        # Deliberately do not call policy.reset: history and calls belong to the run.
+        for _ in range(options.settle_steps):
+            tick(phase="reset_settle", score=False)
+        evaluate()
+        if assessment.status != "running":
+            raise RuntimeError("Reset did not produce a valid running task state")
+        reset_count += 1
+        attempt_open = True
+        attempt_start_decision, attempt_start_tick = decisions, ticks
+        stopped = False
+        reason = "model_call_limit"
+        feedback = Feedback("attempt_reset",
+            f"Attempt {len(attempts)} failed: {failed_reason}. The object and both robot arms "
+            "have been reset to their initial states. Use these NEW images and measured robot state; "
+            "previous poses are no longer current. Your history is retained; reconsider the failed approach. "
+            "Simulation time restarted, but the total call/time budgets did not reset.",
+            {"attempt": len(attempts) + 1, "reset_count": reset_count,
+             "remaining_decisions": decision_limit - decisions})
+        pending_reset_notice = feedback.message
+        observation = observe()
+        recorder.event({"event": "attempt_reset", "step": decisions, "tick": ticks,
+                        "attempt": len(attempts) + 1,
+                        "observation": recorder.observation(observation, decisions, after_reset=True)})
+        if not dry_run:
+            print(f"R5_ATTEMPT_RESET {reset_count}: {failed_reason}", flush=True)
+        return True
 
     try:
         policy_metadata = getattr(policy, "run_metadata", None)
@@ -146,6 +219,7 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
         if not dry_run:
             evaluate()  # Establish evaluator reference state after settling, before any model action.
         ready = True
+        attempt_open = True
         scene_report = getattr(backend, "scene_report", None)
         if scene_report:
             from .recording import write_json
@@ -164,22 +238,62 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
             if not dry_run:
                 print(f"R5_POLICY_REQUEST {step}", flush=True)
             try:
-                action = policy.act(PolicyInput(config.instruction, observation, step))
-            finally:
-                exchange = getattr(policy, "last_exchange", None)
-                if exchange:
-                    recorder.event({"event": "model_exchange", "step": step, "exchange": exchange})
+                try:
+                    action = policy.act(PolicyInput(config.instruction, observation, step))
+                finally:
+                    exchange = getattr(policy, "last_exchange", None)
+                    if exchange:
+                        recorder.event({"event": "model_exchange", "step": step, "exchange": exchange})
+            except InvalidPolicyAction as exc:
+                invalid_model_actions += 1
+                feedback = Feedback("rejected", "Your previous response was not a valid action. "
+                                    "No commands were applied and simulation time has not advanced. "
+                                    "Return a new JSON object matching the action schema. " + str(exc)
+                                    + (" Last reset notice: " + pending_reset_notice if pending_reset_notice else ""),
+                                    {"reason_code": "invalid_model_action"})
+                observation = replace(observation, feedback=(feedback if config.include_feedback
+                                                            else Feedback("not_provided")))
+                recorder.event({"event": "policy_action_rejected", "step": step, "error": str(exc),
+                                "policy_time_s": time.monotonic() - t0,
+                                "observation": recorder.observation(observation, step)})
+                # One failed response consumes one decision/call. Retry from the
+                # exact same state without applying a wait action or resetting.
+                budget()
+                continue
+            pending_reset_notice = ""  # A valid reply has retained this observation in policy history.
             policy_time_s = time.monotonic() - t0
             validate_action(action, config)
             if not dry_run:
                 recorder.event({"event": "decision", "step": step, "action": asdict(action),
                                 "policy_time_s": policy_time_s})
             budget()  # Never execute a response that arrived after the wall-time deadline.
+            if action.depth_queries:
+                from .cameras.depth import resolve_depth_queries
+                results = resolve_depth_queries(observation.rgb, action.depth_queries)
+                feedback = Feedback("observed", "Pixel depth queries completed. No commands applied; "
+                                    "simulation time has not advanced. Results describe visible surfaces in these images.",
+                                    {"depth_queries": results, "execution_status": robot.feedback().status})
+                # Reuse the exact queried capture. Do not rerender, tick, reset,
+                # invoke Robot.apply, or start another uncounted model call.
+                observation = replace(observation, feedback=feedback)
+                recorder.event({"event": "depth_query", "step": step, "action": asdict(action),
+                                "observation": recorder.observation(observation, step)})
+                continue
             if action.request_stop:
                 stopped = True
                 reason = "policy_requested_stop"
                 for _ in range(options.stop_steps):
                     tick(phase="final_observation")
+                    if assessment.status in {"succeeded", "failed"}:
+                        break
+                # A fall during the last observation is still a failed attempt.
+                if assessment.status == "failed":
+                    recorder.event({"event": "transition", "step": step,
+                                    "action": asdict(action), "policy_time_s": policy_time_s,
+                                    "observation": recorder.observation(observe(), step),
+                                    "evaluation": asdict(assessment)})
+                    if retry_failed_attempt():
+                        continue
                 break
             try:
                 robot.apply(action)
@@ -200,13 +314,14 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
             action_ticks = options.max_action_steps if action.commands else options.wait_steps
             for _ in range(action_ticks):
                 tick()
+                if assessment.status in {"succeeded", "failed"}:
+                    break
                 stable = stable + 1 if feedback.status == "completed" else 0
                 if action.commands and stable >= options.completion_samples:
                     completed = True
                     break
-                if assessment.status == "failed":
-                    break
-            if action.commands and not completed and feedback.status == "executing":
+            if (action.commands and not completed and feedback.status == "executing"
+                    and assessment.status not in {"succeeded", "failed"}):
                 timeouts += 1
                 cancel_pending = getattr(robot, "on_action_timeout", None)
                 if cancel_pending is not None:
@@ -220,7 +335,10 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                             "observation": recorder.observation(observation, step),
                             "evaluation": asdict(assessment)})
             if assessment.status in {"succeeded", "failed"}:
-                reason = "task_terminal"
+                if retry_failed_attempt():
+                    continue
+                reason = ("model_call_limit" if options.retry_failed_attempts and assessment.retryable
+                          and decisions >= decision_limit else "task_terminal")
                 break
             if ticks >= limit:
                 reason = "max_steps"
@@ -232,8 +350,6 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
             status = "dry_run_complete"
     except EpisodeLimit as exc:
         status, reason = ("dry_run_complete" if dry_run else "finished"), str(exc)
-    except InvalidPolicyAction as exc:
-        status, reason, error = "finished", "invalid_model_action", str(exc)
     except NotImplementedError as exc:
         status, reason, error = "implementation_missing", "stub_reached", str(exc)
     except (Exception, KeyboardInterrupt) as exc:
@@ -254,13 +370,16 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                      and assessment.status in {"running", "succeeded", "failed"})
         if evaluated and assessment.status == "running":
             assessment = Assessment("failed", f"Episode ended before success: {reason}", assessment.metrics)
+        finish_attempt(assessment.status if evaluated else "not_evaluated", reason)
         result = {
             "task_id": config.task_id, "mode": mode, "status": status,
             "termination_reason": reason, "completed_steps": ticks, "decisions": decisions,
             "model_calls": getattr(policy, "calls", 0), "executed_actions": executed,
             "action_timeouts": timeouts, "rejected_actions": rejected, "policy_requested_stop": stopped,
+            "invalid_model_actions": invalid_model_actions,
             "false_completion": bool(stopped and evaluated and assessment.status != "succeeded"),
-            "wall_time_s": time.monotonic() - start, "simulation_time_s": final_time,
+            "wall_time_s": time.monotonic() - start,
+            "simulation_time_s": ticks * config.control_dt_s if options.retry_failed_attempts else final_time,
             "task_evaluated": evaluated,
             "success": (assessment.status == "succeeded") if evaluated else None,
             "assessment": asdict(assessment), "error": error,
@@ -269,6 +388,14 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
             "videos": {name: {"path": f"video/{name}/motion.mp4", "frames": video.count}
                        for name, video in videos.items()},
         }
+        if options.retry_failed_attempts:
+            result.update(evaluation_protocol="retry_with_history", reset_count=reset_count,
+                          attempts=attempts, attempt_count=len(attempts),
+                          failed_attempts=sum(a["status"] == "failed" for a in attempts),
+                          first_attempt_success=(attempts[0]["status"] == "succeeded"
+                                                 if attempts and attempts[0]["status"] != "not_evaluated" else None),
+                          success_attempt=next((a["attempt"] for a in attempts if a["status"] == "succeeded"), None),
+                          final_attempt_time_s=final_time)
         if summarize is not None:
             result = summarize(result)
         result = json.loads(json.dumps(result, allow_nan=False))

@@ -1,7 +1,6 @@
-"""URDF-derived R5 FK and bounded local IK; no simulator or ROS dependency.
+"""URDF-derived R5 forward kinematics, coordinate transforms and IK results.
 
-IK chooses a joint goal, not a collision-free or straight Cartesian trajectory.
-A local solve that does not converge is not proof of global unreachability.
+This module has no inverse solver or simulator dependency. Lula supplies IK.
 """
 
 from dataclasses import dataclass
@@ -9,7 +8,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from .profile import RobotProfile
-from .transforms import (axis_rotation, finite_vector, origin_transform, pose_residual,
+from .transforms import (axis_rotation, finite_vector, origin_transform,
                          pose_transform, transform_pose)
 from .urdf import read_urdf
 
@@ -20,8 +19,9 @@ class IKResult:
     positions_rad: tuple[float, ...]
     position_error_m: float
     orientation_error_rad: float
-    iterations: int
+    iterations: int | None
     reason: str
+    descents: int | None = None  # Lula reports descents, not individual iterations.
 
 
 class IKError(ValueError):
@@ -62,27 +62,22 @@ class R5Kinematics:
         self.upper = np.array([limits[name].upper for name in profile.joint_names])
         self.reach_bound_m = sum(np.linalg.norm(t[:3, 3]) for t in self.origins) + np.linalg.norm(self.tcp[:3, 3])
 
-    def _forward_jacobian(self, positions: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        transform, axes, points = np.eye(4), [], []
+    def _forward_transform(self, positions: np.ndarray) -> np.ndarray:
+        transform = np.eye(4)
         index = 0
         for joint, origin in zip(self.chain, self.origins):
             transform = transform @ origin
             if joint.kind != "fixed":
                 axis = np.asarray(joint.axis) / np.linalg.norm(joint.axis)
-                axes.append(transform[:3, :3] @ axis)
-                points.append(transform[:3, 3].copy())
                 motion = np.eye(4)
                 motion[:3, :3] = axis_rotation(axis, positions[index])
                 transform = transform @ motion
                 index += 1
-        transform = transform @ self.tcp
-        jacobian = np.array([np.r_[np.cross(axis, transform[:3, 3] - point), axis]
-                             for point, axis in zip(points, axes)]).T
-        return transform, jacobian
+        return transform @ self.tcp
 
     def forward(self, positions, arm: str, frame: str = "world") -> tuple[float, ...]:
         q = finite_vector(positions, len(self.profile.joint_names), "Joint positions")
-        transform, _ = self._forward_jacobian(q)
+        transform = self._forward_transform(q)
         self._check_frame(arm, frame)
         return transform_pose(self.bases[arm] @ transform if frame == "world" else transform)
 
@@ -96,43 +91,3 @@ class R5Kinematics:
         self._check_frame(arm, frame)
         target = pose_transform(pose)
         return transform_pose(self.bases[arm] @ target if frame == "robot_base" else target)
-
-    def solve(self, pose, arm: str, seed, frame: str = "world", *, max_iterations: int = 120) -> IKResult:
-        if type(max_iterations) is not int or max_iterations < 1:
-            raise ValueError("IK max_iterations must be a positive integer")
-        target = pose_transform(self.world_pose(pose, arm, frame))
-        target = np.linalg.inv(self.bases[arm]) @ target
-        q = finite_vector(seed, len(self.profile.joint_names), "IK seed")
-        # Measured physics states can lie slightly outside nominal limits.
-        q = np.clip(q, self.lower, self.upper)
-        weights = np.array([1., 1., 1., 0.15, 0.15, 0.15])
-        reason = "local_solver_not_converged"
-        iteration = 0
-        for iteration in range(max_iterations + 1):
-            current, jacobian = self._forward_jacobian(q)
-            error = pose_residual(current, target)
-            position_error, orientation_error = np.linalg.norm(error[:3]), np.linalg.norm(error[3:])
-            if position_error <= self.position_tolerance_m and orientation_error <= self.orientation_tolerance_rad:
-                return IKResult(True, tuple(float(v) for v in q), float(position_error),
-                                float(orientation_error), iteration, "converged")
-            if np.linalg.norm(target[:3, 3]) > self.reach_bound_m + self.position_tolerance_m:
-                reason = "outside_conservative_reach_bound"
-                break
-            if iteration == max_iterations:
-                break
-            weighted_jacobian, weighted_error = weights[:, None] * jacobian, weights * error
-            delta = weighted_jacobian.T @ np.linalg.solve(
-                weighted_jacobian @ weighted_jacobian.T + 0.01**2 * np.eye(6), weighted_error)
-            delta *= min(1.0, 0.15 / max(float(np.max(np.abs(delta))), 1e-12))
-            improved = False
-            for fraction in (1., .5, .25, .125, .0625):
-                candidate = np.clip(q + fraction * delta, self.lower, self.upper)
-                next_pose, _ = self._forward_jacobian(candidate)
-                if np.linalg.norm(weights * pose_residual(next_pose, target)) < np.linalg.norm(weighted_error) - 1e-12:
-                    q, improved = candidate, True
-                    break
-            if not improved:
-                break
-        # Failed solutions are diagnostic only; callers must never execute them.
-        return IKResult(False, tuple(float(v) for v in q), float(position_error),
-                        float(orientation_error), iteration, reason)

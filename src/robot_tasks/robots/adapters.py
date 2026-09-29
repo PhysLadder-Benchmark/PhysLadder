@@ -30,7 +30,7 @@ class R5Adapter(RobotAdapter):
     """Dual-arm R5 SIMULATION adapter; never connects to the real robot SDK.
 
     The manufacturer description and names are configured in config.robot.
-    Cartesian goals use bounded IK followed by joint physics drives.
+    Cartesian goals use Lula IK followed by joint physics drives.
     This adapter does not provide collision-free path planning or force control.
     """
 
@@ -56,10 +56,15 @@ class R5Adapter(RobotAdapter):
         self.config, self.backend = config, backend
         self.execution = ExecutionSettings.from_config(config)
         if config.robot.tcp_pose_wxyz is not None:
-            from .kinematics import R5Kinematics
-            self.kinematics = R5Kinematics(config.robot)
+            from isaacsim.core.utils.extensions import enable_extension
+            from .lula import R5LulaKinematics
+            enable_extension("isaacsim.robot_motion.lula")
+            self.kinematics = R5LulaKinematics(config.robot, backend.settings.asset_directory,
+                                             sampling_seed=config.seed)
         self.instances = backend.add_r5(config.robot)
-        backend.scene_report["ik_solver"] = "numerical"
+        backend.scene_report["ik_solver"] = "lula" if self.kinematics is not None else "not_configured"
+        if self.kinematics is not None:
+            backend.scene_report["ik_configuration"] = self.kinematics.metadata
         backend.before_physics_step = self.before_physics_step
 
     def reset(self, seed: int) -> None:
