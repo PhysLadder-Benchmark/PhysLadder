@@ -130,6 +130,7 @@ class L1Scene:
                 "motion_mode": "direct_ik",
                 "gripper_timing": "after_motion",
                 "startup_preparation": "downward_ready_v1",
+                "observation_preparation": "face_manipulation_workspace_v1",
             },
             "arm_roles": config.arm_roles,
             "physics_variant": "CPU PhysX, fixed mesh cavities, dynamic convex decomposition",

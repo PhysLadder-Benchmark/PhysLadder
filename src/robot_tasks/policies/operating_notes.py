@@ -34,6 +34,7 @@ def operating_notes(config) -> dict:
     notes["startup_preparation"] = (
         "Before your first observation the manipulation arm moved to a fixed downward-facing ready pose. "
         "This is robot-only preparation, not a model action or a grasp. Use the measured TCP state. "
-        "Observation arms keep their reset pose until you choose to move them for inspection."
+        "Observation arms start with their wrist cameras facing the manipulation workspace. "
+        "You may reposition them for a clearer view using the same motion interface."
     )
     return notes

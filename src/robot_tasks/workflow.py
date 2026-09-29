@@ -11,12 +11,13 @@ SECTIONS = {"runtime", "observation", "recording", "execution", "policy"}
 def workflow_metadata() -> dict:
     """Describe implemented behavior for inspection and run records, not switches."""
     return {
-        "version": 2, "action_interface": "sparse_eef", "ik": "lula",
+        "version": 3, "action_interface": "sparse_eef", "ik": "lula",
         "observation_modalities": ["rgb", "depth", "camera_calibration", "robot_state", "feedback"],
         "retain_text_history": True, "operating_notes": True, "visual_aids": True,
         "decision_notes": True, "gripper_timing": "after_motion",
         "active_observation": "according_to_task_arm_roles",
         "startup_preparation": "downward_ready_v1",
+        "observation_preparation": "face_manipulation_workspace_v1",
     }
 
 
