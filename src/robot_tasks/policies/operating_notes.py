@@ -31,4 +31,9 @@ def operating_notes(config) -> dict:
         notes["camera_roles"] = {c.name: {"model": c.model, "parent": c.parent}
                                  for c in load_camera_rig(config.source.parent / camera_path).select(config.cameras)}
     notes["motion_backend"] = "ik"
+    notes["startup_preparation"] = (
+        "Before your first observation the manipulation arm moved to a fixed downward-facing ready pose. "
+        "This is robot-only preparation, not a model action or a grasp. Use the measured TCP state. "
+        "Observation arms keep their reset pose until you choose to move them for inspection."
+    )
     return notes

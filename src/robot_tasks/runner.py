@@ -60,6 +60,7 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                 policy: Policy, output_root: Path, *, dry_run: bool = False,
                 step_limit: int | None = None, run_directory: Path | None = None,
                 record_video: bool = False,
+                preparation: Action | None = None,
                 summarize: Callable[[dict], dict] | None = None) -> tuple[Path, dict]:
     """One fresh run. Task truth is evaluated separately from policy inputs.
 
@@ -133,6 +134,29 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                             "robot": {k: asdict(v) for k, v in robot.state().items()},
                             "evaluation": asdict(assessment)})
 
+    def prepare_robot() -> None:
+        if dry_run or preparation is None:
+            return
+        budget()
+        validate_action(preparation, config)
+        recorder.event({"event": "preparation_start", "action": asdict(preparation),
+                        "model_generated": False})
+        robot.apply(preparation)
+        stable = 0
+        for _ in range(options.max_action_steps):
+            tick(phase="preparation", score=False)
+            stable = stable + 1 if feedback.status == "completed" else 0
+            if stable >= options.completion_samples:
+                break
+        if stable < options.completion_samples:
+            cancel = getattr(robot, "on_action_timeout", None)
+            if cancel is not None:
+                cancel()
+            raise RuntimeError("Fixed startup preparation did not reach its pose; GPT was not called")
+        recorder.event({"event": "preparation_complete", "time_s": backend.time_s(),
+                        "feedback": asdict(feedback),
+                        "robot": {k: asdict(v) for k, v in robot.state().items()}})
+
     def finish_attempt(outcome: str, termination: str) -> None:
         nonlocal attempt_open
         if not options.retry_failed_attempts or not attempt_open:
@@ -171,6 +195,7 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
         # Deliberately do not call policy.reset: history and calls belong to the run.
         for _ in range(options.settle_steps):
             tick(phase="reset_settle", score=False)
+        prepare_robot()
         evaluate()
         if assessment.status != "running":
             raise RuntimeError("Reset did not produce a valid running task state")
@@ -219,6 +244,7 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                 videos[frame.camera] = MotionVideo(directory, replace(settings, width=frame.width, height=frame.height))
         for _ in range(options.settle_steps):
             tick(phase="settle", score=False)
+        prepare_robot()
         initial = {k: asdict(v) for k, v in robot.state().items()}
         if not dry_run:
             evaluate()  # Establish evaluator reference state after settling, before any model action.

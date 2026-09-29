@@ -1,0 +1,74 @@
+{
+  "revision": "43dacb13d3051a9ccd421f4e7e08e4e3eb29dfab",
+  "files": [
+    {
+      "path": "Rigid/test_tube/00002",
+      "metadata.json": {
+        "bytes": 3508,
+        "sha256": "6ad299e38944f77be2edee73475a80d2313ea1a2a7119c1e449f4ba1055b40d6"
+      },
+      "object.usdz": {
+        "bytes": 1108703,
+        "sha256": "e7ef90e9bf1fa1db63359c5317d6bd990dcb3475576478741fead8f6977e004e"
+      }
+    },
+    {
+      "path": "Geometry/test_tube_slot/00000",
+      "metadata.json": {
+        "bytes": 8117,
+        "sha256": "964aa50dacf43c45fff1b7da92218d089f2c618e542dcbc1f3114175acc05164"
+      },
+      "object.usdz": {
+        "bytes": 388120,
+        "sha256": "939d71ae619de1b1c40db3a6c11769e20b8c65245e123f7ffd986f5da35042f6"
+      }
+    },
+    {
+      "path": "Rigid/charger/00000",
+      "metadata.json": {
+        "bytes": 4377,
+        "sha256": "3a462763b4f0922067d5df8fcdb78b26bb566afb1af7cc831d7e27af16dbd59f"
+      },
+      "object.usdz": {
+        "bytes": 762980,
+        "sha256": "50532876b868d0cc5a0add9c35be0aa8b72f89e02e06e04a6fd021de95b1ecd0"
+      }
+    },
+    {
+      "path": "Rigid/socket/00000",
+      "metadata.json": {
+        "bytes": 6025,
+        "sha256": "7b9afc3bc8aa2d46844447a33f4cc623a80618970aaa599e074f6b0f145d14ba"
+      },
+      "object.usdz": {
+        "bytes": 423696,
+        "sha256": "3539a25ac55c7379d35ac547734fc7a6b573e14615e55fae89a11d2176e78e92"
+      }
+    },
+    {
+      "path": "Rigid/key/00000",
+      "metadata.json": {
+        "bytes": 3956,
+        "sha256": "c5a6f1a996ab3672f4b60acb60cddfb0cb302bcb7090f514b31a34543c6d0d42"
+      },
+      "object.usdz": {
+        "bytes": 11674406,
+        "sha256": "b1f712655c6e2ad36aea7cc680841aa96d7762b63d38a9d4fd4ffc6cbe0c87ea"
+      }
+    },
+    {
+      "path": "Geometry/key_slot/00000",
+      "metadata.json": {
+        "bytes": 4219,
+        "sha256": "b9e4a01b5764b1b60f8dabd36ecdc113ffa351692e75aca3b53b8ccc6195b343"
+      },
+      "object.usdz": {
+        "bytes": 3597392,
+        "sha256": "ebd8a10b73ce90a8e8b3dfb5b80e2598920a5a567d1113e67149fdf1bb023c07"
+      }
+    }
+  ],
+  "repository": "https://huggingface.co/datasets/RoboDojo-Benchmark/RoboDojo",
+  "prefix": "Assets/Object/RoboDojo",
+  "license": "Apache-2.0 (dataset); upstream code MIT, not vendored"
+}

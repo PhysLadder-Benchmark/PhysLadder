@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "robot_repository": "https://github.com/fiveages-sim/robot-descriptions-arx",
+  "robot_revision": "71b069961eafe3d71524d199d99ac24c752b348a",
+  "robot_visual_type": "PBR material groups; upstream has no UV images",
+  "files": [
+    {
+      "path": "r5/LICENSE",
+      "url": "https://raw.githubusercontent.com/fiveages-sim/robot-descriptions-arx/71b069961eafe3d71524d199d99ac24c752b348a/arx5_description/LICENSE",
+      "sha256": "11b6d7cd3c80b5eda4974f4fde6c08ec4c142bd9cb66f1b854974c25dab9cf22",
+      "bytes": 1503,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "path": "r5/base_link.glb",
+      "url": "https://raw.githubusercontent.com/fiveages-sim/robot-descriptions-arx/71b069961eafe3d71524d199d99ac24c752b348a/arx5_description/meshes/r5/base_link.glb",
+      "sha256": "72c4b822c074140b1d58f6f2f2d844845db7d8fd074a274b0033f29b4c801e14",
+      "bytes": 276780,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "path": "r5/link1.glb",
+      "url": "https://raw.githubusercontent.com/fiveages-sim/robot-descriptions-arx/71b069961eafe3d71524d199d99ac24c752b348a/arx5_description/meshes/r5/link1.glb",
+      "sha256": "39955f2cd3cd1d7d9c41164e90eb54f68d8184213196eb10fe271395469bf5ef",
+      "bytes": 126820,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "path": "r5/link2.glb",
+      "url": "https://raw.githubusercontent.com/fiveages-sim/robot-descriptions-arx/71b069961eafe3d71524d199d99ac24c752b348a/arx5_description/meshes/r5/link2.glb",
+      "sha256": "cd007429d608205843dc8a206c1978e04c4ee4fbdf1ec98030b66180fac00724",
+      "bytes": 624932,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "path": "r5/link3.glb",
+      "url": "https://raw.githubusercontent.com/fiveages-sim/robot-descriptions-arx/71b069961eafe3d71524d199d99ac24c752b348a/arx5_description/meshes/r5/link3.glb",
+      "sha256": "dada60483a8c9d07c9a02effc61cc89aefaee25333ee8d95ebfcfce2c7a429ce",
+      "bytes": 697048,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "path": "r5/link4.glb",
+      "url": "https://raw.githubusercontent.com/fiveages-sim/robot-descriptions-arx/71b069961eafe3d71524d199d99ac24c752b348a/arx5_description/meshes/r5/link4.glb",
+      "sha256": "b03ff7eca8302d047ae6a0e44f5d32e8735d6c19ae7cd9b42a855994ebd1333a",
+      "bytes": 139856,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "path": "r5/link5.glb",
+      "url": "https://raw.githubusercontent.com/fiveages-sim/robot-descriptions-arx/71b069961eafe3d71524d199d99ac24c752b348a/arx5_description/meshes/r5/link5.glb",
+      "sha256": "6b1369c5f41ccbdd5312b54646ca974a5e3a16b4eb194e99aeb4b71b19f0d661",
+      "bytes": 713064,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "path": "r5/link6.glb",
+      "url": "https://raw.githubusercontent.com/fiveages-sim/robot-descriptions-arx/71b069961eafe3d71524d199d99ac24c752b348a/arx5_description/meshes/r5/link6.glb",
+      "sha256": "0b6f5a27a51bfb51db09ef13874980af5e256502518d90b5d1d2975b723b47cc",
+      "bytes": 647856,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "path": "r5/link7.glb",
+      "url": "https://raw.githubusercontent.com/fiveages-sim/robot-descriptions-arx/71b069961eafe3d71524d199d99ac24c752b348a/arx5_description/meshes/r5/link7.glb",
+      "sha256": "1a979bf3402bab7685294ca9474924620775f916216446ff523bf450d329577f",
+      "bytes": 94116,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "path": "r5/link8.glb",
+      "url": "https://raw.githubusercontent.com/fiveages-sim/robot-descriptions-arx/71b069961eafe3d71524d199d99ac24c752b348a/arx5_description/meshes/r5/link8.glb",
+      "sha256": "4464747c86d14fd2300990452bb1edca01cb4f4dfbb7cc87cb89d1499aed3399",
+      "bytes": 93996,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "path": "textures/kitchen_wood_diff.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/kitchen_wood/kitchen_wood_diff_1k.jpg",
+      "sha256": "6d0170f1ab1b9353aab6f0382a7753026e32a5b58f779651cd05a91618dfcdab",
+      "bytes": 879137,
+      "license": "CC0-1.0",
+      "source": "https://polyhaven.com/a/kitchen_wood"
+    },
+    {
+      "path": "textures/kitchen_wood_rough.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/kitchen_wood/kitchen_wood_rough_1k.jpg",
+      "sha256": "38044a0b781b2d3219804bc045fc0d226bae33060cc18bb13355fb578ee98c73",
+      "bytes": 875985,
+      "license": "CC0-1.0",
+      "source": "https://polyhaven.com/a/kitchen_wood"
+    },
+    {
+      "path": "textures/kitchen_wood_nor_gl.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/kitchen_wood/kitchen_wood_nor_gl_1k.jpg",
+      "sha256": "30d6c1f3f7ad9e6a0e216393d9ee9a489f3b8a6efd9d85237f639e9bfde4cae5",
+      "bytes": 666833,
+      "license": "CC0-1.0",
+      "source": "https://polyhaven.com/a/kitchen_wood"
+    },
+    {
+      "path": "textures/concrete_floor_02_diff.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_floor_02/concrete_floor_02_diff_1k.jpg",
+      "sha256": "6db84a6d87dc50508b9d134d6fbd2b7e876b8081a5f43a118a249ca18de73af5",
+      "bytes": 776097,
+      "license": "CC0-1.0",
+      "source": "https://polyhaven.com/a/concrete_floor_02"
+    },
+    {
+      "path": "textures/concrete_floor_02_rough.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_floor_02/concrete_floor_02_rough_1k.jpg",
+      "sha256": "c7f026a611b7859903c61ec7fd4574944157223e9e7796413dd6e2a66eaeac7a",
+      "bytes": 318550,
+      "license": "CC0-1.0",
+      "source": "https://polyhaven.com/a/concrete_floor_02"
+    },
+    {
+      "path": "textures/concrete_floor_02_nor_gl.jpg",
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/concrete_floor_02/concrete_floor_02_nor_gl_1k.jpg",
+      "sha256": "fcda391b57a816d646ae15544688be53790478da5cd48dbe514b3c6901415e61",
+      "bytes": 192757,
+      "license": "CC0-1.0",
+      "source": "https://polyhaven.com/a/concrete_floor_02"
+    }
+  ]
+}

@@ -5,6 +5,8 @@ from pathlib import Path
 
 from .config import TaskConfig, load_config
 from .paths import PROJECT_ROOT
+from .tasks.l1.task import L1Task
+from .tasks.l1.specs import RIGID_IDS, FILES, build_design
 from .tasks.dual_arm_handover import DualArmHandover
 from .tasks.pick_place import SingleArmPickPlace
 
@@ -32,6 +34,12 @@ TASKS = {
         PROJECT_ROOT / "configs/tasks/l2_02_dual_arm_handover.toml",
     ),
 }
+
+
+for task_id, filename in zip(RIGID_IDS, FILES):
+    TASKS[task_id] = TaskSpec(task_id, build_design(task_id).name, L1Task, (1,), True,
+        "Shared GPT RGB-D workflow with right-arm observation; measured goal/process scoring; l1-rigid-v1",
+        PROJECT_ROOT / f"configs/tasks/{task_id.lower().replace('-', '_')}_{filename}.toml")
 
 
 def get_spec(config: TaskConfig) -> TaskSpec:

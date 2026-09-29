@@ -91,22 +91,28 @@ class NamedEntryTests(unittest.TestCase):
 
     def test_adding_a_registered_task_needs_no_cli_change(self):
         from fixtures import RGBDBackend
+        from robot_tasks.robots.preparation import preparation_action
+        from robot_tasks.types import Feedback
         path = self.config_variant(task_id="TEST-NEW")
         factory = Mock(return_value=MockTask(), spec=[])
         spec = replace(TASKS["GPT-PICK-PLACE"], task_id="TEST-NEW", default_config=path,
                        factory=factory, implemented=True)
         policy_factory = Mock(side_effect=lambda config, model: NoopPolicy(config.control_dt_s))
         backend = RGBDBackend()
+        robot = MockRobot()
+        robot.apply = Mock()
+        robot.feedback = Mock(return_value=Feedback("completed"))
         with patch.dict(TASKS, {spec.task_id: spec}), \
                 patch.dict("robot_tasks.execution.POLICIES", {"fixture": policy_factory}), \
                 patch("robot_tasks.execution.IsaacSimBackend", return_value=backend), \
-                patch("robot_tasks.execution.R5Adapter", return_value=MockRobot()), \
+                patch("robot_tasks.execution.R5Adapter", return_value=robot), \
                 patch("robot_tasks.runner.print"), \
                 redirect_stdout(io.StringIO()) as output:
             code = main(["run", spec.task_id, "--policy", "fixture", "--gui", "--output", str(self.directory)])
         self.assertEqual(code, 0)
         factory.assert_called_once_with()
         config = policy_factory.call_args.args[0]
+        self.assertEqual(robot.apply.call_args_list[0].args[0], preparation_action(config))
         self.assertFalse(config.raw["simulation"]["headless"])
         self.assertEqual(json.loads(output.getvalue())["task_id"], spec.task_id)
         self.assertTrue(backend.closed)
