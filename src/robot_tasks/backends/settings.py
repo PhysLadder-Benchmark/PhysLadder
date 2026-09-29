@@ -27,6 +27,8 @@ class SimulationSettings:
     camera_target: tuple[float, ...] = (0.2, 0.0, 0.3)
     camera_profile: str = ""  # Relative to episode config; empty keeps legacy overview.
     capture_render_passes: int = 2
+    environment: str = "plain"
+    robot_appearance: str = "vendor_white"
 
     @classmethod
     def from_config(cls, config: TaskConfig) -> "SimulationSettings":
@@ -38,6 +40,10 @@ class SimulationSettings:
         if not isinstance(directory, str) or not directory:
             raise ValueError("simulation.asset_directory must be a path")
         result = cls(asset_directory=(config.source.parent / directory).resolve(), **data)
+        if result.environment not in {"plain", "lab_room_v1"}:
+            raise ValueError("simulation.environment must be plain or lab_room_v1")
+        if result.robot_appearance not in {"vendor_white", "r5_black_silver_v1"}:
+            raise ValueError("simulation.robot_appearance must be vendor_white or r5_black_silver_v1")
         if not isinstance(result.camera_profile, str):
             raise ValueError("simulation.camera_profile must be a path string")
         if type(result.capture_render_passes) is not int or not 1 <= result.capture_render_passes <= 8:

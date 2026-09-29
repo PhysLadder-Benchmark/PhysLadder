@@ -46,6 +46,9 @@ class ExecutionSettings:
     stop_steps: int = 0
     max_decisions: int | None = None
     gripper_timing: str = "simultaneous"
+    motion_mode: str = "direct_ik"
+    startup_pose: str = "none"
+    gripper_completion: str = "position"
 
     @classmethod
     def from_config(cls, config: TaskConfig) -> "ExecutionSettings":
@@ -54,8 +57,16 @@ class ExecutionSettings:
         if unknown:
             raise ValueError(f"Unknown execution settings: {sorted(unknown)}")
         result = cls(**data)
-        if result.gripper_timing not in {"simultaneous", "after_motion"}:
-            raise ValueError("execution.gripper_timing must be simultaneous or after_motion")
+        if result.gripper_completion not in {"position", "stall_aware_v1"}:
+            raise ValueError("execution.gripper_completion must be position or stall_aware_v1")
+        if result.gripper_timing not in {"simultaneous", "after_motion", "open_before_motion"}:
+            raise ValueError("execution.gripper_timing must be simultaneous, after_motion or open_before_motion")
+        if result.motion_mode not in {"direct_ik", "cartesian_linear_v1"}:
+            raise ValueError("execution.motion_mode must be direct_ik or cartesian_linear_v1")
+        if result.startup_pose not in {"none", "downward_ready_v1"}:
+            raise ValueError("execution.startup_pose must be none or downward_ready_v1")
+        if result.startup_pose != "none" and result.motion_mode != "cartesian_linear_v1":
+            raise ValueError("downward_ready_v1 requires cartesian_linear_v1")
         for name in ("max_action_steps", "completion_samples", "wait_steps", "settle_steps", "stop_steps"):
             value = getattr(result, name)
             minimum = 0 if name in {"settle_steps", "stop_steps"} else 1

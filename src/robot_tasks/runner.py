@@ -142,6 +142,26 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                 videos[frame.camera] = MotionVideo(directory, replace(settings, width=frame.width, height=frame.height))
         for _ in range(options.settle_steps):
             tick(phase="settle", score=False)
+        if not dry_run and options.startup_pose != "none":
+            from .robots.preparation import preparation_action
+            preparation = preparation_action(config)
+            recorder.event({"event": "preparation_start", "name": options.startup_pose,
+                            "action": asdict(preparation), "model_generated": False})
+            robot.apply(preparation)
+            stable = 0
+            for _ in range(options.max_action_steps):
+                tick(phase="preparation", score=False)
+                stable = stable + 1 if feedback.status == "completed" else 0
+                if stable >= options.completion_samples:
+                    break
+            if stable < options.completion_samples:
+                cancel = getattr(robot, "on_action_timeout", None)
+                if cancel is not None:
+                    cancel()
+                raise RuntimeError("Fixed startup preparation did not reach its pose; GPT was not called")
+            recorder.event({"event": "preparation_complete", "name": options.startup_pose,
+                            "time_s": backend.time_s(), "feedback": asdict(feedback),
+                            "robot": {k: asdict(v) for k, v in robot.state().items()}})
         initial = {k: asdict(v) for k, v in robot.state().items()}
         if not dry_run:
             evaluate()  # Establish evaluator reference state after settling, before any model action.
@@ -200,6 +220,8 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
             action_ticks = options.max_action_steps if action.commands else options.wait_steps
             for _ in range(action_ticks):
                 tick()
+                if feedback.status == "blocked":
+                    break
                 stable = stable + 1 if feedback.status == "completed" else 0
                 if action.commands and stable >= options.completion_samples:
                     completed = True
@@ -209,11 +231,12 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
             if action.commands and not completed and feedback.status == "executing":
                 timeouts += 1
                 cancel_pending = getattr(robot, "on_action_timeout", None)
+                cancellation = {}
                 if cancel_pending is not None:
-                    cancel_pending()
+                    cancellation = cancel_pending() or {}
                 feedback = Feedback("action_timeout", "Target did not settle within the per-action budget. "
                                     "Inspect measured state and images before choosing the next action.",
-                                    {**feedback.metrics, "last_status": feedback.status})
+                                    {**feedback.metrics, **cancellation, "last_status": feedback.status})
             observation = observe()
             recorder.event({"event": "transition", "step": step,
                             "action": asdict(action), "policy_time_s": policy_time_s,

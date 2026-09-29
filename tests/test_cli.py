@@ -32,8 +32,12 @@ class NamedEntryTests(unittest.TestCase):
     def config_variant(self, task="L1-01", *, task_id=None):
         spec = TASKS[task]
         content = spec.default_config.read_text(encoding="utf-8")
-        content = content.replace('"../robots/r5.toml"', json.dumps((ROOT / "configs/robots/r5_sim.toml").as_posix()))
-        content = content.replace('max_steps = 100', 'max_steps = 3')
+        content = content.replace('"../robots/r5_sim.toml"', json.dumps((ROOT / "configs/robots/r5_sim.toml").as_posix()))
+        content = content.replace('max_steps = 2400', 'max_steps = 120')
+        content = content.replace('settle_steps = 12', 'settle_steps = 0')
+        content = content.replace('save_video = true', 'save_video = false')
+        content = content.replace('startup_pose = "downward_ready_v1"', 'startup_pose = "none"')
+        content = content.replace('camera_profile = "../cameras/', 'camera_profile = "' + (ROOT / 'configs/cameras').as_posix() + '/')
         if task_id is not None:
             content = content.replace(f'id = "{task}"', f'id = "{task_id}"')
         path = self.directory / "variant.toml"
@@ -50,7 +54,7 @@ class NamedEntryTests(unittest.TestCase):
         variant = self.config_variant()
         spec, config = resolve_task("L1-01", variant)
         self.assertEqual(config.source, variant)
-        self.assertEqual(config.max_steps, 3)
+        self.assertEqual(config.max_steps, 120)
 
     def test_wrong_task_or_missing_identity_is_rejected_before_execution(self):
         for arguments, message in (

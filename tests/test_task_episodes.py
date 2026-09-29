@@ -119,7 +119,7 @@ class EpisodeExecutionTests(unittest.TestCase):
         # Runtime snapshots use resolved paths, even if Windows TEMP is an alias.
         self.root = Path(self.temp.name).resolve()
         base = load_config(ROOT / 'configs/tasks/l1_01_cylinder_insertion.toml')
-        self.config = replace(base, raw={**base.raw, "execution": {
+        self.config = replace(base, control_dt_s=0.1, raw={**base.raw, "policy_options": {}, "execution": {
             "max_action_steps": 8, "completion_samples": 2, "wait_steps": 3, "max_decisions": 4}})
 
     def run_case(self, policy, *, config=None, robot=None):
@@ -144,6 +144,29 @@ class EpisodeExecutionTests(unittest.TestCase):
         self.assertEqual(result["success"], False)
         self.assertTrue(result["false_completion"])
         self.assertTrue(backend.closed)
+
+    def test_blocked_action_returns_control_without_waiting_for_timeout(self):
+        seen = []
+
+        class BlockedRobot(TrackingRobot):
+            def feedback(robot):
+                if robot.applied:
+                    return Feedback("blocked", "Opening stalled; queued motion cancelled.",
+                                    {"reason_code": "opening_stalled"})
+                return super().feedback()
+
+        class Policy(NoopPolicy):
+            def act(policy, context):
+                seen.append(context)
+                return Action((ArmCommand("left", "gripper", (0.07,)),) if context.step == 1 else (),
+                              policy.duration_s, request_stop=context.step > 1)
+
+        _, result, _, robot = self.run_case(Policy(0.1), robot=BlockedRobot())
+        self.assertEqual(seen[1].observation.feedback.status, "blocked")
+        self.assertAlmostEqual(seen[1].observation.time_s, self.config.control_dt_s)
+        self.assertEqual(result["action_timeouts"], 0)
+        self.assertFalse(result["success"])
+        self.assertEqual(len(robot.applied), 1)
 
     def test_action_timeout_is_returned_to_policy_without_resetting_scene(self):
         seen = []

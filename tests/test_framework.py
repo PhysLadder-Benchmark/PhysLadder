@@ -20,7 +20,8 @@ class FrameworkTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.output = Path(self.temp.name)
-        self.config = load_config(ROOT / "configs/tasks/l1_01_cylinder_insertion.toml")
+        base = load_config(ROOT / "configs/tasks/l1_01_cylinder_insertion.toml")
+        self.config = replace(base, control_dt_s=0.1, raw={**base.raw, "execution": {}, "policy_options": {}})
 
     def run_mock(self, *, config=None, backend=None, task=None, policy=None, dry_run=True):
         config = config or self.config
@@ -49,7 +50,7 @@ class FrameworkTests(unittest.TestCase):
                 self.assertEqual(len(events), 4)  # reset + 3 transitions
                 self.assertEqual(set(events[0]["observation"]["robot"]), set(config.arms))
                 self.assertEqual(len(events[-1]["observation"]["rgb"]), len(config.cameras))
-                self.assertAlmostEqual(events[-1]["observation"]["time_s"], 0.3)
+                self.assertAlmostEqual(events[-1]["observation"]["time_s"], 3 * config.control_dt_s)
                 self.assertEqual(len(list(path.rglob("*.ppm"))), 4 * len(config.cameras))
                 self.assertEqual((path / "robot_profile.toml").read_bytes(), config.robot.source.read_bytes())
                 self.assertEqual((path / "asset_source.lock.json").read_bytes(), config.robot.asset_lock.read_bytes())

@@ -58,6 +58,22 @@ class CheckSpec:
 _CONFIGS = PROJECT_ROOT / "configs/checks"
 
 CHECKS = {
+    "l1-grasp": CheckSpec(
+        "l1-grasp", "L1 执行器物理抓取、搬运、释放及空夹负例（不调用 GPT）",
+        ("R5-GRASP-BASELINE",), _CONFIGS / "l1_grasp.toml",
+        "grasp_baseline:run_grasp_baseline", "L1_grasp_", require_cartesian_sim_ready,
+    ),
+    "l1-motion": CheckSpec(
+        "l1-motion", "复测 L1 首步运动、夹爪时序及桌面穿入拒绝（不调用 GPT）",
+        ("L1-01",), PROJECT_ROOT / "configs/tasks/l1_01_cylinder_insertion.toml",
+        "l1_motion_check:run_l1_motion_check", "L1_motion_", require_cartesian_sim_ready,
+    ),
+    "l1-scene": CheckSpec(
+        "l1-scene", "L1 场景、三路 RGB、重置与物理夹具检查（不调用 GPT）",
+        tuple(f"L1-{i:02}" for i in range(1,9)),
+        PROJECT_ROOT / "configs/tasks/l1_01_cylinder_insertion.toml",
+        "l1_scene_check:run_l1_scene_check", "L1_scene_", require_cartesian_sim_ready,
+    ),
     "gpt-pick-place": CheckSpec(
         "gpt-pick-place", "GPT 单臂抓放任务的全链路检查", ("GPT-PICK-PLACE",),
         PROJECT_ROOT / "configs/tasks/gpt_single_arm_pick_place.toml",

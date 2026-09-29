@@ -42,6 +42,8 @@ save_rgb = true
 save_video = true
 
 [simulation]
+environment = "lab_room_v1"
+robot_appearance = "r5_black_silver_v1"
 camera_profile = "../cameras/r5_orbbec_provisional.toml"
 asset_directory = "../../build/r5"
 headless = true
@@ -85,7 +87,10 @@ wait_steps = 12
 settle_steps = 12
 stop_steps = 12
 max_decisions = 40
-gripper_timing = "after_motion"
+gripper_timing = "open_before_motion"
+motion_mode = "cartesian_linear_v1"
+startup_pose = "downward_ready_v1"
+gripper_completion = "stall_aware_v1"
 
 [policy]
 model_config = "../models/gpt.toml"

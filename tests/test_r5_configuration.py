@@ -101,7 +101,7 @@ class R5ConfigurationTests(unittest.TestCase):
                 self.assertEqual(config.robot_model, "r5")
                 self.assertEqual(config.robot.available_arms, ("left", "right"))
                 self.assertEqual(config.arms, active)
-                self.assertEqual(config.robot.source, PROFILE)
+                self.assertEqual(config.robot.source, ROOT / "configs/robots/r5_sim.toml" if config_path == INSERTION else PROFILE)
                 self.assertEqual(config.cameras, ("overview", "left_wrist", "right_wrist"))
 
     def test_asset_resolution_is_independent_of_working_directory(self):
@@ -122,7 +122,7 @@ class R5ConfigurationTests(unittest.TestCase):
 
     def test_unknown_active_arm_and_legacy_robot_fields_are_rejected(self):
         content = INSERTION.read_text(encoding="utf-8").replace(
-            '"../robots/r5.toml"', json.dumps(PROFILE.as_posix()))
+            '"../robots/r5_sim.toml"', json.dumps(PROFILE.as_posix()))
         for changed, message in (
             (content.replace('active_arms = ["left"]', 'active_arms = ["arm"]'), "subset"),
             (content.replace('[robot]', '[robot]\nmodel = "r5"'), "only profile and active_arms"),
@@ -209,7 +209,7 @@ class R5ConfigurationTests(unittest.TestCase):
         with patch("robot_tasks.execution.IsaacSimBackend") as backend, \
                 patch("robot_tasks.execution.GPTPolicy") as policy, redirect_stderr(io.StringIO()) as error:
             with self.assertRaises(SystemExit) as raised:
-                main(["run", "--config", str(INSERTION), "--policy", "gpt"])
+                main(["run", "--config", str(HANDOVER), "--policy", "gpt"])
             self.assertEqual(raised.exception.code, 2)
             self.assertIn("not implemented", error.getvalue())
             backend.assert_not_called()

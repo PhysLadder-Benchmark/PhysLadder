@@ -36,6 +36,7 @@ dist/
 /runs/
 /reports/
 /assets/cameras/source/
+/assets/l1/source/
 *.log
 # This is an immutable vendor source file covered by the R5 source lock.
 !/assets/r5/R5a/export.log

@@ -3,6 +3,7 @@
 from datetime import datetime, timezone
 import json
 import os
+import signal
 from pathlib import Path
 import subprocess
 import sys
@@ -12,6 +13,7 @@ from uuid import uuid4
 from ..paths import PROJECT_ROOT
 from ..recording import write_json
 from .registry import get_check
+from .scene_preview import PREVIEW_READY
 
 
 def completed_check(output: Path, returncode: int) -> bool:
@@ -41,10 +43,20 @@ def run_check_process(name: str, output_root: Path, *, config_path: Path | None 
         command.extend(("--model-config", str(model_config.resolve())))
     environment = dict(os.environ, PYTHONUTF8="1", PYTHONUNBUFFERED="1")
     timed_out = threading.Event()
+    interactive_scene = spec.name == "l1-scene" and gui
+    preview_started = False
+    process_options = {}
+    if interactive_scene:
+        # Forward Ctrl+C once to the viewer, instead of interrupting both its
+        # render loop and cleanup via the shared terminal process group.
+        if os.name == "nt":
+            process_options["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
+        else:
+            process_options["start_new_session"] = True
     with (output / "process.log").open("w", encoding="utf-8") as log:
         with subprocess.Popen(command, cwd=PROJECT_ROOT, env=environment,
                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                              text=True, encoding="utf-8", errors="replace") as process:
+                              text=True, encoding="utf-8", errors="replace", **process_options) as process:
             def terminate_on_timeout():
                 timed_out.set()
                 process.kill()
@@ -55,8 +67,29 @@ def run_check_process(name: str, output_root: Path, *, config_path: Path | None 
                 for line in process.stdout:
                     log.write(line)
                     log.flush()
+                    if interactive_scene and line.strip() == PREVIEW_READY:
+                        preview_started = True
+                        timer.cancel()
                     print(line, end="", flush=True)
                 returncode = process.wait()
+            except KeyboardInterrupt:
+                if not preview_started:
+                    process.kill()
+                    process.wait()
+                    raise
+                ignored = {s: signal.signal(s, signal.SIG_IGN) for s in
+                           (signal.SIGINT, *([signal.SIGBREAK] if hasattr(signal, "SIGBREAK") else []))}
+                try:
+                    if process.poll() is None:
+                        process.send_signal(signal.CTRL_BREAK_EVENT if os.name == "nt" else signal.SIGINT)
+                    try:
+                        returncode = process.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        process.kill()
+                        returncode = process.wait()
+                finally:
+                    for signum, handler in ignored.items():
+                        signal.signal(signum, handler)
             except BaseException:
                 process.kill()
                 process.wait()

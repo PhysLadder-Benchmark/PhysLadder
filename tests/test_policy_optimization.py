@@ -155,7 +155,9 @@ class OptimizationTests(unittest.TestCase):
     def test_gripper_is_deferred_until_motion_settles_and_timeout_cancels_it(self):
         robot = R5Adapter()
         robot.config = self.config
-        robot.execution = ExecutionSettings.from_config(self.config)
+        # Preserve the legacy execution mode as an explicit compatibility case.
+        robot.execution = replace(ExecutionSettings.from_config(self.config),
+                                  gripper_timing="after_motion", motion_mode="direct_ik")
         home = self.config.robot.mounts[0].home_positions_rad
         fingers = width_to_joints(self.config.robot, .041)
         robot.targets = {"left": home + fingers}

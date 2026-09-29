@@ -25,11 +25,13 @@ class IsaacSimBackend:
         self.camera_names = ()
         self._capture_id = 0
         self.before_physics_step = None
+        self.environment_report = {"profile": "plain"}
 
     def open(self, config: TaskConfig) -> None:
         if self.app is not None:
             raise RuntimeError("Isaac Sim backend is already open")
         self.settings = SimulationSettings.from_config(config)
+        self.environment_report = {"profile": self.settings.environment}
         self.camera_names = config.cameras
         if self.settings.camera_profile:
             from ..cameras.profile import load_camera_rig
@@ -71,6 +73,9 @@ class IsaacSimBackend:
                 scale=np.array(BENCH_SIZE), size=1.0, color=np.array([0.24, 0.29, 0.34]),
             ))
             UsdLux.DomeLight.Define(self.world.stage, "/World/Light").CreateIntensityAttr(1100)
+            if self.settings.environment == "lab_room_v1":
+                from .lab_room import build_lab_room
+                self.environment_report = build_lab_room(self.world.stage)
             if self.camera_profile is None:
                 camera = rep.create.camera(
                     name="overview", position=self.settings.camera_position,
@@ -101,6 +106,8 @@ class IsaacSimBackend:
             raise RuntimeError("R5 loading requires an open, empty backend")
         usd_path, self.import_report = convert_r5(profile, self.settings)
         self.scene_report = {"asset": str(usd_path), "physics_device": "cpu", "arms": {},
+                             "environment": self.environment_report,
+                             "robot_appearance": self.settings.robot_appearance,
                              "storage": storage_report(self.runtime_storage, kit_started=True),
                              "self_collision": self.settings.self_collision,
                              "drive_type": "force", "gravity_m_s2": 9.81,
@@ -165,6 +172,10 @@ class IsaacSimBackend:
                 "configured_base_pose_wxyz": mount.base_pose_wxyz,
                 "ee_link_path": tip_path, "tcp_pose_in_ee_wxyz": profile.tcp_pose_wxyz,
             }
+            if self.settings.robot_appearance == "r5_black_silver_v1":
+                from .appearance import apply_r5_appearance
+                self.scene_report["arms"][mount.name]["appearance"] = apply_r5_appearance(
+                    self.world.stage, mount.prim_path)
         if self.camera_profile is not None:
             from ..cameras.isaac_rig import IsaacCameraRig
             self.camera_rig = IsaacCameraRig(self.world.stage, self._rep, self.camera_profile, self.camera_names)

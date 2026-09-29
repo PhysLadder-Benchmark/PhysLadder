@@ -2,7 +2,10 @@
 
 本项目使用 **ARX／方舟 R5 双臂平台**。提供厂家资产校验、URDF 导入、Isaac Sim 双臂加载、关节位置控制、仿真 TCP 与末端位姿 IK、夹爪开合、状态回读、复位、三路 RGB，以及脚本方块抓放、GPT 图像调用和 R5 动作反馈的集成校验。已接入 **GPT 单臂方块抓放任务**，现场标定和力控接口仍待实现。
 
-另有两个待实现的任务模板：**L1-01 圆柱插孔**、**L2-02 双臂夹持力交接**。集成校验结果不代表正式测评任务成功率。
+已接入 **L1-01～L1-08 刚性操作任务**：圆柱插孔、异形块嵌槽、插头插接、薄片入槽、钥匙插锁、工具柄抓取、挂环与积木堆叠。共用原有三路 RGB、动作接口与 R5 执行器，GPT 自主选择动作，独立评分器检查目标与操作过程。资产准备、运行命令和验证边界见 [L1 任务说明](docs/l1_tasks.md)。**L2-02 双臂夹持力交接**仍是模板；集成校验结果不代表任务成功率。
+
+L1 与 GPT 抓放任务提供本地室内环境、木纹工作台和 R5 黑银材质；配置、
+启动命令、资产来源与实验对比注意事项见 [场景外观说明](docs/simulation_appearance.md)。
 
 ## Windows / Linux 共用运行方式
 
@@ -43,7 +46,7 @@ python3 tools/launch.py run GPT-PICK-PLACE --model-config /path/to/model.toml --
 
 跨平台入口共用现有模型 API、任务配置和评分实现；不包含 `active_agent` 或 `codex_cli` 通道。
 从此前本地版本迁移时，旧模型配置中的 `transport` 字段不再支持，请按原始模型模板配置。
-正式插孔和双臂交接任务仍是模板。GPT 抬手检查和抓放任务共用执行与记录模块，
+L1 任务、GPT 抬手检查和抓放任务共用执行与记录模块，
 通过 `run` 或 `check` 启动均保存 `runtime_config.json` 和 `storage_config.json` 环境快照；
 `config.toml`、结果和日志记录实验，不记录 API 密钥。
 
@@ -101,7 +104,11 @@ python -m robot_tasks check cameras --gui
 ```
 
 `run` 当前使用 GPT 策略；指定模型配置用 `--model-config`。不调用 GPT 的脚本抓放检查使用 `check interaction`。
-当前 L1-01、L2-02 仍是未实现的任务模板，`run` 会在启动仿真、创建模型策略前明确报错。
+`run L1-01`～`run L1-08` 可启动正式 GPT 任务；首次先运行 `python3 tools/fetch_l1_assets.py`。
+`check l1-scene --config configs/tasks/l1_01_cylinder_insertion.toml` 只做无模型场景检查，不计算 GPT 成功率。
+
+`python3 tools/launch.py check l1-grasp --gui` 验证 L1 共享执行器的两次物理方块抓放及张开夹爪负例，不调用 GPT；夹爪完成反馈与验证范围见 [抓放基线说明](docs/l1_grasp_baseline.md)。
+L2-02 仍是未实现的任务模板，`run` 会在启动仿真、创建模型策略前明确报错。
 `run GPT-PICK-PLACE` 运行自主单臂抓放；`check gpt` 保留基础动作检查。单次结果不能代表总体成功率。
 原来的 `check-r5*`、`check-gpt-api` 命令已统一替换为 `check <名称>`；仅传 `run --config ...` 的用法仍保留。
 WSL 调用 Windows Isaac 环境时继续使用 `tools/run_r5_check.ps1 -Check gpt -Gui`，F5 调试入口也已同步。
@@ -521,7 +528,7 @@ GPT_Benchmark/
 | Isaac Sim 后端 | 已实现基础链路与临时三路 RGB | 现场相机标定、任务专属物体与接触状态 |
 | R5 资产与共享配置 | 已实现 | 核对现场版本，补充标定和运行参数 |
 | R5 仿真适配 | 已实现关节、夹爪与末端目标控制／IK，提供脚本抓放集成检查 | 正式任务策略、路径规划与力控 |
-| 圆柱插孔 | 待实现 | 抓取、对准、插入、释放、稳定性评分 |
+| L1-01～L1-08 | 场景、复位、独立目标／过程评分已实现；Ubuntu 场景验证通过 | Windows GPU 验证、多种子 GPT 完整测评 |
 | 双臂夹持力交接 | 待实现 | 两侧接触、载荷转移、释放与掉落判断 |
 | GPT 策略 | 已接 Responses、三路 RGB、动作反馈及自主单臂抓放 | 扩展任务与测评协议 |
 | 正式任务脚本参照 | 待实现；脚本方块抓放集成检查可运行 | 各测评任务独立的脚本参照 |
@@ -537,7 +544,7 @@ GPT_Benchmark/
 cd D:\mengjq\research_projects\GPT_Benchmark
 $taskPython = 'D:\conda\envs\isaac51\python.exe'
 
-# 列出模板及状态
+# 列出任务及实现状态
 & $taskPython -m robot_tasks list
 
 # 校验厂家资产和关节映射，同时列出待确认参数
@@ -549,7 +556,7 @@ $taskPython = 'D:\conda\envs\isaac51\python.exe'
 # 检查任务引用的机器人配置，不启动仿真
 & $taskPython -m robot_tasks inspect L1-01
 
-# 插孔模板的占位流程自检
+# 插孔的占位流程自检（不启动真实场景）
 & $taskPython -m robot_tasks dry-run L1-01
 
 # 双臂交接模板的占位流程自检
@@ -568,7 +575,7 @@ WSL 中进入同一目录，使用 `/root/miniforge3/envs/sim-research/bin/pytho
 & $taskPython -m robot_tasks run L1-01 --gui
 ```
 
-当前 `run` 会先拒绝未实现的任务；已实现任务再核查仿真运行条件，失败时退出码为 `2`。具体任务场景、任务策略及评分仍未实现；三路 RGB 已在独立集成检查中接通。基础机器人验证使用 `check joint`，模型链路验证使用 `check api` 和 `check gpt`。
+`run` 会先拒绝未实现的任务；已实现任务再核查仿真运行条件，失败时退出码为 `2`。GPT 抓放和八项 L1 场景、评分均已接入；L2-02 仍待实现。基础机器人验证使用 `check joint`，模型链路验证使用 `check api` 和 `check gpt`。
 
 ## GPT 接口与 R5 闭环
 
@@ -649,16 +656,16 @@ runs/<任务编号>_<模式>_<时间>_<随机后缀>/
 └── video/<相机名>/          MP4、GIF 与首帧（真实 GPT 运行）
 ```
 
-## 每个任务需要补齐什么
+## 任务范围与后续验证
 
 | 任务 | 场景和动作过程 | 成功判定需要明确 |
 |---|---|---|
-| L1-01 圆柱插孔 | 工作台、可抓取圆柱、孔座；机械臂抓起后对准、插入并释放 | 插入深度、轴向偏差、释放后的稳定时间、掉落或卡住 |
+| L1-01～L1-08 | 见 [L1 任务说明](docs/l1_tasks.md)；场景与评分已实现 | 后续完成跨系统 GPU 检查及完整、多种子的 GPT 测评 |
 | L2-02 双臂夹持力交接 | 两臂共同可达区域、物体、真实摩擦夹持；接收侧承重后供给侧释放 | 载荷转移、滑移、掉落、接收侧独立稳定持物 |
 
 后端复用了此前确认可用的 D3D12 设置；机器人模型与控制映射全部使用本框架的 R5 配置。生成资产在 `build/r5/<输入哈希>/`，厂家原始文件保持不变。
 
-R5 脚本方块抓放、GPT 基础动作与 GPT 自主单臂抓放已有独立入口。下一步可在这条公共执行流程上接入插孔等任务；相机现场标定和力控仍待补齐。新增任务时，在 `src/robot_tasks/tasks/` 增加场景、复位、评分实现，在 `configs/tasks/` 增加配置，并更新 `registry.py` 的状态与证据。
+R5 脚本方块抓放、GPT 基础动作、GPT 自主单臂抓放与八项 L1 任务已有独立入口。相机现场标定和力控仍待补齐。新增任务时，在 `src/robot_tasks/tasks/` 增加场景、复位、评分实现，在 `configs/tasks/` 增加配置，并更新 `registry.py` 的状态与证据。
 
 ## 框架检查
 
@@ -683,8 +690,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/check_framework.ps1
 
 | 配置（位于 `configs/tasks/`） | 内容 |
 |---|---|
-| `gpt_single_arm_pick_place.toml` | 默认：保留本回合文字历史、R5 操作说明、指定坐标轴、先移动再开合夹爪，以及图像标记 |
-| `gpt_single_arm_pick_place_optimized.toml` | 保留本回合文字历史、R5 操作说明、指定坐标轴、先移动再开合夹爪 |
+| `gpt_single_arm_pick_place.toml` | 默认：保留本回合文字历史、R5 操作说明、指定坐标轴、分段执行、先张开后移动／到位后闭合，以及图像标记 |
+| `gpt_single_arm_pick_place_optimized.toml` | 保留本回合文字历史、R5 操作说明、指定坐标轴与相同执行配置 |
 | `gpt_single_arm_pick_place_calibrated.toml` | 优化配置 + 向模型提供虚拟相机内外参 |
 | `gpt_single_arm_pick_place_visual_aids.toml` | 与默认相同；优化配置 + 图像标记，不额外发送相机内外参数值 |
 
@@ -708,6 +715,16 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(wslpath -w ./tools/ru
 `execution.gripper_timing="after_motion"` 会在同一条命令的机械臂运动到位并稳定后执行夹爪目标。
 动作超时取消尚未执行的开合，避免在下一轮等待时意外释放物体。反馈包含目标／实测 TCP、各轴剩余误差、
 夹爪开口误差和执行阶段；“夹爪没合到目标”不会自动判为已抓到物体。
+
+当前 L1 和上述四份抓放任务配置统一使用 `motion_mode="cartesian_linear_v1"` 与
+`gripper_timing="open_before_motion"`：目标按直线位置与最短旋转插值、按关节参考速度限制执行，
+已知桌面穿入检查在动作下发前完成；组合命令张开时先开再移动，闭合仍等运动完成。
+超时会取消未完成路径并保持实测关节位置。`direct_ik` 和 `after_motion` 保留供旧工程检查显式复现；
+下文历史记录使用旧执行模式，不能直接归因为模型能力的同条件提升。详见 [运动修复与验证](docs/l1_motion_fix.md)。
+
+上述任务还统一启用 `startup_pose="downward_ready_v1"`：GPT 开始决策前，机械臂先移动到固定朝下准备位姿，
+当前左臂 TCP 为世界 `(0.36, 0.42, 0.25)` m，开口不变；到位后才采集首组模型观测。
+该准备不读取工件位置，单独记录为 `preparation`，不算 GPT 决策；设为 `none` 可关闭。
 
 三路相机默认在同一物理状态完成两轮渲染后读取，空缓冲仍有限重试。`check cameras` 还会在物理暂停时移动临时标记，
 检查画面更新和像素投影误差。记录的相机参数来自虚拟场景，并非现场手眼标定；只有 `camera_calibration=true` 才传给模型，
