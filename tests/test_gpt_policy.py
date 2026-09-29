@@ -5,6 +5,7 @@ from io import BytesIO
 import json
 import os
 from pathlib import Path
+import socket
 import tempfile
 import time
 import unittest
@@ -298,6 +299,19 @@ class SettingsTests(unittest.TestCase):
                         {"timeout_s": float("inf")}, {"max_calls": True}, {"history_steps": -1}):
             with self.subTest(changes=changes), self.assertRaises(ValueError):
                 replace(SETTINGS, **changes)
+
+    def test_timeout_is_positive_finite_and_can_exceed_ten_minutes(self):
+        for value in (0, -1, True, "90", None, float("nan"), float("inf")):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, "finite positive"):
+                replace(SETTINGS, timeout_s=value)
+        self.assertEqual(replace(SETTINGS, timeout_s=1800).timeout_s, 1800)
+
+    def test_unit_process_blocks_dns_and_connections_before_network_io(self):
+        with self.assertRaisesRegex(RuntimeError, "Unit tests cannot access the network"):
+            socket.getaddrinfo("example.invalid", 443)
+        with socket.socket() as connection:
+            with self.assertRaisesRegex(RuntimeError, "Unit tests cannot access the network"):
+                connection.connect(("127.0.0.1", 9))
 
     @patch.dict(os.environ, {"ROBOT_TEST_API_KEY": "private-token"})
     def test_env_key_read_without_modification(self):

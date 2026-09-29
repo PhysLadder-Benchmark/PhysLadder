@@ -3,6 +3,7 @@
 from copy import deepcopy
 from dataclasses import replace
 from pathlib import Path
+import sys
 
 import numpy as np
 
@@ -13,6 +14,18 @@ from robot_tasks.types import DepthFrame, RGBFrame
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def _deny_network(event, args):
+    if event in {"socket.connect", "socket.getaddrinfo", "socket.gethostbyname", "socket.sendto"}:
+        raise RuntimeError("Unit tests cannot access the network; mock the client or HTTP transport. "
+                           "Live GPT calls belong to the manual integration check.")
+
+
+# All GPT unit tests import these fixtures. Audit hooks also catch sockets opened
+# underneath urllib, without replacing the mock transport used by protocol tests.
+# This applies only to this test process, never to the application entry points.
+sys.addaudithook(_deny_network)
 
 
 def robot_config(*, arms=("left", "right")):

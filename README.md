@@ -535,6 +535,11 @@ MP4 保留所有控制周期的画面；GIF 是覆盖整轮的抽帧预览，最
 
 ## 框架检查
 
+`tests/` 只运行离线软件测试，不需要 GPT Token 或 Isaac Sim。GPT 决策使用模拟客户端，
+HTTP/SSE 测试使用模拟传输和响应；测试进程拦截网络连接，漏写 mock 会直接报错。
+单元测试日志中的 `R5_POLICY_REQUEST` 表示执行循环进入了模拟策略，不代表真实模型请求。
+CI 仅运行这些离线检查；真实 GPT 抓放留在 `integrationtest/`，通过 `check gpt-pick-place` 手动启动。
+
 ```powershell
 & $taskPython -m unittest discover -s tests -v
 # 或同时检查两个任务配置与自检入口：
