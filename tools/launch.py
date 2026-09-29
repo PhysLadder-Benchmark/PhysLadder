@@ -12,9 +12,24 @@ from robot_tasks.runtime_config import load_runtime
 
 def run_windows(command, env, shutdown_timeout):
     import signal
+    if os.name == "nt":
+        import ctypes
+        # PowerShell/WSL may start native commands with Ctrl+C ignored. This
+        # console flag is inherited separately from Python's signal handler.
+        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        if not kernel.SetConsoleCtrlHandler(None, False):
+            error = ctypes.get_last_error()
+            if error != 6:  # ERROR_INVALID_HANDLE: a noninteractive process has no console.
+                raise ctypes.WinError(error)
     process = subprocess.Popen(command, env=env, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
     try:
-        return process.wait()
+        # Windows' indefinite native wait can defer Python's Ctrl+C handler.
+        # Return to Python regularly, even while the worker prints nothing.
+        while True:
+            try:
+                return process.wait(timeout=0.2)
+            except subprocess.TimeoutExpired:
+                continue
     except KeyboardInterrupt:
         # Repeated Ctrl+C must not interrupt bounded cleanup halfway through.
         previous = signal.signal(signal.SIGINT, signal.SIG_IGN)

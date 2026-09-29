@@ -10,6 +10,7 @@ from pathlib import Path
 from .config import ExecutionSettings, TaskConfig
 from .interfaces import Backend, Policy, Robot, Task
 from .recording import EpisodeRecorder
+from .robot_roles import FixedArmMonitor, validate_role_command
 from .types import Action, Assessment, EvaluationState, Feedback, InvalidPolicyAction, Observation, PolicyInput
 
 
@@ -29,8 +30,7 @@ def validate_action(action: Action, config: TaskConfig, *, require_control_durat
         validate_depth_queries(action.depth_queries, config.cameras)
     seen = set()
     for command in action.commands:
-        if command.arm not in config.arms:
-            raise ValueError(f"Unknown arm: {command.arm}")
+        validate_role_command(config, command.arm, command.kind)
         if command.kind not in {"joint_position", "cartesian_pose", "gripper"}:
             raise ValueError(f"Unsupported action kind: {command.kind}")
         channel = "gripper" if command.kind == "gripper" else "arm_motion"
@@ -60,6 +60,7 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                 policy: Policy, output_root: Path, *, dry_run: bool = False,
                 step_limit: int | None = None, run_directory: Path | None = None,
                 record_video: bool = False,
+                preparation: Action | None = None,
                 summarize: Callable[[dict], dict] | None = None) -> tuple[Path, dict]:
     """One fresh run. Task truth is evaluated separately from policy inputs.
 
@@ -71,6 +72,7 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
     if type(limit) is not int or not 0 < limit <= config.max_steps:
         raise ValueError("step_limit must be in [1, max_steps]")
     options = ExecutionSettings() if dry_run else ExecutionSettings.from_config(config)
+    role_monitor = FixedArmMonitor(config, options.fixed_arm_tolerance_rad)
     mode = "dry_run" if dry_run else "simulation"
     recorder = EpisodeRecorder(output_root, config, mode, limit, run_directory=run_directory)
     start = time.monotonic()
@@ -104,6 +106,8 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
         state = EvaluationState({**backend.evaluation_state().values,
                                  "simulation_time_s": backend.time_s(), "robot": robot.state()})
         assessment = task.evaluate(state, robot.feedback())
+        if not dry_run:
+            assessment = role_monitor.update(state.values["robot"], assessment)
         if dry_run and assessment.status != "not_evaluated":
             assessment = Assessment("not_evaluated", "Rejected task score during dry-run")
             raise ValueError("Dry-run must never produce a task score")
@@ -131,12 +135,12 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                             "evaluation": asdict(assessment)})
 
     def prepare_robot() -> None:
-        if dry_run or options.startup_pose == "none":
+        if dry_run or preparation is None:
             return
-        from .robots.preparation import preparation_action
-        preparation = preparation_action(config)
-        recorder.event({"event": "preparation_start", "name": options.startup_pose,
-                        "action": asdict(preparation), "model_generated": False})
+        budget()
+        validate_action(preparation, config)
+        recorder.event({"event": "preparation_start", "action": asdict(preparation),
+                        "model_generated": False})
         robot.apply(preparation)
         stable = 0
         for _ in range(options.max_action_steps):
@@ -149,8 +153,8 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
             if cancel is not None:
                 cancel()
             raise RuntimeError("Fixed startup preparation did not reach its pose; GPT was not called")
-        recorder.event({"event": "preparation_complete", "name": options.startup_pose,
-                        "time_s": backend.time_s(), "feedback": asdict(feedback),
+        recorder.event({"event": "preparation_complete", "time_s": backend.time_s(),
+                        "feedback": asdict(feedback),
                         "robot": {k: asdict(v) for k, v in robot.state().items()}})
 
     def finish_attempt(outcome: str, termination: str) -> None:
@@ -187,6 +191,7 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
         backend.reset(config.seed)
         task.reset(backend, config.seed)
         robot.reset(config.seed)  # Clears queued targets and restores both arms.
+        role_monitor.reset()
         # Deliberately do not call policy.reset: history and calls belong to the run.
         for _ in range(options.settle_steps):
             tick(phase="reset_settle", score=False)
@@ -339,7 +344,7 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
             action_ticks = options.max_action_steps if action.commands else options.wait_steps
             for _ in range(action_ticks):
                 tick()
-                if feedback.status == "blocked" or assessment.status in {"succeeded", "failed"}:
+                if assessment.status in {"succeeded", "failed"}:
                     break
                 stable = stable + 1 if feedback.status == "completed" else 0
                 if action.commands and stable >= options.completion_samples:
@@ -349,12 +354,11 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                     and assessment.status not in {"succeeded", "failed"}):
                 timeouts += 1
                 cancel_pending = getattr(robot, "on_action_timeout", None)
-                cancellation = {}
                 if cancel_pending is not None:
-                    cancellation = cancel_pending() or {}
+                    cancel_pending()
                 feedback = Feedback("action_timeout", "Target did not settle within the per-action budget. "
                                     "Inspect measured state and images before choosing the next action.",
-                                    {**feedback.metrics, **cancellation, "last_status": feedback.status})
+                                    {**feedback.metrics, "last_status": feedback.status})
             observation = observe()
             recorder.event({"event": "transition", "step": step,
                             "action": asdict(action), "policy_time_s": policy_time_s,
@@ -378,7 +382,9 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
         status, reason = ("dry_run_complete" if dry_run else "finished"), str(exc)
     except NotImplementedError as exc:
         status, reason, error = "implementation_missing", "stub_reached", str(exc)
-    except (Exception, KeyboardInterrupt) as exc:
+    except KeyboardInterrupt:
+        status, reason, error = "cancelled", "user_interrupt", None
+    except Exception as exc:
         status, reason, error = "error", "exception", f"{type(exc).__name__}: {exc}"
     finally:
         try:

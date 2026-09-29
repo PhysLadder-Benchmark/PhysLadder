@@ -12,7 +12,7 @@ import xml.etree.ElementTree as ET
 
 import numpy as np
 
-from robot_tasks.config import load_config
+from fixtures import robot_config
 from robot_tasks.robots.adapters import R5Adapter
 from robot_tasks.robots.audit import require_cartesian_sim_ready
 from robot_tasks.robots.control import plan_targets, width_to_joints
@@ -42,7 +42,7 @@ def fake_lula(profile):
 
 class R5KinematicsTests(unittest.TestCase):
     def setUp(self):
-        self.config = load_config(ROOT / "configs/checks/r5_cartesian.toml")
+        self.config = robot_config()
         self.profile = self.config.robot
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)

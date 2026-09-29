@@ -104,11 +104,6 @@ class R5LulaKinematics(R5Kinematics):
         # existing overall angular tolerance, which is checked independently below.
         self.ik_config.orientation_tolerance = 2 * math.sin(self.orientation_tolerance_rad / (2 * math.sqrt(2)))
         self.ik_config.sampling_seed = sampling_seed
-        # Refine the previous waypoint's seed to the existing pose tolerances.
-        # The default 1e-6 gradient cutoff can end local refinement too early
-        # and trigger random restarts onto a different joint branch. Keep the
-        # executor's jump/collision guards and pose tolerances unchanged.
-        self.ik_config.bfgs_gradient_norm_termination = 1e-9
         self.validate_model()
 
     def validate_model(self) -> None:
@@ -132,7 +127,6 @@ class R5LulaKinematics(R5Kinematics):
                 "max_num_descents": self.ik_config.max_num_descents,
                 "ccd_max_iterations": self.ik_config.ccd_max_iterations,
                 "bfgs_max_iterations": self.ik_config.bfgs_max_iterations,
-                "bfgs_gradient_norm_termination": self.ik_config.bfgs_gradient_norm_termination,
                 "collision_avoidance": False, "fallback": None}
 
     def solve(self, pose, arm: str, seed, frame: str = "world") -> IKResult:

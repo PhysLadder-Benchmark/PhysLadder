@@ -33,7 +33,7 @@ class GPTSettings:
             raise ValueError("api_key_env must be an environment variable name, never a token")
         if (isinstance(self.timeout_s, bool) or not isinstance(self.timeout_s, (int, float))
                 or not math.isfinite(self.timeout_s) or self.timeout_s <= 0):
-            raise ValueError("timeout_s must be finite and positive")
+            raise ValueError("timeout_s must be a finite positive number")
         if self.reasoning_effort not in {"low", "medium", "high", "xhigh", "max"}:
             raise ValueError("Unsupported reasoning_effort")
         if type(self.structured_output) is not bool:

@@ -1,5 +1,6 @@
 # R5 asset description is available; simulation/control remain unimplemented.
 schema_version = 2
+workflow_profile = "../workflows/gpt_default.toml"
 
 [task]
 id = "L2-02"
@@ -13,17 +14,8 @@ object_type = "rigid_test_object_to_be_confirmed"
 profile = "../robots/r5.toml"
 active_arms = ["left", "right"]
 
-[runtime]
-seed = 0
-max_steps = 100
-max_wall_time_s = 120.0
-physics_dt_s = 0.004166666666666667
-control_dt_s = 0.1
+[simulation]
+camera_profile = "../cameras/r5_orbbec_provisional.toml"
 
-[observation]
-cameras = ["overview", "left_wrist", "right_wrist"]
-include_robot_state = true
-include_feedback = true
-
-[recording]
-save_rgb = true
+[policy]
+model_config = "../models/gpt.toml"

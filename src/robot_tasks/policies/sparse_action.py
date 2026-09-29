@@ -43,14 +43,14 @@ def decode_sparse_action(text, config, observation) -> Action:
         if not isinstance(doc, dict) or set(doc) != {"commands", "request_stop"}:
             raise ValueError("Expected commands and request_stop only")
         rows, stop = doc["commands"], doc["request_stop"]
-        if not isinstance(rows, list) or len(rows) > len(config.arms) or type(stop) is not bool:
+        if not isinstance(rows, list) or len(rows) > len(config.command_arms) or type(stop) is not bool:
             raise ValueError("Invalid commands or stop flag")
         commands, seen = [], set()
         for row in rows:
             if not isinstance(row, dict) or set(row) != {"arm", *FIELDS}:
                 raise ValueError("Each sparse command must contain arm and all nullable target fields")
             arm = row["arm"]
-            if not isinstance(arm, str) or arm not in config.arms or arm in seen:
+            if not isinstance(arm, str) or arm not in config.command_arms or arm in seen:
                 raise ValueError("Each active arm may appear only once")
             seen.add(arm)
             for field in FIELDS:

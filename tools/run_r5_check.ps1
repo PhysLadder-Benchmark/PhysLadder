@@ -4,7 +4,7 @@ param(
     [string]$ModelConfig,
     [switch]$Gui,
     [switch]$Debugger,
-    [string]$Check = 'joint',
+    [string]$Check = 'gpt-pick-place',
     [string]$DebugHost = '127.0.0.1',
     [ValidateRange(1, 65535)][int]$DebugPort = 5678
 )
@@ -69,7 +69,7 @@ try {
     # Names, defaults and implementations belong to the Python registry.
     $taskArguments = @('-m', 'robot_tasks', 'check', $Check)
     if ($Debugger) {
-        $taskArguments = @('-Xfrozen_modules=off', '-m', 'robot_tasks.integrationtest.debug_motion',
+        $taskArguments = @('-Xfrozen_modules=off', '-m', 'robot_tasks.integrationtest.debug_check',
                            '--listen-host', $DebugHost, '--port', "$DebugPort", '--check', $Check)
     }
     if ($PSBoundParameters.ContainsKey('Config')) { $taskArguments += @('--config', $Config) }

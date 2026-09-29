@@ -28,6 +28,7 @@ class L1Task:
         self.settings = L1Settings.from_config(config)
         self.scene = L1Scene(backend, config, self.settings)
         self.arm = config.arms[0]
+        self.fixed_arms = config.fixed_arms
 
     def reset(self, backend, seed):
         self.scene.reset(seed)
@@ -45,7 +46,7 @@ class L1Task:
                 (
                     abs(q - original)
                     for name, arm in robot.items()
-                    if name != self.arm
+                    if name in self.fixed_arms
                     for q, original in zip(
                         arm.joint_positions_rad, self.initial_robot[name].joint_positions_rad
                     )

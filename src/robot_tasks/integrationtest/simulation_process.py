@@ -1,19 +1,119 @@
 """Run a registered check in an isolated process with a wall-time watchdog."""
 
 from datetime import datetime, timezone
+from contextlib import contextmanager
 import json
 import os
-import signal
 from pathlib import Path
+from queue import Empty, Queue
+import signal
 import subprocess
 import sys
 import threading
+import time
 from uuid import uuid4
 
 from ..paths import PROJECT_ROOT
 from ..recording import write_json
 from .registry import get_check
-from .scene_preview import PREVIEW_READY
+
+
+@contextmanager
+def _uninterrupted_cleanup():
+    """A second Ctrl+C must not leave the owned worker half-cleaned."""
+    previous = {}
+    for name in ("SIGINT", "SIGBREAK"):
+        number = getattr(signal, name, None)
+        if number is not None:
+            previous[number] = signal.signal(number, signal.SIG_IGN)
+    try:
+        yield
+    finally:
+        for number, handler in previous.items():
+            signal.signal(number, handler)
+
+
+def _stop_worker(process, *, grace_s=3.0, kill_timeout_s=3.0) -> tuple[bool, bool]:
+    """Stop only this isolated worker tree. All waits are bounded.
+
+    Returns (forced, worker_exited). Native Kit/network calls may ignore the
+    graceful request; taskkill/process-group kill is the final fallback.
+    """
+    forced = False
+    with _uninterrupted_cleanup():
+        try:
+            if os.name == "nt":
+                process.send_signal(signal.CTRL_BREAK_EVENT)
+            else:
+                os.killpg(process.pid, signal.SIGINT)
+            process.wait(timeout=grace_s)
+        except (OSError, subprocess.TimeoutExpired):
+            forced = True
+        if os.name == "nt":
+            if forced and process.poll() is None:
+                try:
+                    subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                   timeout=kill_timeout_s, check=False)
+                except (OSError, subprocess.TimeoutExpired):
+                    pass
+                if process.poll() is None:
+                    try:
+                        process.kill()
+                    except OSError:
+                        pass
+        else:
+            # Kill lingering descendants even if their leader handled SIGINT.
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+                forced = True
+            except ProcessLookupError:
+                pass
+        try:
+            process.wait(timeout=kill_timeout_s)
+        except subprocess.TimeoutExpired:
+            return forced, False
+    return forced, True
+
+
+def _monitor_worker(process, log, deadline: float) -> int:
+    """Keep blocking pipe reads off the main thread so Ctrl+C stays responsive."""
+    messages = Queue()
+
+    def read_output():
+        try:
+            # Only this thread owns the buffered read/close lock.
+            with process.stdout as stream:
+                for line in stream:
+                    messages.put(line)
+        except Exception as exc:
+            messages.put(exc)
+        finally:
+            messages.put(None)
+
+    reader = threading.Thread(target=read_output, name="r5-worker-output", daemon=True)
+    reader.start()
+    eof = False
+    while True:
+        if time.monotonic() >= deadline:
+            raise subprocess.TimeoutExpired("R5 worker", 0)
+        try:
+            message = messages.get(timeout=0.1) if not eof else None
+        except Empty:
+            message = ""
+        if isinstance(message, Exception):
+            raise message
+        if message is None:
+            eof = True
+        elif message:
+            log.write(message)
+            log.flush()
+            print(message, end="", flush=True)
+        if eof:
+            try:
+                return process.wait(timeout=0.1)
+            except subprocess.TimeoutExpired:
+                pass
 
 
 def completed_check(output: Path, returncode: int) -> bool:
@@ -42,67 +142,48 @@ def run_check_process(name: str, output_root: Path, *, config_path: Path | None 
     if model_config is not None:
         command.extend(("--model-config", str(model_config.resolve())))
     environment = dict(os.environ, PYTHONUTF8="1", PYTHONUNBUFFERED="1")
-    timed_out = threading.Event()
-    interactive_scene = spec.name == "l1-scene" and gui
-    preview_started = False
-    process_options = {}
-    if interactive_scene:
-        # Forward Ctrl+C once to the viewer, instead of interrupting both its
-        # render loop and cleanup via the shared terminal process group.
-        if os.name == "nt":
-            process_options["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
-        else:
-            process_options["start_new_session"] = True
+    timed_out = interrupted = forced = False
+    cleanup_complete = True
+    launch_options = ({"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt"
+                      else {"start_new_session": True})
     with (output / "process.log").open("w", encoding="utf-8") as log:
-        with subprocess.Popen(command, cwd=PROJECT_ROOT, env=environment,
-                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                              text=True, encoding="utf-8", errors="replace", **process_options) as process:
-            def terminate_on_timeout():
-                timed_out.set()
-                process.kill()
-            timer = threading.Timer(config.max_wall_time_s + 60, terminate_on_timeout)
-            timer.daemon = True
-            timer.start()
-            try:
-                for line in process.stdout:
-                    log.write(line)
-                    log.flush()
-                    if interactive_scene and line.strip() == PREVIEW_READY:
-                        preview_started = True
-                        timer.cancel()
-                    print(line, end="", flush=True)
-                returncode = process.wait()
-            except KeyboardInterrupt:
-                if not preview_started:
-                    process.kill()
-                    process.wait()
-                    raise
-                ignored = {s: signal.signal(s, signal.SIG_IGN) for s in
-                           (signal.SIGINT, *([signal.SIGBREAK] if hasattr(signal, "SIGBREAK") else []))}
-                try:
-                    if process.poll() is None:
-                        process.send_signal(signal.CTRL_BREAK_EVENT if os.name == "nt" else signal.SIGINT)
-                    try:
-                        returncode = process.wait(timeout=5)
-                    except subprocess.TimeoutExpired:
-                        process.kill()
-                        returncode = process.wait()
-                finally:
-                    for signum, handler in ignored.items():
-                        signal.signal(signum, handler)
-            except BaseException:
-                process.kill()
-                process.wait()
-                raise
-            finally:
-                timer.cancel()
+        process = subprocess.Popen(command, cwd=PROJECT_ROOT, env=environment,
+                                   stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                   text=True, encoding="utf-8", errors="replace", **launch_options)
+        print(f"R5_PROCESS_STARTED worker_pid={process.pid} output={output}", flush=True)
+        try:
+            returncode = _monitor_worker(process, log, time.monotonic() + config.max_wall_time_s + 60)
+        except KeyboardInterrupt:
+            interrupted = True
+            print(f"R5_PROCESS_STOPPING worker_pid={process.pid} reason=user_interrupt", flush=True)
+            forced, cleanup_complete = _stop_worker(process)
+            returncode = 130
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            forced, cleanup_complete = _stop_worker(process)
+            returncode = 124
+        except BaseException:
+            _stop_worker(process)
+            raise
     from ..runtime import snapshot_runtime_config
     snapshot_runtime_config(output)
-    passed = completed_check(output, returncode) and not timed_out.is_set()
+    passed = completed_check(output, returncode) and not (timed_out or interrupted)
     write_json(output / "process.json", {"returncode": returncode, "passed": passed,
-                                        "timed_out": timed_out.is_set(), "worker_pid": process.pid})
+                                        "timed_out": timed_out, "interrupted": interrupted,
+                                        "forced_termination": forced, "cleanup_complete": cleanup_complete,
+                                        "worker_returncode": process.returncode, "worker_pid": process.pid})
+    if (interrupted or timed_out) and not (output / "result.json").exists():
+        write_json(output / "result.json", {
+            "task_id": config.task_id, "status": "cancelled" if interrupted else "error",
+            "termination_reason": "user_interrupt" if interrupted else "watchdog_timeout",
+            "task_evaluated": False, "success": None, "passed": False,
+            "error": "Worker stopped before a complete episode result was saved",
+        })
     from ..reporting import write_run_report
     write_run_report(output)
     print("R5_PROCESS_RESULT " + json.dumps({"output": str(output), "passed": passed,
-                                            "returncode": returncode}), flush=True)
+                                            "returncode": returncode, "interrupted": interrupted,
+                                            "cleanup_complete": cleanup_complete}), flush=True)
+    if interrupted:
+        raise KeyboardInterrupt
     return output, passed

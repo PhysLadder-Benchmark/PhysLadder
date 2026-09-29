@@ -27,6 +27,23 @@ class TaskConfig:
     save_rgb: bool
     include_depth: bool = False
     save_depth: bool = False
+    observation_arms: tuple[str, ...] = ()
+    workflow_source: Path | None = None
+    workflow_settings: dict | None = None
+
+    @property
+    def command_arms(self) -> tuple[str, ...]:
+        """Arms allowed to move; arms itself identifies task manipulation arms."""
+        return self.arms + self.observation_arms
+
+    @property
+    def fixed_arms(self) -> tuple[str, ...]:
+        return tuple(a for a in self.robot.available_arms if a not in self.command_arms)
+
+    @property
+    def arm_roles(self) -> dict[str, str]:
+        return {a: "manipulation" if a in self.arms else "observation" if a in self.observation_arms else "fixed"
+                for a in self.robot.available_arms}
 
     @property
     def robot_model(self) -> str:
@@ -47,11 +64,12 @@ class ExecutionSettings:
     settle_steps: int = 0
     stop_steps: int = 0
     max_decisions: int | None = None
-    gripper_timing: str = "simultaneous"
-    motion_mode: str = "direct_ik"
-    startup_pose: str = "none"
-    gripper_completion: str = "position"
     retry_failed_attempts: bool = False
+    fixed_arm_tolerance_rad: float = 0.01
+
+    @property
+    def gripper_timing(self) -> str:
+        return "after_motion"
 
     @classmethod
     def from_config(cls, config: TaskConfig) -> "ExecutionSettings":
@@ -60,20 +78,11 @@ class ExecutionSettings:
         if unknown:
             raise ValueError(f"Unknown execution settings: {sorted(unknown)}")
         result = cls(**data)
+        _positive(result.fixed_arm_tolerance_rad, "execution.fixed_arm_tolerance_rad")
         if type(result.retry_failed_attempts) is not bool:
             raise ValueError("execution.retry_failed_attempts must be a boolean")
         if result.retry_failed_attempts and not config.include_feedback:
             raise ValueError("Retrying attempts requires observation.include_feedback")
-        if result.gripper_completion not in {"position", "stall_aware_v1"}:
-            raise ValueError("execution.gripper_completion must be position or stall_aware_v1")
-        if result.gripper_timing not in {"simultaneous", "after_motion", "open_before_motion"}:
-            raise ValueError("execution.gripper_timing must be simultaneous, after_motion or open_before_motion")
-        if result.motion_mode not in {"direct_ik", "cartesian_linear_v1"}:
-            raise ValueError("execution.motion_mode must be direct_ik or cartesian_linear_v1")
-        if result.startup_pose not in {"none", "downward_ready_v1"}:
-            raise ValueError("execution.startup_pose must be none or downward_ready_v1")
-        if result.startup_pose != "none" and result.motion_mode != "cartesian_linear_v1":
-            raise ValueError("downward_ready_v1 requires cartesian_linear_v1")
         for name in ("max_action_steps", "completion_samples", "wait_steps", "settle_steps", "stop_steps"):
             value = getattr(result, name)
             minimum = 0 if name in {"settle_steps", "stop_steps"} else 1
@@ -117,26 +126,43 @@ def load_config(path: Path) -> TaskConfig:
     source = path.expanduser().resolve()
     with source.open("rb") as f:
         raw = tomllib.load(f)
+    if type(raw.get("schema_version")) is not int or raw["schema_version"] != 2:
+        raise ValueError("Use schema_version = 2 with an R5 robot.profile and active_arms; legacy robot configs are not supported")
+    from .workflow import load_workflow
+    raw, workflow_source, workflow_settings = load_workflow(source, raw)
     if "planner" in raw:
         raise ValueError("R5 uses Lula IK; remove the obsolete [planner] section")
     required = {"schema_version", "task", "robot", "runtime", "observation", "recording"}
     if not required.issubset(raw):
         raise ValueError(f"Missing config sections: {sorted(required - raw.keys())}")
-    if type(raw["schema_version"]) is not int or raw["schema_version"] != 2:
-        raise ValueError("Use schema_version = 2 with an R5 robot.profile and active_arms; legacy robot configs are not supported")
     task, robot = raw["task"], raw["robot"]
     runtime, observation = raw["runtime"], raw["observation"]
     for label, value in (("task.id", task["id"]), ("task.instruction", task["instruction"])):
         if not isinstance(value, str) or not value.strip():
             raise ValueError(f"{label} must be a nonempty string")
-    if not isinstance(robot, dict) or set(robot) != {"profile", "active_arms"}:
-        raise ValueError("robot must contain only profile and active_arms; this project uses R5 exclusively")
+    if (not isinstance(robot, dict) or not {"profile", "active_arms"}.issubset(robot)
+            or set(robot) - {"profile", "active_arms", "observation_arms"}):
+        raise ValueError("robot must contain only profile and active_arms, with optional observation_arms; this project uses R5 exclusively")
     if not isinstance(robot["profile"], str) or not robot["profile"].strip():
         raise ValueError("robot.profile must reference an R5 profile TOML")
     profile = load_robot_profile(source.parent / robot["profile"])
     arms = names(robot["active_arms"], "robot.active_arms")
     if not set(arms).issubset(profile.available_arms):
         raise ValueError("robot.active_arms must be a nonempty subset of the R5 left/right arms")
+    observers = robot.get("observation_arms", [])
+    observation_arms = () if observers == [] else names(observers, "robot.observation_arms")
+    if not set(observation_arms).issubset(profile.available_arms) or set(arms) & set(observation_arms):
+        raise ValueError("observation_arms must be available arms distinct from manipulation active_arms")
+    cameras = _names(observation["cameras"], "cameras")
+    if observation_arms:
+        from .cameras.profile import load_camera_rig
+        camera_profile = raw.get("simulation", {}).get("camera_profile")
+        if not camera_profile or not observation["include_robot_state"] or not observation["include_feedback"]:
+            raise ValueError("Observation arms require a camera profile, robot state and execution feedback")
+        rig = load_camera_rig(source.parent / camera_profile)
+        parents = {camera.parent for camera in rig.select(cameras)}
+        if not set(observation_arms).issubset(parents):
+            raise ValueError("Each observation arm must carry a selected camera")
     max_steps, seed = runtime["max_steps"], runtime["seed"]
     if type(max_steps) is not int or max_steps <= 0 or type(seed) is not int or seed < 0:
         raise ValueError("max_steps must be a positive integer; seed a nonnegative integer")
@@ -155,7 +181,7 @@ def load_config(path: Path) -> TaskConfig:
         raise ValueError("Depth requires simulation.camera_profile for RGB alignment and calibration")
     return TaskConfig(
         source=source, raw=raw, task_id=task["id"], instruction=task["instruction"],
-        robot=profile, arms=arms, cameras=_names(observation["cameras"], "cameras"),
+        robot=profile, arms=arms, cameras=cameras,
         seed=seed, max_steps=max_steps,
         max_wall_time_s=_positive(runtime["max_wall_time_s"], "max_wall_time_s"),
         control_dt_s=control_dt, physics_dt_s=physics_dt,
@@ -163,4 +189,5 @@ def load_config(path: Path) -> TaskConfig:
         include_feedback=_boolean(observation["include_feedback"], "include_feedback"),
         save_rgb=_boolean(raw["recording"]["save_rgb"], "save_rgb"),
         include_depth=include_depth, save_depth=save_depth,
+        observation_arms=observation_arms, workflow_source=workflow_source, workflow_settings=workflow_settings,
     )

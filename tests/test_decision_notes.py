@@ -26,10 +26,8 @@ SETTINGS = GPTSettings("https://example.invalid", "offline-fixture", max_calls=8
 
 def config():
     base = configured()
-    return replace(base, arms=("left", "right"), instruction="Offline two-arm action protocol fixture.",
-                   raw={**base.raw, "robot": {**base.raw["robot"], "active_arms": ["left", "right"]},
-                        "policy_options": {"camera_calibration": True, "retain_text_history": True,
-                                           "action_interface": "sparse_eef", "decision_notes": True}})
+    return replace(base, arms=("left", "right"), observation_arms=(), instruction="Offline two-arm action protocol fixture.",
+                   raw={**base.raw, "robot": {**base.raw["robot"], "active_arms": ["left", "right"], "observation_arms": []}})
 
 
 def states(right_angle=0.):
@@ -102,13 +100,11 @@ class DecisionNoteTests(unittest.TestCase):
         self.assertFalse(policy.history)
         self.assertEqual(policy.calls, 0)
 
-    def test_legacy_rgb_contract_is_unchanged_when_notes_are_disabled(self):
-        current = replace(self.config, include_depth=False, save_depth=False,
-                          raw={**self.config.raw, "policy_options": {}})
-        self.client.generate.return_value = reply({"commands": [], "request_stop": True})
-        policy = GPTPolicy(current, SETTINGS, client=self.client)
-        self.assertNotIn("note", policy.schema["properties"])
-        self.assertEqual(policy.act(self.context).note, "")
+    def test_note_cannot_be_disabled_by_an_old_task_switch(self):
+        current = replace(self.config, raw={**self.config.raw, "policy_options": {"decision_notes": False}})
+        with self.assertRaisesRegex(ValueError, "always enabled"):
+            GPTPolicy(current, SETTINGS, client=self.client)
+        self.client.generate.assert_not_called()
 
     def test_camera_motion_then_depth_query_then_stop_share_runner_and_record_notes(self):
         class Backend(MockBackend):

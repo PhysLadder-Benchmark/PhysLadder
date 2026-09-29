@@ -32,7 +32,7 @@ class MockBackend:
 
 class MockRobot:
     def initialize(self, backend, config: TaskConfig) -> None:
-        self.arms = config.arms
+        self.arms = config.command_arms
 
     def reset(self, seed: int) -> None:
         pass

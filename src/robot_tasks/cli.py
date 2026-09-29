@@ -48,6 +48,7 @@ def _validate_robot(args) -> int:
 
 
 def _inspect(args) -> int:
+    from .workflow import workflow_metadata
     spec, config = resolve_task(args.task, args.config)
     audit = audit_robot(config.robot)
     print(json.dumps({
@@ -56,6 +57,10 @@ def _inspect(args) -> int:
         "configuration_valid": audit.valid, "task_implemented": spec.implemented,
         "robot": config.robot_model, "available_arms": config.robot.available_arms,
         "active_arms": config.arms, "cameras": config.cameras, "robot_audit": audit.as_dict(),
+        "command_arms": config.command_arms, "arm_roles": config.arm_roles,
+        "workflow_profile": str(config.workflow_source) if config.workflow_source else None,
+        "execution": config.raw.get("execution", {}), "workflow": workflow_metadata(),
+        "reasoning_effort_override": config.raw.get("policy", {}).get("reasoning_effort"),
         "observation_modalities": ["rgb", "depth"] if config.include_depth else ["rgb"],
         "save_depth": config.save_depth,
         "asset_path": str(config.asset_path) if config.asset_path else None,
@@ -72,6 +77,8 @@ def _run(args) -> int:
         gui=args.gui, dry_run=args.dry_run, step_limit=args.steps,
     )
     _print_result(directory, result)
+    if result["status"] == "cancelled":
+        return 130
     return 0 if result["status"] in {"finished", "dry_run_complete"} else 2
 
 
@@ -132,6 +139,8 @@ def main(argv: list[str] | None = None) -> int:
     previous = signal.signal(signal.SIGBREAK, interrupt) if hasattr(signal, "SIGBREAK") else None
     try:
         return _main(argv)
+    except KeyboardInterrupt:
+        return 130
     finally:
         if hasattr(signal, "SIGBREAK"):
             signal.signal(signal.SIGBREAK, previous)

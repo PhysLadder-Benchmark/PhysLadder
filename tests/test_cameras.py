@@ -22,7 +22,7 @@ class CameraProfileTests(unittest.TestCase):
         for camera in rig.cameras:
             self.assertTrue(camera.asset.is_file())
             self.assertEqual(len(camera.metadata()["asset_sha256"]), 64)
-        config = load_config(ROOT / "configs/checks/r5_cameras.toml")
+        config = load_config(ROOT / "configs/tasks/gpt_single_arm_pick_place.toml")
         settings = SimulationSettings.from_config(config)
         self.assertEqual((config.source.parent / settings.camera_profile).resolve(), PROFILE)
         self.assertEqual(tuple(c.name for c in rig.select(config.cameras)), config.cameras)

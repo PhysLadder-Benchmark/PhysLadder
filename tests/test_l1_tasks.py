@@ -10,6 +10,9 @@ from robot_tasks.robots.transforms import pose_transform
 from robot_tasks.tasks.l1.evaluation import L1Evaluator, L1Settings
 from robot_tasks.tasks.l1.specs import RIGID_IDS, build_design, local_corners, pose
 from robot_tasks.tasks.l1.task import L1Task
+from robot_tasks.config import ExecutionSettings
+from robot_tasks.types import ArmState, EvaluationState, Feedback
+from unittest.mock import Mock
 
 
 def sample(a, p, *, grip=False, handle=True):
@@ -204,20 +207,45 @@ class L1ProtocolTests(unittest.TestCase):
         self.assertGreater(ring.parts[0].size[2], lower + 0.002)
         self.assertLess(ring.parts[0].size[2], upper)
 
-    def test_fixed_sensor_action_executor_settings_match_master_pick_place(self):
+    def test_all_l1_tasks_use_shared_workflow_and_observation_arm(self):
         _, reference = resolve_task("GPT-PICK-PLACE")
         for name in RIGID_IDS:
             spec, config = resolve_task(name)
             self.assertTrue(spec.implemented)
             self.assertEqual(config.robot.source, reference.robot.source)
             self.assertEqual(config.cameras, reference.cameras)
-            for section in ("simulation", "execution", "policy_options", "observation", "robot"):
+            for section in ("execution", "observation", "robot", "policy", "recording"):
                 self.assertEqual(config.raw[section], reference.raw[section], (name, section))
+            self.assertNotIn("policy_options", config.raw)
+            self.assertEqual(config.observation_arms, ("right",))
+            self.assertTrue(config.include_depth)
+            self.assertEqual(ExecutionSettings.from_config(config).max_decisions, 100)
+            self.assertEqual(config.raw["policy"]["reasoning_effort"], "medium")
             self.assertEqual(config.control_dt_s, reference.control_dt_s)
             self.assertEqual(config.physics_dt_s, reference.physics_dt_s)
             prompt = L1Task.prepare_config(config).instruction
             self.assertNotIn("metadata", prompt)
             self.assertNotIn("sha256", prompt)
+            self.assertIn("right arm may move only to improve", prompt)
+            self.assertNotIn("keep the other arm still", prompt)
+
+    def test_observation_arm_motion_does_not_fail_l1_scoring(self):
+        for task_id in RIGID_IDS:
+            with self.subTest(task=task_id):
+                _, config = resolve_task(task_id)
+                task = L1Task()
+                task.arm = config.arms[0]
+                task.fixed_arms = config.fixed_arms
+                task.initial_robot = None
+                task.inactive_drift = 0.0
+                task.scene = Mock()
+                task.scorer = Mock()
+                state = {"left": ArmState(joint_positions_rad=(0.0,) * 6),
+                         "right": ArmState(joint_positions_rad=(0.0,) * 6)}
+                task.evaluate(EvaluationState({"robot": state, "simulation_time_s": 0.0}), Feedback("completed"))
+                state = {**state, "right": ArmState(joint_positions_rad=(0.5,) * 6)}
+                task.evaluate(EvaluationState({"robot": state, "simulation_time_s": 1.0}), Feedback("completed"))
+                self.assertEqual(task.scorer.update.call_args.kwargs["inactive_drift"], 0.0)
 
     def test_unknown_settings_and_wrong_active_arm_fail(self):
         _, c = resolve_task("L1-01")

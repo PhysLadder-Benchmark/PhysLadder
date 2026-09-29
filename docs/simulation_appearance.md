@@ -1,6 +1,6 @@
 # 室内环境与 R5 黑银外观
 
-L1 八项任务及 GPT 抓放任务默认使用 `lab_room_v1`：5.2 × 5.4 × 3 米房间、
+L1 八项任务默认使用 `lab_room_v1`：5.2 × 5.4 × 3 米房间、
 墙体、门窗、顶灯、储物柜，以及带木纹台面和金属桌腿的工作台。
 R5 使用 `r5_black_silver_v1` 黑色机身／银色金属分区材质。
 
@@ -12,24 +12,11 @@ R5 使用 `r5_black_silver_v1` 黑色机身／银色金属分区材质。
 # 可选：校验或恢复贴图和机器人视觉资产（正常克隆已包含这些文件）
 python3 tools/fetch_appearance_assets.py
 
-# 不调用 GPT，检查场景、三路相机、夹具和物理支撑
-python3 tools/launch.py check l1-scene --config configs/tasks/l1_01_cylinder_insertion.toml --gui
-
-# 不调用 GPT，验证相同执行器的抓取、搬运、释放与负例
-python3 tools/launch.py check l1-grasp --gui
-
 # 正式任务：使用已有模型配置与密钥环境变量
 python3 tools/launch.py run L1-01 --gui
 ```
 
-带 `--gui` 的场景检查会先保存结果，再暂停仿真并保持窗口打开，方便自由查看；
-在启动命令的终端按 `Ctrl+C` 或关闭窗口才退出。查看阶段没有自动超时，
-不调用 GPT，也不继续评分。去掉 `--gui` 仍在检查完成后自动退出。
-图片保存在该次 `runs/L1_scene_*/` 的
-`initial_views.png`、`initial_overview.png` 等文件中。
-查看房间全貌时可在 Isaac Sim 的 Perspective 视口中缩放／旋转。
-视口观察不修改发送给 GPT 的三路相机。`check interaction` 是旧工程检查，
-仍保留旧场景；检查本次 L1 环境请使用上面的 `check l1-scene`。
+`run` 会调用真实模型；三路录像和场景信息保存到该次 `runs/` 目录。可在 Isaac Sim 的 Perspective 视口中缩放／旋转，视口操作不修改模型接收的三路相机。当前抓放任务保留原场景，L1 使用本节的室内外观。
 
 ## 配置与实验可比性
 
@@ -73,7 +60,9 @@ robot_appearance = "r5_black_silver_v1" # 或 vendor_white
 颜色、反射率和贴纸的精确标定复刻**。若以后获得官方材质资产，可只替换视觉
 配置，并更新版本与资产哈希。
 
-## 本机验证（2026-09-29，Ubuntu / Isaac Sim 5.1）
+## 合并前的历史验证（2026-09-29，Ubuntu / Isaac Sim 5.1）
+
+以下运行使用 master 当时的执行器与检查入口，不代表当前公共流程的复测结果。
 
 - 软件回归：190 项，189 通过、1 项按环境条件跳过。新增测试核对资产哈希、
   视觉网格与厂家 STL 对齐、物理对象不被视觉覆盖修改，以及台面尺寸与 UV。

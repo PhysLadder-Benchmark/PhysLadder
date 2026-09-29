@@ -47,7 +47,7 @@ class ArmState:
 
 @dataclass(frozen=True)
 class Feedback:
-    status: str  # completed / executing / blocked / action_timeout / not_initialized / rejected / error / mock_only
+    status: str  # completed / executing / not_initialized / rejected / error / mock_only
     message: str = ""
     metrics: dict = field(default_factory=dict)
 

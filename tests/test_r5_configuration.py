@@ -123,6 +123,8 @@ class R5ConfigurationTests(unittest.TestCase):
     def test_unknown_active_arm_and_legacy_robot_fields_are_rejected(self):
         content = PICK_PLACE.read_text(encoding="utf-8").replace(
             '"../robots/r5_sim.toml"', json.dumps(PROFILE.as_posix()))
+        content = content.replace('"../workflows/gpt_default.toml"',
+                                  json.dumps((ROOT / "configs/workflows/gpt_default.toml").as_posix()))
         for changed, message in (
             (content.replace('active_arms = ["left"]', 'active_arms = ["arm"]'), "subset"),
             (content.replace('[robot]', '[robot]\nmodel = "r5"'), "only profile and active_arms"),

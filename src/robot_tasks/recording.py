@@ -41,6 +41,10 @@ class EpisodeRecorder:
         self.save_depth = config.save_depth and mode != "dry_run"
         config_bytes = config.source.read_bytes()
         (self.directory / "config.toml").write_bytes(config_bytes)
+        # The task file alone no longer describes the effective workflow.
+        write_json(self.directory / "effective_config.json", config.raw)
+        if config.workflow_settings is not None:
+            write_json(self.directory / "workflow_profile.json", config.workflow_settings)
         robot_profile_bytes = config.robot.source.read_bytes()
         (self.directory / "robot_profile.toml").write_bytes(robot_profile_bytes)
         source_lock_bytes = config.robot.asset_lock.read_bytes()
@@ -58,11 +62,14 @@ class EpisodeRecorder:
             "evidence_type": "framework_dry_run" if mode == "dry_run" else "simulation_attempt",
             "mock": mode == "dry_run", "seed": config.seed, "step_limit": step_limit,
             "config_path": str(config.source), "config_sha256": hashlib.sha256(config_bytes).hexdigest(),
+            "workflow_profile_path": str(config.workflow_source) if config.workflow_source else None,
+            "effective_config_sha256": hashlib.sha256((self.directory / "effective_config.json").read_bytes()).hexdigest(),
             "robot_asset": str(config.asset_path) if config.asset_path else None,
             "robot_profile_path": str(config.robot.source),
             "robot_profile_sha256": hashlib.sha256(robot_profile_bytes).hexdigest(),
             "asset_source_lock_sha256": hashlib.sha256(source_lock_bytes).hexdigest(),
             "available_arms": config.robot.available_arms, "active_arms": config.arms,
+            "command_arms": config.command_arms, "arm_roles": config.arm_roles,
             "python": platform.python_version(), "platform": platform.platform(),
             "source_sha256": sources,
             "units": {"distance": "m", "angle": "rad", "time": "s", "quaternion": "wxyz"},

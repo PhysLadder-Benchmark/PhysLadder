@@ -18,6 +18,9 @@ from robot_tasks.runner import run_episode
 from robot_tasks.types import ArmState, Assessment, Feedback, RGBFrame
 
 
+from fixtures import rgbd, gripper_command, decision_document
+
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -33,7 +36,7 @@ class ResetBackend(MockBackend):
     def capture_rgb(self):
         # Distinct offline fixtures prove that post-reset images are re-acquired.
         value = (self.resets + int(round(self.t * 120))) % 256
-        return tuple(RGBFrame(name, self.t, 2, 2, bytes([value] * 12)) for name in self.config.cameras)
+        return tuple(replace(rgbd(name, self.t), data=bytes([value] * (32 * 24 * 3))) for name in self.config.cameras)
 
 
 class ResetRobot(MockRobot):
@@ -86,13 +89,11 @@ class RetryTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         base = load_config(ROOT / "configs/tasks/gpt_single_arm_pick_place.toml")
-        self.config = replace(base, include_depth=False, save_depth=False, raw={**base.raw, "execution": {
-            "max_action_steps": 4, "max_decisions": 100, "retry_failed_attempts": True},
-            "policy_options": {"retain_text_history": True}})
+        self.config = replace(base, raw={**base.raw, "execution": {
+            "max_action_steps": 4, "max_decisions": 100, "retry_failed_attempts": True}})
         self.settings = GPTSettings("https://example.org/openai", "fixture-model", max_calls=100)
         self.client = Mock()
-        self.client.generate.return_value = self.reply(json.dumps({"request_stop": False, "commands": [
-            {"arm": "left", "kind": "gripper", "values": [.04], "frame": "world"}]}))
+        self.client.generate.return_value = self.reply(json.dumps(decision_document(commands=[gripper_command(.04)])))
 
     def reply(self, text):
         return ModelReply(text, self.settings.model, "offline-fixture", {}, 0.)
@@ -131,7 +132,7 @@ class RetryTests(unittest.TestCase):
         self.assertEqual(fresh["feedback"]["status"], "attempt_reset")
         self.assertEqual(fresh["feedback"]["metrics"]["remaining_decisions"], 99)
         self.assertNotIn("hidden_target", json.dumps(messages))
-        self.assertNotEqual(messages[-1]["content"][-1], calls[0].kwargs["messages"][-1]["content"][-1])
+        self.assertNotEqual(messages[-1]["content"][2], calls[0].kwargs["messages"][-1]["content"][2])
         failed = next(e for e in self.events if e["event"] == "transition")
         reset = next(e for e in self.events if e["event"] == "attempt_reset")
         before = self.path / failed["observation"]["rgb"][0]["path"]
@@ -144,8 +145,7 @@ class RetryTests(unittest.TestCase):
         self.assertAlmostEqual(result["final_attempt_time_s"], self.config.control_dt_s)
 
     def test_decision_note_survives_scene_reset_without_a_fresh_call_budget(self):
-        current = replace(self.config, raw={**self.config.raw,
-            "policy_options": {"retain_text_history": True, "decision_notes": True}})
+        current = self.config
         doc = json.loads(self.client.generate.return_value.text)
         doc["note"] = "The object is visible; close the left gripper."
         self.client.generate.return_value = self.reply(json.dumps(doc))
@@ -242,7 +242,7 @@ class RetryTests(unittest.TestCase):
         self.assertEqual([a["status"] for a in result["attempts"]], ["failed", "not_evaluated"])
 
     def test_failure_during_stop_observation_retries_and_does_not_keep_stop_flag(self):
-        self.client.generate.return_value = self.reply('{"commands":[],"request_stop":true}')
+        self.client.generate.return_value = self.reply(json.dumps(decision_document(request_stop=True)))
         config = replace(self.config, raw={**self.config.raw, "execution": {
             "max_decisions": 3, "stop_steps": 1, "retry_failed_attempts": True}})
         result = self.run_case(config=config, task=AttemptTask(always_fail=True))

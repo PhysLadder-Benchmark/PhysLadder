@@ -18,7 +18,10 @@ from robot_tasks.tasks.l1.specs import build_design
 class RackGeometryTests(unittest.TestCase):
     def setUp(self):
         self.design = build_design("L1-01")
-        path, _ = verified_asset(self.design.fixture_asset)
+        try:
+            path, _ = verified_asset(self.design.fixture_asset)
+        except FileNotFoundError:
+            self.skipTest("Optional pinned L1 assets missing; run tools/fetch_l1_assets.py outside unit tests")
         self.path = path
         self.before = hashlib.sha256(path.read_bytes()).hexdigest()
         self.stage = Usd.Stage.CreateInMemory()

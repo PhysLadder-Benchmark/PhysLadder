@@ -48,7 +48,7 @@ def _decode_action(text: str, config: TaskConfig) -> Action:
     if not isinstance(document, dict) or set(document) != {"commands", "request_stop"}:
         raise ValueError("Model action has missing or unexpected fields")
     rows, stop = document["commands"], document["request_stop"]
-    if not isinstance(rows, list) or len(rows) > 2 * len(config.arms) or type(stop) is not bool:
+    if not isinstance(rows, list) or len(rows) > 2 * len(config.command_arms) or type(stop) is not bool:
         raise ValueError("Invalid command count or request_stop type")
     if stop and rows:
         raise ValueError("A stop request cannot contain motion commands")

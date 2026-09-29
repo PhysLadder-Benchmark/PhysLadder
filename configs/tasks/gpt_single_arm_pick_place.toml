@@ -1,11 +1,12 @@
 schema_version = 2
+workflow_profile = "../workflows/gpt_default.toml"
 
 [task]
 id = "GPT-PICK-PLACE"
 instruction = """
 Use only the {arm} R5 arm to pick up the red cube from the table and place it
-at the centre of the green target patch. The other arm must remain still.
-Determine the cube and target locations from the RGB views. Plan your own
+at the centre of the green target patch. Follow the shared arm-role permissions.
+Determine the cube and target locations from the provided observations. Plan your own
 approach, grasp, lift, transport, release and retreat using measured TCP poses
 and execution feedback. Reobserve and correct alignment as needed. Use small
 Cartesian moves near contact; IK alone does not guarantee a straight path.
@@ -24,26 +25,9 @@ the measured state and feedback; do not repeat an unreachable target unchanged.
 [robot]
 profile = "../robots/r5_sim.toml"
 active_arms = ["left"]
-
-[runtime]
-seed = 0
-max_steps = 2400
-max_wall_time_s = 1800.0
-physics_dt_s = 0.004166666666666667
-control_dt_s = 0.08333333333333333
-
-[observation]
-cameras = ["overview", "left_wrist", "right_wrist"]
-include_robot_state = true
-include_feedback = true
-
-[recording]
-save_rgb = true
-save_video = true
+observation_arms = ["right"]
 
 [simulation]
-environment = "lab_room_v1"
-robot_appearance = "r5_black_silver_v1"
 camera_profile = "../cameras/r5_orbbec_provisional.toml"
 asset_directory = "../../build/r5"
 headless = true
@@ -78,26 +62,6 @@ placement_height_tolerance_m = 0.006
 placement_speed_m_s = 0.02
 placement_angular_speed_rad_s = 0.2
 gripper_open_tolerance_m = 0.003
-inactive_joint_tolerance_rad = 0.01
-
-[execution]
-max_action_steps = 120
-completion_samples = 3
-wait_steps = 12
-settle_steps = 12
-stop_steps = 12
-max_decisions = 40
-gripper_timing = "open_before_motion"
-motion_mode = "cartesian_linear_v1"
-startup_pose = "downward_ready_v1"
-gripper_completion = "stall_aware_v1"
 
 [policy]
 model_config = "../models/gpt.toml"
-
-[policy_options]
-retain_text_history = true
-operating_notes = true
-action_interface = "sparse_eef"
-camera_calibration = false
-visual_aids = true

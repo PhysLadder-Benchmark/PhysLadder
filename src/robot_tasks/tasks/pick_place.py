@@ -54,7 +54,7 @@ class SingleArmPickPlace:
     def prepare_config(config: TaskConfig) -> TaskConfig:
         if len(config.arms) != 1:
             raise ValueError("Single-arm pick/place requires exactly one active R5 arm")
-        settings = InteractionSettings.from_config(config, scripted=False)
+        settings = InteractionSettings.from_config(config)
         # Only public task requirements are substituted. No source/target object coordinates.
         fields = {"arm": config.arms[0], "lift_threshold_m": settings.lift_threshold_m,
                   "stability_s": settings.stability_s, "open_width_m": settings.open_width_m}
@@ -62,29 +62,16 @@ class SingleArmPickPlace:
 
     def build_scene(self, backend, config: TaskConfig) -> None:
         self.arm = config.arms[0]
-        self.settings = InteractionSettings.from_config(config, scripted=False)
+        self.settings = InteractionSettings.from_config(config)
         self.scene = InteractionScene(backend, config, self.settings)
-        self.initial_robot = None
-        self.inactive_drift = 0.0
 
     def reset(self, backend, seed: int) -> None:
         self.scene.reset(self.arm)
         self.evaluator = PickPlaceEvaluator(self.settings, self.scene.source(self.arm), self.scene.destination(self.arm))
-        self.initial_robot = None
-        self.inactive_drift = 0.0
 
     def evaluate(self, state: EvaluationState, feedback: Feedback) -> Assessment:
         robot = state.values["robot"]
-        if self.initial_robot is None:
-            self.initial_robot = robot
-        self.inactive_drift = max(self.inactive_drift, max(
-            (abs(q - original) for name, arm in robot.items() if name != self.arm
-             for q, original in zip(arm.joint_positions_rad, self.initial_robot[name].joint_positions_rad)), default=0.0))
         active = robot[self.arm]
         sample = {"time_s": state.values["simulation_time_s"], "object": self.scene.measure(self.arm),
                   "tcp_pose_world_wxyz": active.tcp_pose_world_wxyz, "gripper_width_m": active.gripper_width_m}
-        assessment = self.evaluator.update(sample)
-        metrics = {**assessment.metrics, "inactive_arm_max_drift_rad": self.inactive_drift}
-        if self.inactive_drift > self.settings.inactive_joint_tolerance_rad:
-            return Assessment("failed", "Inactive arm moved beyond the configured tolerance", metrics)
-        return replace(assessment, metrics=metrics)
+        return self.evaluator.update(sample)
