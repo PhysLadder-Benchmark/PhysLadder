@@ -36,7 +36,7 @@ class ReportingTests(unittest.TestCase):
                      {"event": "model_exchange", "exchange": {}},
                      {"event": "policy_configuration", "configuration": {"provider": {
                          "model": "test-model", "reasoning_effort": "medium", "base_url": "PRIVATE_ENDPOINT"}}}])
-        finish_run(self.run, self.result())
+        finish_run(self.run, self.result(invalid_model_actions=2))
         data = collect_run_evidence(self.run)
         metric = data["tracking"]["left"]["position_error_m"]
         self.assertEqual(metric["samples"], 2)
@@ -49,7 +49,16 @@ class ReportingTests(unittest.TestCase):
         self.assertIn("| 任务评价 | 失败 |", text)
         self.assertIn("placement.max_xy_error_m | 0.034", text)
         self.assertIn("| 错误宣告完成 | 是 |", text)
+        self.assertIn("| 无效模型动作数（计入调用预算） | 2 |", text)
         self.assertNotIn("PRIVATE_ENDPOINT", text)
+
+    def test_solver_name_comes_from_recorded_scene_not_current_defaults(self):
+        self.events([])
+        for solver in ("numerical", "lula"):
+            write_json(self.run / "scene.json", {"ik_solver": solver})
+            finish_run(self.run, self.result())
+            text = (self.run / "report.md").read_text(encoding="utf-8")
+            self.assertIn(f"| IK 求解器 | {solver} |", text)
 
     def test_no_measurements_are_unknown_not_zero_and_partial_log_is_disclosed(self):
         self.events([])
@@ -100,6 +109,21 @@ class ReportingTests(unittest.TestCase):
         (self.run / "result.json").unlink()
         write_run_report(self.run)
         self.assertIn("没有完整的 result.json", (self.run / "report.md").read_text(encoding="utf-8"))
+
+    def test_retry_report_exposes_first_failure_even_when_final_attempt_succeeds(self):
+        self.events([])
+        finish_run(self.run, self.result(success=True, evaluation_protocol="retry_with_history",
+            reset_count=1, failed_attempts=1, first_attempt_success=False, success_attempt=2,
+            attempts=[{"attempt": 1, "status": "failed", "decision_start": 1, "decision_end": 3,
+                       "assessment": {"reason": "Cylinder was knocked over"}},
+                      {"attempt": 2, "status": "succeeded", "decision_start": 4, "decision_end": 9,
+                       "assessment": {"reason": "Seated"}}]))
+        text = (self.run / "report.md").read_text(encoding="utf-8")
+        self.assertIn("| 首次尝试成功 | 否 |", text)
+        self.assertIn("| 失败尝试数 | 1 |", text)
+        self.assertIn("| 成功发生于第几次尝试 | 2 |", text)
+        self.assertIn("Cylinder was knocked over", text)
+        self.assertIn("不能当作独立单次尝试的成功率", text)
 
 
 if __name__ == "__main__":

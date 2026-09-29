@@ -25,6 +25,8 @@ class TaskConfig:
     include_robot_state: bool
     include_feedback: bool
     save_rgb: bool
+    include_depth: bool = False
+    save_depth: bool = False
 
     @property
     def robot_model(self) -> str:
@@ -49,6 +51,7 @@ class ExecutionSettings:
     motion_mode: str = "direct_ik"
     startup_pose: str = "none"
     gripper_completion: str = "position"
+    retry_failed_attempts: bool = False
 
     @classmethod
     def from_config(cls, config: TaskConfig) -> "ExecutionSettings":
@@ -57,6 +60,10 @@ class ExecutionSettings:
         if unknown:
             raise ValueError(f"Unknown execution settings: {sorted(unknown)}")
         result = cls(**data)
+        if type(result.retry_failed_attempts) is not bool:
+            raise ValueError("execution.retry_failed_attempts must be a boolean")
+        if result.retry_failed_attempts and not config.include_feedback:
+            raise ValueError("Retrying attempts requires observation.include_feedback")
         if result.gripper_completion not in {"position", "stall_aware_v1"}:
             raise ValueError("execution.gripper_completion must be position or stall_aware_v1")
         if result.gripper_timing not in {"simultaneous", "after_motion", "open_before_motion"}:
@@ -111,7 +118,7 @@ def load_config(path: Path) -> TaskConfig:
     with source.open("rb") as f:
         raw = tomllib.load(f)
     if "planner" in raw:
-        raise ValueError("Only built-in R5 IK is supported; remove the obsolete [planner] section")
+        raise ValueError("R5 uses Lula IK; remove the obsolete [planner] section")
     required = {"schema_version", "task", "robot", "runtime", "observation", "recording"}
     if not required.issubset(raw):
         raise ValueError(f"Missing config sections: {sorted(required - raw.keys())}")
@@ -140,6 +147,12 @@ def load_config(path: Path) -> TaskConfig:
         raise ValueError("control_dt_s must be an integer multiple of physics_dt_s")
     if "save_video" in raw["recording"]:
         _boolean(raw["recording"]["save_video"], "save_video")
+    include_depth = _boolean(observation.get("include_depth", False), "include_depth")
+    save_depth = _boolean(raw["recording"].get("save_depth", include_depth), "save_depth")
+    if save_depth and not include_depth:
+        raise ValueError("recording.save_depth requires observation.include_depth")
+    if include_depth and not raw.get("simulation", {}).get("camera_profile"):
+        raise ValueError("Depth requires simulation.camera_profile for RGB alignment and calibration")
     return TaskConfig(
         source=source, raw=raw, task_id=task["id"], instruction=task["instruction"],
         robot=profile, arms=arms, cameras=_names(observation["cameras"], "cameras"),
@@ -149,4 +162,5 @@ def load_config(path: Path) -> TaskConfig:
         include_robot_state=_boolean(observation["include_robot_state"], "include_robot_state"),
         include_feedback=_boolean(observation["include_feedback"], "include_feedback"),
         save_rgb=_boolean(raw["recording"]["save_rgb"], "save_rgb"),
+        include_depth=include_depth, save_depth=save_depth,
     )

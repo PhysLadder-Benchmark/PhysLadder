@@ -23,8 +23,8 @@ L1-01 使用带圆底的试管变体，不声称是理想实心圆柱。L1-02 �
 
 ## 固定条件与信息边界
 
-- 三路 RGB：`overview`、`left_wrist`、`right_wrist`，沿用 `r5_orbbec_provisional.toml`。不新增深度、检测器、分割或物体真值输入。
-- 动作接口仍为 `sparse_eef`，同一 R5 仿真配置、数值 IK、关节执行器和 12～70 mm 夹爪范围。首步受阻修复后，八项任务统一使用 `cartesian_linear_v1` 和 `open_before_motion`，详见 [运动修复说明](l1_motion_fix.md)。这改变了执行条件，不能与旧 `direct_ik / after_motion` 结果当作同条件对比；不接入新的运动学库或感知模型。
+- 默认三路 RGB：`overview`、`left_wrist`、`right_wrist`，沿用 `r5_orbbec_provisional.toml`。合并后共享链路支持显式启用 RGB-D 和像素深度查询；L1 默认配置仍为 RGB 对照，不引入检测器、分割或物体真值输入。启用深度必须统一八项任务的观测条件并另行记录。
+- 动作接口仍为 `sparse_eef`，R5 仿真配置、关节执行器和 12～70 mm 夹爪范围相同。八项任务统一使用 `cartesian_linear_v1` 和 `open_before_motion`，逐点 IK 已统一接入同事的 **Lula**，不再使用原自编数值逆解。保留速度、关节跳变和桌面碰撞检查；见 [运动修复说明](l1_motion_fix.md) 和 [分支集成记录](l1_integration.md)。旧 IK、旧执行方式与当前版本不能作为相同执行条件合并比较。
 - 物理步长 1/240 s、控制步长 1/12 s，默认最多 40 次模型决策、2400 个控制周期、1800 s 墙钟时间。模型调用期间仿真暂停的行为沿用 master。
 - 夹爪完成协议统一为 `stall_aware_v1`：闭合稳定受阻可结束动作但不代表抓取成功；相同目标开口用于保持夹持，先开夹受阻会取消排队运动并返回策略。协议和验证见 [抓放基线说明](l1_grasp_baseline.md)，不可与旧 `position` 结果当作相同执行条件比较。
 - 八项均使用左臂，右臂保持初始姿态。改变参与臂需要新的布局版本，当前配置会拒绝直接切换右臂。

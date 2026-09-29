@@ -12,6 +12,7 @@ class PolicyOptions:
     action_interface: str = "absolute_pose"
     camera_calibration: bool = False
     visual_aids: bool = False
+    decision_notes: bool = False
 
     @classmethod
     def from_config(cls, config: TaskConfig) -> "PolicyOptions":
@@ -19,7 +20,7 @@ class PolicyOptions:
         if not isinstance(data, dict) or set(data) - cls.__dataclass_fields__.keys():
             raise ValueError("Unknown policy_options fields")
         result = cls(**data)
-        for name in ("retain_text_history", "operating_notes", "camera_calibration", "visual_aids"):
+        for name in ("retain_text_history", "operating_notes", "camera_calibration", "visual_aids", "decision_notes"):
             if type(getattr(result, name)) is not bool:
                 raise ValueError(f"policy_options.{name} must be boolean")
         if result.action_interface not in {"absolute_pose", "sparse_eef"}:

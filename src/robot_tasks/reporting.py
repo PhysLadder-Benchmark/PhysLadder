@@ -66,6 +66,7 @@ def collect_run_evidence(directory: Path) -> dict:
         warnings.append("没有完整的 result.json，不能判定任务结果。")
     errors = defaultdict(lambda: defaultdict(list))
     rejections, calls, latencies = Counter(), 0, []
+    depth_queries = 0
     provider = {}
     log = directory / "episode.jsonl"
     if log.exists():
@@ -87,6 +88,8 @@ def collect_run_evidence(directory: Path) -> dict:
                 elif event.get("event") == "action_rejected":
                     feedback = event.get("observation", {}).get("feedback", {})
                     rejections[feedback.get("metrics", {}).get("reason_code", "unspecified")] += 1
+                elif event.get("event") == "depth_query":
+                    depth_queries += 1
                 elif event.get("event") == "transition":
                     feedback = event.get("observation", {}).get("feedback", {})
                     for arm, values in feedback.get("metrics", {}).get("tcp", {}).items():
@@ -96,8 +99,9 @@ def collect_run_evidence(directory: Path) -> dict:
                                 errors[arm][field].append(value)
     tracking = {arm: {field: {"samples": len(values), "mean": statistics.mean(values), "max": max(values)}
                       for field, values in fields.items()} for arm, fields in errors.items()}
-    return {"result": result, "manifest": manifest, "process": process, "provider": provider,
+    return {"result": result, "manifest": manifest, "process": process, "provider": provider, "scene": read("scene.json"),
             "tracking": tracking, "rejections": dict(rejections), "logged_model_exchanges": calls,
+            "depth_query_decisions": depth_queries,
             "api_latency_total_s": sum(latencies) if latencies else None,
             "api_latency_samples": len(latencies), "warnings": warnings}
 
@@ -120,7 +124,14 @@ def write_run_report(directory: Path) -> Path:
         ("工程检查通过", result.get("passed")), ("终止原因", result.get("termination_reason")),
         ("模型", data["provider"].get("model")), ("推理强度", data["provider"].get("reasoning_effort")),
         ("随机种子", manifest.get("seed")),
+        ("IK 求解器", data["scene"].get("ik_solver")),
+        ("相机输入模态", manifest.get("observation_modalities")),
     ])
+    if manifest.get("depth", {}).get("enabled"):
+        lines += ["本回合启用 RGB＋深度。深度为与 RGB 对齐的理想仿真光轴距离（米），"
+                  "不模拟奥比硬件噪声、盲区或双目匹配误差，不应与仅 RGB 结果混合统计。"
+                  "原始 float32 深度保存在 depth/，无效像素为 NaN；PNG 仅作固定刻度的可视化。"
+                  "保存频率与决策观测一致，不是逐物理步深度录像。像素查询不推进物理，但计入模型调用预算。", ""]
     if process:
         lines += _table(("进程检查", "结果"), [("退出码", process.get("returncode")),
                           ("监控超时", process.get("timed_out")), ("进程与结果联合校验通过", process.get("passed"))])
@@ -132,10 +143,27 @@ def write_run_report(directory: Path) -> Path:
         lines += [f"运行异常：{_cell(result['error'])}", ""]
     if data["warnings"]:
         lines += ["记录缺项：", "", *(f"- {_cell(w)}" for w in data["warnings"]), ""]
+    if result.get("evaluation_protocol") == "retry_with_history":
+        lines += ["## 失败复位与重试", "",
+                  "本次采用保留模型历史的复位重试，所有尝试共享调用、物理步和现实时间预算。"
+                  "任务评价表示预算内最终结果，不能当作独立单次尝试的成功率。", ""]
+        lines += _table(("指标", "数值"), [
+            ("完成复位次数", result.get("reset_count")), ("失败尝试数", result.get("failed_attempts")),
+            ("首次尝试成功", result.get("first_attempt_success")),
+            ("成功发生于第几次尝试", result.get("success_attempt")),
+        ])
+        lines += _table(("尝试", "状态", "模型决策起止", "原因"), [
+            (a.get("attempt"), a.get("status"),
+             f"{a.get('decision_start')}—{a.get('decision_end')}", a.get("assessment", {}).get("reason"))
+            for a in result.get("attempts", [])])
+        lines += ["录像连续保留失败和复位后的过程；episode.jsonl 的 attempt_end / attempt_reset "
+                  "记录对应的全局 tick 边界。仿真时间统计所有尝试与复位后的稳定过程，局部场景时间在复位时归零。", ""]
     lines += ["## 执行统计", ""]
     lines += _table(("指标", "数值"), [
         ("模型调用次数", result.get("model_calls")), ("已记录模型交互", data["logged_model_exchanges"]),
+        ("深度查询决策数（已包含在模型调用中）", data["depth_query_decisions"]),
         ("执行动作数", result.get("executed_actions")), ("动作拒绝数", result.get("rejected_actions")),
+        ("无效模型动作数（计入调用预算）", result.get("invalid_model_actions")),
         ("动作超时数", result.get("action_timeouts")), ("错误宣告完成", result.get("false_completion")),
         ("现实耗时（秒）", result.get("wall_time_s")), ("仿真时间（秒）", result.get("simulation_time_s")),
         ("有时延记录的 API 耗时合计（秒）", data["api_latency_total_s"]),
@@ -174,7 +202,7 @@ def write_run_report(directory: Path) -> Path:
     lines += ["## 录像与原始记录", ""]
     paths = [path for name in ("result.json", "episode.jsonl", "motion.jsonl", "manifest.json", "instruction.txt",
                                "config.toml", "robot_profile.toml", "camera_profile.toml", "scene.json",
-                               "process.json", "process.log", "frames", "analysis")
+                               "process.json", "process.log", "frames", "depth", "analysis")
              if (path := directory / name).exists()]
     paths += sorted(directory.glob("*.mp4")) + sorted(directory.glob("video/**/*.mp4"))
     for path in paths:

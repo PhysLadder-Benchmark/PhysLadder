@@ -11,7 +11,7 @@
 | `gpt_api_check.py` | 一次真实 API 图片请求与动作格式检查，不启动机器人 |
 | `gpt_check.py` | 参数化抬手检查；执行循环复用公共 runner |
 | `gpt_pick_place_check.py` | GPT 单臂抓放全链路入口；复用注册任务、执行循环与独立评分 |
-| `camera_check.py` | 三路 RGB、左右腕部独立跟随、同步时间戳及模型输入打包；不调用 API |
+| `camera_check.py` | 三路 RGB／可选 RGB-D、左右腕部独立跟随、同步时间戳及模型输入打包；不调用 API |
 | `simulation_process.py`、`simulation_worker.py` | 进程隔离、超时、退出码与结果联合校验 |
 | `debug_motion.py` | WSL → Windows 调试连接，F11 进入对应检查 |
 
@@ -42,10 +42,17 @@ GPT 校验入口为 `python -m robot_tasks check api` 和 `python -m robot_tasks
 后者不是接触任务测评；始终保留 `task_evaluated=false`。模型配置在 `configs/models/gpt.toml`，
 Token 从 `OPENAI_API_KEY` 读取。物理在请求期间暂停，模型调用耗时单独记录，不算入仿真录像时间。
 模型请求、JSON 解析和 RGB 编码等共享实现位于 `policies/`，与这些工程验收入口分开。
+HTTP 错误记录服务端返回的 `type/code/message`、`Retry-After` 和请求 ID（如有），
+只保留限长且已脱敏的字段，不写入 Token、原始 HTML 或完整请求。429 的具体含义以服务端说明为准。
+`check api` 会直接在终端输出 `R5_API_RESULT`，并保存同样的错误信息；它只发一次小图像请求，不启动 Isaac。
 
 `python -m robot_tasks check cameras --gui` 使用真实型号 CAD 和临时相机参数校验三路观测。
 `configs/cameras/r5_orbbec_provisional.toml` 内的 `provisional_uncalibrated` 表示内外参未经现场标定。
 该配置也由 GPT 集成检查使用；普通关节／抓放检查保留原来的单路工程相机配置。
+在相机检查配置中启用 `observation.include_depth=true`、`policy_options.camera_calibration=true`，
+同一检查还会验证深度缓冲、RGB 配对、像素反投影往返误差和六张模型输入图像，保存各相机的 `depth.npy/png`。
+这检查理想渲染数据和坐标计算，不验证真机传感器精度，也不调用 GPT。
+RGB-D 的离线数据契约与执行循环测试位于 `tests/test_depth.py`。
 
 `check gpt-pick-place` 运行 `GPT-PICK-PLACE` 任务，配置在 `configs/tasks/gpt_single_arm_pick_place.toml`。
 它与 `run GPT-PICK-PLACE` 使用同一任务实现，区别是增加独立工作进程和 watchdog，并提供已有 F5 调试入口。
@@ -53,3 +60,14 @@ Token 从 `OPENAI_API_KEY` 读取。物理在请求期间暂停，模型调用�
 
 共享方块场景和物理判据移到 `tasks/pick_place_scene.py`、`tasks/pick_place_metrics.py`，
 公共执行在 `runner.py`，录像编码在 `video.py`。集成检查复用生产代码，不持有另一套抓放实现。
+
+`lula_check.py` 只调用 Isaac 附带的真实 Lula 库检查 R5 运动学，不启动 Kit、物理仿真或 GPT，
+也不执行任务参照动作。用 Isaac Python 运行：
+
+```bash
+python -m robot_tasks.integrationtest.lula_check --output runs/lula_check/result.json
+```
+
+它复用生产 `R5LulaKinematics` 和资产生成逻辑，覆盖双臂、世界／底座坐标、由 FK 构造的可达位姿和不可达目标。
+通过只表示模型和求解链路正确，不表示物理驱动跟踪或任务成功。实际物理检查仍用已有 `check cartesian`，
+完整任务仍用 `check gpt-pick-place` 等原有入口；无需增加任务配置来选择 IK。

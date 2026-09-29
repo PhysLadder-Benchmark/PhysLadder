@@ -32,8 +32,8 @@ class GPTSettings:
         if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", self.api_key_env):
             raise ValueError("api_key_env must be an environment variable name, never a token")
         if (isinstance(self.timeout_s, bool) or not isinstance(self.timeout_s, (int, float))
-                or not math.isfinite(self.timeout_s) or not 1 <= self.timeout_s <= 600):
-            raise ValueError("timeout_s must be in [1, 600]")
+                or not math.isfinite(self.timeout_s) or self.timeout_s <= 0):
+            raise ValueError("timeout_s must be finite and positive")
         if self.reasoning_effort not in {"low", "medium", "high", "xhigh", "max"}:
             raise ValueError("Unsupported reasoning_effort")
         if type(self.structured_output) is not bool:

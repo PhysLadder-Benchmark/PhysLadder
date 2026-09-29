@@ -16,7 +16,7 @@ class TaskSpec:
     task_id: str
     name: str
     factory: type
-    arm_count: int
+    active_arm_counts: tuple[int, ...]
     implemented: bool
     evidence: str
     default_config: Path
@@ -24,12 +24,12 @@ class TaskSpec:
 
 TASKS = {
     "GPT-PICK-PLACE": TaskSpec(
-        "GPT-PICK-PLACE", "GPT 单臂方块抓放", SingleArmPickPlace, 1, True,
+        "GPT-PICK-PLACE", "GPT 单臂方块抓放", SingleArmPickPlace, (1,), True,
         "GPT 自主选择动作；实测接触、抬起、释放与稳定放置独立评分",
         PROJECT_ROOT / "configs/tasks/gpt_single_arm_pick_place.toml",
     ),
     "L2-02": TaskSpec(
-        "L2-02", "双臂夹持力交接", DualArmHandover, 2, False,
+        "L2-02", "双臂夹持力交接", DualArmHandover, (2,), False,
         "仅有参考任务调研；本地双臂交接未验证",
         PROJECT_ROOT / "configs/tasks/l2_02_dual_arm_handover.toml",
     ),
@@ -37,7 +37,7 @@ TASKS = {
 
 
 for task_id, filename in zip(RIGID_IDS, FILES):
-    TASKS[task_id] = TaskSpec(task_id, build_design(task_id).name, L1Task, 1, True,
+    TASKS[task_id] = TaskSpec(task_id, build_design(task_id).name, L1Task, (1,), True,
         "GPT RGB decisions; independent measured goal/process scoring; l1-rigid-v1",
         PROJECT_ROOT / f"configs/tasks/{task_id.lower().replace('-', '_')}_{filename}.toml")
 
@@ -46,8 +46,8 @@ def get_spec(config: TaskConfig) -> TaskSpec:
     if config.task_id not in TASKS:
         raise ValueError(f"Unknown task ID: {config.task_id}")
     spec = TASKS[config.task_id]
-    if len(config.arms) != spec.arm_count:
-        raise ValueError(f"{spec.task_id} requires {spec.arm_count} arm(s)")
+    if len(config.arms) not in spec.active_arm_counts:
+        raise ValueError(f"{spec.task_id} permits active arm counts {spec.active_arm_counts}")
     return spec
 
 

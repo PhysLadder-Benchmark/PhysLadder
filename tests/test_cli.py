@@ -4,6 +4,7 @@ from contextlib import chdir, redirect_stderr, redirect_stdout
 from dataclasses import replace
 import io
 import json
+import re
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
@@ -29,15 +30,16 @@ class NamedEntryTests(unittest.TestCase):
         # Windows TEMP can use an 8.3 alias; the CLI returns resolved paths.
         self.directory = Path(self.temp.name).resolve()
 
-    def config_variant(self, task="L1-01", *, task_id=None):
+    def config_variant(self, task="GPT-PICK-PLACE", *, task_id=None):
         spec = TASKS[task]
         content = spec.default_config.read_text(encoding="utf-8")
         content = content.replace('"../robots/r5_sim.toml"', json.dumps((ROOT / "configs/robots/r5_sim.toml").as_posix()))
-        content = content.replace('max_steps = 2400', 'max_steps = 120')
-        content = content.replace('settle_steps = 12', 'settle_steps = 0')
-        content = content.replace('save_video = true', 'save_video = false')
-        content = content.replace('startup_pose = "downward_ready_v1"', 'startup_pose = "none"')
-        content = content.replace('camera_profile = "../cameras/', 'camera_profile = "' + (ROOT / 'configs/cameras').as_posix() + '/')
+        content = re.sub(r"max_steps = \d+", "max_steps = 3", content)
+        content = content.replace('"../cameras/r5_orbbec_provisional.toml"',
+                                  json.dumps((ROOT / "configs/cameras/r5_orbbec_provisional.toml").as_posix()))
+        content = content.replace("save_video = true", "save_video = false")
+        content = content.replace("settle_steps = 12", "settle_steps = 0")
+        content = re.sub(r"\[execution\]\n.*?(?=\n\[)", "[execution]\n", content, flags=re.S)
         if task_id is not None:
             content = content.replace(f'id = "{task}"', f'id = "{task_id}"')
         path = self.directory / "variant.toml"
@@ -52,15 +54,15 @@ class NamedEntryTests(unittest.TestCase):
                 self.assertEqual(config.source, expected.default_config)
                 self.assertEqual(resolve_task(config_path=expected.default_config)[0], spec)
         variant = self.config_variant()
-        spec, config = resolve_task("L1-01", variant)
+        spec, config = resolve_task("GPT-PICK-PLACE", variant)
         self.assertEqual(config.source, variant)
-        self.assertEqual(config.max_steps, 120)
+        self.assertEqual(config.max_steps, 3)
 
     def test_wrong_task_or_missing_identity_is_rejected_before_execution(self):
         for arguments, message in (
             (["run", "missing"], "Unknown task ID"),
             (["run"], "Provide a task ID"),
-            (["run", "L1-01", "--config", str(TASKS["L2-02"].default_config)], "Task/config mismatch"),
+            (["run", "GPT-PICK-PLACE", "--config", str(TASKS["L2-02"].default_config)], "Task/config mismatch"),
         ):
             with self.subTest(arguments=arguments), patch("robot_tasks.cli.execute_task") as execute, \
                     redirect_stderr(io.StringIO()) as error:
@@ -72,7 +74,7 @@ class NamedEntryTests(unittest.TestCase):
 
     def test_dry_run_by_name_never_calls_a_model_or_reports_task_success(self):
         with patch("robot_tasks.execution.GPTPolicy") as policy, redirect_stdout(io.StringIO()) as output:
-            code = main(["dry-run", "L1-01", "--output", str(self.directory)])
+            code = main(["dry-run", "GPT-PICK-PLACE", "--output", str(self.directory)])
         policy.assert_not_called()
         result = json.loads(output.getvalue())
         self.assertEqual(code, 0)
@@ -83,7 +85,7 @@ class NamedEntryTests(unittest.TestCase):
     def test_adding_a_registered_task_needs_no_cli_change(self):
         path = self.config_variant(task_id="TEST-NEW")
         factory = Mock(return_value=MockTask(), spec=[])
-        spec = replace(TASKS["L1-01"], task_id="TEST-NEW", default_config=path,
+        spec = replace(TASKS["GPT-PICK-PLACE"], task_id="TEST-NEW", default_config=path,
                        factory=factory, implemented=True)
         policy_factory = Mock(side_effect=lambda config, model: NoopPolicy(config.control_dt_s))
         backend = MockBackend()

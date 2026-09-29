@@ -14,7 +14,7 @@ from robot_tasks.registry import resolve_task
 from robot_tasks.robots.preparation import preparation_action
 from robot_tasks.robots.transforms import pose_transform
 from robot_tasks.runner import run_episode
-from robot_tasks.types import Action, Feedback
+from robot_tasks.types import Action, Assessment, Feedback
 
 
 class PreparingRobot(MockRobot):
@@ -104,6 +104,40 @@ class PreparationTests(unittest.TestCase):
         self.assertFalse(result["task_evaluated"])
         self.assertIsNone(result["success"])
         self.assertIn("preparation", result["error"])
+
+    def test_retry_repeats_preparation_before_next_policy_observation(self):
+        class RetryPolicy(StopPolicy):
+            def act(self, context):
+                self.seen.append(context)
+                return Action((), 1 / 12, len(self.seen) > 1)
+
+        policy = RetryPolicy()
+
+        class RetryTask(MockTask):
+            resets = 0
+
+            def reset(self, backend, seed):
+                self.resets += 1
+
+            def evaluate(self, state, feedback):
+                if self.resets == 1 and policy.seen:
+                    return Assessment("failed", "Synthetic retry trigger", retryable=True)
+                return Assessment("running", "Fresh attempt")
+
+        config = replace(self.config, raw={**self.config.raw, "execution": {
+            **self.config.raw["execution"], "retry_failed_attempts": True}})
+        robot = PreparingRobot()
+        with tempfile.TemporaryDirectory() as directory:
+            path, result = run_episode(config, MockBackend(), robot, RetryTask(), policy, Path(directory))
+            events = [json.loads(line) for line in (path / "episode.jsonl").read_text().splitlines()]
+        self.assertEqual(result["reset_count"], 1)
+        self.assertEqual(len(policy.seen), 2)  # Policy history is retained across resets.
+        self.assertEqual(robot.applied.count(preparation_action(config)), 2)
+        completions = [e for e in events if e["event"] == "preparation_complete"]
+        self.assertEqual(len(completions), 2)
+        self.assertAlmostEqual(policy.seen[-1].observation.time_s, completions[-1]["time_s"])
+        self.assertEqual(policy.seen[-1].observation.feedback.status, "attempt_reset")
+        self.assertGreater(result["completed_steps"], result["final_attempt_time_s"] / config.control_dt_s)
 
 
 if __name__ == "__main__":

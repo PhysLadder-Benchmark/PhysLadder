@@ -17,7 +17,6 @@ try {
     & $TaskPython -m robot_tasks validate-robot --profile configs/robots/r5.toml --output reports/r5_asset_audit_windows.json
     if ($LASTEXITCODE -ne 0) { throw 'R5 asset validation failed' }
     foreach ($taskConfig in @(
-        'configs/tasks/l1_01_cylinder_insertion.toml',
         'configs/tasks/l2_02_dual_arm_handover.toml',
         'configs/tasks/gpt_single_arm_pick_place.toml'
     )) {

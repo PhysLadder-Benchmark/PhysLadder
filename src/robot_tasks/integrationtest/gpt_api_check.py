@@ -2,6 +2,7 @@
 
 from dataclasses import asdict
 from datetime import datetime, timezone
+import json
 from pathlib import Path
 from uuid import uuid4
 
@@ -43,4 +44,5 @@ def run_gpt_api_check(config_path: Path, output_root: Path, *, model_path: Path 
         result["error"] = f"{type(exc).__name__}: {exc}"
     write_json(output / "model_exchange.json", policy.last_exchange)
     finish_run(output, result)
+    print("R5_API_RESULT " + json.dumps({"output": str(output), **result}, ensure_ascii=False), flush=True)
     return output, result

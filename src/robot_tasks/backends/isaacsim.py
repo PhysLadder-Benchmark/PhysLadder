@@ -24,6 +24,7 @@ class IsaacSimBackend:
         self.camera_profile = self.camera_rig = None
         self.camera_names = ()
         self._capture_id = 0
+        self.include_depth = False
         self.before_physics_step = None
         self.environment_report = {"profile": "plain"}
 
@@ -33,6 +34,9 @@ class IsaacSimBackend:
         self.settings = SimulationSettings.from_config(config)
         self.environment_report = {"profile": self.settings.environment}
         self.camera_names = config.cameras
+        self.include_depth = config.include_depth
+        if self.include_depth and not self.settings.camera_profile:
+            raise ValueError("Depth capture requires a camera rig profile")
         if self.settings.camera_profile:
             from ..cameras.profile import load_camera_rig
             self.camera_profile = load_camera_rig(config.source.parent / self.settings.camera_profile)
@@ -178,7 +182,8 @@ class IsaacSimBackend:
                     self.world.stage, mount.prim_path)
         if self.camera_profile is not None:
             from ..cameras.isaac_rig import IsaacCameraRig
-            self.camera_rig = IsaacCameraRig(self.world.stage, self._rep, self.camera_profile, self.camera_names)
+            self.camera_rig = IsaacCameraRig(self.world.stage, self._rep, self.camera_profile, self.camera_names,
+                                             include_depth=self.include_depth)
             self.scene_report["camera_rig"] = self.camera_rig.create(
                 {name: arm["ee_link_path"] for name, arm in self.scene_report["arms"].items()})
         return dict(self.articulations)

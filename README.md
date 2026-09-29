@@ -6,6 +6,7 @@
 
 L1 与 GPT 抓放任务提供本地室内环境、木纹工作台和 R5 黑银材质；配置、
 启动命令、资产来源与实验对比注意事项见 [场景外观说明](docs/simulation_appearance.md)。
+与 Lula / RGB-D 分支的衔接、验证方式及实验条件见 [集成说明](docs/l1_integration.md)。
 
 ## Windows / Linux 共用运行方式
 
@@ -24,6 +25,7 @@ Windows 路径推荐使用正斜杠，例如 `D:/conda/envs/isaac51/python.exe`�
 python3 tools/launch.py list --checks
 python3 tools/launch.py check joint --gui
 python3 tools/launch.py check cameras --gui
+python3 tools/launch.py check cameras --config configs/checks/r5_cameras_rgbd.toml --gui
 python3 tools/launch.py check interaction --gui
 ```
 
@@ -90,12 +92,12 @@ Python 源码位于 `src/robot_tasks/`，配置、厂家资产、测试和工具
 
 ```bash
 python -m robot_tasks list
-python -m robot_tasks inspect L1-01
-python -m robot_tasks dry-run L1-01
-python -m robot_tasks run L1-01 --gui
+python -m robot_tasks inspect GPT-PICK-PLACE
+python -m robot_tasks dry-run GPT-PICK-PLACE
+python -m robot_tasks run GPT-PICK-PLACE --gui
 
-# 同一任务使用不同实验参数；配置中的 task.id 必须仍为 L1-01。
-python -m robot_tasks run L1-01 --config configs/tasks/l1_01_cylinder_insertion.toml --gui
+# 同一任务使用不同实验参数；配置中的 task.id 必须仍为 GPT-PICK-PLACE。
+python -m robot_tasks run GPT-PICK-PLACE --config configs/tasks/gpt_single_arm_pick_place.toml --gui
 
 # 工程检查名称与默认配置也由注册表解析。
 python -m robot_tasks list --checks
@@ -161,7 +163,7 @@ F5 选择 **R5: GPT pick-place GUI (WSL)**。它运行同一任务实现，可�
 
 成功要求实测持续抬起至少 7 厘米（含双指接触证据），再释放到目标区并稳定至少 1 秒，同时夹爪张开并退出。
 评分每控制周期更新，不依赖 GPT 的口头宣告；推过去、短暂抬起或未松手不能通过。任务超时及过早停止记为失败，
-非法模型动作记为 `invalid_model_action` 失败；服务／仿真错误单独保留为未完成评估。`result.json` 记录 `success`、`termination_reason`、`action_timeouts`、
+非法模型动作记录原始响应和 `invalid_model_action` 拒绝原因，再请求模型纠正；仿真保持暂停，不执行坏指令，重试计入调用预算。服务／仿真错误单独保留为未完成评估。`result.json` 记录 `success`、`termination_reason`、`invalid_model_actions`、`action_timeouts`、
 `rejected_actions`、`false_completion` 和详细过程评分。`check gpt-pick-place` 的 `passed` 要求本次实际抓放成功。
 
 运行隔离沿用原机制：新的场景、机器人、任务评分器和 GPT 策略；回合开始清空对话、计数器及执行状态，
@@ -336,11 +338,23 @@ WSL 终端通过 Windows 启动器运行同一流程：
 cli.py → integrationtest/simulation_process.py → simulation_worker.py → cartesian_check.py
   → adapters.py：读取当前关节状态，接收目标位姿
   → control.py：校验整条双臂命令
-  → kinematics.py：依据 URDF、TCP 和当前关节角求解 IK
+  → lula.py：依据 R5 URDF、TCP 和当前关节角调用 NVIDIA Lula IK
   → adapters.py：下发关节位置目标
   → isaacsim.py：物理步进，读取实际 link6 位姿
   → adapters.py：换算实际 TCP，返回误差及 executing / completed
 ```
+
+所有笛卡尔动作现在统一使用 Isaac Sim 附带的 NVIDIA Lula `compute_ik_ccd`，与官方
+[LulaKinematicsSolver](https://docs.isaacsim.omniverse.nvidia.com/5.1.0/manipulators/manipulators_lula_kinematics.html)
+使用同一求解 API。旧 NumPy 逆解已移除，保留不依赖仿真的正运动学，用于核对 TCP 和返回解的误差。
+这只替换 IK：GPT 决策、动作反馈、夹爪时序、任务评分及失败复位仍走原来的链路。
+Lula IK 不提供避障或直线轨迹，不能据此保证抓取／插孔成功；更换求解器后的任务效果需重新运行确认。
+
+启动时从现有 R5 URDF、运行限位和 TCP 定义生成 `build/r5/lula/<哈希>/r5.urdf` 与
+`robot_description.yaml`，不改厂家资产，也不下载官方机器人资产。左右臂目标先换算到各自底座坐标系，
+用实测关节角作为初值。结果必须同时通过 Lula 收敛、关节限位及独立 FK 误差检查，才允许下发。
+`scene.json` 保存求解器、参数和生成文件哈希，`report.md` 标明 `IK 求解器 = lula`。
+缺少 Lula 时明确报错，不回退其他求解器。Windows／Linux 都需使用安装了对应平台 Isaac Sim 的 Python。
 
 命令示例（在机器人已初始化、复位后）：
 
@@ -402,7 +416,7 @@ python -m robot_tasks check interaction --config configs/checks/r5_interaction.t
 此入口直接调试运动检查函数，不经过正常命令的父进程看门狗；专用 `r5_motion_debug.toml`
 将墙钟上限设为 12 小时，给断点暂停留时间，物理参数与普通检查相同。记录保存在 `runs/debug/`。
 末端检查选择 **R5: Cartesian check GUI (WSL)** 后按 F5，使用 `r5_cartesian_debug.toml`；
-在 `integrationtest/cartesian_check.py`、`control.py`、`kinematics.py` 下断点即可。
+在 `integrationtest/cartesian_check.py`、`control.py`、`robots/lula.py` 下断点即可。
 完整交互选择 **R5: Interaction check GUI (WSL)**，在 `integrationtest/interaction_check.py` 下断点。
 三种调试配置使用同一端口，一次运行一个。
 停止时选择调试器的终止操作；如果只是断开连接，程序可能继续运行，可在任务终端按 Ctrl+C。
@@ -508,7 +522,8 @@ GPT_Benchmark/
 │   ├── robots/importer.py  URDF → 独立 USD 资产及缓存校验
 │   ├── robots/control.py   动作校验和夹爪开口换算
 │   ├── robots/transforms.py 坐标变换与位姿误差计算
-│   ├── robots/kinematics.py URDF 正运动学、雅可比和有界局部 IK
+│   ├── robots/kinematics.py URDF 正运动学和坐标转换（无逆解算法）
+│   ├── robots/lula.py       R5 描述生成、NVIDIA Lula IK 和解的误差／限位检查
 │   ├── robots/adapters.py  R5 关节／末端驱动、实际 TCP、反馈与复位
 │   ├── policies/           GPT 配置、Responses 请求、RGB 历史与动作解析
 │   ├── integrationtest/    API、R5 运动、接触、GPT 闭环及调试校验
@@ -531,7 +546,6 @@ GPT_Benchmark/
 | L1-01～L1-08 | 场景、复位、独立目标／过程评分已实现；Ubuntu 场景验证通过 | Windows GPU 验证、多种子 GPT 完整测评 |
 | 双臂夹持力交接 | 待实现 | 两侧接触、载荷转移、释放与掉落判断 |
 | GPT 策略 | 已接 Responses、三路 RGB、动作反馈及自主单臂抓放 | 扩展任务与测评协议 |
-| 正式任务脚本参照 | 待实现；脚本方块抓放集成检查可运行 | 各测评任务独立的脚本参照 |
 | GIF / MP4 | 工程检查及 GPT 抓放已保存真实帧 | 正式评测时确定录像与归档协议 |
 
 ## 先运行框架
@@ -554,7 +568,7 @@ $taskPython = 'D:\conda\envs\isaac51\python.exe'
 & $taskPython -m robot_tasks validate-robot --profile configs/robots/r5.toml --require-ready
 
 # 检查任务引用的机器人配置，不启动仿真
-& $taskPython -m robot_tasks inspect L1-01
+& $taskPython -m robot_tasks inspect GPT-PICK-PLACE
 
 # 插孔的占位流程自检（不启动真实场景）
 & $taskPython -m robot_tasks dry-run L1-01
@@ -572,7 +586,7 @@ WSL 中进入同一目录，使用 `/root/miniforge3/envs/sim-research/bin/pytho
 真实仿真的统一入口已保留：
 
 ```powershell
-& $taskPython -m robot_tasks run L1-01 --gui
+& $taskPython -m robot_tasks run GPT-PICK-PLACE --gui
 ```
 
 `run` 会先拒绝未实现的任务；已实现任务再核查仿真运行条件，失败时退出码为 `2`。GPT 抓放和八项 L1 场景、评分均已接入；L2-02 仍待实现。基础机器人验证使用 `check joint`，模型链路验证使用 `check api` 和 `check gpt`。
@@ -655,6 +669,43 @@ runs/<任务编号>_<模式>_<时间>_<随机后缀>/
 ├── frames/<相机名>/*.ppm    决策时的 RGB；dry-run 为占位帧
 └── video/<相机名>/          MP4、GIF 与首帧（真实 GPT 运行）
 ```
+
+## 可选观测与决策记录
+
+通用 GPT 链路保留 RGB-D、相机参数、图像标记和决策说明能力，由每个任务显式启用。
+现有 GPT 单臂抓放默认使用三路 RGB 和图像坐标标记；深度、相机参数披露和 `note` 默认关闭，
+另一臂仍必须静止。启用其他输入时需同步更新任务提示，并在结果中区分实验条件。
+
+启用 `observation.include_depth=true`、`policy_options.camera_calibration=true`，并保留
+`observation.include_feedback=true` 后，模型收到每个视角的 RGB 与对齐深度预览。
+虚拟相机内参和逐帧外参随观测提供；图像缩放时同步调整内参。
+参数来自仿真，`hardware_calibrated=false`；深度为光轴 Z 方向的米制距离，
+不模拟真实相机的噪声、盲区或双目匹配误差。
+
+深度预览使用固定 0.02—2.00 m 色标。模型可通过 `depth_queries` 查询 RGB 图像中的像素，
+每次最多 8 个点，返回对应可见表面的深度、相机坐标和世界坐标，不提供物体中心或评分真值。
+查询不执行动作、不推进物理，但占用模型调用预算；不能与运动或停止请求同时提交。
+无效深度返回 `no_depth`。运动、等待、停止时传空查询列表，关闭深度时不发送此字段。
+
+`recording.save_depth=true` 将原始 float32 米制深度保存到 `depth/<camera>/<step>.npy`，
+NaN 表示无效像素，同名 PNG 是预览。保存时刻与决策观测一致，复位帧单独保存；
+不是逐物理步深度录像。仅 RGB 对照应同时关闭 `include_depth` 和 `save_depth`。
+参考：[Isaac Sim 相机深度 API](https://docs.isaacsim.omniverse.nvidia.com/5.1.0/py/source/extensions/isaacsim.sensors.camera/docs/index.html)。
+
+启用 `policy_options.decision_notes=true` 后，每次决策必须附带 `note`，
+用一两句英文描述当前观察及动作目的，最多 512 字符。它只作为历史和日志记录，
+不参与控制或评分；图片历史淘汰不会删除文字笔记，新的 run 会清空历史。
+
+## 失败重试与记录
+
+通用执行循环保留 `execution.retry_failed_attempts` 开关；只有任务评分器明确将失败标为
+`retryable=true` 且尚有预算时，才复位场景、机器人与评分器，并保留模型历史。
+所有尝试共享调用、物理步和现实时间预算。当前抓放任务没有接入这种自动复位判据，
+仅打开开关不会使掉落自动重试。
+
+报告分别记录首次尝试、失败次数、复位次数和最终结果，避免把保留历史重试当作独立回合。
+无效模型动作被拒绝后可以继续决策，也计入预算；成功、模型请求停止、预算耗尽或故障可以提前结束。
+MP4 保留所有控制周期的画面；GIF 是覆盖整轮的抽帧预览，最多约 240 帧，限制长回合内存占用。
 
 ## 任务范围与后续验证
 

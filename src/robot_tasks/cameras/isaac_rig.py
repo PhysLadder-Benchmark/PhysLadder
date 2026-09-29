@@ -1,9 +1,9 @@
-"""RGB render products attached to world or measured R5 rigid-link transforms."""
+"""RGB and optional aligned depth from the same camera render products."""
 
 import numpy as np
 
 from ..robots.transforms import transform_pose
-from ..types import RGBFrame
+from ..types import DepthFrame, RGBFrame
 from .profile import CameraRigProfile
 from . import RGBNotReady
 from .geometry import calibration_metadata
@@ -18,10 +18,12 @@ def _set_pose(prim, pose):
 
 
 class IsaacCameraRig:
-    def __init__(self, stage, rep, profile: CameraRigProfile, names: tuple[str, ...]):
+    def __init__(self, stage, rep, profile: CameraRigProfile, names: tuple[str, ...], *, include_depth=False):
         self.stage, self.rep, self.profile = stage, rep, profile
         self.specs = profile.select(names)
         self.paths, self.products, self.annotators, self.sensors = {}, {}, {}, {}
+        self.include_depth = include_depth
+        self.depth_annotators = {}
 
     def create(self, ee_paths: dict[str, str]) -> dict:
         from isaacsim.sensors.camera import Camera
@@ -50,8 +52,15 @@ class IsaacCameraRig:
             annotator = self.rep.AnnotatorRegistry.get_annotator("rgb")
             self.annotators[spec.name] = annotator
             annotator.attach(product)
+            if self.include_depth:
+                depth = self.rep.AnnotatorRegistry.get_annotator("distance_to_image_plane")
+                self.depth_annotators[spec.name] = depth
+                depth.attach(product)
             report["cameras"][spec.name] = {**spec.metadata(), "parent_prim": parent,
-                                           "camera_prim": self.paths[spec.name]}
+                                           "camera_prim": self.paths[spec.name],
+                                           "depth_enabled": self.include_depth,
+                                           "depth_source": "ideal_rendered_optical_axis_m" if self.include_depth else None,
+                                           "hardware_depth_emulated": False}
         return report
 
     def read(self, timestamp: float, capture_id: int = 0) -> tuple[RGBFrame, ...]:
@@ -66,7 +75,21 @@ class IsaacCameraRig:
                 raise RuntimeError(f"{spec.name}: invalid RGB dimensions {data.shape}")
             rgb = np.ascontiguousarray(data[..., :3], dtype=np.uint8)
             metadata = calibration_metadata(spec, poses[spec.name], timestamp, capture_id)
-            frames.append(RGBFrame(spec.name, timestamp, width, height, rgb.tobytes(), metadata))
+            depth_frame = None
+            if self.include_depth:
+                data = np.asarray(self.depth_annotators[spec.name].get_data())
+                if data.size == 0:
+                    raise RGBNotReady(f"{spec.name}: depth buffer is not ready")
+                if data.shape == (height, width, 1):
+                    data = data[..., 0]
+                if data.shape != (height, width):
+                    raise RuntimeError(f"{spec.name}: invalid depth dimensions {data.shape}")
+                depth = np.array(data, dtype="<f4", order="C", copy=True)
+                # Renderer background may be inf/0. Never turn it into a surface.
+                depth[~np.isfinite(depth) | (depth <= 0) | (depth < spec.clipping_m[0])
+                      | (depth > spec.clipping_m[1])] = np.nan
+                depth_frame = DepthFrame(spec.name, timestamp, width, height, depth.tobytes(), capture_id)
+            frames.append(RGBFrame(spec.name, timestamp, width, height, rgb.tobytes(), metadata, depth_frame))
         return tuple(frames)
 
     def world_poses(self) -> dict[str, tuple[float, ...]]:
@@ -78,11 +101,14 @@ class IsaacCameraRig:
     def close(self) -> None:
         for name, annotator in self.annotators.items():
             annotator.detach(self.products[name])
+        for name, annotator in self.depth_annotators.items():
+            annotator.detach(self.products[name])
         for product in self.products.values():
             product.destroy()
         for sensor in self.sensors.values():
             sensor.destroy()
         self.annotators.clear()
+        self.depth_annotators.clear()
         self.products.clear()
         self.sensors.clear()
         self.paths.clear()

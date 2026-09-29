@@ -17,7 +17,7 @@ from robot_tasks.config import ExecutionSettings, load_config
 from robot_tasks.integrationtest.gpt_check import MotionGoal
 from robot_tasks.policies.gpt import GPTPolicy
 from robot_tasks.policies.model_config import GPTSettings
-from robot_tasks.policies.responses import ModelReply
+from robot_tasks.policies.responses import ModelError, ModelReply
 from robot_tasks.runner import run_episode
 from robot_tasks.tasks.pick_place import PickPlaceEvaluator, SingleArmPickPlace
 from robot_tasks.tasks.pick_place_scene import InteractionSettings
@@ -118,8 +118,11 @@ class EpisodeExecutionTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         # Runtime snapshots use resolved paths, even if Windows TEMP is an alias.
         self.root = Path(self.temp.name).resolve()
-        base = load_config(ROOT / 'configs/tasks/l1_01_cylinder_insertion.toml')
-        self.config = replace(base, control_dt_s=0.1, raw={**base.raw, "policy_options": {}, "execution": {
+        base = load_config(ROOT / 'configs/tasks/gpt_single_arm_pick_place.toml')
+        # Controller tests use an explicit 10 Hz fixture and default policy protocol.
+        base = replace(base, control_dt_s=0.1, include_depth=False, save_depth=False,
+                       raw={k: v for k, v in base.raw.items() if k != "policy_options"})
+        self.config = replace(base, raw={**base.raw, "execution": {
             "max_action_steps": 8, "completion_samples": 2, "wait_steps": 3, "max_decisions": 4}})
 
     def run_case(self, policy, *, config=None, robot=None):
@@ -300,15 +303,74 @@ class EpisodeExecutionTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 pose_transform(pose)
 
-    def test_invalid_model_output_is_task_failure_not_service_error(self):
-        settings = GPTSettings("https://example.org/openai", "gpt-6-astra")
+    def test_invalid_model_outputs_consume_all_100_calls_without_moving(self):
+        settings = GPTSettings("https://example.org/openai", "gpt-6-astra", max_calls=100)
+        config = replace(self.config, raw={**self.config.raw, "execution": {"max_decisions": 100}})
         client = Mock()
         client.generate.return_value = ModelReply('{"unexpected":true}', settings.model, "fixture", {}, 0.)
-        _, result, _, robot = self.run_case(GPTPolicy(self.config, settings, client=client))
-        self.assertEqual(result["termination_reason"], "invalid_model_action")
+        path, result, backend, robot = self.run_case(GPTPolicy(config, settings, client=client), config=config)
+        self.assertEqual(result["termination_reason"], "model_call_limit")
         self.assertTrue(result["task_evaluated"])
         self.assertFalse(result["success"])
-        self.assertEqual(result["decisions"], 1)
+        self.assertIsNone(result["error"])
+        self.assertEqual(result["decisions"], 100)
+        self.assertEqual(result["model_calls"], 100)
+        self.assertEqual(result["invalid_model_actions"], 100)
+        self.assertEqual(client.generate.call_count, 100)
+        self.assertEqual(backend.time_s(), 0)
+        self.assertFalse(robot.applied)
+        events = [json.loads(line) for line in (path / "episode.jsonl").read_text().splitlines()]
+        self.assertEqual(sum(e["event"] == "policy_action_rejected" for e in events), 100)
+        self.assertEqual(sum(e["event"] == "model_exchange" for e in events), 100)
+        self.assertFalse(any(e["event"] == "physics" for e in events))
+
+    def test_bad_json_retries_same_observation_then_executes_only_valid_action(self):
+        malformed = '{"request_stop":false,"commands":[{"arm":"left","gripper_width_m":0.012,"}]}'
+        settings = GPTSettings("https://example.org/openai", "gpt-6-astra")
+        for interface in ("absolute", "sparse_eef"):
+            with self.subTest(interface=interface):
+                config = self.config
+                command = {"arm": "left", "kind": "gripper", "values": [0.04], "frame": "world"}
+                if interface == "sparse_eef":
+                    config = replace(config, raw={**config.raw, "policy_options": {"action_interface": interface}})
+                    command = {"arm": "left", "x_m": None, "y_m": None, "z_m": None,
+                               "roll_deg": None, "pitch_deg": None, "yaw_deg": None, "gripper_width_m": 0.04}
+                client = Mock()
+                client.generate.side_effect = [ModelReply(text, settings.model, "fixture", {}, 0.) for text in (
+                    malformed, json.dumps({"request_stop": False, "commands": [command]}),
+                    '{"commands":[],"request_stop":true}')]
+                policy = GPTPolicy(config, settings, client=client)
+                path, result, _, robot = self.run_case(policy, config=config)
+                self.assertEqual(result["model_calls"], 3)
+                self.assertEqual(result["invalid_model_actions"], 1)
+                self.assertEqual(result["executed_actions"], 1)
+                self.assertEqual(result["termination_reason"], "policy_requested_stop")
+                self.assertIsNone(result["error"])
+                self.assertEqual(len(robot.applied), 1)
+                self.assertEqual(robot.applied[0].commands[0].values, (0.04,))
+                contents = [call.kwargs["messages"][-1]["content"] for call in client.generate.call_args_list[:2]]
+                first, retry = [json.loads(content[0]["text"]) for content in contents]
+                self.assertEqual(first["simulation_time_s"], retry["simulation_time_s"])
+                self.assertEqual(first["robot"], retry["robot"])
+                self.assertEqual(contents[0][1:], contents[1][1:])
+                self.assertEqual(retry["feedback"]["metrics"]["reason_code"], "invalid_model_action")
+                self.assertIn("Return a new JSON", retry["feedback"]["message"])
+                events = [json.loads(line) for line in (path / "episode.jsonl").read_text().splitlines()]
+                exchanges = [e["exchange"] for e in events if e["event"] == "model_exchange"]
+                self.assertEqual(exchanges[0]["response_text"], malformed)
+                self.assertEqual([e["status"] for e in exchanges], ["rejected", "accepted", "accepted"])
+
+    def test_provider_error_is_not_retried_as_an_invalid_action(self):
+        settings = GPTSettings("https://example.org/openai", "gpt-6-astra", max_calls=100)
+        client = Mock()
+        client.generate.side_effect = ModelError("Responses HTTP 401")
+        _, result, _, robot = self.run_case(GPTPolicy(self.config, settings, client=client))
+        self.assertEqual(client.generate.call_count, 1)
+        self.assertEqual(result["model_calls"], 1)
+        self.assertEqual(result["invalid_model_actions"], 0)
+        self.assertEqual(result["status"], "error")
+        self.assertFalse(result["task_evaluated"])
+        self.assertIsNone(result["success"])
         self.assertFalse(robot.applied)
 
     def test_cleanup_error_cannot_preserve_a_passing_check_result(self):

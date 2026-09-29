@@ -37,6 +37,8 @@ class EpisodeRecorder:
         snapshot_runtime_config(self.directory)
         snapshot_storage_config(self.directory)
         self.save_rgb = config.save_rgb
+        self.require_depth = config.include_depth and mode != "dry_run"
+        self.save_depth = config.save_depth and mode != "dry_run"
         config_bytes = config.source.read_bytes()
         (self.directory / "config.toml").write_bytes(config_bytes)
         robot_profile_bytes = config.robot.source.read_bytes()
@@ -67,12 +69,21 @@ class EpisodeRecorder:
             "video_status": "pending",
             "instruction": config.instruction,
             "physics_during_inference": "paused",
+            "observation_modalities": ["rgb", "depth"] if config.include_depth else ["rgb"],
+            "depth": {"enabled": config.include_depth, "recorded": self.save_depth,
+                      "source": "ideal_simulation_render" if self.require_depth else None,
+                      "quantity": "optical_axis_z", "units": "m", "hardware_emulated": False,
+                      "recording_cadence": "decision observations and reset/final observations; not every physics tick",
+                      "queries_share_model_budget": True},
             "execution": config.raw.get("execution", {}),
-            "episode_isolation": "fresh scene/robot/task; policy history reset; unique output; no previous results loaded",
+            "episode_isolation": "fresh scene/robot/task and policy history at run start; unique output; no previous runs loaded",
+            "retry_protocol": ("reset scene/robot/task; retain policy history and shared budgets"
+                               if mode != "dry_run" and config.raw.get("execution", {}).get("retry_failed_attempts")
+                               else "no automatic retry"),
         })
         (self.directory / "instruction.txt").write_text(config.instruction, encoding="utf-8")
 
-    def observation(self, observation: Observation, step: int) -> dict:
+    def observation(self, observation: Observation, step: int, *, after_reset: bool = False) -> dict:
         frames = []
         for frame in observation.rgb:
             if len(frame.data) != frame.width * frame.height * 3 or min(frame.width, frame.height) <= 0:
@@ -82,7 +93,9 @@ class EpisodeRecorder:
                 # Camera names are sanitized independently of adapter inputs.
                 if not frame.camera.replace("_", "").isalnum():
                     raise ValueError("Invalid camera name")
-                relative = Path("frames") / frame.camera / f"{step:06d}.ppm"
+                # Preserve the failed decision's images when its reset is logged.
+                suffix = "_reset" if after_reset else ""
+                relative = Path("frames") / frame.camera / f"{step:06d}{suffix}.ppm"
                 target = self.directory / relative
                 target.parent.mkdir(parents=True, exist_ok=True)
                 header = f"P6\n{frame.width} {frame.height}\n255\n".encode("ascii")
@@ -91,6 +104,24 @@ class EpisodeRecorder:
             frames.append({"camera": frame.camera, "time_s": frame.timestamp_s,
                            "width": frame.width, "height": frame.height, "path": saved_path,
                            "calibration": frame.calibration})
+            if self.require_depth or frame.depth is not None:
+                from .cameras.depth import depth_array, depth_metadata, encode_depth_preview
+                metadata = depth_metadata(frame)
+                metadata.update(path=None, preview_path=None)
+                if self.save_depth:
+                    import numpy as np
+                    if not frame.camera.replace("_", "").isalnum():
+                        raise ValueError("Invalid camera name")
+                    suffix = "_reset" if after_reset else ""
+                    relative = Path("depth") / frame.camera / f"{step:06d}{suffix}.npy"
+                    target = self.directory / relative
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    np.save(target, depth_array(frame), allow_pickle=False)
+                    preview, display = encode_depth_preview(frame, (frame.width, frame.height))
+                    target.with_suffix(".png").write_bytes(preview)
+                    metadata.update(path=relative.as_posix(), preview_path=relative.with_suffix(".png").as_posix(),
+                                    preview=display)
+                frames[-1]["depth"] = metadata
         return {"time_s": observation.time_s, "rgb": frames,
                 "robot": {k: asdict(v) for k, v in observation.robot.items()},
                 "feedback": asdict(observation.feedback)}

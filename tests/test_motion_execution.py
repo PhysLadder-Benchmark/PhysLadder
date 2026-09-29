@@ -2,6 +2,9 @@
 
 from dataclasses import replace
 import math
+import tempfile
+from pathlib import Path
+from importlib.metadata import PackageNotFoundError
 import unittest
 from unittest.mock import patch
 
@@ -12,7 +15,8 @@ from robot_tasks.registry import resolve_task
 from robot_tasks.robots.adapters import R5Adapter
 from robot_tasks.robots.control import width_to_joints
 from robot_tasks.robots.gripper import GripperProgress
-from robot_tasks.robots.kinematics import R5Kinematics
+from robot_tasks.robots.lula import R5LulaKinematics
+from robot_tasks.integrationtest.lula_check import load_native_lula
 from robot_tasks.robots.motion import BenchGuard, interpolated_poses, plan_cartesian, JointPath
 from robot_tasks.robots.transforms import pose_errors
 from robot_tasks.types import Action, ArmCommand, ArmState, Feedback
@@ -22,7 +26,13 @@ class MotionPathTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         _, cls.config = resolve_task("L1-01")
-        cls.kin = R5Kinematics(cls.config.robot)
+        try:
+            native = load_native_lula()
+        except (PackageNotFoundError, ModuleNotFoundError) as exc:
+            raise unittest.SkipTest("Native Lula path checks require Isaac Python") from exc
+        directory = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(directory.cleanup)
+        cls.kin = R5LulaKinematics(cls.config.robot, Path(directory.name), lula_module=native)
         cls.guard = BenchGuard(cls.config.robot)
         cls.home = cls.config.robot.mounts[0].home_positions_rad
 
@@ -65,6 +75,8 @@ class MotionPathTests(unittest.TestCase):
                 budget_s=0.1,
             )
 
+
+class PathPrimitiveTests(unittest.TestCase):
     def test_quaternion_interpolation_uses_short_arc(self):
         poses, distance, angle = interpolated_poses((0, 0, 0, 1, 0, 0, 0), (0, 0, 0.1, -1, 0, 0, 0))
         self.assertAlmostEqual(angle, 0)

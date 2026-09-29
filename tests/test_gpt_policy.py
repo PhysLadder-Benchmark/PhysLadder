@@ -1,5 +1,6 @@
 import base64
 from dataclasses import replace
+from contextlib import redirect_stdout
 from io import BytesIO
 import json
 import os
@@ -164,6 +165,47 @@ class ResponsesTests(unittest.TestCase):
         self.assertEqual(opener.open.call_count, 1)
 
     @patch.dict(os.environ, {"OPENAI_API_KEY": "test-private-token"})
+    def test_429_preserves_provider_reason_and_retry_header_without_credentials(self):
+        from email.message import Message
+        headers = Message()
+        headers["retry-after"] = "30"
+        headers["x-request-id"] = "req-fixture"
+        body = BytesIO(json.dumps({"error": {
+            "type": "rate_limit_error", "code": "insufficient_quota",
+            "message": "Account quota exceeded; key=test-private-token Authorization: Bearer secret-other",
+            "request": {"api_key": "nested-secret-must-not-be-logged"}}}).encode())
+        opener = Mock()
+        opener.open.side_effect = HTTPError("https://example.org", 429, "ignored reason", headers, body)
+        with patch("robot_tasks.policies.responses.build_opener", return_value=opener), self.assertRaises(ModelError) as error:
+            ResponsesClient(SETTINGS).generate(instructions="", messages=[], schema={})
+        message = str(error.exception)
+        for expected in ("429", "insufficient_quota", "Account quota exceeded", "req-fixture", '"retry_after": "30"'):
+            self.assertIn(expected, message)
+        for secret in ("test-private-token", "secret-other", "nested-secret-must-not-be-logged"):
+            self.assertNotIn(secret, message)
+        opener.open.assert_called_once()
+        self.assertTrue(body.closed)
+
+    @patch.dict(os.environ, {"OPENAI_API_KEY": "test-private-token"})
+    def test_http_error_does_not_dump_html_large_payloads_or_control_characters(self):
+        cases = ((b"<html>test-private-token</html>", "non_json_or_empty"),
+                 (b"x" * 16385, "too_large"),
+                 (json.dumps({"error": {"message": "Denied\n\x1b[31m " + "x"*1000}}).encode(), "Denied"),
+                 (b'{"message":"Channel busy","code":429}', "Channel busy"))
+        for raw, expected in cases:
+            with self.subTest(expected=expected):
+                opener = Mock()
+                opener.open.side_effect = HTTPError("https://example.org", 429, "ignored", {}, BytesIO(raw))
+                with patch("robot_tasks.policies.responses.build_opener", return_value=opener), self.assertRaises(ModelError) as error:
+                    ResponsesClient(SETTINGS).generate(instructions="", messages=[], schema={})
+                message = str(error.exception)
+                self.assertIn(expected, message)
+                self.assertNotIn("test-private-token", message)
+                self.assertNotIn("<html>", message)
+                self.assertNotIn("\x1b", message)
+                self.assertLess(len(message), 800)
+
+    @patch.dict(os.environ, {"OPENAI_API_KEY": "test-private-token"})
     def test_provider_echoing_token_is_not_recordable(self):
         opener = Mock()
         opener.open.return_value = Stream(json.dumps(response_document("test-private-token")).encode(), "application/json")
@@ -232,9 +274,31 @@ class GPTPolicyTests(unittest.TestCase):
         self.assertEqual(backend.time_s(), 0)
         self.assertIsNone(result["success"])
         self.assertEqual(result["status"], "finished")
-        self.assertEqual(result["termination_reason"], "invalid_model_action")
+        self.assertEqual(result["termination_reason"], "model_call_limit")
+        self.assertEqual(result["model_calls"], SETTINGS.max_calls)
+        self.assertEqual(result["invalid_model_actions"], SETTINGS.max_calls)
         self.assertEqual(events[0]["event"], "policy_configuration")
-        self.assertEqual(events[-1]["exchange"]["status"], "rejected")
+        exchanges = [e["exchange"] for e in events if e["event"] == "model_exchange"]
+        self.assertEqual(len(exchanges), SETTINGS.max_calls)
+        self.assertTrue(all(e["status"] == "rejected" for e in exchanges))
+
+    def test_api_only_check_prints_and_records_error_without_starting_isaac(self):
+        from io import StringIO
+        from robot_tasks.integrationtest.gpt_api_check import run_gpt_api_check
+        self.client.generate.side_effect = ModelError('Responses HTTP 429; provider_error={"code":"rate_limit"}')
+        output = StringIO()
+        with tempfile.TemporaryDirectory() as directory, redirect_stdout(output), \
+                patch("robot_tasks.policies.gpt.ResponsesClient", return_value=self.client), \
+                patch("robot_tasks.backends.isaacsim.IsaacSimBackend.open") as start_isaac:
+            path, result = run_gpt_api_check(self.config.source, Path(directory),
+                                            model_path=ROOT / "configs/models/gpt.example.toml")
+            saved = json.loads((path / "result.json").read_text())
+        start_isaac.assert_not_called()
+        self.client.generate.assert_called_once()
+        self.assertFalse(result["passed"])
+        self.assertEqual(saved, result)
+        self.assertIn("R5_API_RESULT", output.getvalue())
+        self.assertIn("rate_limit", output.getvalue())
 
 
 class SettingsTests(unittest.TestCase):
@@ -249,6 +313,12 @@ class SettingsTests(unittest.TestCase):
                         {"timeout_s": float("inf")}, {"max_calls": True}, {"history_steps": -1}):
             with self.subTest(changes=changes), self.assertRaises(ValueError):
                 replace(SETTINGS, **changes)
+
+    def test_timeout_can_be_long_but_must_remain_finite_and_positive(self):
+        self.assertEqual(replace(SETTINGS, timeout_s=900).timeout_s, 900)
+        for value in (True, 0, -1, float("nan"), float("inf"), "90"):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                replace(SETTINGS, timeout_s=value)
 
     @patch.dict(os.environ, {"ROBOT_TEST_API_KEY": "private-token"})
     def test_env_key_read_without_modification(self):

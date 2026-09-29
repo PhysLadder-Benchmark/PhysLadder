@@ -56,6 +56,8 @@ def _inspect(args) -> int:
         "configuration_valid": audit.valid, "task_implemented": spec.implemented,
         "robot": config.robot_model, "available_arms": config.robot.available_arms,
         "active_arms": config.arms, "cameras": config.cameras, "robot_audit": audit.as_dict(),
+        "observation_modalities": ["rgb", "depth"] if config.include_depth else ["rgb"],
+        "save_depth": config.save_depth,
         "asset_path": str(config.asset_path) if config.asset_path else None,
         "asset_exists": config.asset_path.exists() if config.asset_path else False,
         "evidence": spec.evidence,
@@ -74,7 +76,7 @@ def _run(args) -> int:
 
 
 def _task_arguments(parser) -> None:
-    parser.add_argument("task", nargs="?", help="注册任务 ID，例如 L1-01；只传 --config 也可")
+    parser.add_argument("task", nargs="?", help="注册任务 ID，例如 GPT-PICK-PLACE；只传 --config 也可")
     parser.add_argument("--config", type=Path, help="覆盖该任务的默认实验配置")
 
 
