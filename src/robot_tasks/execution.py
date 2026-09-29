@@ -20,6 +20,11 @@ def _gpt_policy(config: TaskConfig, model_config: Path | None):
     configured = config.raw.get("policy", {}).get("model_config")
     path = model_config or (config.source.parent / configured if configured else PROJECT_ROOT / "configs/models/gpt.toml")
     settings = load_gpt_settings(path)
+    policy_settings = config.raw.get("policy", {})
+    if set(policy_settings) - {"model_config", "reasoning_effort"}:
+        raise ValueError("policy only supports model_config and reasoning_effort")
+    if "reasoning_effort" in policy_settings:
+        settings = replace(settings, reasoning_effort=policy_settings["reasoning_effort"])
     decisions = ExecutionSettings.from_config(config).max_decisions
     if decisions is not None:
         settings = replace(settings, max_calls=decisions)

@@ -28,18 +28,11 @@ from robot_tasks.runner import run_episode
 from robot_tasks.types import Assessment, DepthFrame, DepthQuery, Feedback, Observation, PolicyInput, RGBFrame
 
 
+from fixtures import rgbd, gripper_command, decision_document
+
+
 ROOT = Path(__file__).resolve().parents[1]
 SETTINGS = GPTSettings("https://example.invalid", "fixture", max_calls=3, image_max_edge=256)
-
-
-def rgbd(camera="overview", time_s=0., *, width=32, height=24, capture_id=1):
-    calibration = {"intrinsics_fx_fy_cx_cy": [32., 30., width/2, height/2],
-                   "distortion": [0.] * 5, "resolution": [width, height],
-                   "T_world_camera_pose_wxyz": [1., 2., 3., 1., 0., 0., 0.],
-                   "capture_id": capture_id, "simulation_time_s": time_s,
-                   "source": "simulation_camera_parameters", "hardware_calibrated": False}
-    depth = DepthFrame(camera, time_s, width, height, np.full((height, width), .5, "<f4").tobytes(), capture_id)
-    return RGBFrame(camera, time_s, width, height, bytes([50, 100, 200]) * width * height, calibration, depth)
 
 
 def configured():
@@ -48,8 +41,7 @@ def configured():
                    raw={**base.raw,
                         "observation": {**base.raw["observation"], "include_depth": True},
                         "recording": {**base.raw["recording"], "save_depth": True},
-                        "execution": {"max_action_steps": 1, "max_decisions": 3},
-                        "policy_options": {"camera_calibration": True, "retain_text_history": True}})
+                        "execution": {"max_action_steps": 1, "max_decisions": 3}})
 
 
 def reply(document):
@@ -57,7 +49,7 @@ def reply(document):
 
 
 def query_document():
-    return {"commands": [], "request_stop": False, "depth_queries": [{"camera": "overview", "u": 16, "v": 12}]}
+    return decision_document(depth_queries=[{"camera": "overview", "u": 16, "v": 12}])
 
 
 class DepthGeometryTests(unittest.TestCase):
@@ -200,20 +192,16 @@ class DepthPolicyAndRecordingTests(unittest.TestCase):
         policy = GPTPolicy(self.config, SETTINGS, client=self.client)
         with self.assertRaisesRegex(ValueError, "every configured camera"):
             policy.act(replace(self.context, observation=replace(self.context.observation, rgb=self.frames[:2])))
-        config = replace(self.config, raw={**self.config.raw, "policy_options": {}})
-        with self.assertRaisesRegex(ValueError, "camera_calibration"):
-            GPTPolicy(config, SETTINGS, client=self.client)
+        frames = (replace(self.frames[0], calibration=None), *self.frames[1:])
+        with self.assertRaisesRegex(ValueError, "no camera metadata"):
+            policy.act(replace(self.context, observation=replace(self.context.observation, rgb=frames)))
         self.client.generate.assert_not_called()
 
-    def test_rgb_only_ignores_optional_depth_and_keeps_original_schema(self):
+    def test_rgb_only_is_rejected_before_a_request(self):
         config = replace(self.config, include_depth=False, save_depth=False)
-        self.client.generate.return_value = reply({"commands": [], "request_stop": True})
-        policy = GPTPolicy(config, SETTINGS, client=self.client)
-        action = policy.act(self.context)
-        self.assertTrue(action.request_stop)
-        request = self.client.generate.call_args.kwargs
-        self.assertNotIn("depth_queries", request["schema"]["properties"])
-        self.assertEqual(sum(v["type"] == "input_image" for v in request["messages"][-1]["content"]), 3)
+        with self.assertRaisesRegex(ValueError, "RGB-D"):
+            GPTPolicy(config, SETTINGS, client=self.client)
+        self.client.generate.assert_not_called()
 
     def test_raw_depth_is_lossless_and_reset_does_not_overwrite_failure(self):
         frame = self.frames[0]
@@ -264,10 +252,8 @@ class DepthPolicyAndRecordingTests(unittest.TestCase):
         backend, robot, task = Backend(), MockRobot(), MockTask()
         robot.apply = Mock()
         task.evaluate = Mock(return_value=Assessment("running", "Offline fixture"))
-        self.client.generate.side_effect = [reply(query_document()), reply({
-            "commands": [{"arm": "left", "kind": "gripper", "values": [.06], "frame": "world"}],
-            "request_stop": False, "depth_queries": []}), reply({
-            "commands": [], "request_stop": True, "depth_queries": []})]
+        self.client.generate.side_effect = [reply(query_document()), reply(decision_document(commands=[gripper_command()])),
+            reply(decision_document(request_stop=True))]
         policy = GPTPolicy(self.config, SETTINGS, client=self.client)
         with tempfile.TemporaryDirectory() as temporary, redirect_stdout(StringIO()):
             _, result = run_episode(self.config, backend, robot, task, policy, Path(temporary))
@@ -285,13 +271,14 @@ class DepthConfigurationTests(unittest.TestCase):
     def test_depth_flags_validate_without_isaac_or_model(self):
         source = ROOT / "configs/tasks/gpt_single_arm_pick_place.toml"
         text = source.read_text(encoding="utf-8")
-        text = text.replace("[observation]", "[observation]\ninclude_depth = true")
-        text = text.replace("[recording]", "[recording]\nsave_depth = true")
+        text += "\n[observation]\ninclude_depth = true\n[recording]\nsave_depth = true\n"
         text = text.replace('"../robots/r5_sim.toml"', json.dumps((ROOT / "configs/robots/r5_sim.toml").as_posix()))
+        text = text.replace('"../workflows/gpt_default.toml"', json.dumps((ROOT / "configs/workflows/gpt_default.toml").as_posix()))
+        text = text.replace('"../cameras/r5_orbbec_provisional.toml"', json.dumps((ROOT / "configs/cameras/r5_orbbec_provisional.toml").as_posix()))
         cases = (("include_depth = true", "include_depth = 1"),
                  ("save_depth = true", 'save_depth = "yes"'),
                  ("include_depth = true", "include_depth = false"),
-                 ('camera_profile = "../cameras/r5_orbbec_provisional.toml"', ""))
+                 ('camera_profile = ' + json.dumps((ROOT / "configs/cameras/r5_orbbec_provisional.toml").as_posix()), ""))
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "config.toml"
             for before, after in cases:

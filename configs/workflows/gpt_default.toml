@@ -1,0 +1,28 @@
+# Shared experiment parameters. GPT workflow capabilities are fixed in code.
+# No scene, task ID, robot roles, provider endpoint or credentials belong here.
+[runtime]
+seed = 0
+max_steps = 2400
+max_wall_time_s = 1800.0
+physics_dt_s = 0.004166666666666667
+control_dt_s = 0.08333333333333333
+
+[observation]
+cameras = ["overview", "left_wrist", "right_wrist"]
+
+[recording]
+save_rgb = true
+save_depth = true
+save_video = true
+
+[execution]
+max_action_steps = 120
+completion_samples = 3
+wait_steps = 12
+settle_steps = 12
+stop_steps = 12
+max_decisions = 100
+fixed_arm_tolerance_rad = 0.01
+
+[policy]
+reasoning_effort = "medium"

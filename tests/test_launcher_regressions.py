@@ -42,7 +42,7 @@ class InterpreterTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             config = Path(directory) / 'local.toml'
             config.write_text('[isaacsim]\npython=' + json.dumps(sys.executable))
-            args = ['check', 'cameras', '--gui']
+            args = ['check', 'gpt-pick-place', '--gui']
             with patch.dict(os.environ, {'GPT_BENCHMARK_RUNTIME_CONFIG': str(config)}, clear=True), \
                     patch.object(sys, 'argv', ['launch.py', *args]), patch.object(launcher.os, 'execve') as execute:
                 launcher.main()
@@ -51,6 +51,18 @@ class InterpreterTests(unittest.TestCase):
 
 
 class WindowsCancellationTests(unittest.TestCase):
+    @unittest.skipUnless(os.name == 'nt', 'Windows console inheritance')
+    def test_native_launcher_clears_inherited_ignore_ctrl_c_flag(self):
+        kernel = Mock()
+        kernel.SetConsoleCtrlHandler.return_value = True
+        process = Mock()
+        process.wait.side_effect = [subprocess.TimeoutExpired('fixture', .2), 0]
+        with patch('ctypes.WinDLL', return_value=kernel), \
+                patch.object(launcher.subprocess, 'Popen', return_value=process):
+            self.assertEqual(launcher.run_windows(['fixture'], {}, 2), 0)
+        kernel.SetConsoleCtrlHandler.assert_called_once_with(None, False)
+        self.assertTrue(all(call.kwargs['timeout'] == .2 for call in process.wait.call_args_list))
+
     def run_case(self, wait_results):
         process = Mock(pid=987)
         process.wait.side_effect = wait_results

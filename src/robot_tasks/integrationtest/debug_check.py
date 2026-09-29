@@ -1,4 +1,4 @@
-"""Debug the real motion check in one Windows process from a WSL editor.
+"""Debug GPT pick/place in one Windows process from a WSL editor.
 
 The normal check command keeps its subprocess watchdog.
 This development entry waits for attachment before opening Isaac Sim.
@@ -17,12 +17,12 @@ def main(argv: list[str] | None = None) -> int:
     from ..runtime import configure_windows_storage
     configure_windows_storage()
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", type=Path, help="默认使用注册表中的调试配置")
+    parser.add_argument("--config", type=Path, help="默认使用 GPT 抓放任务配置")
     parser.add_argument("--output", type=Path, default=PROJECT_ROOT / "runs/debug")
     parser.add_argument("--listen-host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=5678)
     parser.add_argument("--gui", action="store_true")
-    parser.add_argument("--check", choices=tuple(CHECKS), default="joint")
+    parser.add_argument("--check", choices=tuple(CHECKS), default="gpt-pick-place")
     parser.add_argument("--model-config", type=Path)
     args = parser.parse_args(argv)
     spec = get_check(args.check)

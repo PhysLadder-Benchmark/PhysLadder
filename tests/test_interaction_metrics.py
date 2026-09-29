@@ -52,10 +52,10 @@ class InteractionMetricsTests(unittest.TestCase):
         self.assertFalse(placed(baseline[:1], self.target, self.settings)["passed"])
 
     def test_scene_config_rejects_ungraspable_geometry_before_starting_isaac(self):
-        config = load_config(Path(__file__).resolve().parents[1] / "configs/checks/r5_interaction.toml")
+        config = load_config(Path(__file__).resolve().parents[1] / "configs/tasks/gpt_single_arm_pick_place.toml")
         InteractionSettings.from_config(config)
         for invalid in ({"cube_size_m": 0.10}, {"friction": float("nan")},
-                        {"transfer_y_m": 0.001}, {"closed_width_m": -0.1}, {"extra": 1}):
+                        {"transfer_y_m": 0.001}, {"open_width_m": -0.1}, {"extra": 1}):
             with self.subTest(invalid=invalid), self.assertRaises(ValueError):
                 InteractionSettings.from_config(replace(config, raw={**config.raw, "interaction": invalid}))
 

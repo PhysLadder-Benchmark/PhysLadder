@@ -14,7 +14,7 @@ from urllib.error import HTTPError
 from PIL import Image
 
 from robot_tasks.backends.mock import MockBackend, MockRobot, MockTask
-from robot_tasks.config import load_config
+from fixtures import robot_config, rgbd, gripper_command, decision_document, RGBDBackend
 from robot_tasks.policies.action_codec import decode_action
 from robot_tasks.policies.gpt import GPTPolicy
 from robot_tasks.policies.model_config import GPTSettings, load_gpt_settings, read_api_key
@@ -55,7 +55,7 @@ def event(data):
 
 class ActionCodecTests(unittest.TestCase):
     def setUp(self):
-        self.config = load_config(ROOT / "configs/checks/r5_gpt.toml")
+        self.config = robot_config()
 
     def test_valid_gripper_and_fixed_duration(self):
         action = decode_action(json.dumps(action_document()), self.config)
@@ -215,11 +215,11 @@ class ResponsesTests(unittest.TestCase):
 
 class GPTPolicyTests(unittest.TestCase):
     def setUp(self):
-        self.config = load_config(ROOT / "configs/checks/r5_gpt.toml")
+        self.config = robot_config()
         self.client = Mock()
-        self.client.generate.return_value = ModelReply(json.dumps(action_document()), SETTINGS.model, "id", {}, 1.0)
-        frame = RGBFrame("overview", 1.0, 64, 64, bytes((0, 0, 255)) * 4096)
-        self.context = PolicyInput("Open the left gripper", Observation(1, (frame,), {"left": ArmState()}, Feedback("completed")), 1)
+        self.client.generate.return_value = ModelReply(json.dumps(decision_document(commands=[gripper_command()])), SETTINGS.model, "id", {}, 1.0)
+        frames = tuple(rgbd(camera, 1.) for camera in self.config.cameras)
+        self.context = PolicyInput("Open the left gripper", Observation(1, frames, {"left": ArmState()}, Feedback("completed")), 1)
 
     def test_image_contract_and_input_boundary(self):
         policy = GPTPolicy(self.config, SETTINGS, client=self.client)
@@ -227,18 +227,20 @@ class GPTPolicyTests(unittest.TestCase):
         messages = self.client.generate.call_args.kwargs["messages"]
         content = messages[-1]["content"]
         text = json.loads(content[0]["text"])
-        self.assertEqual(set(text), {"instruction", "step", "simulation_time_s", "robot", "feedback"})
-        data = content[-1]["image_url"].split(",", 1)[1]
+        self.assertEqual(set(text), {"instruction", "step", "simulation_time_s", "robot", "feedback", "tcp_orientation_reference_deg"})
+        data = content[2]["image_url"].split(",", 1)[1]
         image = Image.open(BytesIO(base64.b64decode(data)))
-        self.assertEqual(image.getpixel((0, 0)), (0, 0, 255))
+        self.assertEqual(image.size, (32, 24))
+        self.assertEqual(sum(v["type"] == "input_image" for v in content), 6)
         self.assertNotIn("data:image", json.dumps(policy.last_exchange))
 
     def test_history_bounded_and_reset_clears_budget(self):
         policy = GPTPolicy(self.config, replace(SETTINGS, max_calls=4), client=self.client)
         for _ in range(4):
             policy.act(self.context)
-        self.assertEqual(len(policy.history), 2)
-        self.assertEqual(len(self.client.generate.call_args.kwargs["messages"]), 5)
+        self.assertEqual(len(policy.history), 4)
+        self.assertEqual(len(self.client.generate.call_args.kwargs["messages"]), 7)
+        self.assertFalse(any(v["type"] == "input_image" for v in policy.history[0][0]["content"]))
         with self.assertRaises(ModelError):
             policy.act(self.context)
         self.assertEqual(self.client.generate.call_count, 4)
@@ -266,7 +268,7 @@ class GPTPolicyTests(unittest.TestCase):
         self.client.generate.return_value = ModelReply('{"wrong":true}', SETTINGS.model, "id", {}, 1)
         config = replace(self.config, raw={**self.config.raw, "execution": {"settle_steps": 0}})
         policy = GPTPolicy(config, SETTINGS, client=self.client)
-        backend, robot = MockBackend(), MockRobot()
+        backend, robot = RGBDBackend(), MockRobot()
         with tempfile.TemporaryDirectory() as directory, patch.object(robot, "apply") as apply:
             path, result = run_episode(config, backend, robot, MockTask(), policy, Path(directory))
             events = [json.loads(line) for line in (path / "episode.jsonl").read_text().splitlines()]
@@ -282,23 +284,6 @@ class GPTPolicyTests(unittest.TestCase):
         self.assertEqual(len(exchanges), SETTINGS.max_calls)
         self.assertTrue(all(e["status"] == "rejected" for e in exchanges))
 
-    def test_api_only_check_prints_and_records_error_without_starting_isaac(self):
-        from io import StringIO
-        from robot_tasks.integrationtest.gpt_api_check import run_gpt_api_check
-        self.client.generate.side_effect = ModelError('Responses HTTP 429; provider_error={"code":"rate_limit"}')
-        output = StringIO()
-        with tempfile.TemporaryDirectory() as directory, redirect_stdout(output), \
-                patch("robot_tasks.policies.gpt.ResponsesClient", return_value=self.client), \
-                patch("robot_tasks.backends.isaacsim.IsaacSimBackend.open") as start_isaac:
-            path, result = run_gpt_api_check(self.config.source, Path(directory),
-                                            model_path=ROOT / "configs/models/gpt.example.toml")
-            saved = json.loads((path / "result.json").read_text())
-        start_isaac.assert_not_called()
-        self.client.generate.assert_called_once()
-        self.assertFalse(result["passed"])
-        self.assertEqual(saved, result)
-        self.assertIn("R5_API_RESULT", output.getvalue())
-        self.assertIn("rate_limit", output.getvalue())
 
 
 class SettingsTests(unittest.TestCase):

@@ -134,6 +134,9 @@ def write_run_report(directory: Path) -> Path:
                   "保存频率与决策观测一致，不是逐物理步深度录像。像素查询不推进物理，但计入模型调用预算。", ""]
     if process:
         lines += _table(("进程检查", "结果"), [("退出码", process.get("returncode")),
+                          ("用户中断", process.get("interrupted")),
+                          ("强制结束", process.get("forced_termination")),
+                          ("工作进程已退出", process.get("cleanup_complete")),
                           ("监控超时", process.get("timed_out")), ("进程与结果联合校验通过", process.get("passed"))])
         expected_check_failure = (process.get("returncode") == 2 and result.get("status") == "completed"
                                   and result.get("passed") is False)

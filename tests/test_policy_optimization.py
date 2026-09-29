@@ -13,7 +13,6 @@ from robot_tasks.cameras.geometry import project_world, resized_intrinsics
 from robot_tasks.config import ExecutionSettings, load_config
 from robot_tasks.policies.gpt import GPTPolicy, prepare_frame
 from robot_tasks.policies.model_config import GPTSettings
-from robot_tasks.policies.options import PolicyOptions
 from robot_tasks.policies.responses import ModelReply
 from robot_tasks.policies.sparse_action import FIELDS, REFERENCE, decode_sparse_action, orientation_degrees
 from robot_tasks.robots.adapters import R5Adapter
@@ -22,22 +21,27 @@ from robot_tasks.robots.transforms import origin_transform, pose_errors, transfo
 from robot_tasks.types import Action, ArmCommand, ArmState, Feedback, Observation, PolicyInput, RGBFrame
 
 
+from fixtures import rgbd, decision_document
+
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
 class OptimizationTests(unittest.TestCase):
     def setUp(self):
-        self.config = load_config(ROOT / "configs/tasks/gpt_single_arm_pick_place_optimized.toml")
+        base = load_config(ROOT / "configs/tasks/gpt_single_arm_pick_place.toml")
+        self.config = replace(base, cameras=("overview",), observation_arms=())
         t = origin_transform((.3, .4, .2), (0., 0., 0.))
         t[:3, :3] = REFERENCE
         self.pose = transform_pose(t)
-        self.frame = RGBFrame("overview", 1., 100, 80, bytes((20, 40, 60)) * 8000,
-                              {"intrinsics_fx_fy_cx_cy": [80, 80, 50, 40], "resolution": [100, 80],
-                               "distortion": [0.] * 5, "T_world_camera_pose_wxyz": [0, 0, 1, 1, 0, 0, 0]})
+        sensor = rgbd(time_s=1., width=100, height=80)
+        self.frame = replace(sensor, data=bytes((20, 40, 60)) * 8000,
+                             calibration={**sensor.calibration, "intrinsics_fx_fy_cx_cy": [80, 80, 50, 40],
+                                          "T_world_camera_pose_wxyz": [0, 0, 1, 1, 0, 0, 0]})
         self.obs = Observation(1., (self.frame,), {"left": ArmState(tcp_pose_world_wxyz=self.pose)}, Feedback("completed"))
         self.settings = GPTSettings("https://example.invalid", "test", max_calls=8)
         self.client = Mock()
-        self.client.generate.return_value = ModelReply('{"commands":[],"request_stop":false}', "test", "id", {}, 0.)
+        self.client.generate.return_value = ModelReply(json.dumps(decision_document()), "test", "id", {}, 0.)
 
     def sparse(self, **values):
         row = {"arm": "left", **dict.fromkeys(FIELDS), **values}
@@ -75,24 +79,23 @@ class OptimizationTests(unittest.TestCase):
         messages = self.client.generate.call_args.kwargs["messages"]
         self.assertIn("instruction_0", json.dumps(messages))
         self.assertFalse(any(item["type"] == "input_image" for item in policy.history[0][0]["content"]))
-        self.assertEqual(sum(item["type"] == "input_image" for user, _ in policy.history for item in user["content"]), 2)
+        self.assertEqual(sum(item["type"] == "input_image" for user, _ in policy.history for item in user["content"]), 4)
         policy.reset(12)
         policy.act(PolicyInput("fresh_episode", self.obs, 1))
         self.assertEqual(len(self.client.generate.call_args.kwargs["messages"]), 1)
         self.assertNotIn("instruction_0", json.dumps(self.client.generate.call_args.kwargs["messages"]))
 
-    def test_baseline_does_not_disclose_calibration_or_overlay(self):
+    def test_every_request_includes_calibration_but_not_object_truth(self):
         policy = GPTPolicy(self.config, self.settings, client=self.client)
         policy.act(PolicyInput("task", self.obs, 1))
         messages = self.client.generate.call_args.kwargs["messages"]
-        self.assertNotIn("T_world_camera", json.dumps(messages))
-        image = Image.open(BytesIO(base64.b64decode(messages[-1]["content"][-1]["image_url"].split(",")[1])))
-        self.assertEqual(image.getpixel((0, 0)), (20, 40, 60))
+        self.assertIn("T_world_camera", json.dumps(messages))
         self.assertNotIn("source_x_m", policy.instructions)
         self.assertNotIn("transfer_y_m", policy.instructions)
+        self.assertTrue(policy.run_metadata["workflow"]["visual_aids"])
 
     def test_disclosed_calibration_tracks_actual_encoded_size(self):
-        config = replace(self.config, raw={**self.config.raw, "policy_options": {"camera_calibration": True}})
+        config = self.config
         policy = GPTPolicy(config, replace(self.settings, image_max_edge=64), client=self.client)
         policy.act(PolicyInput("task", self.obs, 1))
         content = self.client.generate.call_args.kwargs["messages"][-1]["content"]
@@ -107,7 +110,7 @@ class OptimizationTests(unittest.TestCase):
         self.client.generate.assert_not_called()
 
     def test_calibration_requested_without_metadata_fails_before_request(self):
-        config = replace(self.config, raw={**self.config.raw, "policy_options": {"camera_calibration": True}})
+        config = self.config
         policy = GPTPolicy(config, self.settings, client=self.client)
         with self.assertRaisesRegex(ValueError, "no camera metadata"):
             policy.act(PolicyInput("task", replace(self.obs, rgb=(replace(self.frame, calibration=None),)), 1))
@@ -115,19 +118,18 @@ class OptimizationTests(unittest.TestCase):
 
     def test_visual_aids_preserve_raw_rgb(self):
         original = self.frame.data
-        encoded, _, _ = prepare_frame(self.frame, 100, visual_aids=True, robot=self.obs.robot)
+        encoded, _, _ = prepare_frame(self.frame, 100, robot=self.obs.robot)
         self.assertEqual(self.frame.data, original)
         self.assertNotEqual(Image.open(BytesIO(encoded)).tobytes(), original)
 
-    def test_visual_aids_reach_model_without_disclosing_camera_parameters(self):
-        config = replace(self.config, raw={**self.config.raw, "policy_options": {
-            **self.config.raw["policy_options"], "visual_aids": True, "camera_calibration": False}})
+    def test_visual_aids_and_calibration_always_reach_model_together(self):
+        config = self.config
         policy = GPTPolicy(config, self.settings, client=self.client)
         original = self.frame.data
         policy.act(PolicyInput("task", self.obs, 1))
         content = self.client.generate.call_args.kwargs["messages"][-1]["content"]
         label = json.loads(content[1]["text"])
-        self.assertNotIn("calibration", label)
+        self.assertIn("calibration", label)
         encoded = base64.b64decode(content[2]["image_url"].split(",", 1)[1])
         image = Image.open(BytesIO(encoded))
         self.assertNotEqual(image.tobytes(), original)
@@ -137,7 +139,7 @@ class OptimizationTests(unittest.TestCase):
     def test_option_typos_and_invalid_timing_are_rejected(self):
         for options in ({"camera_calibration": "true"}, {"action_interface": "magic"}, {"unknown": True}):
             with self.assertRaises(ValueError):
-                PolicyOptions.from_config(replace(self.config, raw={**self.config.raw, "policy_options": options}))
+                GPTPolicy(replace(self.config, raw={**self.config.raw, "policy_options": options}), self.settings, client=self.client)
         with self.assertRaises(ValueError):
             ExecutionSettings.from_config(replace(self.config, raw={**self.config.raw, "execution": {"gripper_timing": "unknown"}}))
 

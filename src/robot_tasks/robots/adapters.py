@@ -111,13 +111,13 @@ class R5Adapter(RobotAdapter):
             from ..runner import validate_action
             validate_action(action, self.config, require_control_duration=False)
             if not action.commands:
-                plan_targets(self.config.robot, self.config.arms, action, self.targets)
+                plan_targets(self.config.robot, self.config.command_arms, action, self.targets)
                 return
             needs_state = any(c.kind == "cartesian_pose" for c in action.commands)
             states = self.state() if needs_state else {}
             measured = ({name: state.joint_positions_rad for name, state in states.items()}
                         if needs_state else None)
-            planned = plan_targets(self.config.robot, self.config.arms, action, self.targets,
+            planned = plan_targets(self.config.robot, self.config.command_arms, action, self.targets,
                                    kinematics=self.kinematics, measured_positions=measured)
             cartesian_targets = dict(self.cartesian_targets)
             for command in action.commands:
@@ -138,11 +138,10 @@ class R5Adapter(RobotAdapter):
             raise
         self.pending_grippers = {}
         self.motion_arms = {c.arm for c in action.commands if c.kind != "gripper"}
-        if self.execution.gripper_timing == "after_motion":
-            for c in action.commands:
-                if c.kind == "gripper" and c.arm in self.motion_arms:
-                    self.pending_grippers[c.arm] = planned[c.arm][6:]
-                    planned[c.arm] = planned[c.arm][:6] + self.targets[c.arm][6:]
+        for c in action.commands:
+            if c.kind == "gripper" and c.arm in self.motion_arms:
+                self.pending_grippers[c.arm] = planned[c.arm][6:]
+                planned[c.arm] = planned[c.arm][:6] + self.targets[c.arm][6:]
         self.motion_stable_s = 0.0
         self._send_targets(planned)
         self.cartesian_targets = cartesian_targets

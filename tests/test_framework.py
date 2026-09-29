@@ -48,7 +48,7 @@ class FrameworkTests(unittest.TestCase):
                 self.assertIn("(<frames>)", report)
                 events = [json.loads(s) for s in (path / "episode.jsonl").read_text().splitlines()]
                 self.assertEqual(len(events), 4)  # reset + 3 transitions
-                self.assertEqual(set(events[0]["observation"]["robot"]), set(config.arms))
+                self.assertEqual(set(events[0]["observation"]["robot"]), set(config.command_arms))
                 self.assertEqual(len(events[-1]["observation"]["rgb"]), len(config.cameras))
                 self.assertAlmostEqual(events[-1]["observation"]["time_s"], 3 * config.control_dt_s)
                 self.assertEqual(len(list(path.rglob("*.ppm"))), 4 * len(config.cameras))

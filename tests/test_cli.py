@@ -13,7 +13,7 @@ from unittest.mock import Mock, patch
 
 from robot_tasks.backends.mock import MockBackend, MockRobot, MockTask, NoopPolicy
 from robot_tasks.cli import main
-from robot_tasks.integrationtest.debug_motion import main as debug_main
+from robot_tasks.integrationtest.debug_check import main as debug_main
 from robot_tasks.integrationtest.registry import CHECKS, CheckSpec
 from robot_tasks.integrationtest.simulation_process import run_check_process
 from robot_tasks.integrationtest.simulation_worker import main as worker_main
@@ -33,13 +33,20 @@ class NamedEntryTests(unittest.TestCase):
     def config_variant(self, task="GPT-PICK-PLACE", *, task_id=None):
         spec = TASKS[task]
         content = spec.default_config.read_text(encoding="utf-8")
+        if 'workflow_profile' in content:
+            content = content.replace('"../workflows/gpt_default.toml"',
+                                      json.dumps((ROOT / "configs/workflows/gpt_default.toml").as_posix()))
+            content += ('\n[runtime]\nmax_steps = 3\n'
+                        '\n[execution]\nmax_action_steps=1\ncompletion_samples=1\nwait_steps=1\nsettle_steps=0\nstop_steps=0\n'
+                        '\n[recording]\nsave_depth=false\nsave_video=false\n')
         content = content.replace('"../robots/r5_sim.toml"', json.dumps((ROOT / "configs/robots/r5_sim.toml").as_posix()))
         content = re.sub(r"max_steps = \d+", "max_steps = 3", content)
         content = content.replace('"../cameras/r5_orbbec_provisional.toml"',
                                   json.dumps((ROOT / "configs/cameras/r5_orbbec_provisional.toml").as_posix()))
         content = content.replace("save_video = true", "save_video = false")
         content = content.replace("settle_steps = 12", "settle_steps = 0")
-        content = re.sub(r"\[execution\]\n.*?(?=\n\[)", "[execution]\n", content, flags=re.S)
+        if 'workflow_profile' not in content:
+            content = re.sub(r"\[execution\]\n.*?(?=\n\[)", "[execution]\n", content, flags=re.S)
         if task_id is not None:
             content = content.replace(f'id = "{task}"', f'id = "{task_id}"')
         path = self.directory / "variant.toml"
@@ -83,12 +90,13 @@ class NamedEntryTests(unittest.TestCase):
         self.assertIsNone(result["success"])
 
     def test_adding_a_registered_task_needs_no_cli_change(self):
+        from fixtures import RGBDBackend
         path = self.config_variant(task_id="TEST-NEW")
         factory = Mock(return_value=MockTask(), spec=[])
         spec = replace(TASKS["GPT-PICK-PLACE"], task_id="TEST-NEW", default_config=path,
                        factory=factory, implemented=True)
         policy_factory = Mock(side_effect=lambda config, model: NoopPolicy(config.control_dt_s))
-        backend = MockBackend()
+        backend = RGBDBackend()
         with patch.dict(TASKS, {spec.task_id: spec}), \
                 patch.dict("robot_tasks.execution.POLICIES", {"fixture": policy_factory}), \
                 patch("robot_tasks.execution.IsaacSimBackend", return_value=backend), \
@@ -124,9 +132,9 @@ class NamedEntryTests(unittest.TestCase):
 
     def test_check_overrides_cannot_silently_change_kind_or_ignore_flags(self):
         for name, path, options, message in (
-            ("gpt", CHECKS["cameras"].default_config, {}, "Check/config mismatch"),
-            ("api", None, {"gui": True}, "--gui"),
-            ("cameras", None, {"model_config": Path("unused.toml")}, "--model-config"),
+            ("gpt-pick-place", TASKS["L2-02"].default_config, {}, "Check/config mismatch"),
+            ("joint", None, {}, "Unknown check"),
+            ("gpt", None, {}, "Unknown check"),
         ):
             with self.subTest(name=name), patch("robot_tasks.integrationtest.simulation_process.subprocess.Popen") as process:
                 with self.assertRaisesRegex(ValueError, message):
@@ -134,12 +142,12 @@ class NamedEntryTests(unittest.TestCase):
                 process.assert_not_called()
 
     def test_check_cli_passes_name_and_overrides_to_common_process(self):
-        config = CHECKS["gpt"].default_config
+        config = CHECKS["gpt-pick-place"].default_config
         model = self.directory / "model.toml"
         with patch("robot_tasks.cli.run_check_process", return_value=(self.directory, True)) as execute:
-            self.assertEqual(main(["check", "gpt", "--config", str(config), "--model-config", str(model),
+            self.assertEqual(main(["check", "gpt-pick-place", "--config", str(config), "--model-config", str(model),
                                    "--gui", "--output", str(self.directory)]), 0)
-        execute.assert_called_once_with("gpt", self.directory, config_path=config, gui=True, model_config=model)
+        execute.assert_called_once_with("gpt-pick-place", self.directory, config_path=config, gui=True, model_config=model)
 
     def test_process_passes_resolved_config_and_model_to_worker(self):
         observed = []
@@ -148,36 +156,33 @@ class NamedEntryTests(unittest.TestCase):
             observed.append(command)
             output = Path(command[command.index("--run-directory") + 1])
             (output / "result.json").write_text('{"status":"completed","passed":true}', encoding="utf-8")
-            process = Mock(stdout=[], pid=123)
+            process = Mock(stdout=io.StringIO(), pid=123, returncode=0)
             process.wait.return_value = 0
-            context = Mock()
-            context.__enter__ = Mock(return_value=process)
-            context.__exit__ = Mock(return_value=False)
-            return context
+            return process
 
         with chdir(self.directory), patch("robot_tasks.integrationtest.simulation_process.subprocess.Popen", side_effect=fake_process), \
                 redirect_stdout(io.StringIO()):
-            output, passed = run_check_process("gpt", self.directory, model_config=Path("model.toml"), gui=True)
+            output, passed = run_check_process("gpt-pick-place", self.directory, model_config=Path("model.toml"), gui=True)
         self.assertTrue(passed)
         command = observed[0]
-        self.assertEqual(command[command.index("--config") + 1], str(CHECKS["gpt"].default_config))
+        self.assertEqual(command[command.index("--config") + 1], str(CHECKS["gpt-pick-place"].default_config))
         self.assertEqual(command[command.index("--model-config") + 1], str(self.directory / "model.toml"))
         self.assertIn("--gui", command)
         self.assertTrue((output / "process.json").is_file())
 
     def test_debugger_uses_same_registry_and_debug_default_or_override(self):
         debugger = Mock()
-        for override in (None, CHECKS["gpt"].default_config):
-            args = ["--check", "gpt", "--gui", "--output", str(self.directory)]
+        for override in (None, CHECKS["gpt-pick-place"].default_config):
+            args = ["--check", "gpt-pick-place", "--gui", "--output", str(self.directory)]
             if override is not None:
                 args += ["--config", str(override)]
             with self.subTest(override=override), patch.dict("sys.modules", {"debugpy": debugger}), \
-                    patch("robot_tasks.integrationtest.debug_motion.sys.platform", "win32"), \
+                    patch("robot_tasks.integrationtest.debug_check.sys.platform", "win32"), \
                     patch("robot_tasks.runtime.configure_windows_storage"), \
                     patch.object(CheckSpec, "run", return_value=(self.directory, {"passed": True})) as execute, \
                     redirect_stdout(io.StringIO()):
                 self.assertEqual(debug_main(args), 0)
-                self.assertEqual(execute.call_args.args[0], override or CHECKS["gpt"].debug_config)
+                self.assertEqual(execute.call_args.args[0], override or CHECKS["gpt-pick-place"].default_config)
         self.assertEqual(debugger.wait_for_client.call_count, 2)
 
 

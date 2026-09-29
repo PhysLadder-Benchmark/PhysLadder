@@ -1,4 +1,4 @@
-"""Control contracts without Kit; actual motion is checked by check joint."""
+"""Offline control contracts; real execution is covered by the GPT pick/place integration case."""
 
 from dataclasses import replace
 import hashlib
@@ -12,7 +12,7 @@ import xml.etree.ElementTree as ET
 
 from robot_tasks.backends.isaacsim import IsaacSimBackend
 from robot_tasks.backends.settings import SimulationSettings
-from robot_tasks.config import load_config
+from fixtures import robot_config
 from robot_tasks.robots.audit import require_joint_sim_ready, require_robot_ready
 from robot_tasks.robots.adapters import R5Adapter
 from robot_tasks.robots.control import joints_to_width, plan_targets, width_to_joints
@@ -27,7 +27,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class R5ControlTests(unittest.TestCase):
     def setUp(self):
-        self.config = load_config(ROOT / "configs/checks/r5_motion.toml")
+        self.config = robot_config()
         self.profile = self.config.robot
         self.targets = {mount.name: mount.home_positions_rad + width_to_joints(self.profile, 0.04)
                         for mount in self.profile.mounts}

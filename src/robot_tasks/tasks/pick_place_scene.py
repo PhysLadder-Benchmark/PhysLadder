@@ -1,4 +1,4 @@
-"""Shared physical cube scene for the GPT task and scripted integration checks."""
+"""Physical cube scene and scoring parameters for GPT pick/place."""
 
 from dataclasses import dataclass
 import math
@@ -15,12 +15,7 @@ class InteractionSettings:
     friction: float = 0.8
     source_x_m: float = 0.38
     transfer_y_m: float = 0.15
-    grasp_tcp_z_m: float = 0.033
-    approach_z_m: float = 0.18
-    lift_z_m: float = 0.15
-    closed_width_m: float = 0.028
     open_width_m: float = 0.070
-    waypoint_spacing_m: float = 0.015
     lift_threshold_m: float = 0.07
     placement_tolerance_m: float = 0.025
     stability_s: float = 1.0
@@ -29,10 +24,9 @@ class InteractionSettings:
     placement_speed_m_s: float = 0.02
     placement_angular_speed_rad_s: float = 0.2
     gripper_open_tolerance_m: float = 0.003
-    inactive_joint_tolerance_rad: float = 0.01
 
     @classmethod
-    def from_config(cls, config: TaskConfig, *, scripted: bool = True) -> "InteractionSettings":
+    def from_config(cls, config: TaskConfig) -> "InteractionSettings":
         data = dict(config.raw.get("interaction", {}))
         unknown = set(data) - set(cls.__dataclass_fields__)
         if unknown:
@@ -45,13 +39,6 @@ class InteractionSettings:
         lower, upper = config.robot.gripper.width_limits_m
         if not lower < result.cube_size_m < result.open_width_m <= upper:
             raise ValueError("The object must fit the R5 gripper width limits")
-        if scripted:
-            if not lower <= result.closed_width_m < result.cube_size_m:
-                raise ValueError("Scripted closed width must be smaller than the object")
-            if not result.cube_size_m / 2 < result.grasp_tcp_z_m < result.cube_size_m:
-                raise ValueError("Grasp TCP must lie in the upper half of this cube")
-            if not result.grasp_tcp_z_m + result.lift_threshold_m < result.lift_z_m <= result.approach_z_m:
-                raise ValueError("Lift height must exceed the lift criterion and remain below approach")
         if result.transfer_y_m <= 2 * result.placement_tolerance_m:
             raise ValueError("Source and destination acceptance regions must be separate")
         return result

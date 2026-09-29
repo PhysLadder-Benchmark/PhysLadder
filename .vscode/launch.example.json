@@ -2,78 +2,6 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "R5: Joint check GUI (WSL)",
-            "type": "debugpy",
-            "request": "attach",
-            "connect": {
-                "host": "WINDOWS_WSL_HOST",
-                "port": 5678
-            },
-            "pathMappings": [
-                {
-                    "localRoot": "${workspaceFolder}",
-                    "remoteRoot": "D:\\path\\to\\GPT_Benchmark"
-                }
-            ],
-            "justMyCode": true,
-            "subProcess": false,
-            "preLaunchTask": "R5: start Windows debugger from WSL"
-        },
-        {
-            "name": "R5: Cartesian check GUI (WSL)",
-            "type": "debugpy",
-            "request": "attach",
-            "connect": {
-                "host": "WINDOWS_WSL_HOST",
-                "port": 5678
-            },
-            "pathMappings": [
-                {
-                    "localRoot": "${workspaceFolder}",
-                    "remoteRoot": "D:\\path\\to\\GPT_Benchmark"
-                }
-            ],
-            "justMyCode": true,
-            "subProcess": false,
-            "preLaunchTask": "R5: start Cartesian debugger from WSL"
-        },
-        {
-            "name": "R5: Interaction check GUI (WSL)",
-            "type": "debugpy",
-            "request": "attach",
-            "connect": {
-                "host": "WINDOWS_WSL_HOST",
-                "port": 5678
-            },
-            "pathMappings": [
-                {
-                    "localRoot": "${workspaceFolder}",
-                    "remoteRoot": "D:\\path\\to\\GPT_Benchmark"
-                }
-            ],
-            "justMyCode": true,
-            "subProcess": false,
-            "preLaunchTask": "R5: start Interaction debugger from WSL"
-        },
-        {
-            "name": "R5: GPT check GUI (WSL)",
-            "type": "debugpy",
-            "request": "attach",
-            "connect": {
-                "host": "WINDOWS_WSL_HOST",
-                "port": 5678
-            },
-            "pathMappings": [
-                {
-                    "localRoot": "${workspaceFolder}",
-                    "remoteRoot": "D:\\path\\to\\GPT_Benchmark"
-                }
-            ],
-            "justMyCode": true,
-            "subProcess": false,
-            "preLaunchTask": "R5: start GPT debugger from WSL"
-        },
-        {
             "name": "R5: GPT pick-place GUI (WSL)",
             "type": "debugpy",
             "request": "attach",
@@ -92,16 +20,14 @@
             "preLaunchTask": "R5: start GPT pick-place debugger from WSL"
         },
         {
-            "name": "R5: Joint check GUI (Windows)",
+            "name": "R5: GPT pick-place GUI (Windows)",
             "type": "debugpy",
             "request": "launch",
             "python": "D:\\conda\\envs\\isaac51\\python.exe",
             "module": "robot_tasks",
             "args": [
-                "check",
-                "joint",
-                "--config",
-                "configs/checks/r5_motion.toml",
+                "run",
+                "GPT-PICK-PLACE",
                 "--gui"
             ],
             "cwd": "${workspaceFolder}",
