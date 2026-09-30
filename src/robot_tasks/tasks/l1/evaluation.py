@@ -46,12 +46,46 @@ class L1Settings:
         return result
 
 
+class InsertionAttemptMonitor:
+    """Scoring-only termination rules; never provide object truth to the policy.
+
+    Debounce contact loss and unsupported toppling for 0.25 simulation seconds.
+    One missing contact sample is not sufficient evidence of a failed grasp.
+    A guided insertion may settle under gravity after release without a reset.
+    """
+
+    persistence_s = 0.25
+    topple_tilt_rad = math.pi / 3
+
+    def __init__(self):
+        self.carried = set()
+        self.loss_since = {}
+        self.topple_since = {}
+        self.failure = ""
+
+    def update(self, name, now, *, lifted, bilateral, tilt, placed):
+        if bilateral and lifted:
+            self.carried.add(name)
+        conditions = (
+            (self.loss_since, name in self.carried and not bilateral and not placed,
+             "Lifted peg lost its grasp before a valid placement"),
+            (self.topple_since, tilt >= self.topple_tilt_rad and not bilateral and not placed,
+             "Peg toppled outside a valid placement"),
+        )
+        for since, condition, reason in conditions:
+            if not condition:
+                since.pop(name, None)
+            elif now - since.setdefault(name, now) >= self.persistence_s - 1e-9 and not self.failure:
+                self.failure = reason
+
+
 class L1Evaluator:
     def __init__(self, design, settings, initial):
         self.design, self.settings, self.initial = design, settings, initial
         self.last_time = None
         self.grasp_since = {}
         self.grasped = set()
+        self.guided_insertions = set()
         self.stable_since = None
         self.previous = {}
         self.above_slot = False
@@ -59,6 +93,7 @@ class L1Evaluator:
         self.bad_handle = False
         self.drops = 0
         self.was_dropping = False
+        self.insertion_attempt = InsertionAttemptMonitor() if design.insertion else None
 
     def update(self, now, objects, *, tcp, gripper_width, inactive_drift=0.0):
         controls = [now, inactive_drift]
@@ -82,6 +117,7 @@ class L1Evaluator:
                 row["angular_velocity"],
                 row["finger_forces"],
                 row["fixture_force_n"],
+                row["bench_force_n"],
                 np.asarray(row["corners"]).ravel(),
             ]
             if not np.isfinite(numbers).all():
@@ -91,8 +127,9 @@ class L1Evaluator:
             r = pose_transform(p)[:3, :3]
             desired = pose_transform(goal)[:3, :3]
             angle = math.acos(float(np.clip((np.trace(desired.T @ r) - 1) / 2, -1, 1)))
-            if self.design.task_id == "L1-01":
-                angle = math.acos(float(np.clip(r[:, 2] @ desired[:, 2], -1, 1)))
+            if self.design.insertion:
+                # Uniform cylinder: its axis is undirected, so either end may enter.
+                angle = math.acos(float(np.clip(abs(r[:, 2] @ desired[:, 2]), 0, 1)))
             if self.design.kind == "stack":
                 # Stripes define an undirected axis (180-degree symmetry).
                 flip = np.diag([-1.0, -1.0, 1.0])
@@ -154,6 +191,25 @@ class L1Evaluator:
             goal_met = bool(
                 xy <= tolerance and z <= cfg.height_tolerance_m and angle <= cfg.rotation_tolerance_rad
             )
+            insertion = {}
+            if self.design.insertion:
+                insertion = self.design.insertion.measure(p, goal[:2], cfg.rotation_tolerance_rad)
+                geometry_met = insertion["insertion_geometry_met"]
+                if not geometry_met:
+                    self.guided_insertions.discard(a.name)
+                elif bilateral and a.name in self.grasped:
+                    self.guided_insertions.add(a.name)
+                supported = bool(row["fixture_force_n"] >= a.mass * 9.81 * 0.5
+                                 and row["bench_force_n"] < cfg.contact_threshold_n)
+                insertion.update(guided_insertion_confirmed=a.name in self.guided_insertions,
+                                 fixture_supported=supported)
+                # A held peg can already satisfy geometry. Final success also
+                # requires release, so real fixture support becomes mandatory.
+                goal_met = bool(geometry_met and (bilateral or supported))
+                self.insertion_attempt.update(
+                    a.name, now, lifted=lifted, bilateral=bilateral, tilt=angle,
+                    placed=bool(geometry_met and a.name in self.guided_insertions),
+                )
             if self.design.kind == "slot":
                 x, y = goal[:2]
                 top = self.design.fixture_top + 0.004
@@ -213,6 +269,7 @@ class L1Evaluator:
                 "rotation_error_rad": angle,
                 "bilateral_contact": bilateral,
                 "tcp_clearance_m": distance,
+                **insertion,
             }
         self.drops += int(dropping and not self.was_dropping)
         self.was_dropping = dropping
@@ -221,6 +278,7 @@ class L1Evaluator:
             len(self.grasped) == len(results)
             and inactive_drift <= cfg.inactive_joint_tolerance_rad
             and all(r["released_and_retreated"] or not self.design.release for r in results.values())
+            and (self.design.insertion is None or len(self.guided_insertions) == len(results))
         )
         qualified = goal_complete and process and all(r["stable"] for r in results.values())
         if qualified:
@@ -238,12 +296,28 @@ class L1Evaluator:
             "drop_events": self.drops,
             "bad_handle_contact": self.bad_handle,
             "inactive_arm_max_drift_rad": inactive_drift,
-            "task_version": "l1-rigid-v1",
+            "task_version": self.design.version,
         }
+        if self.design.insertion:
+            metrics["attempt_failure"] = self.insertion_attempt.failure
+            metrics["stage"] = (
+                "failed" if self.insertion_attempt.failure else
+                "verify_grasp" if self.insertion_attempt.loss_since else
+                "grasp_and_lift" if not self.grasped else
+                "align_and_insert" if not goal_complete or not self.guided_insertions else
+                "release_and_retreat" if not process else
+                "complete" if duration >= cfg.stability_s - 1e-9 else "stabilize"
+            )
         if any(min(v[2] for v in row["corners"]) < -0.10 for row in objects.values()):
-            return Assessment("failed", "Object fell below table", metrics)
+            if self.insertion_attempt:
+                self.insertion_attempt.failure = "Object fell below table"
+                metrics.update(stage="failed", attempt_failure=self.insertion_attempt.failure)
+            return Assessment("failed", "Object fell below table", metrics,
+                              retryable=self.design.insertion is not None)
         if inactive_drift > cfg.inactive_joint_tolerance_rad:
             return Assessment("failed", "Inactive arm moved", metrics)
+        if self.insertion_attempt and self.insertion_attempt.failure:
+            return Assessment("failed", self.insertion_attempt.failure, metrics, retryable=True)
         if duration >= cfg.stability_s - 1e-9:
             return Assessment("succeeded", "Physical goal and process constraints sustained", metrics)
         return Assessment("running", "Waiting for goal, grasp evidence and stable completion", metrics)

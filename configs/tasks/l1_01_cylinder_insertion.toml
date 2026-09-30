@@ -5,21 +5,20 @@ workflow_profile = "../workflows/gpt_default.toml"
 id = "L1-01"
 instruction = """
 Use the left R5 arm for manipulation. The right arm may move only to improve
-its wrist-camera view; do not use it to touch, grasp, push or support objects.
-Infer object locations and orientations from the three RGB-D views and feedback. Choose all grasps and motion targets
-yourself; reobserve and recover after missed grasps or rejected actions.
-Lift every manipulated object at least {lift_m} m above its initial centre
-while grasping it with both fingers for {grasp_hold_s} simulation seconds.
-After completing the goal, sustain it for {stability_s} simulation seconds.
-For tasks requiring release, open the gripper to 0.070 m and retreat at least
-0.065 m clear of the object. Empty commands wait with the existing targets held.
-Use small moves near contact. First open the gripper and choose an observation
-or approach pose above the work area; align the tool before descending.
-In sparse_eef, roll=pitch=yaw=0 points the fingers down; pitch=-90 keeps
-them horizontal. Null angles preserve the measured orientation. Read the
-measured state after preparation; choose positions from the images, not
-from the original home pose.
-Request stop only when the visible task requirements have been met.
+its wrist-camera view; it must not touch, grasp, push or support task objects.
+Choose object locations, grasp regions, poses and actions from the observations.
+Completion requires each manipulated object to have been lifted at least
+{lift_m} m above its initial centre while grasped by both fingers for at least
+{grasp_hold_s} simulation seconds. The final goal must remain stable for
+{stability_s} simulation seconds. When release is required, the final gripper
+opening must be at least 0.060 m, with no finger contact and at least
+{retreat_m} m clearance between the TCP and the object.
+The peg axis must be within {axis_tilt_deg:.1f} degrees of the socket axis;
+rotation about the peg axis is unrestricted.
+Both flat ends are equivalent; there is no required end-for-end orientation.
+Dropping the lifted peg or leaving it toppled ends the current attempt.
+After an automatic reset, use the new observations and re-establish the grasp;
+history is retained, but the total call and time budgets do not restart.
 """
 
 [robot]
@@ -50,13 +49,14 @@ camera_target = [0.28, 0.0, 0.20]
 [policy]
 model_config = "../models/gpt.toml"
 
-# Engineering defaults for l1-rigid-v1, not thresholds prescribed by Feishu.
+[execution]
+retry_failed_attempts = true
+
+# l1-01-wide-clearance-v3: uniform short cylinder; symmetric ends and wide clearance.
 [l1]
 stability_s = 1.0
 grasp_hold_s = 0.25
 lift_m = 0.015
-position_tolerance_m = 0.003
-height_tolerance_m = 0.004
-rotation_tolerance_rad = 0.14
-position_jitter_m = 0.008
-yaw_jitter_rad = 0.15
+rotation_tolerance_rad = 0.17453292519943295
+position_jitter_m = 0.0
+yaw_jitter_rad = 0.0

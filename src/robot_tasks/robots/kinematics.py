@@ -1,9 +1,4 @@
-"""URDF-derived R5 forward kinematics, coordinate transforms and IK results.
-
-This module has no inverse solver or simulator dependency. Lula supplies IK.
-"""
-
-from dataclasses import dataclass
+"""URDF-derived R5 forward kinematics and coordinate transforms; no inverse solver."""
 
 import numpy as np
 
@@ -11,24 +6,6 @@ from .profile import RobotProfile
 from .transforms import (axis_rotation, finite_vector, origin_transform,
                          pose_transform, transform_pose)
 from .urdf import read_urdf
-
-
-@dataclass(frozen=True)
-class IKResult:
-    converged: bool
-    positions_rad: tuple[float, ...]
-    position_error_m: float
-    orientation_error_rad: float
-    iterations: int | None
-    reason: str
-    descents: int | None = None  # Lula reports descents, not individual iterations.
-
-
-class IKError(ValueError):
-    def __init__(self, result: IKResult):
-        self.result = result
-        super().__init__(f"IK rejected: {result.reason}; position error={result.position_error_m:.6f} m, "
-                         f"orientation error={result.orientation_error_rad:.6f} rad")
 
 
 class R5Kinematics:

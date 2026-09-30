@@ -36,7 +36,7 @@ def robot_config(*, arms=("left", "right")):
     raw["recording"].update(save_depth=False, save_video=False)
     raw["execution"] = {}
     return replace(config, raw=raw, arms=arms, observation_arms=(), save_depth=False,
-                   instruction="Offline robot protocol fixture; not a benchmark task instruction.")
+                   max_steps=2400, instruction="Offline robot protocol fixture; not a benchmark task instruction.")
 
 
 def rgbd(camera="overview", time_s=0., *, width=32, height=24, capture_id=1):
@@ -50,7 +50,7 @@ def rgbd(camera="overview", time_s=0., *, width=32, height=24, capture_id=1):
 
 
 def gripper_command(width=.06, arm="left"):
-    return {"arm": arm, **dict.fromkeys(FIELDS), "gripper_width_m": width}
+    return {"arm": arm, **dict.fromkeys(FIELDS), "gripper": (width-.012)/(.070-.012)}
 
 
 def decision_document(**updates):

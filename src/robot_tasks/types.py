@@ -8,6 +8,10 @@ class InvalidPolicyAction(ValueError):
     """A model returned an invalid executable action, not a service failure."""
 
 
+class RetryablePolicyError(RuntimeError):
+    """No action was produced; the runner may retry the unchanged observation."""
+
+
 @dataclass(frozen=True)
 class DepthFrame:
     """RGB-aligned optical-axis depth, metres, packed little-endian float32.
@@ -53,11 +57,20 @@ class Feedback:
 
 
 @dataclass(frozen=True)
+class GraspReference:
+    arm: str
+    time_s: float
+    rgb: tuple[RGBFrame, ...]
+    robot: dict[str, ArmState]
+
+
+@dataclass(frozen=True)
 class Observation:
     time_s: float
     rgb: tuple[RGBFrame, ...]
     robot: dict[str, ArmState]
     feedback: Feedback
+    grasp_references: tuple[GraspReference, ...] = ()
 
 
 @dataclass(frozen=True)

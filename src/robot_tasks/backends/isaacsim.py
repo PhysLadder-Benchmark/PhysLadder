@@ -8,7 +8,7 @@ from ..types import EvaluationState, RGBFrame
 from ..cameras import RGBNotReady
 from ..runtime import configure_windows_storage, storage_report
 from .settings import SimulationSettings
-from .scene_geometry import BENCH_POSITION, BENCH_SIZE
+from .scene_geometry import BENCH_POSITION, BENCH_SIZE, TCP_MARKER_RADIUS_M
 
 
 class IsaacSimBackend:
@@ -159,7 +159,7 @@ class IsaacSimBackend:
                 tip_path, name=f"r5_{mount.name}_ee", reset_xform_properties=False)
             if profile.tcp_pose_wxyz is not None:
                 VisualSphere(prim_path=tip_path + "/tcp_marker", name=f"tcp_{mount.name}",
-                             translation=np.array(profile.tcp_pose_wxyz[:3]), radius=0.004,
+                             translation=np.array(profile.tcp_pose_wxyz[:3]), radius=TCP_MARKER_RADIUS_M,
                              color=np.array([0.0, 0.9, 0.9]))
             self.world.scene.add(FixedCuboid(
                 prim_path=f"/World/Stand_{mount.name}", name=f"stand_{mount.name}",

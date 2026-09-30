@@ -8,11 +8,11 @@ import numpy as np
 from ..robots.transforms import origin_transform, pose_transform, transform_pose
 from ..types import Action, ArmCommand, InvalidPolicyAction
 from ..runner import validate_action
-from ..robots.control import width_to_joints
+from ..robots.control import normalized_to_width
 from .action_codec import _unique_object
 
 
-FIELDS = ("x_m", "y_m", "z_m", "roll_deg", "pitch_deg", "yaw_deg", "gripper_width_m")
+FIELDS = ("x_m", "y_m", "z_m", "roll_deg", "pitch_deg", "yaw_deg", "gripper")
 # R5 TCP +X points down, +Y closes along world Y at zero angles.
 REFERENCE = origin_transform((0., 0., 0.), (0., math.pi / 2, 0.))[:3, :3]
 
@@ -29,6 +29,7 @@ def orientation_degrees(pose) -> tuple[float, float, float]:
 
 def sparse_schema(arms: tuple[str, ...]) -> dict:
     properties = {name: {"type": ["number", "null"]} for name in FIELDS}
+    properties["gripper"].update(minimum=0, maximum=1)
     properties["arm"] = {"type": "string", "enum": list(arms)}
     return {"type": "object", "additionalProperties": False, "required": ["commands", "request_stop"],
             "properties": {"request_stop": {"type": "boolean"}, "commands": {
@@ -58,7 +59,7 @@ def decode_sparse_action(text, config, observation) -> Action:
                 if value is not None and (type(value) not in (int, float) or not math.isfinite(value)):
                     raise ValueError(f"{field} must be finite or null")
             motion = any(row[f] is not None for f in FIELDS[:6])
-            width = row["gripper_width_m"]
+            width = None if row["gripper"] is None else normalized_to_width(config.robot, row["gripper"])
             if not motion and width is None:
                 raise ValueError("Use commands=[] to wait; an all-null command has no target")
             if motion:
@@ -81,7 +82,6 @@ def decode_sparse_action(text, config, observation) -> Action:
                     pose = transform_pose(transform)
                 commands.append(ArmCommand(arm, "cartesian_pose", tuple(pose)))
             if width is not None:
-                width_to_joints(config.robot, width)
                 commands.append(ArmCommand(arm, "gripper", (float(width),)))
         action = Action(tuple(commands), config.control_dt_s, stop)
         validate_action(action, config)

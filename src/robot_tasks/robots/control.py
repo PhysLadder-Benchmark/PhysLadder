@@ -1,13 +1,22 @@
 """Simulator-independent R5 action validation and gripper conversion."""
 
 import math
-from typing import TYPE_CHECKING
 
 from ..types import Action
 from .profile import RobotProfile
 
-if TYPE_CHECKING:
-    from .lula import R5LulaKinematics
+
+def normalized_to_width(profile: RobotProfile, value: float) -> float:
+    """Model protocol: 0 closes to the configured minimum; 1 opens fully."""
+    if type(value) not in (int, float) or not math.isfinite(value) or not 0 <= value <= 1:
+        raise ValueError("gripper must be a finite number in [0, 1]")
+    lower, upper = profile.gripper.width_limits_m
+    return lower + value * (upper - lower)
+
+
+def width_to_normalized(profile: RobotProfile, width: float) -> float:
+    lower, upper = profile.gripper.width_limits_m
+    return (width - lower) / (upper - lower)
 
 
 def width_to_joints(profile: RobotProfile, width: float) -> tuple[float, float]:
@@ -30,9 +39,7 @@ def joints_to_width(profile: RobotProfile, positions: tuple[float, ...]) -> floa
 
 
 def plan_targets(profile: RobotProfile, active_arms: tuple[str, ...], action: Action,
-                 previous: dict[str, tuple[float, ...]], *,
-                 kinematics: "R5LulaKinematics | None" = None,
-                 measured_positions: dict[str, tuple[float, ...]] | None = None) -> dict[str, tuple[float, ...]]:
+                 previous: dict[str, tuple[float, ...]]) -> dict[str, tuple[float, ...]]:
     """Validate the entire bimanual action before changing either arm's targets."""
     if (not isinstance(action, Action) or isinstance(action.duration_s, bool)
             or not math.isfinite(action.duration_s) or action.duration_s <= 0):
@@ -57,13 +64,7 @@ def plan_targets(profile: RobotProfile, active_arms: tuple[str, ...], action: Ac
             raise ValueError(f"{command.kind} requires {count} finite numeric values")
         current = planned[command.arm]
         if command.kind == "cartesian_pose":
-            if kinematics is None or measured_positions is None:
-                raise ValueError("Cartesian control requires configured kinematics and measured joint positions")
-            from .kinematics import IKError
-            solution = kinematics.solve(values, command.arm, measured_positions[command.arm], command.frame)
-            if not solution.converged:
-                raise IKError(solution)
-            target = solution.positions_rad + current[6:]
+            raise ValueError("Cartesian targets must use the shared trajectory planner")
         elif command.kind == "joint_position":
             target = tuple(values) + current[6:]
         else:

@@ -9,7 +9,7 @@ at the centre of the green target patch. Follow the shared arm-role permissions.
 Determine the cube and target locations from the provided observations. Plan your own
 approach, grasp, lift, transport, release and retreat using measured TCP poses
 and execution feedback. Reobserve and correct alignment as needed. Use small
-Cartesian moves near contact; IK alone does not guarantee a straight path.
+Cartesian moves near contact; Planned motion may deviate under contact; inspect actual object motion.
 Lift the cube at least {lift_threshold_m} metres above its initial height and
 keep it securely lifted for at least {stability_s} simulation seconds before
 placing it. Opening the gripper to {open_width_m} metres provides full clearance.

@@ -11,7 +11,10 @@ from .config import ExecutionSettings, TaskConfig
 from .interfaces import Backend, Policy, Robot, Task
 from .recording import EpisodeRecorder
 from .robot_roles import FixedArmMonitor, validate_role_command
-from .types import Action, Assessment, EvaluationState, Feedback, InvalidPolicyAction, Observation, PolicyInput
+from .types import Action, Assessment, EvaluationState, Feedback, InvalidPolicyAction, Observation, PolicyInput, RetryablePolicyError
+
+
+GENERATION_RETRY_DELAYS_S = (2., 4., 8.)  # Fixed: three retries after the initial request.
 
 
 def validate_action(action: Action, config: TaskConfig, *, require_control_duration: bool = True) -> None:
@@ -69,15 +72,23 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
     Opt-in failed attempts reset physics, never policy history or global budgets.
     """
     limit = config.max_steps if step_limit is None else step_limit
-    if type(limit) is not int or not 0 < limit <= config.max_steps:
+    if (type(limit) is not int or limit < 0 or (step_limit is not None and limit == 0)
+            or (config.max_steps and limit > config.max_steps)):
         raise ValueError("step_limit must be in [1, max_steps]")
+    if dry_run and not limit:
+        raise ValueError("Dry-run requires a finite step_limit")
     options = ExecutionSettings() if dry_run else ExecutionSettings.from_config(config)
+    from .grasp_guard import GraspGuard
+    grasp_guard = None if dry_run else GraspGuard(config)
     role_monitor = FixedArmMonitor(config, options.fixed_arm_tolerance_rad)
     mode = "dry_run" if dry_run else "simulation"
     recorder = EpisodeRecorder(output_root, config, mode, limit, run_directory=run_directory)
+    backend.run_directory = recorder.directory
     start = time.monotonic()
     assessment = Assessment("not_evaluated", "Episode has not been evaluated")
     ticks = decisions = executed = timeouts = rejected = invalid_model_actions = 0
+    rejected_stops = 0
+    consecutive_generation_failures = generation_failures = model_retry_attempts = 0
     status, reason, error = "error", "startup", None
     videos = {}
     feedback = Feedback("not_initialized")
@@ -91,15 +102,16 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
     pending_reset_notice = ""
 
     def budget():
-        if time.monotonic() - start >= config.max_wall_time_s:
+        if config.max_wall_time_s > 0 and time.monotonic() - start >= config.max_wall_time_s:
             raise EpisodeLimit("wall_time_limit")
-        if ticks >= limit:
+        if limit and ticks >= limit:
             raise EpisodeLimit("max_steps")
 
     def observe() -> Observation:
-        return Observation(backend.time_s(), backend.capture_rgb(),
-                           robot.state() if config.include_robot_state else {},
-                           feedback if config.include_feedback else Feedback("not_provided"))
+        observation = Observation(backend.time_s(), backend.capture_rgb(),
+                                  robot.state() if config.include_robot_state else {},
+                                  feedback if config.include_feedback else Feedback("not_provided"))
+        return grasp_guard.enrich(observation) if grasp_guard is not None else observation
 
     def evaluate() -> None:
         nonlocal assessment
@@ -182,7 +194,7 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
             return False
         budget()
         # Do not spend the remaining physics budget resetting without another action.
-        if ticks + options.settle_steps >= limit:
+        if limit and ticks + options.settle_steps >= limit:
             raise EpisodeLimit("max_steps")
         failed_reason = assessment.reason
         recorder.event({"event": "attempt_reset_started", "step": decisions, "tick": ticks,
@@ -191,6 +203,8 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
         backend.reset(config.seed)
         task.reset(backend, config.seed)
         robot.reset(config.seed)  # Clears queued targets and restores both arms.
+        if grasp_guard is not None:
+            grasp_guard.reset()
         role_monitor.reset()
         # Deliberately do not call policy.reset: history and calls belong to the run.
         for _ in range(options.settle_steps):
@@ -259,12 +273,14 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
         observation = observe()
         recorder.event({"event": "reset", "observation": recorder.observation(observation, 0)})
         status, reason = "finished", "model_call_limit"
-        policy_limit = getattr(getattr(policy, "settings", None), "max_calls", config.max_steps)
+        policy_limit = getattr(getattr(policy, "settings", None), "max_calls", config.max_steps or 100)
         decision_limit = min(options.max_decisions or policy_limit, policy_limit)
         for step in range(1, decision_limit + 1):
             budget()
             decisions = step
             t0 = time.monotonic()
+            if consecutive_generation_failures:
+                model_retry_attempts += 1
             if not dry_run:
                 print(f"R5_POLICY_REQUEST {step}", flush=True)
             try:
@@ -274,7 +290,31 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                     exchange = getattr(policy, "last_exchange", None)
                     if exchange:
                         recorder.event({"event": "model_exchange", "step": step, "exchange": exchange})
+            except RetryablePolicyError as exc:
+                generation_failures += 1
+                consecutive_generation_failures += 1
+                can_retry = (consecutive_generation_failures <= len(GENERATION_RETRY_DELAYS_S)
+                             and decisions < decision_limit)
+                recorder.event({"event": "model_retry" if can_retry else "model_retry_exhausted",
+                                "step": step, "error": str(exc),
+                                "failure_number": consecutive_generation_failures,
+                                "retry_limit": len(GENERATION_RETRY_DELAYS_S),
+                                "remaining_decisions": decision_limit - decisions,
+                                "policy_time_s": time.monotonic() - t0,
+                                "simulation_time_s": observation.time_s,
+                                "retry_exhaustion": (None if can_retry else
+                                    "retry_limit" if consecutive_generation_failures > len(GENERATION_RETRY_DELAYS_S)
+                                    else "model_call_limit")})
+                if not can_retry:
+                    raise
+                delay = GENERATION_RETRY_DELAYS_S[consecutive_generation_failures - 1]
+                print(f"R5_MODEL_RETRY {consecutive_generation_failures}/3 in {delay:g}s: {exc}", flush=True)
+                budget()
+                time.sleep(delay)  # Interruptible; no physics, reset, history mutation or action.
+                budget()
+                continue
             except InvalidPolicyAction as exc:
+                consecutive_generation_failures = 0  # Generation completed; action schema was invalid.
                 invalid_model_actions += 1
                 feedback = Feedback("rejected", "Your previous response was not a valid action. "
                                     "No commands were applied and simulation time has not advanced. "
@@ -290,6 +330,7 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                 # exact same state without applying a wait action or resetting.
                 budget()
                 continue
+            consecutive_generation_failures = 0
             pending_reset_notice = ""  # A valid reply has retained this observation in policy history.
             policy_time_s = time.monotonic() - t0
             validate_action(action, config)
@@ -311,11 +352,23 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                 continue
             if action.request_stop:
                 stopped = True
-                reason = "policy_requested_stop"
                 for _ in range(options.stop_steps):
                     tick(phase="final_observation")
                     if assessment.status in {"succeeded", "failed"}:
                         break
+                if dry_run or assessment.status == "succeeded":
+                    reason = "policy_requested_stop"
+                    break
+                rejected_stops += 1
+                feedback = Feedback("stop_rejected", "The independent task evaluator has not confirmed completion. "
+                    "Your stop request was rejected and consumed one decision. The scene and history are retained "
+                    "unless an explicit attempt-reset notice follows. Inspect the current images and measured state, "
+                    "then continue or correct the task. No object pose or detailed score is supplied.",
+                    {"task_complete": False, "remaining_decisions": decision_limit - decisions})
+                observation = observe()
+                recorder.event({"event": "stop_rejected", "step": step, "action": asdict(action),
+                                "observation": recorder.observation(observation, step),
+                                "evaluation": asdict(assessment)})
                 # A fall during the last observation is still a failed attempt.
                 if assessment.status == "failed":
                     recorder.event({"event": "transition", "step": step,
@@ -324,7 +377,20 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                                     "evaluation": asdict(assessment)})
                     if retry_failed_attempt():
                         continue
-                break
+                    # A non-retryable terminal failure cannot be repaired by extra calls.
+                    reason = "task_terminal"
+                    break
+                continue
+            if grasp_guard is not None:
+                rejection = grasp_guard.reject_reason(action, observation)
+                if rejection:
+                    observation = grasp_guard.rejection(rejection, observation)
+                    feedback = observation.feedback
+                    rejected += 1
+                    recorder.event({"event": "grasp_check_rejected", "step": step,
+                                    "action": asdict(action),
+                                    "observation": recorder.observation(observation, step)})
+                    continue
             try:
                 robot.apply(action)
             except ValueError:
@@ -338,6 +404,17 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                 # The adapter rejects the whole action atomically. Do not clip,
                 # repair, move, reset, or score an unchanged physics timestamp.
                 continue
+            if grasp_guard is not None:
+                for reference in grasp_guard.accepted(action, observation):
+                    recorder.event({"event": "grasp_reference", "step": step,
+                                    "arm": reference.arm,
+                                    "observation": recorder.observation(
+                                        Observation(reference.time_s, reference.rgb, reference.robot,
+                                                    Feedback("grasp_reference")), step,
+                                        reference_arm=reference.arm)})
+            plan_record = getattr(robot, "last_plan", None)
+            if isinstance(plan_record, dict) and plan_record.get("paths"):
+                recorder.event({"event": "motion_plan", "step": step, **plan_record})
             executed += bool(action.commands)
             stable = 0
             completed = False
@@ -370,7 +447,7 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                 reason = ("model_call_limit" if options.retry_failed_attempts and assessment.retryable
                           and decisions >= decision_limit else "task_terminal")
                 break
-            if ticks >= limit:
+            if limit and ticks >= limit:
                 reason = "max_steps"
                 break
         if not dry_run:
@@ -409,6 +486,14 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
             "model_calls": getattr(policy, "calls", 0), "executed_actions": executed,
             "action_timeouts": timeouts, "rejected_actions": rejected, "policy_requested_stop": stopped,
             "invalid_model_actions": invalid_model_actions,
+            "generation_failures": generation_failures,
+            "model_retry_attempts": model_retry_attempts,
+            "generation_retry_limit": len(GENERATION_RETRY_DELAYS_S),
+            "rejected_stop_requests": rejected_stops,
+            "grasp_check_rejections": grasp_guard.rejections if grasp_guard is not None else 0,
+            "grasp_visual_verifications": grasp_guard.verifications if grasp_guard is not None else 0,
+            "grasp_check_protocol": "rgbd_surface_comotion_v1" if grasp_guard is not None else None,
+            "stop_protocol": "evaluator_gated_continue_within_total_call_budget",
             "false_completion": bool(stopped and evaluated and assessment.status != "succeeded"),
             "wall_time_s": time.monotonic() - start,
             "simulation_time_s": ticks * config.control_dt_s if options.retry_failed_attempts else final_time,

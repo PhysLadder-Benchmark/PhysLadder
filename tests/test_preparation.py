@@ -128,7 +128,8 @@ class PreparationTests(unittest.TestCase):
     def run_case(self, robot):
         policy = StopPolicy()
         with tempfile.TemporaryDirectory() as directory:
-            path, result = run_episode(self.config, RGBDBackend(), robot, MockTask(), policy, Path(directory),
+            config = replace(self.config, raw={**self.config.raw, "execution": {**self.config.raw["execution"], "max_decisions": 1}})
+            path, result = run_episode(config, RGBDBackend(), robot, MockTask(), policy, Path(directory),
                                        preparation=preparation_action(self.config))
             events = [json.loads(l) for l in (path / "episode.jsonl").read_text().splitlines()]
         return result, events, policy
@@ -180,7 +181,7 @@ class PreparationTests(unittest.TestCase):
                 return Assessment("running", "Fresh attempt")
 
         config = replace(self.config, raw={**self.config.raw, "execution": {
-            **self.config.raw["execution"], "retry_failed_attempts": True}})
+            **self.config.raw["execution"], "retry_failed_attempts": True, "max_decisions": 2}})
         robot = PreparingRobot()
         with tempfile.TemporaryDirectory() as directory:
             path, result = run_episode(config, RGBDBackend(), robot, RetryTask(), policy, Path(directory),

@@ -2,8 +2,8 @@
 # No scene, task ID, robot roles, provider endpoint or credentials belong here.
 [runtime]
 seed = 0
-max_steps = 2400
-max_wall_time_s = 1800.0
+max_steps = 0 # No total physics-tick cap; per-action and 100-call budgets still apply.
+max_wall_time_s = 0.0  # Zero disables the episode wall-time limit.
 physics_dt_s = 0.004166666666666667
 control_dt_s = 0.08333333333333333
 

@@ -43,26 +43,44 @@ python3 tools/launch.py run GPT-PICK-PLACE --model-config /path/to/model.toml --
 通过 `run` 或 `check` 启动均保存 `runtime_config.json` 和 `storage_config.json` 环境快照；
 `config.toml`、结果和日志记录实验，不记录 API 密钥。
 
-仅保留两个可选环境覆盖：`GPT_BENCHMARK_PYTHON` 指定解释器，
+Isaac 启动器保留两个可选环境覆盖：`GPT_BENCHMARK_PYTHON` 指定解释器，
 `GPT_BENCHMARK_RUNTIME_CONFIG` 指定另一份本机配置。原来的 `doctor` 命令、
 运行配置里的模型/图形后端/重试字段及 `--runtime-config` 全局选项已移出最小版本。
 
 软件回归在 Windows/Ubuntu CI 执行；真实 GPU 仿真仍需双方各自验证。
 双方比较实验时应使用一致的实验配置、模型设置和兼容的 Isaac Sim 版本。
 
+## 公共运动执行依赖
+
+所有任务使用同一个 cuRobo V2 规划器，没有 Lula 或直接 IK 的静默回退。GPT 选择 TCP 目标，规划器生成关节轨迹，执行层限制每步关节变化和参考速度，并读取实际执行结果。单动作超时会取消排队动作。
+
+在 Linux / WSL 使用 `bash tools/setup_curobo.sh /你的科研盘/runtime` 建立隔离环境。复制 `configs/runtime/planner.example.toml` 为 `planner.local.toml`，填写该环境的 Python；Windows Isaac 会通过 WSL 启动它，原任务启动命令不变。也可以用 `GPT_BENCHMARK_PLANNER_PYTHON` 临时指定。机器路径不进入共享任务配置。
+
+规划器读取桌面、静态夹具和另一只 R5 的碰撞几何；持物时使用双指实测接触和物体表面采样检查搬运净空。这是**规划层使用仿真真值的评测条件**，不会把物体坐标、目标位姿或评分提供给 GPT，也不在物理引擎中绑定物体。机器人球体近似、表面采样、未夹持活动物体的接触豁免，以及相机外壳不参与碰撞，意味着它不是完整的碰撞安全证明。正常就位允许 1 mm 的表面接触容差。
+
+夹爪与轨迹执行语义参考 [RoboProbe EEF Agent 操作说明](https://github.com/RoboProbe/RoboProbe/blob/main/policy/RoboDojo_Agent_L3_Inspect_EEF/docs.py) 和 [执行代码](https://github.com/RoboProbe/RoboProbe/blob/main/policy/RoboDojo_Agent_L3_Inspect_EEF/policy.py)；本项目采用 R5 与 cuRobo V2，不是该基准的完整复现。
+
+夹爪反馈区分目标到位、闭合受阻或停滞、运动未完成。受阻不会自动证明抓取成功；模型仍需短距离抬升、观察物体跟随，必要时移动观测臂。失败的停止请求会返回“尚未确认完成”，继续使用同一场景、历史和剩余总预算；日志保留每次被拒绝的停止。
+
+模型接口报告生成失败／未完成时，公共运行流程固定允许首次请求后再重试 3 次，间隔 2、4、8 秒，无需新增配置。每次重试计入同一个 100 次总调用上限，保留原观测、场景和已接受历史，不执行部分响应，也不推进仿真。成功后重置连续重试计数；连续四次失败或总调用预算不足时按接口异常结束，不冒充任务失败。明确的鉴权、额度、拒绝及请求参数错误不走这项重试；HTTP／网络超时仍按原错误处理。每次请求、重试进度与脱敏后的服务端原因记入运行日志，事件语义参考 [OpenAI Docs](https://developers.openai.com/api/docs/guides/streaming-responses)。
+
+当前抓放与 L1 共用抓取核验：接近与闭爪分开决策；闭爪保存原始 RGB-D 基准帧，之后给模型提供三路“闭爪前／当前”对照图。基于已公开的 TCP、夹爪尺寸、桌面高度和 RGB-D，检查两指之间的可见表面是否随抬升移动。未通过时只允许保持、观察臂移动、单独开爪恢复，以及相对闭爪位置累计不超过 4 cm 的竖直试抬（水平偏移不超过 5 mm），拦截搬运和插入；达到最小开口会提示可能空夹。模型仍决定全部实际动作。
+
+该核验不读取物体真值、接触力或评分，也不调用额外模型；使用表面几何、颜色匹配和抬升前后的可见空间变化，避免把手的移动或模型自述当成物体移动。遮挡、细小／反光／透明物体、相似表面和夹爪几何近似会造成误判或无法确认，核验通过不代表任务成功。当前适用于需要先抓持抬升的任务，不能直接当成不允许抬升的抽屉等任务协议。核验拦截、参考帧和通过次数进入同一运行目录，正式比较应注明 `rgbd_surface_comotion_v1` 条件。
+
 ## L1 任务
 
-八项任务保留 master 的资产、场景、复位与评分，均接入本分支的公共流程：左臂操作、右臂观测，三路 RGB-D、相机参数与图像标记，默认 medium、最多 100 次决策。任务与成功条件见 [L1 任务说明](docs/l1_tasks.md)。
+L1-01 使用直径 35 mm、高 60 mm 的等径短圆柱与直径 55 mm 的固定单孔，两端均可插入，孔座接触无摩擦；L1-02～L1-08 保留 master 的任务设计。均使用公共流程：左臂操作、右臂观测，三路 RGB-D、相机参数与图像标记，默认 medium、最多 100 次决策。通用操作指导由共享系统 Prompt 提供，任务指令只描述目标和判据。任务与成功条件见 [L1 任务说明](docs/l1_tasks.md)。
 
 ```bash
 # 首次下载并校验六组固定版本资产，保存到 assets/l1/source/。
-python3 tools/fetch_l1_assets.py
+python3 tools/fetch_l1_assets.py  # L1-03/05 的外部任务资产；L1-01 不需要
 python3 tools/launch.py inspect L1-01
 python3 tools/launch.py run L1-01 --gui
 # 将 L1-01 换成 L1-02～L1-08 即可选择其他任务。
 ```
 
-抓放和 L1 共用朝下准备阶段：操作臂先到固定准备位姿，成功后才开始 GPT 决策；准备单独记录，失败不调用 GPT。观测臂同时移向两臂之间，并根据腕部相机安装位姿朝向操作臂工作区；准备完成后，GPT 仍可自主调整视角。该准备不读取物体位置，固定臂不参与准备运动，双操作臂任务也不会被改成观测角色。当前 Lula 执行和先运动后夹爪的顺序保持一致。
+抓放和 L1 共用朝下准备阶段：操作臂先到固定准备位姿，成功后才开始 GPT 决策；准备单独记录，失败不调用 GPT。观测臂同时移向两臂之间，并根据腕部相机安装位姿朝向操作臂工作区；准备完成后，GPT 仍可自主调整视角。该准备不读取物体位置，固定臂不参与准备运动，双操作臂任务也不会被改成观测角色。当前统一使用 cuRobo 轨迹执行，保持先运动后夹爪的顺序。
 L1 使用 master 的室内场景与黑银机器人外观；抓放保留原场景，视觉条件须在结果比较时区分。
 
 ## 三路相机与临时参数
@@ -160,7 +178,7 @@ F5 选择 **R5: GPT pick-place GUI (WSL)**。它运行同一任务实现，可�
 | `[robot]` | `active_arms` 为操作臂，`observation_arms` 为仅用于移动相机的观察臂；剩余机械臂固定 |
 | `[policy]` | 模型配置位置；可覆盖公共 `reasoning_effort`，Token 仍只从环境变量读取 |
 
-所有 GPT 任务固定使用 RGB-D 与像素查询、相机内外参、桌面/TCP 标记、动作说明、完整回合文字历史和 Lula IK。
+所有 GPT 任务固定使用 RGB-D 与像素查询、相机内外参、桌面/TCP 标记、动作说明、完整回合文字历史和 cuRobo 轨迹规划。
 这些操作逻辑由公共代码实现，不通过任务配置启用或关闭。
 正式任务只提供场景、角色、目标、复位与评分。单臂任务要求一个**操作臂**，允许另一个臂观察；
 双臂任务可将两个臂都设为操作臂，同样复用公共流程。双臂交接目前仍只有模板，不能作为已实现任务运行。
@@ -168,7 +186,9 @@ F5 选择 **R5: GPT pick-place GUI (WSL)**。它运行同一任务实现，可�
 
 默认物理步长 1/240 秒、控制周期 1/12 秒；每动作最多等待 120 个控制周期，连续 3 次完成反馈后提前返回。
 空动作等待 12 个周期（1 秒）。夹爪被物体挡住而未达到空载目标时，反馈 `action_timeout`，GPT 可继续观察并纠正。
-默认使用 medium、最多 100 次模型调用；物理和时间预算仍为 2400 个控制周期、1800 秒现实时间，可能先于调用上限耗尽。
+默认使用 medium、最多 100 次模型调用，不设整场实验的控制步数或现实时间上限；保留每条动作的执行预算。
+公共配置 `runtime.max_wall_time_s = 0` 表示不限总时长，`run` 和 `check` 均适用；填写正数可恢复限时（单位秒）。
+单次接口请求超时仍由模型配置的 `timeout_s` 控制；物理步数预算仍可能先于调用上限耗尽。
 公共/任务 `[policy].reasoning_effort` 覆盖模型文件中的思考强度，`execution.max_decisions` 覆盖模型文件中的调用上限；
 `-ModelConfig` 选择提供商文件，不覆盖这些实验设置。需要变更条件时，在任务中显式覆盖或修改公共流程配置。
 程序在 API 请求期间暂停物理。录像按仿真时间播放，接口等待耗时单独记录。
@@ -390,7 +410,7 @@ GPT_Benchmark/
 │   ├── config.py / workflow.py   配置读取、共享设置合并
 │   ├── robot_roles.py            操作、观察、固定角色的权限与检查
 │   ├── policies/                 模型请求、观测组装、动作解析
-│   ├── robots/                   资产读取、Lula IK、机器人驱动与反馈
+│   ├── robots/                   资产读取、机器人驱动与执行反馈
 │   ├── cameras/ / backends/      RGB-D、仿真生命周期与占位后端
 │   ├── tasks/                    各任务的场景、复位和评分
 │   ├── recording.py / reporting.py  全过程记录与报告
@@ -541,7 +561,7 @@ MP4 保留所有控制周期的画面；GIF 是覆盖整轮的抽帧预览，最
 2. 可调运行参数优先使用任务文件中的显式值，其次使用引用的 workflow 值，再使用代码默认值。固定操作逻辑不参与覆盖。
 3. `--model-config` 优先于任务的 `policy.model_config` 选择模型文件；但合并后的 `policy.reasoning_effort` 和 `execution.max_decisions` 仍会覆盖模型文件中的思考强度和 `max_calls`。
 4. `--gui` 覆盖 `simulation.headless`。图形后端未写时按实际 Isaac Python 所在系统选择。
-5. 公共配置当前是 medium、最多 100 次决策；2400 个控制周期、1800 秒现实时间仍是独立上限，任何停止条件先到都会结束。
+5. 公共配置当前是 medium、最多 100 次决策；总控制步数和现实时间默认不限；每条动作仍有执行步数限制。未成功的停止请求消耗一次调用，保留场景与历史继续，成功或预算耗尽后结束。
 
 路径以引用文件的目录为基准。`OPENAI_API_KEY` 是运行进程的凭据，不写入配置快照。
 用 `inspect <任务ID>` 查看合并后的角色、输入和预算；每轮 `effective_config.json` 与日志里的 `policy_configuration` 保存实际实验条件。
@@ -589,7 +609,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$(wslpath -w ./tools/ru
 GPT 固定使用 `sparse_eef` 命名字段动作接口，使用绝对世界坐标；
 `x_m/y_m/z_m` 为 null 时保留最新实测值。角度采用 `Rz(yaw) Ry(pitch) Rx(roll) R_reference`，
 全零时 R5 TCP 的 +X 向下、夹爪闭合轴沿世界 +Y；三个角度都为 null 时直接保留实测四元数。
-`gripper_width_m=null` 保留已有夹爪驱动目标。内部仍转换成同一 `Action`，不执行模型生成的程序。
+`gripper=0` 闭合、`gripper=1` 完全张开，`gripper=null` 保留已有夹爪驱动目标。0 对应配置的最小空载开口（当前 12 mm），并非 0 mm；接触物体后允许实际开口大于目标。内部仍转换成同一 `Action`，不执行模型生成的程序。
 
 同一条命令中，机械臂运动到位并稳定后才执行夹爪目标。该顺序固定，不设开关。
 动作超时取消尚未执行的开合，避免在下一轮等待时意外释放物体。反馈包含目标／实测 TCP、各轴剩余误差、
