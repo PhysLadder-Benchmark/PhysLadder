@@ -4,11 +4,14 @@ All dimensions are metres. Holes are unions of wall colliders, never a convex
 hull enclosing a cavity. This module imports neither Isaac nor model clients.
 """
 
-from dataclasses import dataclass, replace
 import math
+from dataclasses import dataclass, replace
+
 import numpy as np
+
 from ...robots.transforms import origin_transform, transform_pose
 from .cylinder_insertion import CylinderInsertion
+from .shaped_recess import ShapedRecess
 
 RED = (0.85, 0.16, 0.05)
 BLUE = (0.08, 0.3, 0.8)
@@ -30,6 +33,8 @@ class Part:
     shape: str = "box"
     color: tuple = RED
     collision: bool = True
+    vertices: tuple = ()
+    faces: tuple = ()
 
 
 @dataclass(frozen=True)
@@ -60,7 +65,7 @@ class Design:
     fixture_pose: tuple = ()
     provenance: str = "Project-authored parametric rigid test article v1"
     version: str = "l1-rigid-v1"
-    insertion: CylinderInsertion | None = None
+    insertion: CylinderInsertion | ShapedRecess | None = None
     fixture_friction: float = 0.8
 
 
@@ -134,26 +139,30 @@ def _procedural_design(task_id):
             version="l1-01-wide-clearance-v3", insertion=g, fixture_friction=0.0,
         )
     if task_id == "L1-02":
-        # T profile: horizontal head plus narrow stem; matching concave well.
-        parts = (
-            box("crossbar", (0.064, 0.022, 0.026), (0, 0.022, 0), RED),
-            box("stem", (0.022, 0.044, 0.026), (0, -0.011, 0), RED),
-        )
-        fixtures = list(rectangular_well(target, (0.074, 0.076), 0.028))
-        fixtures += [
-            box("left_notch", (0.020, 0.048, 0.028), (x - 0.026, y - 0.014, 0.020)),
-            box("right_notch", (0.020, 0.048, 0.028), (x + 0.026, y - 0.014, 0.020)),
-        ]
-        article = Article("t_block", parts, pose(*source, 0.013, yaw=0.45), pose(x, y, 0.019))
+        g = ShapedRecess()
+        vertices, faces = g.block_mesh()
+        block = Part("body", (0.033, 0.050, g.height_m), shape="mesh",
+                     color=RED, vertices=vertices, faces=faces)
+        fixtures = [box("floor", (0.09, 0.09, g.floor_thickness_m),
+                        (x, y, g.floor_thickness_m / 2), BLUE)]
+        for i, (vertices, faces) in enumerate(g.wall_meshes()):
+            fixtures.append(Part(f"wall_{i}", (0, 0, 0), (x, y, 0), shape="mesh",
+                                 color=BLUE, vertices=vertices, faces=faces))
+        article = Article("d_block", (block,), pose(0.36, 0.40, g.height_m / 2 + 0.001, yaw=math.pi / 4),
+                          pose(x, y, g.floor_thickness_m + g.height_m / 2))
         return Design(
-            task_id,
-            "异形块嵌槽",
-            "insert",
-            (article,),
-            tuple(fixtures),
-            "Fit the red T-shaped block into the matching grey T-shaped recess. Fully seat the bottom on the floor without tilted or raised edges; release and withdraw.",
-            0.034,
-            0.005,
+            task_id, "D 形块嵌浅槽（宽容间隙）", "insert", (article,), tuple(fixtures),
+            "Fit the orange D-shaped rigid block into the matching single blue shallow recess. "
+            "The profile is a circle with one side cut flat: match the flat side as well as the curved side. "
+            "The block is about 0.050 m across its widest direction, 0.033 m from flat side to round tip, "
+            "and 0.040 m tall. The recess is 0.012 m deep above a 0.006 m floor, with 0.004 m "
+            "side clearance and a chamfered mouth. About 0.028 m of block remains above the rim when seated. "
+            "The fixture contact friction is zero; gripper friction, gravity, collisions and support remain. "
+            "No press fit, force adjustment, snap fit or deformation is required. There is only one block "
+            "and one recess; identify their matching orientation from observations.",
+            fixture_top=g.rim_z_m, clearance=g.clearance_m,
+            provenance="Project-authored D profile and shallow recess; not a ManiSkill asset or score",
+            version="l1-02-d-recess-v2", insertion=g, fixture_friction=0.0,
         )
     if task_id == "L1-04":
         # Closed receiving box; only the slit in the lid admits the plate.
@@ -347,6 +356,10 @@ def local_corners(article):
     points = []
     for part in article.parts:
         if not part.collision:
+            continue
+        if part.shape == "mesh":
+            t = origin_transform(part.position, part.rotation)
+            points.extend(np.asarray(part.vertices) @ t[:3, :3].T + t[:3, 3])
             continue
         size = part.size if part.shape == "box" else (2 * part.size[0], 2 * part.size[1], part.size[2])
         corners = np.array(list(product(*[(-s / 2, s / 2) for s in size])))

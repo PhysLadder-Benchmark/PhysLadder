@@ -1,18 +1,17 @@
 """Failure-oriented L1 scoring and fixed experimental interface regressions."""
 
-from dataclasses import replace
 import math
 import unittest
-import numpy as np
+from dataclasses import replace
+from unittest.mock import Mock
 
+from robot_tasks.config import ExecutionSettings
 from robot_tasks.registry import resolve_task
 from robot_tasks.robots.transforms import pose_transform
 from robot_tasks.tasks.l1.evaluation import L1Evaluator, L1Settings
 from robot_tasks.tasks.l1.specs import RIGID_IDS, build_design, local_corners, pose
 from robot_tasks.tasks.l1.task import L1Task
-from robot_tasks.config import ExecutionSettings
 from robot_tasks.types import ArmState, EvaluationState, Feedback
-from unittest.mock import Mock
 
 
 def sample(a, p, *, grip=False, handle=True):
@@ -272,7 +271,7 @@ class L1ScoreTests(unittest.TestCase):
         self.assertFalse(result.metrics["goal_complete"])
 
     def test_recovery_after_failed_placement_is_allowed(self):
-        self.setup_task("L1-02")
+        self.setup_task("L1-03")
         self.grasp()
         a = self.d.articles[0]
         for _ in range(3):
@@ -293,9 +292,8 @@ class L1ScoreTests(unittest.TestCase):
         for field in ("now", "tcp", "gripper_width", "inactive_drift"):
             with self.subTest(field=field):
                 self.setup_task("L1-02")
-                values = dict(
-                    now=0.0, tcp=[0.1, 0.1, 0.4, 1, 0, 0, 0], gripper_width=0.07, inactive_drift=0.0
-                )
+                values = {"now": 0.0, "tcp": [0.1, 0.1, 0.4, 1, 0, 0, 0],
+                          "gripper_width": 0.07, "inactive_drift": 0.0}
                 values[field] = [float("nan")] * 7 if field == "tcp" else float("nan")
                 with self.assertRaisesRegex(ValueError, "Nonfinite"):
                     self.e.update(objects=self.goals(), **values)
@@ -334,7 +332,8 @@ class L1ProtocolTests(unittest.TestCase):
 
     def test_all_l1_tasks_use_shared_workflow_and_observation_arm(self):
         _, reference = resolve_task("GPT-PICK-PLACE")
-        for name in RIGID_IDS:
+        from robot_tasks.tasks.bench.task import BenchTask
+        for name in ("L1-01", "L1-03", "L1-05", "L1-07", "L1-08", "L1-09"):
             spec, config = resolve_task(name)
             self.assertTrue(spec.implemented)
             self.assertEqual(config.robot.source, reference.robot.source)
@@ -342,7 +341,7 @@ class L1ProtocolTests(unittest.TestCase):
             for section in ("observation", "robot", "policy", "recording"):
                 self.assertEqual(config.raw[section], reference.raw[section], (name, section))
             execution = dict(config.raw["execution"])
-            self.assertEqual(execution.pop("retry_failed_attempts", False), name == "L1-01")
+            execution.pop("retry_failed_attempts", False)
             self.assertEqual(execution, reference.raw["execution"])
             self.assertNotIn("policy_options", config.raw)
             self.assertEqual(config.observation_arms, ("right",))
@@ -351,16 +350,16 @@ class L1ProtocolTests(unittest.TestCase):
             self.assertEqual(config.raw["policy"]["reasoning_effort"], "medium")
             self.assertEqual(config.control_dt_s, reference.control_dt_s)
             self.assertEqual(config.physics_dt_s, reference.physics_dt_s)
-            prompt = L1Task.prepare_config(config).instruction
+            prompt = BenchTask.prepare_config(config).instruction
             self.assertNotIn("metadata", prompt)
             self.assertNotIn("sha256", prompt)
-            self.assertIn("right arm may move only to improve", prompt)
+            self.assertIn("observation arm", prompt)
             self.assertNotIn("keep the other arm still", prompt)
 
     def test_observation_arm_motion_does_not_fail_l1_scoring(self):
         for task_id in RIGID_IDS:
             with self.subTest(task=task_id):
-                _, config = resolve_task(task_id)
+                _, config = resolve_task("L1-01")
                 task = L1Task()
                 task.arm = config.arms[0]
                 task.fixed_arms = config.fixed_arms

@@ -56,6 +56,10 @@ class NamedEntryTests(unittest.TestCase):
     def test_named_defaults_and_config_only_work_outside_project_directory(self):
         with chdir(self.directory):
             for task_id, expected in TASKS.items():
+                if expected.evidence == "real_only":
+                    with self.assertRaisesRegex(ValueError, "real-only"):
+                        resolve_task(task_id)
+                    continue
                 spec, config = resolve_task(task_id)
                 self.assertIs(spec, expected)
                 self.assertEqual(config.source, expected.default_config)
@@ -69,7 +73,7 @@ class NamedEntryTests(unittest.TestCase):
         for arguments, message in (
             (["run", "missing"], "Unknown task ID"),
             (["run"], "Provide a task ID"),
-            (["run", "GPT-PICK-PLACE", "--config", str(TASKS["L2-02"].default_config)], "Task/config mismatch"),
+            (["run", "GPT-PICK-PLACE", "--config", str(TASKS["L2-01"].default_config)], "Task/config mismatch"),
         ):
             with self.subTest(arguments=arguments), patch("robot_tasks.cli.execute_task") as execute, \
                     redirect_stderr(io.StringIO()) as error:
@@ -138,7 +142,7 @@ class NamedEntryTests(unittest.TestCase):
 
     def test_check_overrides_cannot_silently_change_kind_or_ignore_flags(self):
         for name, path, options, message in (
-            ("gpt-pick-place", TASKS["L2-02"].default_config, {}, "Check/config mismatch"),
+            ("gpt-pick-place", TASKS["L2-01"].default_config, {}, "Check/config mismatch"),
             ("joint", None, {}, "Unknown check"),
             ("gpt", None, {}, "Unknown check"),
         ):

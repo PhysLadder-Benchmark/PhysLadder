@@ -61,5 +61,5 @@ def execute_task(spec: TaskSpec, config: TaskConfig, output_root: Path, *, polic
     policy = POLICIES[policy_name](config, model_config)
     return run_episode(config, IsaacSimBackend(), R5Adapter(), spec.factory(), policy, output_root,
                        run_directory=run_directory, record_video=config.raw["recording"].get("save_video", False),
-                       preparation=preparation_action(config),
+                       preparation=getattr(spec.factory, "preparation_action", preparation_action)(config),
                        summarize=summarize)

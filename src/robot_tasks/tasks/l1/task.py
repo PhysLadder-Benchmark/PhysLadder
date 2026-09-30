@@ -1,7 +1,7 @@
 """L1 task adapter. No scorer output or object truth is exposed to GPT."""
 
-from dataclasses import replace
 import math
+from dataclasses import replace
 
 from .evaluation import L1Evaluator, L1Settings
 from .specs import build_design
@@ -15,7 +15,7 @@ class L1Task:
         cfg = L1Settings.from_config(config)
         d = build_design(config.task_id)
         if d.insertion and {"position_tolerance_m", "height_tolerance_m"} & config.raw.get("l1", {}).keys():
-            raise ValueError("Wide-clearance L1-01 uses socket containment/depth; remove legacy position/height tolerances")
+            raise ValueError("Wide-clearance insertion uses socket containment/depth; remove legacy position/height tolerances")
         return replace(
             config,
             instruction=d.instruction

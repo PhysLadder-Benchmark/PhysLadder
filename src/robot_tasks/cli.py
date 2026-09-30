@@ -23,7 +23,7 @@ def _list(args) -> int:
             print(f"{spec.name} | {spec.description} | {spec.default_config}")
     else:
         for spec in TASKS.values():
-            status = "implemented" if spec.implemented else "template_only"
+            status = "implemented" if spec.implemented else ("real_only" if spec.evidence == "real_only" else "template_only")
             print(f"{spec.task_id} | {spec.name} | {status} | {spec.default_config} | {spec.evidence}")
     return 0
 

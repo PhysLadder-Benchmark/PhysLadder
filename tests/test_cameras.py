@@ -22,7 +22,7 @@ class CameraProfileTests(unittest.TestCase):
         for camera in rig.cameras:
             self.assertTrue(camera.asset.is_file())
             self.assertEqual(len(camera.metadata()["asset_sha256"]), 64)
-        config = load_config(ROOT / "configs/tasks/gpt_single_arm_pick_place.toml")
+        config = load_config(ROOT / "configs/tasks/l1_01_cylinder_insertion.toml")
         settings = SimulationSettings.from_config(config)
         self.assertEqual((config.source.parent / settings.camera_profile).resolve(), PROFILE)
         self.assertEqual(tuple(c.name for c in rig.select(config.cameras)), config.cameras)
@@ -68,7 +68,7 @@ class CameraProfileTests(unittest.TestCase):
             ('resolution = [640, 480]', 'resolution = [true, 480]', "resolution"),
             ('intrinsics = [444.508041', 'intrinsics = [-444.508041', "focal"),
             ('clipping_m = [0.005, 20.0]', 'clipping_m = [0.005, 0.001]', "clipping"),
-            ('0.850207268, 0.443135882', '2.0, 0.443135882', "normalized"),
+            ('0.646659260, 0.286062583', '2.0, 0.286062583', "normalized"),
         )
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "rig.toml"

@@ -36,7 +36,7 @@ SETTINGS = GPTSettings("https://example.invalid", "fixture", max_calls=3, image_
 
 
 def configured():
-    base = load_config(ROOT / "configs/tasks/gpt_single_arm_pick_place.toml")
+    base = load_config(ROOT / "configs/checks/gpt_single_arm_pick_place.toml")
     return replace(base, instruction="Offline RGB-D protocol fixture.", include_depth=True, save_depth=True,
                    raw={**base.raw,
                         "observation": {**base.raw["observation"], "include_depth": True},
@@ -270,7 +270,7 @@ class DepthPolicyAndRecordingTests(unittest.TestCase):
 
 class DepthConfigurationTests(unittest.TestCase):
     def test_depth_flags_validate_without_isaac_or_model(self):
-        source = ROOT / "configs/tasks/gpt_single_arm_pick_place.toml"
+        source = ROOT / "configs/checks/gpt_single_arm_pick_place.toml"
         text = source.read_text(encoding="utf-8")
         text += "\n[observation]\ninclude_depth = true\n[recording]\nsave_depth = true\n"
         text = text.replace('"../robots/r5_sim.toml"', json.dumps((ROOT / "configs/robots/r5_sim.toml").as_posix()))

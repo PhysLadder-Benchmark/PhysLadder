@@ -79,7 +79,7 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
         raise ValueError("Dry-run requires a finite step_limit")
     options = ExecutionSettings() if dry_run else ExecutionSettings.from_config(config)
     from .grasp_guard import GraspGuard
-    grasp_guard = None if dry_run else GraspGuard(config)
+    grasp_guard = None if dry_run or config.grasp_check_mode == "contact_inspection" else GraspGuard(config)
     role_monitor = FixedArmMonitor(config, options.fixed_arm_tolerance_rad)
     mode = "dry_run" if dry_run else "simulation"
     recorder = EpisodeRecorder(output_root, config, mode, limit, run_directory=run_directory)
@@ -169,6 +169,13 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                         "feedback": asdict(feedback),
                         "robot": {k: asdict(v) for k, v in robot.state().items()}})
 
+    def initialize_task() -> None:
+        hook = getattr(task, "initialize_episode", None)
+        if hook is not None and not dry_run:
+            recorder.event({"event": "task_initialization_start", "model_generated": False})
+            hook(backend, robot, tick)
+            recorder.event({"event": "task_initialization_complete", "model_generated": False})
+
     def finish_attempt(outcome: str, termination: str) -> None:
         nonlocal attempt_open
         if not options.retry_failed_attempts or not attempt_open:
@@ -210,6 +217,7 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
         for _ in range(options.settle_steps):
             tick(phase="reset_settle", score=False)
         prepare_robot()
+        initialize_task()
         evaluate()
         if assessment.status != "running":
             raise RuntimeError("Reset did not produce a valid running task state")
@@ -259,6 +267,7 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
         for _ in range(options.settle_steps):
             tick(phase="settle", score=False)
         prepare_robot()
+        initialize_task()
         initial = {k: asdict(v) for k, v in robot.state().items()}
         if not dry_run:
             evaluate()  # Establish evaluator reference state after settling, before any model action.
@@ -492,7 +501,7 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
             "rejected_stop_requests": rejected_stops,
             "grasp_check_rejections": grasp_guard.rejections if grasp_guard is not None else 0,
             "grasp_visual_verifications": grasp_guard.verifications if grasp_guard is not None else 0,
-            "grasp_check_protocol": "rgbd_surface_comotion_v1" if grasp_guard is not None else None,
+            "grasp_check_protocol": "rgbd_surface_comotion_v1" if grasp_guard is not None else (None if dry_run else config.grasp_check_mode),
             "stop_protocol": "evaluator_gated_continue_within_total_call_budget",
             "false_completion": bool(stopped and evaluated and assessment.status != "succeeded"),
             "wall_time_s": time.monotonic() - start,

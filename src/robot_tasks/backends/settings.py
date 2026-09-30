@@ -23,8 +23,8 @@ class SimulationSettings:
     self_collision: bool = False
     solver_position_iterations: int = 32
     solver_velocity_iterations: int = 0
-    camera_position: tuple[float, ...] = (1.5, -1.6, 1.2)
-    camera_target: tuple[float, ...] = (0.2, 0.0, 0.3)
+    camera_position: tuple[float, ...] = (1.6, 0.0, 1.4)
+    camera_target: tuple[float, ...] = (0.28, 0.0, 0.2)
     camera_profile: str = ""  # Relative to episode config; empty keeps legacy overview.
     capture_render_passes: int = 2
     environment: str = "plain"

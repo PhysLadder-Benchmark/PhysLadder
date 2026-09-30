@@ -1,0 +1,80 @@
+# Run from the repository root in the Isaac Sim environment; requires OPENAI_API_KEY.
+# launch_command / launch_command_conda below are documentation, not auto-executed shell code.
+schema_version = 2
+workflow_profile = "../workflows/gpt_default.toml"
+
+[robot]
+profile = "../robots/r5_sim.toml"
+active_arms = ["left"]
+observation_arms = ["right"]
+
+[simulation]
+environment = "lab_room_v1"
+robot_appearance = "r5_black_silver_v1"
+camera_profile = "../cameras/r5_orbbec_provisional.toml"
+asset_directory = "../../build/r5"
+headless = true
+width = 640
+height = 480
+fps = 12
+arm_stiffness = 1500.0
+arm_damping = 80.0
+finger_stiffness = 2000.0
+finger_damping = 40.0
+self_collision = false
+solver_position_iterations = 32
+solver_velocity_iterations = 0
+camera_position = [1.6, 0.0, 1.4]
+camera_target = [0.28, 0.0, 0.20]
+
+[policy]
+model_config = "../models/gpt.toml"
+
+[execution]
+retry_failed_attempts = true
+
+[task]
+id = "L1-09"
+name = "软茎花材插瓶（柔性杆代理）"
+execution_target = "simulation_and_real"
+simulation_enabled = true
+status = "implemented_proxy"
+implementation = "household"
+simulation_limitations = "Segmented bending rod and heavy head; not calibrated plant tissue, no petal bruising or stem fracture. Only the initial-grasp version is assigned L1."
+launch_command = "python tools/launch.py run L1-09 --gui"
+launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L1-09 --gui"
+instruction = """
+Use the LEFT R5 arm for manipulation. The RIGHT arm is an observation arm:
+it may move its wrist camera when a grasp, opening or contact is obscured, but
+must not touch or support the props. Keep the left arm steady while changing
+view. Choose grasp points, poses and motion from current images and available
+robot feedback; no object coordinates or successful action sequence is supplied.
+Place the soft-stem flower into the fixed vase. Use a flower whose stem bends
+and whose head visibly droops when held only near the stem's far end. Do not
+assume it behaves as a rigid rod. The flower starts on the table, separate from
+the vase, with accessible stem and head-support regions.
+Inspect the stem, flower head and vase opening. Select a grasp that supports the
+head while leaving enough free stem to enter the opening, without crushing petals
+or gripping an unsupported far end. Confirm the flower is stably carried before
+moving to the vase. Bring the free stem end over the opening and guide it inside
+with small motions while observing sag and clearance. Once the vase supports the
+flower, release gently and confirm the stem stays inside and the head is supported.
+This L1 variant requires that choosing a suitable initial grasp is enough for
+the rest of the task under fixed basic control. If the specimen needs repeated
+support changes, regrasping or delicate force regulation, report that mismatch
+rather than treating those added requirements as the intended L1 task.
+Inspect the actual released or completed state before requesting stop. A
+commanded pose, blocked gripper, or completion claim is not evidence of success.
+If a grasp is lost or the scene resets, use new observations and reassess rather
+than continuing with stale object positions. Do not invent force measurements
+or assume a force-control tool that the interface does not expose.
+"""
+
+# Chinese setup/props description; keep this the final task attribute.
+description = """
+道具：七段柔性连接的细茎代理、较重的花头、高 180 mm 的固定宽口花瓶、操作台。
+布置：花材代理平放于桌面，花瓶在旁边；左臂操作，右臂主动观察，不提供第二只操作手托扶。
+操作：选择能支撑花头且露出可插入茎端的抓点，提起后调整自由茎端，将其送入瓶内，再松手。
+完成：实际抓起过花材，茎端进入瓶内规定深度，整株离桌并由花瓶承重，释放后稳定。
+代理边界：柔性茎由刚体段与被动弯曲弹簧组成，不是真实植物组织；不模拟花瓣压伤或茎断裂。L1 仅评估初始抓点足以完成的版本；若必须反复托扶或重抓，应单独归为 L3。实物花种、柔软度、花头质量仍需对齐。
+"""

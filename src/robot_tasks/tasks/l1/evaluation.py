@@ -1,11 +1,13 @@
 """Streaming L1 scoring. Only measured simulator state enters this module."""
 
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
+
 import numpy as np
 
 from ...robots.transforms import pose_transform
 from ...types import Assessment
+from .shaped_recess import ShapedRecess
 
 
 @dataclass(frozen=True)
@@ -68,9 +70,9 @@ class InsertionAttemptMonitor:
             self.carried.add(name)
         conditions = (
             (self.loss_since, name in self.carried and not bilateral and not placed,
-             "Lifted peg lost its grasp before a valid placement"),
+             "Lifted object lost its grasp before a valid placement"),
             (self.topple_since, tilt >= self.topple_tilt_rad and not bilateral and not placed,
-             "Peg toppled outside a valid placement"),
+             "Object toppled outside a valid placement"),
         )
         for since, condition, reason in conditions:
             if not condition:
@@ -181,6 +183,11 @@ class L1Evaluator:
                 and tcp is not None
                 and distance >= cfg.retreat_m
             )
+            released_and_retreated = released
+            if isinstance(self.design.insertion, ShapedRecess):
+                # This shallow-placement task needs actual release, not an
+                # additional opening-width or long retreat target.
+                released = bool(np.max(contacts) < cfg.contact_threshold_n)
             still = bool(
                 np.linalg.norm(row["linear_velocity"]) <= cfg.speed_m_s
                 and np.linalg.norm(row["angular_velocity"]) <= cfg.angular_speed_rad_s
@@ -262,7 +269,8 @@ class L1Evaluator:
             results[a.name] = {
                 "goal_complete": goal_met,
                 "grasp_lift_confirmed": a.name in self.grasped,
-                "released_and_retreated": released,
+                "released_and_retreated": released_and_retreated,
+                "release_complete": released,
                 "stable": still,
                 "position_error_xy_m": xy,
                 "height_error_m": z,
@@ -277,7 +285,7 @@ class L1Evaluator:
         process = bool(
             len(self.grasped) == len(results)
             and inactive_drift <= cfg.inactive_joint_tolerance_rad
-            and all(r["released_and_retreated"] or not self.design.release for r in results.values())
+            and all(r["release_complete"] or not self.design.release for r in results.values())
             and (self.design.insertion is None or len(self.guided_insertions) == len(results))
         )
         qualified = goal_complete and process and all(r["stable"] for r in results.values())
@@ -305,7 +313,7 @@ class L1Evaluator:
                 "verify_grasp" if self.insertion_attempt.loss_since else
                 "grasp_and_lift" if not self.grasped else
                 "align_and_insert" if not goal_complete or not self.guided_insertions else
-                "release_and_retreat" if not process else
+                ("release" if isinstance(self.design.insertion, ShapedRecess) else "release_and_retreat") if not process else
                 "complete" if duration >= cfg.stability_s - 1e-9 else "stabilize"
             )
         if any(min(v[2] for v in row["corners"]) < -0.10 for row in objects.values()):

@@ -1,0 +1,45 @@
+# REAL ROBOT ONLY. No simulation scene or simulation configuration is provided.
+# Definition only: real robot SDK, cameras and control adapter must be supplied later.
+# The current simulation runner does not execute this task definition.
+schema_version = 2
+
+[task]
+id = "L3-11"
+name = "湿毛巾擦白板（仅真机）"
+execution_target = "real_only"
+simulation_enabled = false
+status = "real_only"
+implementation = "real_only"
+launch_command = "Not applicable: real robot only; no simulation entry."
+instruction = """
+REAL ROBOT TASK ONLY. Do not create or substitute a simulated cleaning task.
+Use a damp towel to erase the visible marker writing on the secured whiteboard.
+The towel starts on the table and must be picked up autonomously. The board is
+initially placed horizontally on the work surface for this version.
+Identify the writing, grasp a useful part of the towel and establish wiping
+contact. Inspect what remains after each pass. Change the contact region,
+wiping direction, tool orientation and pressure as needed to erase residual
+marks while keeping the towel controlled. Do not count passing over an area
+as proof it is clean, and do not follow a fixed path without inspecting residue.
+Avoid pushing the board loose, losing the towel or damaging the surface. When
+the remaining visible writing is below the agreed criterion, lift off, place
+the towel in its designated resting area and inspect the exposed board again.
+Use available real-camera and robot feedback; do not assume simulated stain
+labels, hidden clean-pixel masks or unprovided force measurements.
+Inspect the actual released or completed state before requesting stop. A
+commanded pose, blocked gripper, or completion claim is not evidence of success.
+If a grasp is lost or the scene resets, use new observations and reassess rather
+than continuing with stale object positions. Do not invent force measurements
+or assume a force-control tool that the interface does not expose.
+"""
+
+# Chinese setup/props description; keep this the final task attribute.
+description = """
+范围：仅真机，不做仿真；不建立擦拭覆盖率或虚拟污点消失的替代任务。
+道具：一块可擦写白板、白板笔写出的字迹、一条湿润但不滴水的毛巾、操作台和白板固定件。
+布置：首版将白板水平固定在桌面，预先写出可见字迹；湿毛巾单独放在旁边，未预先夹持。保留擦拭前画面用于比较残留。
+操作：自主抓取毛巾，识别字迹区域，结合实际残留和接触情况持续调整擦拭位置、方向、姿态及压紧程度，直到字迹基本去除，再把毛巾放下。
+完成：残留字迹面积低于约定阈值，毛巾无失控滑脱，白板无明显损伤或过力。
+边界：只沿固定路径扫过，或只按覆盖面积评分，不足以代表本任务；必须观察真实字迹残留。
+待确认：白板尺寸、字迹颜色和类型、毛巾湿度、可用力反馈、残留阈值及完成后毛巾放置区。
+"""

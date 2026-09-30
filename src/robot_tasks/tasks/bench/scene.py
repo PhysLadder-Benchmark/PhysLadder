@@ -1,0 +1,252 @@
+"""Physical household scenes. Object pose writes are restricted to episode reset.
+
+Joint drives are passive springs except the explicitly declared bowl feeder.
+No success detector attaches, moves, releases or teleports task objects.
+"""
+
+from dataclasses import asdict
+
+import numpy as np
+
+from ...robots.transforms import pose_transform, transform_pose
+from ..l1.evaluation import L1Settings
+from ..l1.scene import L1Scene
+
+
+class BenchScene(L1Scene):
+    root = "/World/Household"
+    report_key = "household"
+
+    def __init__(self, backend, config, spec):
+        from isaacsim.core.prims import RigidPrim
+
+        self.spec = spec
+        settings = L1Settings(position_jitter_m=0, yaw_jitter_rad=0)
+        super().__init__(backend, config, settings, design=spec.design)
+        if spec.mechanism == "free_bottle_and_explicit_helical_contact":
+            self.configure_thread_contacts()
+        paths = [self.root + "/" + a.name for a in self.design.articles]
+        self.arm_contacts = {config.arms[0]: self.fingers}
+        for mount in config.robot.mounts:
+            if mount.name not in self.arm_contacts:
+                self.arm_contacts[mount.name] = RigidPrim(
+                    mount.prim_path + "/link[78]",
+                    name="household_fingers_" + mount.name,
+                    reset_xform_properties=False,
+                    track_contact_forces=True,
+                    contact_filter_prim_paths_expr=paths,
+                    max_contact_count=4096,
+                    disable_stablization=False,
+                )
+        self.pairs, self.pair_names = {}, {}
+        for article in self.design.articles:
+            others = [a.name for a in self.design.articles if a.name != article.name]
+            self.pair_names[article.name] = others
+            if others:
+                self.pairs[article.name] = RigidPrim(
+                    self.root + "/" + article.name,
+                    name="household_pairs_" + article.name,
+                    reset_xform_properties=False,
+                    track_contact_forces=True,
+                    contact_filter_prim_paths_expr=[
+                        self.root + "/" + n for n in others
+                    ],
+                    max_contact_count=4096,
+                    disable_stablization=False,
+                )
+        self.drives = {}
+        for joint in spec.joints:
+            self.create_joint(joint)
+        self.feed_elapsed = None
+        self.feed_armed = False
+        previous = backend.before_physics_step
+
+        def before_step(dt):
+            if previous is not None:
+                previous(dt)
+            if self.feed_armed:
+                self.feed_elapsed = (self.feed_elapsed or 0.0) + dt
+                # Standardized environment actuation, never a robot policy.
+                self.drives["feed_slide", "transX"].CreateTargetPositionAttr(
+                    min(0.15, 0.05 * self.feed_elapsed)
+                )
+
+        backend.before_physics_step = before_step
+        report = backend.scene_report[self.report_key]
+        report.update(
+            mechanism=spec.mechanism,
+            limitations=spec.limitations,
+            public_facts=spec.facts,
+            parameters=spec.parameters,
+            goal_rule="task-specific physical geometry, contact/process evidence and stable final state",
+            joints=[asdict(j) for j in spec.joints],
+            scoring={
+                "version": "household-v1",
+                "stable_s": 1.0,
+                "damage": "proxy thresholds only; no material fracture",
+            },
+        )
+
+    def configure_thread_contacts(self):
+        """Thread clearance is smaller than general grasp contact offsets.
+
+        Preserve grip friction on the shells. Only the mating helical surfaces
+        use the declared sliding material, as in the existing coarse-screw task.
+        """
+        from isaacsim.core.api.materials import PhysicsMaterial
+        from pxr import PhysxSchema, UsdShade
+
+        p = self.spec.parameters
+        self.thread_material = PhysicsMaterial(
+            self.root + "/ThreadMaterial",
+            static_friction=p["thread_friction"],
+            dynamic_friction=p["thread_friction"],
+            restitution=0.0,
+        )
+        PhysxSchema.PhysxMaterialAPI.Apply(
+            self.thread_material.material.GetPrim()
+        ).CreateFrictionCombineModeAttr("min")
+        for path in self.colliders:
+            if "/thread_" in path:
+                prim = self.stage.GetPrimAtPath(path)
+                PhysxSchema.PhysxCollisionAPI.Apply(prim).CreateContactOffsetAttr(
+                    p["thread_contact_offset_m"]
+                )
+                UsdShade.MaterialBindingAPI.Apply(prim).Bind(
+                    self.thread_material.material,
+                    bindingStrength=UsdShade.Tokens.strongerThanDescendants,
+                    materialPurpose="physics",
+                )
+        for name in ("bottle", "cap"):
+            api = PhysxSchema.PhysxRigidBodyAPI.Apply(
+                self.stage.GetPrimAtPath(self.root + "/" + name)
+            )
+            api.CreateSolverPositionIterationCountAttr(48)
+            api.CreateSolverVelocityIterationCountAttr(4)
+            # Preserve slow thread motion instead of damping small movements
+            # for pile stabilization. Contacts still carry the complete load.
+            api.CreateStabilizationThresholdAttr(0.0)
+            api.CreateSleepThresholdAttr(0.0)
+
+    def create_joint(self, spec):
+        from pxr import Gf, UsdPhysics
+
+        path = self.root + "/Joints/" + spec.name
+        hinge_axis = next(iter(spec.axes)) if len(spec.axes) == 1 else None
+        is_hinge = hinge_axis is not None and hinge_axis.startswith("rot")
+        if is_hinge:
+            # A single-axis hinge uses a revolute joint, not a D6 swing drive.
+            # D6 Y/Z swing drives share native PhysX parameters.
+            joint = UsdPhysics.RevoluteJoint.Define(self.stage, path)
+            joint.CreateAxisAttr(hinge_axis[-1])
+        else:
+            joint = UsdPhysics.Joint.Define(self.stage, path)
+        joint.CreateCollisionEnabledAttr(False)
+        transforms = {a.name: pose_transform(a.initial) for a in self.design.articles}
+        world = np.eye(4)
+        world[:3, 3] = spec.anchor
+        for index, name in enumerate((spec.body0, spec.body1)):
+            if name:
+                getattr(joint, f"CreateBody{index}Rel")().SetTargets(
+                    [self.root + "/" + name]
+                )
+            local = np.linalg.inv(transforms[name]) @ world if name else world
+            p = transform_pose(local)
+            getattr(joint, f"CreateLocalPos{index}Attr")(Gf.Vec3f(*p[:3]))
+            getattr(joint, f"CreateLocalRot{index}Attr")(
+                Gf.Quatf(p[3], Gf.Vec3f(*p[4:]))
+            )
+        for axis in ("transX", "transY", "transZ", "rotX", "rotY", "rotZ"):
+            if is_hinge and axis != hinge_axis:
+                continue
+            lower, upper, stiffness, damping = spec.axes.get(
+                axis, (1.0, -1.0, 0.0, 0.0)
+            )
+            if is_hinge:
+                joint.CreateLowerLimitAttr(lower)
+                joint.CreateUpperLimitAttr(upper)
+            else:
+                limit = UsdPhysics.LimitAPI.Apply(joint.GetPrim(), axis)
+                limit.CreateLowAttr(lower)
+                limit.CreateHighAttr(upper)
+            if stiffness or damping:
+                drive = UsdPhysics.DriveAPI.Apply(
+                    joint.GetPrim(), "angular" if is_hinge else axis
+                )
+                drive.CreateTypeAttr("force")
+                drive.CreateStiffnessAttr(stiffness)
+                drive.CreateDampingAttr(damping)
+                drive.CreateTargetPositionAttr(0.0)
+                drive.CreateTargetVelocityAttr(0.0)
+                self.drives[spec.name, axis] = drive
+
+    def reset(self, seed):
+        self.feed_elapsed = None
+        self.feed_armed = False
+        for drive in self.drives.values():
+            drive.CreateTargetPositionAttr(0.0)
+        super().reset(seed)
+        for view in (*self.arm_contacts.values(), *self.pairs.values()):
+            view.initialize()
+
+    def measure(self):
+        rows = super().measure()
+        dt = self.config.physics_dt_s
+        forces = {
+            arm: np.asarray(view.get_contact_force_matrix(dt=dt))
+            for arm, view in self.arm_contacts.items()
+        }
+        for values in forces.values():
+            if values.shape != (2, len(rows), 3) or not np.isfinite(values).all():
+                raise RuntimeError("Invalid household finger contacts")
+        for i, (name, row) in enumerate(rows.items()):
+            row["fingers"] = {
+                arm: np.linalg.norm(f[:, i], axis=1).tolist()
+                for arm, f in forces.items()
+            }
+            row["pair_forces"] = {}
+            if name in self.pairs:
+                matrix = np.asarray(self.pairs[name].get_contact_force_matrix(dt=dt))
+                if not np.isfinite(matrix).all():
+                    raise RuntimeError("Invalid household pair contacts")
+                row["pair_forces"] = dict(
+                    zip(
+                        self.pair_names[name],
+                        map(float, np.linalg.norm(matrix[0], axis=1)),
+                    )
+                )
+        if self.config.task_id == "L2-04":
+            bowl = rows["bowl"]
+            p = self.spec.parameters
+            held = all(
+                all(f > 0.05 for f in bowl["fingers"][arm]) for arm in self.config.arms
+            )
+            # Trigger the declared standardized feeder only at a held receiving pose.
+            # This does not contribute a grasp/success label to policy observations.
+            if (
+                held
+                and np.linalg.norm(np.asarray(bowl["pose"][:2]) - p["feed_xy"]) < 0.015
+                and abs(bowl["pose"][2] - p["feed_z"]) < 0.02
+            ):
+                self.feed_armed = True
+        return rows
+
+    def planning_payloads(self):
+        from ...planning.scene import article_surface
+
+        rows = self.measure()
+        payloads = {a: [] for a in self.config.arms}
+        for article in self.design.articles:
+            row = rows[article.name]
+            t = pose_transform(row["pose"])
+            for arm in self.config.arms:
+                if min(row["fingers"][arm]) > 0.05:
+                    payloads[arm].append(
+                        {
+                            "surface_points_world": (
+                                article_surface(article) @ t[:3, :3].T + t[:3, 3]
+                            ).tolist(),
+                            "source": "measured bilateral contact; collision only, never task-success evidence",
+                        }
+                    )
+        return payloads

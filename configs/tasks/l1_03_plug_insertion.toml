@@ -1,19 +1,7 @@
+# Run from the repository root in the Isaac Sim environment; requires OPENAI_API_KEY.
+# launch_command / launch_command_conda below are documentation, not auto-executed shell code.
 schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
-
-[task]
-id = "L1-03"
-instruction = """
-Use the left R5 arm for manipulation. The right arm may move only to improve
-its wrist-camera view; it must not touch, grasp, push or support task objects.
-Choose object locations, grasp regions, poses and actions from the observations.
-Completion requires each manipulated object to have been lifted at least
-{lift_m} m above its initial centre while grasped by both fingers for at least
-{grasp_hold_s} simulation seconds. The final goal must remain stable for
-{stability_s} simulation seconds. When release is required, the final gripper
-opening must be at least 0.060 m, with no finger contact and at least
-{retreat_m} m clearance between the TCP and the object.
-"""
 
 [robot]
 profile = "../robots/r5_sim.toml"
@@ -26,7 +14,6 @@ robot_appearance = "r5_black_silver_v1"
 camera_profile = "../cameras/r5_orbbec_provisional.toml"
 asset_directory = "../../build/r5"
 headless = true
-# Backend defaults to d3d12 on Windows and vulkan on Linux.
 width = 640
 height = 480
 fps = 12
@@ -37,19 +24,58 @@ finger_damping = 40.0
 self_collision = false
 solver_position_iterations = 32
 solver_velocity_iterations = 0
-camera_position = [1.15, -1.3, 0.95]
+camera_position = [1.6, 0.0, 1.4]
 camera_target = [0.28, 0.0, 0.20]
 
 [policy]
 model_config = "../models/gpt.toml"
 
-# Engineering defaults for l1-rigid-v1, not thresholds prescribed by Feishu.
-[l1]
-stability_s = 1.0
-grasp_hold_s = 0.25
-lift_m = 0.015
-position_tolerance_m = 0.003
-height_tolerance_m = 0.004
-rotation_tolerance_rad = 0.14
-position_jitter_m = 0.008
-yaw_jitter_rad = 0.15
+[execution]
+retry_failed_attempts = true
+
+[task]
+id = "L1-03"
+name = "低阻力插头插接"
+execution_target = "simulation_and_real"
+simulation_enabled = true
+status = "implemented_proxy"
+implementation = "household"
+simulation_limitations = "Rigid dummy connector; no cable, electrical continuity, retention spring or commercial connector fidelity."
+launch_command = "python tools/launch.py run L1-03 --gui"
+launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L1-03 --gui"
+instruction = """
+Use the LEFT R5 arm for manipulation. The RIGHT arm is an observation arm:
+it may move its wrist camera when a grasp, opening or contact is obscured, but
+must not touch or support the props. Keep the left arm steady while changing
+view. Choose grasp points, poses and motion from current images and available
+robot feedback; no object coordinates or successful action sequence is supplied.
+Pick up the unpowered plug from the table and insert it into the matching
+fixed socket. Use a low-insertion-force connector with no latch, screw or lock.
+Initially the plug's insertion axis is approximately parallel to the socket
+axis and its functional end faces toward the socket, but the parts are separated
+and not already aligned or engaged. This reduces gross reorientation; it does
+not supply the final insertion pose.
+Identify the insulating body, functional end, socket opening and any keyed
+orientation. Grip the insulating body without covering the entering end.
+Open, approach, close, and verify a short lift before transporting the plug.
+Align both position and orientation above or in front of the opening, then
+advance gently along the socket axis. Do not force bent alignment or push on
+pins. If blocked, withdraw slightly and inspect the mismatch before correcting.
+Seat the plug to the agreed insertion depth and open the gripper separately.
+Confirm it remains in the socket without hand support. No power connection,
+electrical test, latch actuation, cable routing or twisting operation is required.
+Inspect the actual released or completed state before requesting stop. A
+commanded pose, blocked gripper, or completion claim is not evidence of success.
+If a grasp is lost or the scene resets, use new observations and reassess rather
+than continuing with stale object positions. Do not invent force measurements
+or assume a force-control tool that the interface does not expose.
+"""
+
+# Chinese setup/props description; keep this the final task attribute.
+description = """
+道具：带可抓持壳体和矩形插舌的未通电插头代理、固定空心插座、操作台。
+布置：插头竖直放在桌面，与插座轴线平行；插舌为 22×14 mm，插口为 32×24 mm，排除锁扣与电气连接。
+操作：左臂自主抓取、抬升、对准插口和送入；右臂仅用于主动观察。
+完成：有真实抓持抬升记录，插舌方向和截面正确，达到规定深度，松手后保持支撑和稳定。
+边界：这是宽松几何插接代理，不对应某一商业插头；不模拟通电、弹性端子、插拔寿命或损坏。
+"""

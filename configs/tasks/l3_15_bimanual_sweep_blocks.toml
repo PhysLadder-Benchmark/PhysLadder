@@ -1,0 +1,80 @@
+# Run from the repository root in the Isaac Sim environment; requires OPENAI_API_KEY.
+# launch_command / launch_command_conda below are documentation, not auto-executed shell code.
+schema_version = 2
+workflow_profile = "../workflows/gpt_default.toml"
+
+[robot]
+profile = "../robots/r5_bimanual_sim.toml"
+active_arms = ["left", "right"]
+
+[simulation]
+environment = "lab_room_v1"
+robot_appearance = "r5_black_silver_v1"
+camera_profile = "../cameras/r5_orbbec_provisional.toml"
+asset_directory = "../../build/r5"
+headless = true
+width = 640
+height = 480
+fps = 12
+arm_stiffness = 1500.0
+arm_damping = 80.0
+finger_stiffness = 2000.0
+finger_damping = 40.0
+self_collision = false
+solver_position_iterations = 32
+solver_velocity_iterations = 0
+camera_position = [1.6, 0.0, 1.4]
+camera_target = [0.28, 0.0, 0.20]
+
+[policy]
+model_config = "../models/gpt.toml"
+
+[execution]
+retry_failed_attempts = true
+
+[task]
+id = "L3-15"
+name = "双臂扫块入簸箕"
+execution_target = "simulation_and_real"
+simulation_enabled = true
+status = "implemented_proxy"
+implementation = "household"
+simulation_limitations = "Rigid broom blade and blocks; no compliant bristles or fine dust model."
+launch_command = "python tools/launch.py run L3-15 --gui"
+launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L3-15 --gui"
+instruction = """
+Both R5 arms may manipulate the props; neither is restricted to observation.
+Use the overview and both wrist-camera views. Choose grasp points, poses and
+motion from current observations and available robot feedback. Verify that
+objects actually follow the grippers before transport. Plan motions that keep
+the hands and held props clear of one another.
+Use the small broom and dustpan to collect the loose blocks from the tabletop
+into the dustpan. Both tools start separately on the table, neither pregrasped.
+The small rigid blocks begin scattered within a reachable tabletop area.
+Identify each tool's handle, the broom's working edge and the dustpan mouth.
+Choose one hand for the dustpan and one for the broom, and establish stable
+grasps. Bring the dustpan lip close to the tabletop without tipping the pan.
+Sweep blocks toward and across the lip using controlled strokes. Inspect the
+remaining blocks, pile shape and lip contact after each stroke. Adjust the
+sweeping direction, tool contact and dustpan position as the arrangement changes.
+Keep both tools supported and coordinated; do not sweep blocks off the table,
+knock the pan over or individually pick up blocks to bypass sweeping.
+After the required fraction is inside, stop disturbing the contents, set the
+loaded dustpan and broom down safely, and verify that the collected blocks stay
+inside and none have fallen off the table. Do not count blocks merely touching
+the outer lip as collected.
+Inspect the actual released or completed state before requesting stop. A
+commanded pose, blocked gripper, or completion claim is not evidence of success.
+If a grasp is lost or the scene resets, use new observations and reassess rather
+than continuing with stale object positions. Do not invent force measurements
+or assume a force-control tool that the interface does not expose.
+"""
+
+# Chinese setup/props description; keep this the final task attribute.
+description = """
+道具：刚性小扫具、带柄开放簸箕、五个 14 mm 小方块和操作台。
+布置：扫具与簸箕均放在桌面，小块散落在两者前方；两臂均承担操作。
+操作：自主抓取扫具和簸箕，一臂调整簸箕入口，另一臂推动小块进入；随小块与边缘接触调整扫动方向和簸箕位置。
+完成：保持两工具抓持，记录扫具与块的实际接触；全部五块进入簸箕并被承托，簸箕和小块稳定，禁止夹爪直接拿块完成。
+代理边界：扫头是刚性推板，不模拟柔软刷毛；记录散落、接触与稳定性，未模拟刷毛变形和材料损坏。
+"""

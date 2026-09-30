@@ -1,0 +1,80 @@
+# Run from the repository root in the Isaac Sim environment; requires OPENAI_API_KEY.
+# launch_command / launch_command_conda below are documentation, not auto-executed shell code.
+schema_version = 2
+workflow_profile = "../workflows/gpt_default.toml"
+
+[robot]
+profile = "../robots/r5_sim.toml"
+active_arms = ["left"]
+observation_arms = ["right"]
+
+[simulation]
+environment = "lab_room_v1"
+robot_appearance = "r5_black_silver_v1"
+camera_profile = "../cameras/r5_orbbec_provisional.toml"
+asset_directory = "../../build/r5"
+headless = true
+width = 640
+height = 480
+fps = 12
+arm_stiffness = 1500.0
+arm_damping = 80.0
+finger_stiffness = 2000.0
+finger_damping = 40.0
+self_collision = false
+solver_position_iterations = 32
+solver_velocity_iterations = 0
+camera_position = [1.6, 0.0, 1.4]
+camera_target = [0.28, 0.0, 0.20]
+
+[policy]
+model_config = "../models/gpt.toml"
+
+[execution]
+retry_failed_attempts = true
+
+[task]
+id = "L2-06"
+name = "夹果冻（弹性格点代理）"
+execution_target = "simulation_and_real"
+simulation_enabled = true
+status = "implemented_proxy"
+implementation = "household"
+simulation_limitations = "Eight-cell elastic proxy with strain threshold; NOT gelatin material calibration, irreversible crushing, fracture, tearing or food damage simulation."
+launch_command = "python tools/launch.py run L2-06 --gui"
+launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-06 --gui"
+instruction = """
+Use the LEFT R5 arm for manipulation. The RIGHT arm is an observation arm:
+it may move its wrist camera when a grasp, opening or contact is obscured, but
+must not touch or support the props. Keep the left arm steady while changing
+view. Choose grasp points, poses and motion from current images and available
+robot feedback; no object coordinates or successful action sequence is supplied.
+Pick up the soft jelly from the tabletop and place it on the green destination
+patch without dropping, tearing or visibly crushing it. Use an exposed jelly
+piece, not a sealed rigid plastic cup that hides the intended soft contact.
+Inspect its shape, support surface and accessible gripping region. Select a
+broad, stable grasp and an approach that avoids piercing or cutting edges.
+Close gradually using the available interface, watch deformation and slip, and
+verify a small lift before transport. Keep the established grasp relationship
+stable and use slow, smooth motion. If the jelly visibly deforms excessively or
+slips, pause and adjust before continuing; do not squeeze harder blindly.
+Lower onto the destination patch so it is supported before opening. Release
+without dragging or stretching the jelly and confirm stable placement.
+Use only actual visible deformation or measured feedback. In an elastic simulation
+proxy, distinguish a deformation-limit violation from real tearing or permanent
+damage; do not report unmodeled damage as a measured physical outcome.
+Inspect the actual released or completed state before requesting stop. A
+commanded pose, blocked gripper, or completion claim is not evidence of success.
+If a grasp is lost or the scene resets, use new observations and reassess rather
+than continuing with stale object positions. Do not invent force measurements
+or assume a force-control tool that the interface does not expose.
+"""
+
+# Chinese setup/props description; keep this the final task attribute.
+description = """
+道具：约 42 mm 见方的紫色弹性格点物体、桌面绿色放置标记。
+布置：弹性物体直接放在桌面，不套硬壳；左臂操作，右臂提供额外视角。
+操作：自主选抓点，逐步闭合并观察变形，确认抬起后平稳移到绿色区域，支撑放下并松手。
+完成：有整体抓持抬升证据，物体完整进入目标区且释放稳定；过程中格点相对形变不得超过声明的 35% 阈值。
+代理边界：八个弹性连接单元用于可逆形变测试，不是经过材料标定的果冻，不模拟真实破裂、压溃、黏附和永久损伤。真机果冻与代理结果分别统计。
+"""
