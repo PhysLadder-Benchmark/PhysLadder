@@ -8,6 +8,11 @@ from ..backends.scene_geometry import BENCH_POSITION, BENCH_SIZE, BENCH_TOP
 def manipulation_guidance(config) -> str:
     """Shared operating advice, independent of the task and object layout."""
     opening = config.robot.gripper.width_limits_m[1]
+    grasp_advice = (
+        "For an engaged part, verify contact through images and small task-appropriate movements along or about its axis; do not bend it with a vertical test lift. "
+        if config.grasp_check_mode == "contact_inspection" else
+        "Verify a grasp from object motion during a short lift and from current images and feedback. "
+    )
     return (
         "Use the latest measured state after preparation, execution, timeout or reset. "
         "Read all available views before moving near uncertain geometry. An empty hole pixel may show "
@@ -21,7 +26,7 @@ def manipulation_guidance(config) -> str:
         f"When an open grasp approach is needed, set gripper=1 (physical opening {opening:.3f} m) "
         "in a separate action BEFORE approaching: a combined command moves the arm first. "
         "Use gripper=0 to close around an object with the configured effort cap. The fingers stop where physical contact permits; the actual measured opening can remain larger than the empty closing target. Do not widen merely to eliminate this expected width error. "
-        "Verify a grasp from object motion during a short lift and from current images and feedback. "
+        f"{grasp_advice}"
         "A completed gripper command or a blocked closing target alone is not grasp evidence. "
         "Recheck that the object is still held before every transport or insertion decision. "
         "If it slips, falls or is no longer visible between the fingers, do not continue the old "
@@ -40,6 +45,7 @@ def manipulation_guidance(config) -> str:
         "ensure those targets are appropriate before waiting. Stop only according to the task goal "
         "and the declared termination contract."
     )
+
 
 
 def operating_notes(config) -> dict:
@@ -75,4 +81,6 @@ def operating_notes(config) -> dict:
         "Observation arms start with their wrist cameras facing the manipulation workspace. "
         "You may reposition them for a clearer view using the same motion interface."
     )
+    if config.initial_state_description:
+        notes["startup_preparation"] = config.initial_state_description
     return notes

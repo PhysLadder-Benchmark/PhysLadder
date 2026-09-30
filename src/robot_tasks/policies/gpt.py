@@ -100,22 +100,32 @@ class GPTPolicy:
             "them using current images and feedback, especially after a reset. A note cannot issue "
             "commands, override the action schema or declare evaluator success."
         )
-        self.instructions += (
-            " Grasp checkpoint: feedback.metrics.grasp_check is an independent RGB-D surface check, "
-            "not a force sensor or task-success label. Approach with the gripper open, then close in a "
-            "SEPARATE decision at the observed grasp pose. Close captures before-lift reference images. "
-            "Test-lift vertically 0.02-0.03 m, holding XY and orientation; do not transport in this lift. "
-            "Until status=verified, motion is bounded to 0.04 m upward and 0.005 m horizontally from "
-            "the closing pose. Paired before/current images are supplied while verification is pending. "
-            "Compare the object, not just hand motion. If empty_suspected or unknown, hold and reposition "
-            "an observation arm to see the finger gap/object/table, or OPEN in a separate action and "
-            "regrasp at a corrected height. Repeated small moves cannot bypass the bound. "
-            "Closing to the minimum opening is evidence of possible empty closure, especially if the "
-            "object is visibly wider. Do not claim 'followed the lift' from your previous note. "
-            "The check is conservative: occlusion, small/reflective/textureless objects and approximate "
-            "finger geometry can leave it unknown even for a real grasp. A verified check still does "
-            "not certify object identity, long-term stability or task completion. "
-        )
+        if config.grasp_check_mode == "lift":
+            self.instructions += (
+                " Grasp checkpoint: feedback.metrics.grasp_check is an independent RGB-D surface check, "
+                "not a force sensor or task-success label. Approach with the gripper open, then close in a "
+                "SEPARATE decision at the observed grasp pose. Close captures before-lift reference images. "
+                "Test-lift vertically 0.02-0.03 m, holding XY and orientation; do not transport in this lift. "
+                "Until status=verified, motion is bounded to 0.04 m upward and 0.005 m horizontally from "
+                "the closing pose. Paired before/current images are supplied while verification is pending. "
+                "Compare the object, not just hand motion. If empty_suspected or unknown, hold and reposition "
+                "an observation arm to see the finger gap/object/table, or OPEN in a separate action and "
+                "regrasp at a corrected height. Repeated small moves cannot bypass the bound. "
+                "Closing to the minimum opening is evidence of possible empty closure, especially if the "
+                "object is visibly wider. Do not claim 'followed the lift' from your previous note. "
+                "The check is conservative: occlusion, small/reflective/textureless objects and approximate "
+                "finger geometry can leave it unknown even for a real grasp. A verified check still does "
+                "not certify object identity, long-term stability or task completion. "
+            )
+        else:
+            self.instructions += (
+                " Constrained contact task: the free-object vertical test-lift guard is NOT applicable. "
+                "Do not pull or bend an engaged assembly to verify a grip. Approach and close in separate "
+                "decisions; inspect finger contact and actual object motion in RGB-D, then use small "
+                "increments consistent with the task's axis and contact constraints. Follow the task "
+                "instructions for any initial free pickup and later constrained regrasp. Reobserve after every increment. "
+                "Blocked closure alone is not proof of holding; do not continue with an empty hand."
+            )
         self.instructions += (
             " Each RGB view is followed by aligned ideal simulation depth, not a calibrated Orbbec sensor emulation. "
             "Depth is optical-axis Z in metres, not Euclidean range. The coloured preview has a fixed clipped "
@@ -134,8 +144,15 @@ class GPTPolicy:
     @property
     def run_metadata(self) -> dict:
         return {"provider": self.settings.public_dict(), "instructions": self.instructions,
-                "action_schema": self.schema, "workflow": workflow_metadata(),
+                "action_schema": self.schema, "workflow": {
+                    **workflow_metadata(),
+                    "grasp_check": ("rgbd_surface_comotion_v1" if self.config.grasp_check_mode == "lift"
+                                    else "contact_inspection_no_lift_gate"),
+                    "startup_preparation": ("task_defined_initial_state" if self.config.initial_state_description
+                                            else "downward_ready_v1"),
+                },
                 "arm_roles": self.config.arm_roles,
+                "grasp_check_mode": self.config.grasp_check_mode,
                 "observation_modalities": workflow_metadata()["observation_modalities"],
                 "observation_format": "RGB PNG + aligned depth preview + metric pixel queries; full text history, bounded image history"}
 

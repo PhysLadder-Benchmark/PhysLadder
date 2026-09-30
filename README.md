@@ -1,8 +1,8 @@
 # GPT Benchmark：R5 物理交互测评
 
-本项目使用 **ARX／方舟 R5 双臂平台**。提供厂家资产校验、URDF 导入、Isaac Sim 双臂加载、关节位置控制、仿真 TCP 与末端位姿 IK、夹爪开合、状态回读、复位、三路 RGB-D，以及 GPT 图像调用和 R5 自主抓放的集成校验。已接入 **GPT 单臂方块抓放和 L1-01～L1-08 八项刚性操作任务**，现场标定和力控接口仍待实现。
+本项目使用 **ARX／方舟 R5 双臂平台**。已接入 16 个 L1—L3 仿真任务，以及独立的 GPT 单臂抓放工程检查。任务共用模型接口、三路 RGB-D、相机参数和图像标记、cuRobo 轨迹执行、录像及独立评分。
 
-**L2-02 双臂夹持力交接**仍是待实现模板。集成校验结果不代表正式测评任务成功率。
+任务配置位于 `configs/tasks/`，每项包含英文 prompt、中文道具与布置说明、手臂角色和启动命令。软茎花材、果冻、弹簧卡扣、商业插头/钥匙、东方树叶瓶盖和扫帚采用明确标注的工程代理，不等同实物材料与损坏模型。L3-11 擦白板只记录真机任务，不能启动仿真。代码接入或场景检查通过不代表 GPT 已完成任务。
 
 ## Windows / Linux 共用运行方式
 
@@ -39,7 +39,7 @@ python3 tools/launch.py run GPT-PICK-PLACE --model-config /path/to/model.toml --
 
 跨平台入口共用现有模型 API、任务配置和评分实现；不包含 `active_agent` 或 `codex_cli` 通道。
 从此前本地版本迁移时，旧模型配置中的 `transport` 字段不再支持，请按原始模型模板配置。
-双臂交接任务仍是模板。抓放任务及其集成入口共用执行与记录模块，
+抓放任务及其集成入口共用执行与记录模块，
 通过 `run` 或 `check` 启动均保存 `runtime_config.json` 和 `storage_config.json` 环境快照；
 `config.toml`、结果和日志记录实验，不记录 API 密钥。
 
@@ -68,20 +68,38 @@ Isaac 启动器保留两个可选环境覆盖：`GPT_BENCHMARK_PYTHON` 指定解
 
 该核验不读取物体真值、接触力或评分，也不调用额外模型；使用表面几何、颜色匹配和抬升前后的可见空间变化，避免把手的移动或模型自述当成物体移动。遮挡、细小／反光／透明物体、相似表面和夹爪几何近似会造成误判或无法确认，核验通过不代表任务成功。当前适用于需要先抓持抬升的任务，不能直接当成不允许抬升的抽屉等任务协议。核验拦截、参考帧和通过次数进入同一运行目录，正式比较应注明 `rgbd_surface_comotion_v1` 条件。
 
-## L1 任务
+## 任务池与运行
 
-L1-01 使用直径 35 mm、高 60 mm 的等径短圆柱与直径 55 mm 的固定单孔，两端均可插入，孔座接触无摩擦；L1-02～L1-08 保留 master 的任务设计。均使用公共流程：左臂操作、右臂观测，三路 RGB-D、相机参数与图像标记，默认 medium、最多 100 次决策。通用操作指导由共享系统 Prompt 提供，任务指令只描述目标和判据。任务与成功条件见 [L1 任务说明](docs/l1_tasks.md)。
+| 层级 | 已接入仿真任务 | 手臂角色 |
+|---|---|---|
+| L1 | L1-01 插笔、L1-03 插头、L1-05 钥匙、L1-07 挂杯、L1-08 叠杯、L1-09 软茎代理 | 左臂操作，右臂主动观察 |
+| L2 | L2-01 拔笔帽、L2-03 抽书、L2-04 持碗加料、L2-05 卡扣盒 | 双臂操作 |
+| L2 | L2-06 弹性果冻代理、L2-07 抽屉 | 左臂操作，右臂主动观察 |
+| L3 | L3-03 旋盖、L3-15 扫块 | 双臂操作 |
+| L3 | L3-05 粗螺丝、L3-14 工具推 T 块 | 左臂操作，右臂主动观察 |
+| L3 仅真机 | L3-11 湿毛巾擦白板 | 不提供仿真入口 |
 
 ```bash
-# 首次下载并校验六组固定版本资产，保存到 assets/l1/source/。
-python3 tools/fetch_l1_assets.py  # L1-03/05 的外部任务资产；L1-01 不需要
+python3 tools/launch.py list
 python3 tools/launch.py inspect L1-01
 python3 tools/launch.py run L1-01 --gui
-# 将 L1-01 换成 L1-02～L1-08 即可选择其他任务。
+# 把 L1-01 换成上表任意仿真任务 ID。
 ```
 
-抓放和 L1 共用朝下准备阶段：操作臂先到固定准备位姿，成功后才开始 GPT 决策；准备单独记录，失败不调用 GPT。观测臂同时移向两臂之间，并根据腕部相机安装位姿朝向操作臂工作区；准备完成后，GPT 仍可自主调整视角。该准备不读取物体位置，固定臂不参与准备运动，双操作臂任务也不会被改成观测角色。当前统一使用 cuRobo 轨迹执行，保持先运动后夹爪的顺序。
-L1 使用 master 的室内场景与黑银机器人外观；抓放保留原场景，视觉条件须在结果比较时区分。
+首版采用项目内程序生成的道具，不依赖下载 RoboDojo/ManiSkill 资产；厂家 R5 及相机资产仍需按安装说明准备。默认 medium、最多 100 次模型调用。L1 详细定义见 [L1 任务说明](docs/l1_tasks.md)。每个任务的工程代理边界在 TOML 和运行记录中保留。
+
+所有任务先执行公共机器人准备动作，再开始 GPT 决策；准备动作不读取物体位置。单臂任务会将右腕相机朝向工作区，之后允许 GPT 按需移动观察臂；双臂任务两手均操作。所有手起初为空，拔笔帽从横放整笔开始；没有脚本代替 GPT 抓起或完成道具任务。
+
+静态场景、复位、相机和评分检查集中在 `integrationtest/`，不调用 GPT：
+
+```bash
+# 在 Isaac Python 环境中运行；每个任务使用独立进程。
+python -m robot_tasks.integrationtest.scene_smoke --all
+# 只校验物理场景与 RGB-D，跳过规划器及准备动作；不能代替完整启动检查。
+python -m robot_tasks.integrationtest.scene_smoke --all --no-preparation
+```
+
+场景检查不统计任务成功率；GPT 是否能完成仍由真实模型回合及独立评分判定。未建模的断裂、压坏或流体效应不作为已验证能力。
 
 ## 三路相机与临时参数
 
@@ -114,7 +132,7 @@ python -m robot_tasks dry-run GPT-PICK-PLACE
 python -m robot_tasks run GPT-PICK-PLACE --gui
 
 # 同一任务使用不同实验参数；配置中的 task.id 必须仍为 GPT-PICK-PLACE。
-python -m robot_tasks run GPT-PICK-PLACE --config configs/tasks/gpt_single_arm_pick_place.toml --gui
+python -m robot_tasks run GPT-PICK-PLACE --config configs/checks/gpt_single_arm_pick_place.toml --gui
 
 # 工程检查名称与默认配置也由注册表解析。
 python -m robot_tasks list --checks
@@ -122,7 +140,7 @@ python -m robot_tasks check gpt-pick-place --gui
 ```
 
 `run` 当前使用 GPT 策略；指定模型配置用 `--model-config`。只保留 GPT 抓放集成检查。
-L2-02 仍是未实现模板，会在启动仿真前明确报错。
+L3-11 为仅真机任务，会在启动仿真前明确报错。
 `run GPT-PICK-PLACE` 与 `check gpt-pick-place` 使用同一个自主抓放实现。单次结果不能代表总体成功率。
 原来的 `check-r5*`、`check-gpt-api` 命令已统一替换为 `check <名称>`；仅传 `run --config ...` 的用法仍保留。
 WSL 调用 Windows Isaac 环境时继续使用 `tools/run_r5_check.ps1 -Check gpt-pick-place -Gui`，F5 调试入口也已同步。
@@ -134,7 +152,7 @@ WSL 调用 Windows Isaac 环境时继续使用 `tools/run_r5_check.ps1 -Check gp
 | `execution.py` | 预检查、创建任务／机器人／策略，交给公共 `runner.py` 执行 |
 | `integrationtest/registry.py` | 检查名称、普通／调试默认配置、实现入口与前置校验；CLI、子进程及调试器共用 |
 
-增加同类实验时新增 TOML；新增任务类型时实现 Task 并加入 `TASKS`。
+同类实验用 `*.local.toml` 配合 `--config`；维护中的任务 TOML 按受信任的 `implementation` 自动注册。
 新增工程检查时在 `integrationtest/` 实现检查函数并加入 `CHECKS`，无需改 CLI、子进程、调试器或 PowerShell。
 配置覆盖不能切换任务类型；任务或检查名称与配置不匹配时，执行前报错。
 
@@ -162,7 +180,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass \
 F5 选择 **R5: GPT pick-place GUI (WSL)**。它运行同一任务实现，可在 `runner.run_episode()`、
 `GPTPolicy.act()`、`R5Adapter.apply()`、`SingleArmPickPlace.evaluate()` 处断点。
 
-默认配置为 [gpt_single_arm_pick_place.toml](configs/tasks/gpt_single_arm_pick_place.toml)。
+默认配置为 [gpt_single_arm_pick_place.toml](configs/checks/gpt_single_arm_pick_place.toml)。
 它引用 [公共运行参数](configs/workflows/gpt_default.toml)。左臂根据三路 RGB-D、相机参数、机器人状态和反馈，
 自主抓起红色方块并放到绿色目标区；右臂是观察臂，GPT 可移动其腕部相机寻找视角，但不能向它下发夹爪指令。
 观察动作和深度查询沿用同一个决策、执行与反馈循环，共享预算。没有独立的观察控制链路，也没有预设换视角动作。
@@ -450,7 +468,7 @@ $taskPython = 'D:\conda\envs\isaac51\python.exe'
 & $taskPython -m robot_tasks dry-run GPT-PICK-PLACE
 
 # 双臂交接模板的占位流程自检
-& $taskPython -m robot_tasks dry-run L2-02
+& $taskPython -m robot_tasks dry-run L2-01
 ```
 
 WSL 中进入同一目录，使用 `/root/miniforge3/envs/sim-research/bin/python -m robot_tasks ...` 即可。
@@ -536,19 +554,19 @@ MP4 保留所有控制周期的画面；GIF 是覆盖整轮的抽帧预览，最
 |---|---|
 | `src/robot_tasks/tasks/<任务>.py` | 实现 `build_scene()` 创建物体/场景、`reset()` 复位、`evaluate()` 根据实测状态评分；需要时用 `prepare_config()` 检查参数并生成指令 |
 | `configs/tasks/<任务>.toml` | 引用共享 workflow、机器人与相机，填写任务 ID、指令、操作/观察臂、场景和成功条件 |
-| `src/robot_tasks/registry.py` | 注册任务 ID、实现类、默认配置和操作臂数量；确认实现完整后才设 `implemented=True` |
+| `tasks/bench/{l1,l2,l3}.py` 与 `scoring_l*.py` | 家用物体任务分别提供几何/关节定义和过程评分；TOML 的 `implementation = "household"` 由注册表自动绑定。新增另一类实现才修改注册表的受信任映射 |
 
 新物体需要额外资产时放入 `assets/` 并记录来源。场景较复杂时可在 `tasks/` 内拆场景与评分辅助模块。
 已有动作、观测和力学能力足够时，不改 CLI、GPT 客户端、IK、runner、recording，也不为每个任务复制集成入口。
 新任务使用 `run <任务ID>`。若需要当前没有的力控、触觉或新动作类型，才扩展公共接口和适配器。
 
-当前双臂交接 `L2-02` 仍是未实现模板；共享流程就绪不代表其物体、接触和评分已完成。
+物体尺寸、初态、关节和评分阈值目前定义在对应任务实现中；TOML 不会覆盖代码中未公开的几何参数。
 
 ## 哪些配置影响任务
 
 | 配置 | 影响内容 | 修改范围 |
 |---|---|---|
-| `configs/tasks/<任务>.toml` | instruction、角色、场景物体、初态、成功阈值；`[simulation]` 还包括驱动刚度/阻尼、碰撞和求解器设置 | 当前选中的实验 |
+| `configs/tasks/<任务>.toml` | instruction、角色、实现绑定与运行说明；`[simulation]` 还包括驱动刚度/阻尼、碰撞和求解器设置 | 当前选中的实验 |
 | `configs/workflows/gpt_default.toml` | 相机选择、记录设置、物理/控制步长、时间和调用预算、medium 等公共运行参数 | 引用该文件且未覆盖相应字段的任务 |
 | `configs/robots/r5_sim.toml` | URDF、左右底座、home、TCP、夹爪映射和关节限位，影响 IK 与动作执行 | 引用这个机器人配置的任务 |
 | `configs/cameras/r5_orbbec_provisional.toml` | 相机型号/外壳、安装方向、分辨率、内参、畸变和视角 | 引用这个相机配置的任务 |
@@ -635,3 +653,11 @@ GPT 固定使用 `sparse_eef` 命名字段动作接口，使用绝对世界坐�
 
 实现参考：[RoboProbe 的动作接口](https://github.com/RoboProbe/RoboProbe/tree/main/policy/RoboDojo_Agent_L3_Inspect_EEF)、
 [Responses 会话状态](https://developers.openai.com/api/docs/guides/conversation-state)。本项目仍使用 R5，不复制参考项目的 X5／Franka 参数。
+
+### L2-01：双臂拔笔帽（预抓持简化版）
+
+`python tools/launch.py run L2-01 --gui`。左手初始化夹稳笔身，GPT 用右手抓帽、拔出，再分别放好。详见 [任务边界与运行说明](docs/l2_01_marker_uncap.md)。使用公共模型工作流；笔帽是本地生成的柔顺摩擦配合，未校准真机拔出力，也未模拟塑性损坏。
+
+### L3-05：粗螺丝对准与旋入（直立简化版）
+
+`python tools/launch.py run L3-05 --gui`。粗螺丝直立、与固定孔座分开；GPT 抓取、对准、啮合并旋入，松手留在孔中即可。右臂可主动观察。详见 [任务边界与运行说明](docs/l3_05_coarse_screw.md)。采用本地真实接触螺纹，不预先啮合，不模拟滑牙和材料损伤。

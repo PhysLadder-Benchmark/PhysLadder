@@ -58,7 +58,7 @@ class CheckSpec:
 CHECKS = {
     "gpt-pick-place": CheckSpec(
         "gpt-pick-place", "GPT 单臂抓放任务的全链路检查", ("GPT-PICK-PLACE",),
-        PROJECT_ROOT / "configs/tasks/gpt_single_arm_pick_place.toml",
+        PROJECT_ROOT / "configs/checks/gpt_single_arm_pick_place.toml",
         "gpt_pick_place_check:run_gpt_pick_place_check", "R5_gpt_pick_place_",
         require_cartesian_sim_ready, uses_model=True,
     ),

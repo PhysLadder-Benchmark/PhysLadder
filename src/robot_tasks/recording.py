@@ -75,6 +75,8 @@ class EpisodeRecorder:
             "units": {"distance": "m", "angle": "rad", "time": "s", "quaternion": "wxyz"},
             "video_status": "pending",
             "instruction": config.instruction,
+            "grasp_check_mode": config.grasp_check_mode,
+            "initial_state_description": config.initial_state_description,
             "physics_during_inference": "paused",
             "observation_modalities": ["rgb", "depth"] if config.include_depth else ["rgb"],
             "depth": {"enabled": config.include_depth, "recorded": self.save_depth,

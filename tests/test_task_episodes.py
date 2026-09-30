@@ -120,7 +120,7 @@ class EpisodeExecutionTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         # Runtime snapshots use resolved paths, even if Windows TEMP is an alias.
         self.root = Path(self.temp.name).resolve()
-        base = load_config(ROOT / 'configs/tasks/gpt_single_arm_pick_place.toml')
+        base = load_config(ROOT / 'configs/checks/gpt_single_arm_pick_place.toml')
         # Controller tests use an explicit 10 Hz fixture with the shared RGB-D protocol.
         base = replace(base, control_dt_s=0.1, save_depth=False)
         self.config = replace(base, raw={**base.raw, "execution": {
@@ -265,7 +265,7 @@ class EpisodeExecutionTests(unittest.TestCase):
 
     def test_pick_place_allows_right_observation_but_not_gripping_and_formats_public_goals(self):
         from robot_tasks.policies.action_codec import decode_action
-        config = SingleArmPickPlace.prepare_config(load_config(ROOT / "configs/tasks/gpt_single_arm_pick_place.toml"))
+        config = SingleArmPickPlace.prepare_config(load_config(ROOT / "configs/checks/gpt_single_arm_pick_place.toml"))
         self.assertEqual(config.arms, ("left",))
         self.assertNotIn("{", config.instruction)
         self.assertNotIn("0.38", config.instruction)
@@ -290,7 +290,7 @@ class EpisodeExecutionTests(unittest.TestCase):
         self.assertFalse(storage["windows_storage_configured"])
 
     def test_pick_place_goals_and_prompt_share_changed_parameters(self):
-        config = load_config(ROOT / "configs/tasks/gpt_single_arm_pick_place.toml")
+        config = load_config(ROOT / "configs/checks/gpt_single_arm_pick_place.toml")
         config = replace(config, raw={**config.raw, "interaction": {**config.raw["interaction"],
                                                                   "lift_threshold_m": 0.09, "open_width_m": 0.06}})
         prepared = SingleArmPickPlace.prepare_config(config)

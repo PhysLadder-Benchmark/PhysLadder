@@ -1,25 +1,7 @@
+# Run from the repository root in the Isaac Sim environment; requires OPENAI_API_KEY.
+# launch_command / launch_command_conda below are documentation, not auto-executed shell code.
 schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
-
-[task]
-id = "L1-01"
-instruction = """
-Use the left R5 arm for manipulation. The right arm may move only to improve
-its wrist-camera view; it must not touch, grasp, push or support task objects.
-Choose object locations, grasp regions, poses and actions from the observations.
-Completion requires each manipulated object to have been lifted at least
-{lift_m} m above its initial centre while grasped by both fingers for at least
-{grasp_hold_s} simulation seconds. The final goal must remain stable for
-{stability_s} simulation seconds. When release is required, the final gripper
-opening must be at least 0.060 m, with no finger contact and at least
-{retreat_m} m clearance between the TCP and the object.
-The peg axis must be within {axis_tilt_deg:.1f} degrees of the socket axis;
-rotation about the peg axis is unrestricted.
-Both flat ends are equivalent; there is no required end-for-end orientation.
-Dropping the lifted peg or leaving it toppled ends the current attempt.
-After an automatic reset, use the new observations and re-establish the grasp;
-history is retained, but the total call and time budgets do not restart.
-"""
 
 [robot]
 profile = "../robots/r5_sim.toml"
@@ -32,7 +14,6 @@ robot_appearance = "r5_black_silver_v1"
 camera_profile = "../cameras/r5_orbbec_provisional.toml"
 asset_directory = "../../build/r5"
 headless = true
-# Backend defaults to d3d12 on Windows and vulkan on Linux.
 width = 640
 height = 480
 fps = 12
@@ -43,7 +24,7 @@ finger_damping = 40.0
 self_collision = false
 solver_position_iterations = 32
 solver_velocity_iterations = 0
-camera_position = [1.15, -1.3, 0.95]
+camera_position = [1.6, 0.0, 1.4]
 camera_target = [0.28, 0.0, 0.20]
 
 [policy]
@@ -52,11 +33,50 @@ model_config = "../models/gpt.toml"
 [execution]
 retry_failed_attempts = true
 
-# l1-01-wide-clearance-v3: uniform short cylinder; symmetric ends and wide clearance.
-[l1]
-stability_s = 1.0
-grasp_hold_s = 0.25
-lift_m = 0.015
-rotation_tolerance_rad = 0.17453292519943295
-position_jitter_m = 0.0
-yaw_jitter_rad = 0.0
+[task]
+id = "L1-01"
+name = "马克笔入笔筒"
+execution_target = "simulation_and_real"
+simulation_enabled = true
+status = "implemented"
+implementation = "household"
+simulation_limitations = "Engineering dimensions and friction; not calibrated to physical props."
+launch_command = "python tools/launch.py run L1-01 --gui"
+launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L1-01 --gui"
+instruction = """
+Use the LEFT R5 arm for manipulation. The RIGHT arm is an observation arm:
+it may move its wrist camera when a grasp, opening or contact is obscured, but
+must not touch or support the props. Keep the left arm steady while changing
+view. Choose grasp points, poses and motion from current images and available
+robot feedback; no object coordinates or successful action sequence is supplied.
+Pick up the capped marker standing upright on the table and place its lower
+end into the single fixed, upright pen holder. Keep the cap on. The holder has
+a broad, open mouth and a loose, low-resistance fit: this is not press fitting.
+Identify the marker's upper graspable body, lower entering end, holder opening
+and their relative axes from observations. Grasp high enough that the lower
+end and the fingers can clear the holder rim during insertion.
+Approach with an open gripper and close in a separate decision. Make a small
+upward test lift and confirm the whole marker follows; correct a missed grasp
+before moving toward the holder. Carry with its lower end above the rim, align
+approximately vertically over the opening, and lower gently in small increments.
+If it rests on the rim, lift clear and correct alignment instead of pushing.
+Guide the marker inside to the task's configured seating depth, then open in a
+separate decision. Leave it supported by the holder with its upper portion
+visible and stable after release. Do not drop it in from above or keep supporting
+it with the hand. There is no need to uncap, write, rotate a thread or apply a
+precise insertion force.
+Inspect the actual released or completed state before requesting stop. A
+commanded pose, blocked gripper, or completion claim is not evidence of success.
+If a grasp is lost or the scene resets, use new observations and reassess rather
+than continuing with stale object positions. Do not invent force measurements
+or assume a force-control tool that the interface does not expose.
+"""
+
+# Chinese setup/props description; keep this the final task attribute.
+description = """
+道具：直径约 30 mm、总高 125 mm 的刚性马克笔，固定的蓝色空心笔筒，操作台。
+布置：马克笔竖直放在桌面，笔筒在旁边；双手空手。左臂操作，右臂可主动换视角但不能接触道具。
+操作：自主选抓点，抓起马克笔，保持竖直，对准宽松笔筒口后放入并松手。
+完成：有实际抓持抬升记录，笔下端入筒至少 40 mm，笔筒实际承重，松手后稳定 1 秒。
+边界：固定基础控制、低摩擦和宽松间隙；笔筒由独立碰撞壁片组成，孔口没有被凸包封住。道具为项目程序生成的工程尺寸，需再与实物核对。
+"""

@@ -10,6 +10,7 @@ import numpy as np
 
 def collider_meshes(backend):
     from pxr import Usd, UsdGeom, UsdPhysics
+
     from ..backends.scene_geometry import BENCH_POSITION, BENCH_SIZE
 
     result = {
@@ -136,6 +137,11 @@ def article_surface(article):
             continue
         if part.shape == "box":
             local = box_surface(part.size)
+        elif part.shape == "mesh":
+            triangles = np.asarray(part.vertices)[np.asarray(part.faces)]
+            weights = np.array([(i / 4, j / 4, 1 - (i + j) / 4)
+                                for i in range(5) for j in range(5 - i)])
+            local = np.einsum("wk,fkd->fwd", weights, triangles).reshape(-1, 3)
         else:
             radius, _, height = part.size
             angles = np.linspace(0, 2 * np.pi, 48, endpoint=False)

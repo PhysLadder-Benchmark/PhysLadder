@@ -1,0 +1,79 @@
+# Run from the repository root in the Isaac Sim environment; requires OPENAI_API_KEY.
+# launch_command / launch_command_conda below are documentation, not auto-executed shell code.
+schema_version = 2
+workflow_profile = "../workflows/gpt_default.toml"
+
+[robot]
+profile = "../robots/r5_bimanual_sim.toml"
+active_arms = ["left", "right"]
+
+[simulation]
+environment = "lab_room_v1"
+robot_appearance = "r5_black_silver_v1"
+camera_profile = "../cameras/r5_orbbec_provisional.toml"
+asset_directory = "../../build/r5"
+headless = true
+width = 640
+height = 480
+fps = 12
+arm_stiffness = 1500.0
+arm_damping = 80.0
+finger_stiffness = 2000.0
+finger_damping = 40.0
+self_collision = false
+solver_position_iterations = 32
+solver_velocity_iterations = 0
+camera_position = [1.6, 0.0, 1.4]
+camera_target = [0.28, 0.0, 0.20]
+
+[policy]
+model_config = "../models/gpt.toml"
+
+[execution]
+retry_failed_attempts = true
+
+[task]
+id = "L2-05"
+name = "弹性卡扣翻盖盒开合"
+execution_target = "simulation_and_real"
+simulation_enabled = true
+status = "implemented_proxy"
+id_status = "provisional_duplicate_L2_04_in_source"
+implementation = "household"
+simulation_limitations = "Enlarged spring-slider latch proxy, not a calibrated moulded flexure; no fracture model."
+launch_command = "python tools/launch.py run L2-05 --gui"
+launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-05 --gui"
+instruction = """
+Both R5 arms may manipulate the props; neither is restricted to observation.
+Use the overview and both wrist-camera views. Choose grasp points, poses and
+motion from current observations and available robot feedback. Verify that
+objects actually follow the grippers before transport. Plan motions that keep
+the hands and held props clear of one another.
+Open the latched hinged box, remove the item inside, then close the lid and
+engage the latch again. The box starts on the table with the lid shut and the
+latch actually engaged. Do not assume it is already unlocked.
+Identify the box body, latch, hinge, opening direction and graspable regions.
+Stabilize the body with one hand as needed, then use the other to actuate the
+latch in its natural release direction. Verify unlocking before lifting the lid;
+do not pull the whole box upward to substitute for releasing the catch.
+Open the lid without overextending the hinge, remove the single item and place
+it on the table. Bring the lid back into alignment, close gently and engage the
+catch. If the lid or latch resists, inspect alignment and the lock state instead
+of forcing it. Confirm the lid remains shut after the hands release it.
+Completion requires opening, item removal and verified re-latching, not merely
+lowering the lid onto the box. Do not claim that a flat closed lid proves locking.
+Inspect the actual released or completed state before requesting stop. A
+commanded pose, blocked gripper, or completion claim is not evidence of success.
+If a grasp is lost or the scene resets, use new observations and reassess rather
+than continuing with stale object positions. Do not invent force measurements
+or assume a force-control tool that the interface does not expose.
+"""
+
+# Chinese setup/props description; keep this the final task attribute.
+description = """
+道具：固定蓝色翻盖盒、绿色提盖柄、红色被动弹簧滑扣、黄色橡皮和操作台。
+布置：盒盖关闭，滑扣齿位于固定卡缘下，橡皮在盒内。双臂空手。
+操作：一臂沿前方拉出滑扣约 15 mm，另一臂提盖；取出橡皮放在桌面，再保持滑扣退让、关闭盒盖并释放滑扣，使其回到扣合位置。
+完成：依次出现实际解锁、开盖、取出物品、关盖和扣合，橡皮放好，双手释放，过程和最终状态分别记录。
+代理边界：实现放大的弹簧滑扣与铰链接触，不是商业塑料卡扣的材料弯曲模型；没有断裂或疲劳。按现有任务编号保留 L2，但多阶段接触切换应在报告中说明。
+"""

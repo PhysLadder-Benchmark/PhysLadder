@@ -32,7 +32,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class OptimizationTests(unittest.TestCase):
     def setUp(self):
-        base = load_config(ROOT / "configs/tasks/gpt_single_arm_pick_place.toml")
+        base = load_config(ROOT / "configs/checks/gpt_single_arm_pick_place.toml")
         self.config = replace(base, cameras=("overview",), observation_arms=())
         t = origin_transform((.3, .4, .2), (0., 0., 0.))
         t[:3, :3] = REFERENCE

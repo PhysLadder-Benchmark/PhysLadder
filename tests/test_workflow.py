@@ -27,7 +27,7 @@ from test_depth import rgbd
 
 
 ROOT = Path(__file__).resolve().parents[1]
-TASK = ROOT / "configs/tasks/gpt_single_arm_pick_place.toml"
+TASK = ROOT / "configs/checks/gpt_single_arm_pick_place.toml"
 
 
 def states(right_angle=0.):

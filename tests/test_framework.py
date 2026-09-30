@@ -20,7 +20,7 @@ class FrameworkTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.output = Path(self.temp.name)
-        self.config = replace(load_config(ROOT / "configs/tasks/gpt_single_arm_pick_place.toml"),
+        self.config = replace(load_config(ROOT / "configs/checks/gpt_single_arm_pick_place.toml"),
                               control_dt_s=0.1, include_depth=False, save_depth=False)
 
     def run_mock(self, *, config=None, backend=None, task=None, policy=None, dry_run=True):
@@ -32,7 +32,7 @@ class FrameworkTests(unittest.TestCase):
         )
 
     def test_dry_run_persists_evidence_but_never_task_success(self):
-        for name in ("gpt_single_arm_pick_place.toml", "l2_02_dual_arm_handover.toml"):
+        for name in ("l1_01_cylinder_insertion.toml", "l2_01_marker_uncap.toml"):
             with self.subTest(name=name):
                 config = load_config(ROOT / "configs/tasks" / name)
                 backend = MockBackend()
@@ -150,7 +150,7 @@ class FrameworkTests(unittest.TestCase):
                         load_config(self.config.source)
 
     def test_task_arm_count_must_match(self):
-        bad = replace(self.config, task_id="L2-02", arms=("left",))
+        bad = replace(self.config, task_id="L2-01", arms=("left",))
         with self.assertRaisesRegex(ValueError, "active arm counts"):
             get_spec(bad)
 

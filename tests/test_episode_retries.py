@@ -91,7 +91,7 @@ class RetryTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        base = load_config(ROOT / "configs/tasks/gpt_single_arm_pick_place.toml")
+        base = load_config(ROOT / "configs/checks/gpt_single_arm_pick_place.toml")
         self.config = replace(base, raw={**base.raw, "execution": {
             "max_action_steps": 4, "max_decisions": 100, "retry_failed_attempts": True}})
         self.settings = GPTSettings("https://example.org/openai", "fixture-model", max_calls=100)

@@ -11,7 +11,7 @@ SECTIONS = {"runtime", "observation", "recording", "execution", "policy"}
 def workflow_metadata() -> dict:
     """Describe implemented behavior for inspection and run records, not switches."""
     return {
-        "version": 9, "action_interface": "sparse_eef_normalized_gripper", "ik": "curobo",
+        "version": 10, "action_interface": "sparse_eef_normalized_gripper", "ik": "curobo",
         "generation_retries": "3 after initial failure; unchanged observation; shared total call budget",
         "motion": "collision_checked_joint_trajectory",
         "stop_protocol": "evaluator_gated_continue_within_total_call_budget",

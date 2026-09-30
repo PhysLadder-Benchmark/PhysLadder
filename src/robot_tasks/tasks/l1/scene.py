@@ -1,25 +1,29 @@
 """Eight passive physical scenes. Pose writes occur only in episode reset."""
 
 from dataclasses import asdict
+
 import numpy as np
 
-from ...robots.transforms import pose_transform, origin_transform, transform_pose
+from ...robots.transforms import origin_transform, pose_transform, transform_pose
 from .assets import import_asset
 from .evaluation import InsertionAttemptMonitor
+from .shaped_recess import ShapedRecess
 from .specs import build_design, local_corners
 
 
 class L1Scene:
     root = "/World/L1"
 
-    def __init__(self, backend, config, settings):
+    report_key = "l1"
+
+    def __init__(self, backend, config, settings, *, design=None):
         from isaacsim.core.api.materials import PhysicsMaterial
-        from isaacsim.core.prims import SingleRigidPrim, RigidPrim
-        from pxr import UsdGeom, UsdPhysics, PhysxSchema, UsdShade
+        from isaacsim.core.prims import RigidPrim, SingleRigidPrim
+        from pxr import PhysxSchema, UsdGeom, UsdPhysics, UsdShade
 
         self.backend, self.config, self.settings = backend, config, settings
         backend.planning_payloads = self.planning_payloads
-        self.design = build_design(config.task_id)
+        self.design = design if design is not None else build_design(config.task_id)
         self.bodies, self.contacts = {}, {}
         self.material = PhysicsMaterial(
             self.root + "/Material", static_friction=0.8, dynamic_friction=0.8, restitution=0.0
@@ -139,12 +143,15 @@ class L1Scene:
                 "topple_tilt_rad": InsertionAttemptMonitor.topple_tilt_rad,
                 "guided_release_exempt": True,
             }
-        backend.scene_report["l1"] = {
+        if isinstance(self.design.insertion, ShapedRecess):
+            scoring.pop("retreat_m")
+            scoring["release_rule"] = "no finger contact; fixture support; no opening-width or retreat-distance gate"
+        backend.scene_report[self.report_key] = {
             "version": self.design.version,
             "design": asdict(self.design),
             "assets": evidence,
             "scoring": scoring,
-            "goal_rule": ("cylinder containment, insertion depth, guided insertion and fixture support"
+            "goal_rule": ("object containment, insertion depth, guided insertion and fixture support"
                           if self.design.insertion else "task geometry and pose tolerances"),
             "contact_materials": {"gripper_peg_and_bench": {"static": 0.8, "dynamic": 0.8},
                                   "fixture": {"static": self.design.fixture_friction,
@@ -166,7 +173,7 @@ class L1Scene:
         }
 
     def set_pose(self, path, pose):
-        from pxr import UsdGeom, Gf
+        from pxr import Gf, UsdGeom
 
         x = UsdGeom.Xformable(self.stage.GetPrimAtPath(path))
         x.ClearXformOpOrder()
@@ -174,19 +181,26 @@ class L1Scene:
         x.AddOrientOp(UsdGeom.XformOp.PrecisionDouble).Set(Gf.Quatd(pose[3], Gf.Vec3d(*pose[4:])))
 
     def add_part(self, path, part):
-        from pxr import UsdGeom, UsdPhysics, Gf
+        from pxr import Gf, UsdGeom, UsdPhysics
 
-        shape = (
-            UsdGeom.Cube.Define(self.stage, path)
-            if part.shape == "box"
-            else UsdGeom.Cylinder.Define(self.stage, path)
-        )
-        if part.shape == "box":
+        if part.shape == "mesh":
+            shape = UsdGeom.Mesh.Define(self.stage, path)
+            shape.CreatePointsAttr([Gf.Vec3f(*v) for v in part.vertices])
+            shape.CreateFaceVertexCountsAttr([3] * len(part.faces))
+            shape.CreateFaceVertexIndicesAttr(np.asarray(part.faces).ravel().tolist())
+            shape.CreateSubdivisionSchemeAttr("none")
+            if part.collision:
+                UsdPhysics.MeshCollisionAPI.Apply(shape.GetPrim()).CreateApproximationAttr("convexHull")
+        elif part.shape == "box":
+            shape = UsdGeom.Cube.Define(self.stage, path)
             shape.CreateSizeAttr(1.0)
-        else:
+        elif part.shape == "cylinder":
+            shape = UsdGeom.Cylinder.Define(self.stage, path)
             shape.CreateRadiusAttr(part.size[0])
             shape.CreateHeightAttr(part.size[2])
             shape.CreateAxisAttr("Z")
+        else:
+            raise ValueError(f"Unsupported L1 part shape: {part.shape}")
         self.set_pose(path, transform_pose(origin_transform(part.position, part.rotation)))
         if part.shape == "box":
             UsdGeom.Xformable(shape).AddScaleOp().Set(Gf.Vec3f(*part.size))
@@ -215,7 +229,7 @@ class L1Scene:
         self.fingers.initialize()
         for view in self.supports.values():
             view.initialize()
-        self.backend.scene_report["l1"]["initial_poses"] = self.initial
+        self.backend.scene_report[self.report_key]["initial_poses"] = self.initial
 
     def planning_payloads(self):
         """Collision-only privilege; no task evaluator is queried or changed."""

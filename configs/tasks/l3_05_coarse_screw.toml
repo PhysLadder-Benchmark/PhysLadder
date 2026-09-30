@@ -1,0 +1,120 @@
+# Run from the repository root in the Isaac Sim environment; requires OPENAI_API_KEY.
+# launch_command / launch_command_conda below are documentation, not auto-executed shell code.
+schema_version = 2
+workflow_profile = "../workflows/gpt_default.toml"
+
+[robot]
+profile = "../robots/r5_sim.toml"
+active_arms = ["left"]
+observation_arms = ["right"]
+
+[simulation]
+environment = "lab_room_v1"
+robot_appearance = "r5_black_silver_v1"
+camera_profile = "../cameras/r5_orbbec_provisional.toml"
+asset_directory = "../../build/r5"
+headless = true
+width = 640
+height = 480
+fps = 12
+arm_stiffness = 1500.0
+arm_damping = 80.0
+finger_stiffness = 2000.0
+finger_damping = 40.0
+self_collision = false
+solver_position_iterations = 32
+solver_velocity_iterations = 0
+camera_position = [1.6, 0.0, 1.4]
+camera_target = [0.28, 0.0, 0.20]
+
+[policy]
+model_config = "../models/gpt.toml"
+
+[execution]
+retry_failed_attempts = true
+
+[task]
+id = "L3-05"
+name = "粗螺丝对准与旋入（保留现有版）"
+execution_target = "simulation_and_real"
+simulation_enabled = true
+status = "implemented"
+implementation = "screw"
+launch_command = "python tools/launch.py run L3-05 --gui"
+launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L3-05 --gui"
+instruction = """
+Pick up the large upright orange screw, align it with the single opening in the
+fixed blue threaded socket, engage its thread, and screw it down. Leave it seated
+after opening the left gripper. The screw starts separately on the table; it is
+NOT already held, aligned over the socket or engaged. No tool is needed.
+
+Use the LEFT arm for all manipulation. The RIGHT arm is an active camera arm:
+move it when needed to inspect the grasp, screw tip, socket mouth, engagement or
+actual screw rotation. It must never touch or support either object. Leave the
+manipulation hand steady when changing the view. Determine actual coordinates,
+grasp regions and poses from current RGB-D and camera calibration. Nominal sizes
+below describe the object, not a supplied grasp pose or an action sequence.
+
+Geometry: shaft core diameter 0.026 m, thread outer diameter 0.036 m, shaft length
+0.042 m; the orange grasping head is 0.044 m across and 0.018 m tall. Overall
+height is 0.060 m. The thread is a coarse RIGHT-HAND thread, pitch 0.012 m per
+full revolution. The socket rim is 0.047 m above the tabletop. Both parts are
+rigid. There is generous engineering clearance and low thread friction, but
+the thread is a physical obstacle: straight downward pushing is not screwing.
+
+Choose a grip on the upper head which leaves the shaft, entering tip and fingers
+clear of the socket. Approach with an open gripper. Close in a SEPARATE decision;
+zero is the fully closed command and contact can stop the fingers at a wider
+measured opening. A blocked opening alone does not prove a grasp. Before leaving
+the source, make a small vertical lift and visually confirm the whole screw
+follows. If not, stop transport, open and correct the grasp. Use the observation
+arm if the object is occluded. Carry with the entire tip above the socket rim.
+
+Keep the screw upright and its tip centred over the bore. Approach in small
+increments. Establish first engagement without forcing the part down. If it
+rests on the rim or does not advance, inspect alignment, lift slightly only if
+unengaged, recenter, or rotate gently backwards to find the thread start. Do not
+repeat large downward commands against a blocked part.
+
+Once engaged, rotate CLOCKWISE as viewed from above and coordinate downward
+motion with the pitch: 15 degrees corresponds to about 0.0005 m, 30 degrees to
+0.001 m, and 90 degrees to 0.003 m. These are geometric expectations, not proof
+of progress; inspect the actual screw and its black head mark after each move.
+Use short rotation increments (e.g. 15-30 degrees) with small axial advances,
+retaining the grasp. Rotate the tool around the world vertical screw axis while
+keeping the fingers pointed down. If the screw slips in the fingers, adjust the
+grasp and reobserve. If motion is blocked, correct alignment or back off slightly;
+do not claim progress from the requested pose or hand rotation alone.
+
+You may regrasp the head if wrist range requires it: leave the threaded screw
+supported by the socket, open, rotate/reposition the empty hand, and close again.
+After engagement, NEVER perform a free-object vertical test lift: it would pull
+against the thread. Recheck contact and actual rotation visually instead. The
+interface uses fixed drive parameters, not a direct torque/force controller;
+you can adjust poses, opening and motion increments. No live force sensor or
+simulator object pose is supplied to you.
+
+Completion requires genuine held rotation/downward progress of at least three
+quarters of a turn (about 0.009 m coupled advance), and the tip at least 0.021 m
+below the socket rim. The screw must remain upright and supported by the socket.
+Simply dropping it in, spinning in air, pushing straight down or turning an empty
+gripper does not count. Once seated, OPEN in a separate decision, move the empty
+hand clear without touching the screw, and observe it stable for 1 simulation
+second. There is no extra transport or placement zone. Request stop only after
+checking the released final state. This version does not simulate thread damage.
+
+If the attempt resets after a drop/topple, inspect the new scene and start again
+from the upright screw. History is retained; the shared total call budget does
+not restart. Every decision needs a brief English observation/action note.
+"""
+
+# Chinese setup/props description; keep this the final task attribute.
+description = """
+当前实现：已接入本地物理场景、共用 GPT 控制流程、独立评分及记录。参数为仿真工程值，需按实物校准；启动命令见本任务 launch_command。
+范围：保留当前已接入的仿真配置与英文 prompt；本轮不替换螺丝、孔座、动作流程或评分定义。
+道具：现有橙色粗螺丝、固定蓝色螺纹孔座和操作台；螺丝芯径约 26 mm、牙外径约 36 mm、头部直径约 44 mm、总高约 60 mm，右旋螺距 12 mm。
+布置：螺丝平底直立在桌面，孔座单独固定，二者分开放置、不预先啮合、不预抓持。左臂操作，右臂可按需移动相机观察。
+操作：自主抓住螺丝头、抬起、搬运对准、首次啮合，然后协调顺时针旋转与向下推进，必要时重抓，最后松手让孔座承托。
+完成：沿用现有净旋转、有效推进、入孔深度及释放稳定判据；任务阈值和本轮之前修正的评分逻辑不变。
+边界：这是粗牙简化接触任务，未模拟或验证滑牙、材料损伤和真实紧固扭矩；不能将其解释为标准紧固件验收。
+"""

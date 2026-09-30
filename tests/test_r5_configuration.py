@@ -20,8 +20,8 @@ from robot_tasks.robots.urdf import read_urdf
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = ROOT / "configs/robots/r5.toml"
-PICK_PLACE = ROOT / "configs/tasks/gpt_single_arm_pick_place.toml"
-HANDOVER = ROOT / "configs/tasks/l2_02_dual_arm_handover.toml"
+PICK_PLACE = ROOT / "configs/checks/gpt_single_arm_pick_place.toml"
+HANDOVER = ROOT / "configs/tasks/l2_01_marker_uncap.toml"
 
 
 class R5ConfigurationTests(unittest.TestCase):
@@ -211,9 +211,9 @@ class R5ConfigurationTests(unittest.TestCase):
         with patch("robot_tasks.execution.IsaacSimBackend") as backend, \
                 patch("robot_tasks.execution.GPTPolicy") as policy, redirect_stderr(io.StringIO()) as error:
             with self.assertRaises(SystemExit) as raised:
-                main(["run", "--config", str(HANDOVER), "--policy", "gpt"])
+                main(["run", "--config", str(ROOT / "configs/tasks/l3_11_whiteboard_wiping_real.toml"), "--policy", "gpt"])
             self.assertEqual(raised.exception.code, 2)
-            self.assertIn("not implemented", error.getvalue())
+            self.assertIn("real-only", error.getvalue())
             backend.assert_not_called()
             policy.assert_not_called()
 

@@ -57,7 +57,7 @@ class ProcessBudgetTests(unittest.TestCase):
                         sp._monitor_worker(worker, io.StringIO(), deadline)
 
     def test_check_process_disables_watchdog_for_unlimited_config(self):
-        config = load_config(PROJECT_ROOT / "configs/tasks/gpt_single_arm_pick_place.toml")
+        config = load_config(PROJECT_ROOT / "configs/checks/gpt_single_arm_pick_place.toml")
         for seconds, deadline in ((0.0, None), (30.0, 190.0)):
             spec = Mock(preflight=None, output_prefix="fixture_")
             spec.name = "gpt-pick-place"

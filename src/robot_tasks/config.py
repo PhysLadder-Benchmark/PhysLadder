@@ -31,6 +31,10 @@ class TaskConfig:
     workflow_source: Path | None = None
     workflow_settings: dict | None = None
 
+    # Task capability, assigned by its adapter; not a user workflow switch.
+    grasp_check_mode: str = "lift"
+    initial_state_description: str = ""
+
     @property
     def command_arms(self) -> tuple[str, ...]:
         """Arms allowed to move; arms itself identifies task manipulation arms."""
@@ -126,6 +130,8 @@ def load_config(path: Path) -> TaskConfig:
     source = path.expanduser().resolve()
     with source.open("rb") as f:
         raw = tomllib.load(f)
+    if raw.get("task", {}).get("simulation_enabled") is False:
+        raise ValueError(f"{raw['task'].get('id', source.name)} is real-only and cannot run in simulation")
     if type(raw.get("schema_version")) is not int or raw["schema_version"] != 2:
         raise ValueError("Use schema_version = 2 with an R5 robot.profile and active_arms; legacy robot configs are not supported")
     from .workflow import load_workflow
