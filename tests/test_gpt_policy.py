@@ -19,7 +19,7 @@ from fixtures import robot_config, rgbd, gripper_command, decision_document, RGB
 from robot_tasks.policies.action_codec import decode_action
 from robot_tasks.policies.gpt import GPTPolicy
 from robot_tasks.policies.model_config import GPTSettings, load_gpt_settings, read_api_key
-from robot_tasks.policies.responses import ModelError, ModelReply, ResponsesClient, completed_response, read_response
+from robot_tasks.policies.responses import ModelError, ModelReply, ResponsesClient, RetryableModelError, completed_response, read_response
 from robot_tasks.runner import run_episode
 from robot_tasks.types import ArmState, Feedback, Observation, PolicyInput, RGBFrame
 
@@ -118,6 +118,39 @@ class ResponsesTests(unittest.TestCase):
     def test_json_response_supported(self):
         reply = self.read(json.dumps(response_document()).encode(), "application/json")
         self.assertEqual(reply.model, SETTINGS.model)
+
+    def test_failed_incomplete_and_error_events_preserve_sanitized_details(self):
+        cases = [
+            {"type": "response.failed", "response": {"id": "resp_fixture", "error": {
+                "code": "server_error", "message": "test-private-token Bearer hidden-secret", "input": "private request"}}},
+            {"type": "response.incomplete", "response": {"incomplete_details": {"reason": "max_output_tokens"}}},
+            {"type": "error", "code": "server_error", "message": "upstream generation failed"},
+        ]
+        for value in cases:
+            with self.subTest(value=value), self.assertRaises(RetryableModelError) as error:
+                read_response(Stream(event(value)), expected_model=SETTINGS.model,
+                              start=time.monotonic(), timeout_s=10, secret="test-private-token")
+            message = str(error.exception)
+            self.assertIn(value['type'], message)
+            for secret in ('test-private-token', 'hidden-secret', 'private request'):
+                self.assertNotIn(secret, message)
+
+    def test_explicit_quota_auth_and_refusal_events_are_permanent(self):
+        for value in (
+            {'type': 'response.failed', 'response': {'error': {'code': 'invalid_api_key'}}},
+            {'type': 'error', 'code': 'insufficient_quota'},
+            {'type': 'response.incomplete', 'response': {'incomplete_details': {'reason': 'content_filter'}}},
+            {'type': 'error', 'code': 'rate_limit_exceeded', 'message': 'apikey 7天限额已用完'},
+            {'type': 'error', 'error': 'apikey 7天限额已用完'},
+        ):
+            with self.subTest(value=value), self.assertRaises(ModelError) as error:
+                self.read(event(value))
+            self.assertNotIsInstance(error.exception, RetryableModelError)
+
+    def test_json_failed_response_uses_same_retry_contract(self):
+        with self.assertRaises(RetryableModelError):
+            self.read(json.dumps(response_document(status='failed', error={'code': 'server_error'})).encode(),
+                      'application/json')
 
     def test_truncated_failed_and_incomplete_stream_never_produces_action(self):
         for data in (event({"type": "response.output_text.delta", "delta": json.dumps(action_document())}),

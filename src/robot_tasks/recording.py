@@ -90,7 +90,11 @@ class EpisodeRecorder:
         })
         (self.directory / "instruction.txt").write_text(config.instruction, encoding="utf-8")
 
-    def observation(self, observation: Observation, step: int, *, after_reset: bool = False) -> dict:
+    def observation(self, observation: Observation, step: int, *, after_reset: bool = False,
+                    reference_arm: str | None = None) -> dict:
+        if reference_arm is not None and not reference_arm.replace("_", "").isalnum():
+            raise ValueError("Invalid reference arm name")
+        suffix = f"_grasp_{reference_arm}" if reference_arm else ("_reset" if after_reset else "")
         frames = []
         for frame in observation.rgb:
             if len(frame.data) != frame.width * frame.height * 3 or min(frame.width, frame.height) <= 0:
@@ -101,7 +105,6 @@ class EpisodeRecorder:
                 if not frame.camera.replace("_", "").isalnum():
                     raise ValueError("Invalid camera name")
                 # Preserve the failed decision's images when its reset is logged.
-                suffix = "_reset" if after_reset else ""
                 relative = Path("frames") / frame.camera / f"{step:06d}{suffix}.ppm"
                 target = self.directory / relative
                 target.parent.mkdir(parents=True, exist_ok=True)
@@ -119,7 +122,6 @@ class EpisodeRecorder:
                     import numpy as np
                     if not frame.camera.replace("_", "").isalnum():
                         raise ValueError("Invalid camera name")
-                    suffix = "_reset" if after_reset else ""
                     relative = Path("depth") / frame.camera / f"{step:06d}{suffix}.npy"
                     target = self.directory / relative
                     target.parent.mkdir(parents=True, exist_ok=True)

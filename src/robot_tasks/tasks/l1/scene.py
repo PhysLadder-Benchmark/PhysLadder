@@ -5,6 +5,7 @@ import numpy as np
 
 from ...robots.transforms import pose_transform, origin_transform, transform_pose
 from .assets import import_asset
+from .evaluation import InsertionAttemptMonitor
 from .specs import build_design, local_corners
 
 
@@ -17,11 +18,20 @@ class L1Scene:
         from pxr import UsdGeom, UsdPhysics, PhysxSchema, UsdShade
 
         self.backend, self.config, self.settings = backend, config, settings
+        backend.planning_payloads = self.planning_payloads
         self.design = build_design(config.task_id)
         self.bodies, self.contacts = {}, {}
         self.material = PhysicsMaterial(
             self.root + "/Material", static_friction=0.8, dynamic_friction=0.8, restitution=0.0
         )
+        self.fixture_material = PhysicsMaterial(
+            self.root + "/FixtureMaterial", static_friction=self.design.fixture_friction,
+            dynamic_friction=self.design.fixture_friction, restitution=0.0,
+        )
+        # Make the contact-pair rule explicit. With the zero-friction socket,
+        # min(0, .8) is zero, while gripper/peg and bench/peg remain .8.
+        for material in (self.material, self.fixture_material):
+            PhysxSchema.PhysxMaterialAPI.Apply(material.material.GetPrim()).CreateFrictionCombineModeAttr("min")
         stage = backend.world.stage
         self.stage = stage
         self.colliders = []
@@ -68,7 +78,7 @@ class L1Scene:
                     orientation=np.array(article.initial[3:]),
                 )
             )
-        # Match master interaction friction/contact offsets on the bench and R5.
+        # Keep grasp and bench friction; the fixture has its own material.
         paths = (
             self.colliders
             + ["/World/Bench"]
@@ -88,7 +98,7 @@ class L1Scene:
             api.CreateContactOffsetAttr(0.001)
             api.CreateRestOffsetAttr(0.0)
             UsdShade.MaterialBindingAPI.Apply(prim).Bind(
-                self.material.material,
+                (self.fixture_material if path.startswith(self.root + "/Fixture/") else self.material).material,
                 bindingStrength=UsdShade.Tokens.strongerThanDescendants,
                 materialPurpose="physics",
             )
@@ -106,6 +116,7 @@ class L1Scene:
         self.support_filters = [p for p in self.colliders if p.startswith(self.root + "/Fixture/")] + [
             "/World/Bench"
         ]
+        backend.planning_fixture_paths = tuple(self.support_filters[:-1])
         self.supports = {
             a.name: RigidPrim(
                 self.root + "/" + a.name,
@@ -118,16 +129,32 @@ class L1Scene:
             )
             for a in self.design.articles
         }
+        scoring = asdict(settings)
+        if self.design.insertion:
+            # These legacy pose thresholds do not define the wide socket goal.
+            scoring.pop("position_tolerance_m")
+            scoring.pop("height_tolerance_m")
+            scoring["attempt_termination"] = {
+                "contact_loss_or_topple_persistence_s": InsertionAttemptMonitor.persistence_s,
+                "topple_tilt_rad": InsertionAttemptMonitor.topple_tilt_rad,
+                "guided_release_exempt": True,
+            }
         backend.scene_report["l1"] = {
-            "version": "l1-rigid-v1",
+            "version": self.design.version,
             "design": asdict(self.design),
             "assets": evidence,
-            "scoring": asdict(settings),
+            "scoring": scoring,
+            "goal_rule": ("cylinder containment, insertion depth, guided insertion and fixture support"
+                          if self.design.insertion else "task geometry and pose tolerances"),
+            "contact_materials": {"gripper_peg_and_bench": {"static": 0.8, "dynamic": 0.8},
+                                  "fixture": {"static": self.design.fixture_friction,
+                                              "dynamic": self.design.fixture_friction},
+                                  "friction_combine_mode": "min", "restitution": 0.0},
             "colliders": self.colliders,
-            "ground_truth_use": "evaluator only",
+            "ground_truth_use": "evaluator plus privileged collision-only planner; never object state in model input",
             "controller": {
-                "adapter": "R5Adapter / Lula IK",
-                "motion_mode": "direct_ik",
+                "adapter": "R5Adapter / cuRobo trajectory",
+                "motion_mode": "collision_checked_trajectory",
                 "gripper_timing": "after_motion",
                 "startup_preparation": "downward_ready_v1",
                 "observation_preparation": "face_manipulation_workspace_v1",
@@ -189,6 +216,21 @@ class L1Scene:
         for view in self.supports.values():
             view.initialize()
         self.backend.scene_report["l1"]["initial_poses"] = self.initial
+
+    def planning_payloads(self):
+        """Collision-only privilege; no task evaluator is queried or changed."""
+        from ...planning.scene import article_surface
+        forces = np.asarray(self.fingers.get_contact_force_matrix(dt=self.config.physics_dt_s))
+        payloads = []
+        for i, article in enumerate(self.design.articles):
+            if not np.all(np.linalg.norm(forces[:,i,:],axis=1) > .05):
+                continue
+            xyz, q = self.bodies[article.name].get_world_pose()
+            transform = pose_transform((*xyz,*q))
+            local = article_surface(article)
+            payloads.append({"surface_points_world": (local@transform[:3,:3].T+transform[:3,3]).tolist(),
+                             "source": "bilateral measured contact; sampled geometry, not a grasp-success label"})
+        return {self.config.arms[0]: payloads}
 
     def measure(self):
         dt = self.config.physics_dt_s

@@ -216,8 +216,25 @@ class EpisodeExecutionTests(unittest.TestCase):
         self.assertEqual(result["termination_reason"], "wall_time_limit")
         self.assertFalse(result["success"])
 
+    def test_unlimited_wall_time_keeps_executing_until_decision_budget(self):
+        clock = [0.0]
+        config = replace(self.config, max_wall_time_s=0.0)
+
+        class SlowPolicy(NoopPolicy):
+            def act(policy, context):
+                clock[0] += 3600.0
+                return Action((ArmCommand("left", "gripper", (0.04,)),), policy.duration_s)
+
+        with patch("robot_tasks.runner.time.monotonic", side_effect=lambda: clock[0]):
+            _, result, _, robot = self.run_case(SlowPolicy(0.1), config=config)
+        self.assertEqual(result["status"], "finished")
+        self.assertEqual(result["termination_reason"], "model_call_limit")
+        self.assertEqual(result["decisions"], 4)
+        self.assertEqual(len(robot.applied), 4)
+        self.assertEqual(result["wall_time_s"], 14400.0)
+
     def test_gpt_history_and_outputs_reset_even_if_policy_object_is_reused(self):
-        settings = GPTSettings("https://example.org/openai", "gpt-6-astra")
+        settings = GPTSettings("https://example.org/openai", "gpt-6-astra", max_calls=1)
         client = Mock()
         stop = json.dumps(decision_document(request_stop=True))
         client.generate.return_value = ModelReply(stop, settings.model, "fixture", {}, 0.)
@@ -321,7 +338,7 @@ class EpisodeExecutionTests(unittest.TestCase):
 
     def test_bad_json_retries_same_observation_then_executes_only_valid_action(self):
         malformed = '{"request_stop":false,"commands":[{"arm":"left","gripper_width_m":0.012,"}]}'
-        settings = GPTSettings("https://example.org/openai", "gpt-6-astra")
+        settings = GPTSettings("https://example.org/openai", "gpt-6-astra", max_calls=3)
         config = self.config
         command = gripper_command(.04)
         client = Mock()
@@ -333,7 +350,8 @@ class EpisodeExecutionTests(unittest.TestCase):
         self.assertEqual(result["model_calls"], 3)
         self.assertEqual(result["invalid_model_actions"], 1)
         self.assertEqual(result["executed_actions"], 1)
-        self.assertEqual(result["termination_reason"], "policy_requested_stop")
+        self.assertEqual(result["termination_reason"], "model_call_limit")
+        self.assertEqual(result["rejected_stop_requests"], 1)
         self.assertIsNone(result["error"])
         self.assertEqual(len(robot.applied), 1)
         self.assertEqual(robot.applied[0].commands[0].values, (0.04,))

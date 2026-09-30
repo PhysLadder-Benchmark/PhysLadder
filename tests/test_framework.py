@@ -139,6 +139,16 @@ class FrameworkTests(unittest.TestCase):
         self.assertEqual(result["completed_steps"], 0)
         self.assertIsNone(result["success"])
 
+    def test_wall_limit_config_accepts_zero_and_rejects_invalid_values(self):
+        for value in (0, 0.0, 60.0, -1, True, "0", float("inf"), float("nan")):
+            raw = {**self.config.raw, "runtime": {**self.config.raw["runtime"], "max_wall_time_s": value}}
+            with self.subTest(value=value), patch("robot_tasks.workflow.load_workflow", return_value=(raw, None, None)):
+                if type(value) in (int, float) and value in (0, 60.0):
+                    self.assertEqual(load_config(self.config.source).max_wall_time_s, value)
+                else:
+                    with self.assertRaisesRegex(ValueError, "max_wall_time_s"):
+                        load_config(self.config.source)
+
     def test_task_arm_count_must_match(self):
         bad = replace(self.config, task_id="L2-02", arms=("left",))
         with self.assertRaisesRegex(ValueError, "active arm counts"):

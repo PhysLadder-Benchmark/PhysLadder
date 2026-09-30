@@ -15,6 +15,9 @@ from robot_tasks.policies.gpt import GPTPolicy
 from robot_tasks.policies.model_config import GPTSettings
 from robot_tasks.policies.responses import ModelError, ModelReply
 from robot_tasks.runner import run_episode
+from robot_tasks.robots.transforms import pose_transform
+from robot_tasks.tasks.l1.evaluation import L1Evaluator, L1Settings
+from robot_tasks.tasks.l1.specs import build_design, local_corners, pose
 from robot_tasks.types import ArmState, Assessment, Feedback, RGBFrame
 
 
@@ -158,6 +161,54 @@ class RetryTests(unittest.TestCase):
         self.assertIn("attempt_reset", second_messages[-1]["content"][0]["text"])
         notes = [e["action"]["note"] for e in self.events if e["event"] == "decision"]
         self.assertEqual(notes, [doc["note"], doc["note"]])
+
+    def test_real_insertion_scorer_cancels_action_and_notifies_model_after_drop(self):
+        class MeasuredInsertion(MockTask):
+            """Synthetic measurements exercise the real scorer and episode runner."""
+
+            def __init__(self):
+                self.resets = 0
+                self.design = build_design("L1-01")
+                self.article = self.design.articles[0]
+
+            def reset(self, backend, seed):
+                self.resets += 1
+                self.scorer = L1Evaluator(self.design, L1Settings(),
+                                          {self.article.name: self.article.initial})
+
+            def evaluate(self, state, feedback):
+                now = state.values["simulation_time_s"]
+                held = self.resets == 1 and 0 < now < .5
+                a = self.article
+                p = pose(*a.initial[:2], .2) if held else a.initial
+                t = pose_transform(p)
+                row = {"pose": p, "linear_velocity": [0., 0., 0.], "angular_velocity": [0., 0., 0.],
+                       "finger_forces": [1., 1.] if held else [0., 0.],
+                       "fixture_force_n": 0., "bench_force_n": 0. if held else a.mass * 9.81,
+                       "corners": (local_corners(a) @ t[:3, :3].T + t[:3, 3]).tolist()}
+                return self.scorer.update(now, {a.name: row}, tcp=(.1, .1, .3), gripper_width=.04)
+
+        config = replace(self.config, raw={**self.config.raw, "execution": {
+            "max_action_steps": 120, "max_decisions": 2, "retry_failed_attempts": True}})
+        moving = self.client.generate.return_value
+        stop = self.reply(json.dumps(decision_document(commands=[], request_stop=True)))
+        self.client.generate.side_effect = [moving, stop]
+        result = self.run_case(config=config, task=MeasuredInsertion())
+        self.assertEqual(result["model_calls"], 2)
+        self.assertEqual(result["reset_count"], 1)
+        # The first attempt drops; the rejected stop consumes the last call.
+        self.assertEqual(result["failed_attempts"], 2)
+        self.assertFalse(result["first_attempt_success"])
+        self.assertEqual(result["action_timeouts"], 0)
+        self.assertLess(result["simulation_time_s"], 1.)
+        self.assertEqual(self.robot.applies, 1)
+        self.assertFalse(self.robot.pending)
+        self.policy.reset.assert_called_once()
+        fresh = json.loads(self.client.generate.call_args_list[1].kwargs["messages"][-1]["content"][0]["text"])
+        self.assertEqual(fresh["feedback"]["status"], "attempt_reset")
+        self.assertIn("lost its grasp", fresh["feedback"]["message"])
+        self.assertNotIn("insertion_depth_m", json.dumps(fresh))
+        self.assertEqual(fresh["feedback"]["metrics"]["remaining_decisions"], 1)
 
     def test_100_calls_are_shared_and_last_failure_does_not_start_an_unused_attempt(self):
         result = self.run_case(task=AttemptTask(always_fail=True))

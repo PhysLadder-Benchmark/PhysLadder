@@ -47,6 +47,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(self.config.arm_roles, {"left": "manipulation", "right": "observation"})
         self.assertTrue(self.config.include_depth)
         self.assertTrue(self.config.save_depth)
+        self.assertEqual(self.config.max_wall_time_s, 0.0)
         self.assertEqual(ExecutionSettings.from_config(self.config).max_decisions, 100)
         settings = GPTSettings("https://example.invalid", "fixture", reasoning_effort="low", max_calls=2)
         with patch("robot_tasks.execution.load_gpt_settings", return_value=settings), \

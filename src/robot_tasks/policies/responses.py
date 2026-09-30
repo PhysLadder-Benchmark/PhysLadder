@@ -1,6 +1,7 @@
-"""Responses HTTP/SSE transport. No retries, redirects, SDK or local model.
+"""Responses HTTP/SSE transport. No hidden retries, redirects or local model.
 
-An uncertain request is recorded once, never silently billed/replayed.
+Each generate() sends exactly one request. The episode runner owns the fixed
+generation retry budget, logs every attempt and counts it against max_calls.
 Partial output can never become a robot action.
 """
 
@@ -12,10 +13,54 @@ from urllib.error import HTTPError, URLError
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from .model_config import GPTSettings, read_api_key
+from ..types import RetryablePolicyError
 
 
 class ModelError(RuntimeError):
     """A sanitized provider/protocol error, safe for experiment logs."""
+
+
+class RetryableModelError(ModelError, RetryablePolicyError):
+    """Provider generation failed/incomplete; no partial output is executable."""
+
+
+def generation_error(document: dict, event_type: str, secret: str = "") -> ModelError:
+    """Preserve bounded scalar reasons; never expose provider output/requests."""
+    response = document.get("response")
+    response = response if isinstance(response, dict) else document
+    payload = response.get("error")
+    if isinstance(payload, str):
+        payload = {"message": payload}
+    payload = payload if isinstance(payload, dict) else response
+    details = {"event": event_type}
+    for source, key, target in ((response, "id", "response_id"),
+                                (payload, "code", "code"), (payload, "type", "type"),
+                                (payload, "message", "message")):
+        value = _safe_error_field(source.get(key), secret)
+        if value is not None:
+            details[target] = value
+    incomplete = response.get("incomplete_details")
+    if isinstance(incomplete, dict):
+        value = _safe_error_field(incomplete.get("reason"), secret)
+        if value is not None:
+            details["incomplete_reason"] = value
+    labels = " ".join(details.get(k, "") for k in ("code", "type", "incomplete_reason")).lower()
+    # Explicit authorization, quota, refusal and invalid-request failures need
+    # a change outside this retry. Unknown gateway generation failures get the
+    # user's fixed three retries; this does not assert they are transient.
+    permanent = any(code in labels for code in (
+        "invalid_api_key", "authentication", "unauthorized", "permission", "access_denied",
+        "insufficient_quota", "quota_exceeded", "billing_hard_limit", "subscription_sharing_usage",
+        "content_filter", "refusal", "safety_violation", "invalid_request", "context_length_exceeded",
+    ))
+    message = details.get("message", "").lower()
+    permanent |= any(reason in message for reason in (
+        "限额已用完", "额度已耗尽", "额度用完", "quota exceeded", "quota exhausted",
+        "invalid api key", "incorrect api key",
+    ))
+    error = ModelError if permanent else RetryableModelError
+    return error("Provider reported failed/incomplete generation; provider_error="
+                 + json.dumps(details, ensure_ascii=False, allow_nan=False))
 
 
 class _NoRedirect(HTTPRedirectHandler):
@@ -88,7 +133,10 @@ class ModelReply:
                 "usage": self.usage, "latency_s": self.latency_s}
 
 
-def completed_response(document: dict, expected_model: str, latency_s: float) -> ModelReply:
+def completed_response(document: dict, expected_model: str, latency_s: float,
+                       *, secret: str = "") -> ModelReply:
+    if isinstance(document, dict) and document.get("status") in {"failed", "incomplete"}:
+        raise generation_error(document, "response." + document["status"], secret)
     if not isinstance(document, dict) or document.get("status") != "completed":
         raise ModelError("Response did not complete; no action accepted")
     if document.get("model") != expected_model:
@@ -117,14 +165,15 @@ def completed_response(document: dict, expected_model: str, latency_s: float) ->
     return ModelReply("".join(texts), expected_model, str(document.get("id", "")), counts, latency_s)
 
 
-def read_response(stream, *, expected_model: str, start: float, timeout_s: float) -> ModelReply:
+def read_response(stream, *, expected_model: str, start: float, timeout_s: float,
+                  secret: str = "") -> ModelReply:
     """Accept JSON or SSE, requiring the terminal response.completed object."""
     limit = 4 * 1024 * 1024
     if "text/event-stream" not in stream.headers.get("Content-Type", ""):
         raw = stream.read(limit + 1)
         if len(raw) > limit:
             raise ModelError("Provider response exceeds size limit")
-        return completed_response(json.loads(raw), expected_model, time.monotonic() - start)
+        return completed_response(json.loads(raw), expected_model, time.monotonic() - start, secret=secret)
     total = 0
     data_lines = []
     while True:
@@ -148,9 +197,9 @@ def read_response(stream, *, expected_model: str, start: float, timeout_s: float
             raise ModelError("Stream ended without response.completed")
         event = json.loads(payload)
         if event.get("type") == "response.completed":
-            return completed_response(event.get("response"), expected_model, time.monotonic() - start)
+            return completed_response(event.get("response"), expected_model, time.monotonic() - start, secret=secret)
         if event.get("type") in {"error", "response.failed", "response.incomplete"}:
-            raise ModelError("Provider reported failed/incomplete generation")
+            raise generation_error(event, event["type"], secret)
 
 
 class ResponsesClient:
@@ -178,7 +227,8 @@ class ResponsesClient:
         start = time.monotonic()
         try:
             with build_opener(_NoRedirect()).open(request, timeout=settings.timeout_s) as stream:
-                reply = read_response(stream, expected_model=settings.model, start=start, timeout_s=settings.timeout_s)
+                reply = read_response(stream, expected_model=settings.model, start=start,
+                                      timeout_s=settings.timeout_s, secret=secret)
             if time.monotonic() - start > settings.timeout_s:
                 raise ModelError("Model request exceeded time budget; output discarded")
             if secret in reply.text or secret in reply.response_id:

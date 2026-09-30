@@ -29,7 +29,7 @@ def sample(a, p, *, grip=False, handle=True):
         "finger_forces": [1.0, 1.0] if grip else [0.0, 0.0],
         "finger_contacts_local": points if grip else [[], []],
         "fixture_force_n": a.mass * 9.81,
-        "bench_force_n": a.mass * 9.81,
+        "bench_force_n": 0.0,
         "corners": (local_corners(a) @ t[:3, :3].T + t[:3, 3]).tolist(),
     }
 
@@ -52,6 +52,9 @@ class L1ScoreTests(unittest.TestCase):
         }
         for _ in range(3):
             self.update(rows)
+        if self.d.insertion:
+            # A real grasp/lift must precede reaching insertion depth while held.
+            self.update({a.name: sample(a, a.goal, grip=True) for a in self.d.articles})
         if self.d.kind == "slot":
             a = self.d.articles[0]
             above = {a.name: sample(a, pose(a.goal[0], a.goal[1], 0.22), grip=True)}
@@ -96,20 +99,122 @@ class L1ScoreTests(unittest.TestCase):
         self.setup_task("L1-01")
         self.grasp()
         a = self.d.articles[0]
-        upside_down = {a.name: sample(a, pose(*a.goal[:3], roll=math.pi))}
-        self.assertFalse(self.update(upside_down).metrics["goal_complete"])
+        horizontal = {a.name: sample(a, pose(*a.goal[:3], roll=math.pi / 2))}
+        self.assertFalse(self.update(horizontal).metrics["goal_complete"])
 
-    def test_tube_on_bench_is_not_seated_on_rack_bottom_plate(self):
+    def test_peg_below_socket_floor_is_not_success(self):
         self.setup_task("L1-01")
         self.grasp()
         a = self.d.articles[0]
-        # Old goal ignored the rack's bottom plate, admitting a tube standing
-        # on the bench even when the fixture collider was nearly nonexistent.
-        rows = {a.name: sample(a, pose(a.goal[0], a.goal[1], a.asset_size[2] / 2))}
+        rows = {a.name: sample(a, pose(a.goal[0], a.goal[1], self.d.insertion.height_m / 2))}
         for _ in range(8):
             result = self.update(rows)
         self.assertFalse(result.metrics["goal_complete"])
         self.assertNotEqual(result.status, "succeeded")
+
+    def test_wide_insertion_accepts_offset_rotation_and_either_end(self):
+        for roll in (0., math.pi):
+            with self.subTest(roll=roll):
+                self.setup_task("L1-01")
+                self.grasp()
+                a = self.d.articles[0]
+                p = pose(a.goal[0] + .009, a.goal[1], a.goal[2], roll=roll, yaw=2.1)
+                self.update({a.name: sample(a, p, grip=True)})
+                for _ in range(6):
+                    result = self.update({a.name: sample(a, p)})
+                self.assertEqual(result.status, "succeeded")
+                self.assertEqual(result.metrics["task_version"], "l1-01-wide-clearance-v3")
+
+    def test_lost_peg_interrupts_attempt_even_after_landing_and_before_grasp_hold(self):
+        for confirmed in (False, True):
+            with self.subTest(confirmed=confirmed):
+                self.setup_task("L1-01")
+                a = self.d.articles[0]
+                for _ in range(3 if confirmed else 1):
+                    self.update({a.name: sample(a, pose(*a.initial[:2], .22), grip=True)})
+                # Landed between captures: downward velocity is no longer visible.
+                rows = {a.name: sample(a, a.initial)}
+                self.assertEqual(self.update(rows).status, "running")
+                result = self.update(rows)
+                self.assertEqual(result.status, "failed")
+                self.assertTrue(result.retryable)
+                self.assertIn("lost its grasp", result.reason)
+                self.assertEqual(result.metrics["stage"], "failed")
+                # A later goal pose cannot erase this failed attempt.
+                for _ in range(6):
+                    result = self.update(self.goals())
+                self.assertEqual(result.status, "failed")
+
+    def test_contact_flicker_does_not_reset_a_grasp(self):
+        self.setup_task("L1-01")
+        a = self.d.articles[0]
+        p = pose(*a.initial[:2], .22)
+        for _ in range(3):
+            self.update({a.name: sample(a, p, grip=True)})
+        self.assertEqual(self.update({a.name: sample(a, p)}).status, "running")
+        for _ in range(3):
+            self.assertEqual(self.update({a.name: sample(a, p, grip=True)}).status, "running")
+
+    def test_toppled_peg_before_first_grasp_is_retryable_but_held_tilt_is_allowed(self):
+        for grip in (False, True):
+            with self.subTest(grip=grip):
+                self.setup_task("L1-01")
+                a = self.d.articles[0]
+                rows = {a.name: sample(a, pose(*a.initial[:2], .1, roll=math.pi / 2), grip=grip)}
+                for _ in range(4):
+                    result = self.update(rows)
+                self.assertEqual(result.status, "running" if grip else "failed")
+                self.assertEqual(result.retryable, not grip)
+
+    def test_guided_release_may_settle_without_being_classified_as_a_drop(self):
+        self.setup_task("L1-01")
+        self.grasp()
+        a = self.d.articles[0]
+        p = pose(*a.goal[:2], a.goal[2] + .004)
+        self.update({a.name: sample(a, p, grip=True)})
+        rows = {a.name: sample(a, p)}
+        rows[a.name]["linear_velocity"][2] = -.1
+        rows[a.name]["fixture_force_n"] = 0.
+        self.assertEqual(self.update(rows).status, "running")
+        for _ in range(6):
+            result = self.update(self.goals())
+        self.assertEqual(result.status, "succeeded")
+
+    def test_below_table_peg_is_retryable_without_waiting_for_contact_debounce(self):
+        self.setup_task("L1-01")
+        a = self.d.articles[0]
+        result = self.update({a.name: sample(a, pose(*a.initial[:2], -.2))})
+        self.assertEqual(result.status, "failed")
+        self.assertTrue(result.retryable)
+
+    def test_dropped_into_hole_without_guided_insertion_does_not_pass(self):
+        self.setup_task("L1-01")
+        a = self.d.articles[0]
+        for _ in range(3):
+            self.update({a.name: sample(a, pose(a.initial[0], a.initial[1], .22), grip=True)})
+        for _ in range(6):
+            result = self.update(self.goals())
+        self.assertTrue(result.metrics["goal_complete"])
+        self.assertFalse(result.metrics["process_constraints_met"])
+        self.assertFalse(result.metrics["criteria"][a.name]["guided_insertion_confirmed"])
+
+    def test_shallow_insert_or_missing_socket_support_does_not_pass(self):
+        for case in ("shallow", "floating", "bench_support"):
+            with self.subTest(case=case):
+                self.setup_task("L1-01")
+                self.grasp()
+                a = self.d.articles[0]
+                rows = self.goals()
+                if case == "shallow":
+                    rows[a.name] = sample(a, pose(a.goal[0], a.goal[1], a.goal[2] + .015))
+                elif case == "floating":
+                    rows[a.name]["fixture_force_n"] = 0.0
+                else:
+                    rows[a.name]["bench_force_n"] = a.mass * 9.81
+                for _ in range(6):
+                    result = self.update(rows)
+                self.assertFalse(result.metrics["goal_complete"])
+                self.assertNotEqual(result.status, "succeeded")
 
     def test_held_object_cannot_count_as_released(self):
         self.setup_task("L1-02")
@@ -197,6 +302,26 @@ class L1ScoreTests(unittest.TestCase):
 
 
 class L1ProtocolTests(unittest.TestCase):
+    def test_uniform_cylinder_has_gripper_margin_and_real_socket_clearance(self):
+        d = build_design("L1-01")
+        g = d.insertion
+        _, config = resolve_task("L1-01")
+        self.assertFalse(d.fixture_asset)
+        self.assertFalse(d.articles[0].asset)
+        self.assertAlmostEqual(g.hole_radius_m - g.radius_m, .010)
+        self.assertGreaterEqual(config.robot.gripper.width_limits_m[1] - 2 * g.radius_m, .030)
+        self.assertLessEqual(g.height_m / (2 * g.radius_m), 2.0)
+        cylinder, = d.articles[0].parts
+        self.assertEqual(cylinder.shape, "cylinder")
+        self.assertEqual(cylinder.size, (g.radius_m, g.radius_m, g.height_m))
+        self.assertEqual(cylinder.position, (0, 0, 0))
+        # The tangent inner faces retain a real opening; no solid central collider.
+        for part in d.fixtures[1:]:
+            self.assertAlmostEqual(math.dist(part.position[:2], d.articles[0].goal[:2]) - part.size[0] / 2,
+                                   g.hole_radius_m)
+        self.assertEqual(d.fixture_friction, 0.0)
+        self.assertFalse(g.measure(d.articles[0].initial, d.articles[0].goal[:2], .175)["insertion_geometry_met"])
+
     def test_block_and_ring_offer_grasps_within_fixed_gripper_limits(self):
         _, config = resolve_task("L1-08")
         lower, upper = config.robot.gripper.width_limits_m
@@ -214,8 +339,11 @@ class L1ProtocolTests(unittest.TestCase):
             self.assertTrue(spec.implemented)
             self.assertEqual(config.robot.source, reference.robot.source)
             self.assertEqual(config.cameras, reference.cameras)
-            for section in ("execution", "observation", "robot", "policy", "recording"):
+            for section in ("observation", "robot", "policy", "recording"):
                 self.assertEqual(config.raw[section], reference.raw[section], (name, section))
+            execution = dict(config.raw["execution"])
+            self.assertEqual(execution.pop("retry_failed_attempts", False), name == "L1-01")
+            self.assertEqual(execution, reference.raw["execution"])
             self.assertNotIn("policy_options", config.raw)
             self.assertEqual(config.observation_arms, ("right",))
             self.assertTrue(config.include_depth)
@@ -253,6 +381,8 @@ class L1ProtocolTests(unittest.TestCase):
             L1Task.prepare_config(replace(c, arms=("right",)))
         with self.assertRaises(ValueError):
             L1Settings.from_config(replace(c, raw={**c.raw, "l1": {"hidden_override": 1}}))
+        with self.assertRaisesRegex(ValueError, "legacy"):
+            L1Task.prepare_config(replace(c, raw={**c.raw, "l1": {"position_tolerance_m": .003}}))
 
 
 if __name__ == "__main__":

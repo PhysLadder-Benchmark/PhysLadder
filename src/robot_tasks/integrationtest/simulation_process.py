@@ -1,4 +1,4 @@
-"""Run a registered check in an isolated process with a wall-time watchdog."""
+"""Run a registered check in an isolated process with an optional wall-time watchdog."""
 
 from datetime import datetime, timezone
 from contextlib import contextmanager
@@ -76,7 +76,7 @@ def _stop_worker(process, *, grace_s=3.0, kill_timeout_s=3.0) -> tuple[bool, boo
     return forced, True
 
 
-def _monitor_worker(process, log, deadline: float) -> int:
+def _monitor_worker(process, log, deadline: float | None) -> int:
     """Keep blocking pipe reads off the main thread so Ctrl+C stays responsive."""
     messages = Queue()
 
@@ -95,7 +95,7 @@ def _monitor_worker(process, log, deadline: float) -> int:
     reader.start()
     eof = False
     while True:
-        if time.monotonic() >= deadline:
+        if deadline is not None and time.monotonic() >= deadline:
             raise subprocess.TimeoutExpired("R5 worker", 0)
         try:
             message = messages.get(timeout=0.1) if not eof else None
@@ -152,7 +152,8 @@ def run_check_process(name: str, output_root: Path, *, config_path: Path | None 
                                    text=True, encoding="utf-8", errors="replace", **launch_options)
         print(f"R5_PROCESS_STARTED worker_pid={process.pid} output={output}", flush=True)
         try:
-            returncode = _monitor_worker(process, log, time.monotonic() + config.max_wall_time_s + 60)
+            deadline = time.monotonic() + config.max_wall_time_s + 60 if config.max_wall_time_s > 0 else None
+            returncode = _monitor_worker(process, log, deadline)
         except KeyboardInterrupt:
             interrupted = True
             print(f"R5_PROCESS_STOPPING worker_pid={process.pid} reason=user_interrupt", flush=True)

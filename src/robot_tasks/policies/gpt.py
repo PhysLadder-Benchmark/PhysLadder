@@ -11,7 +11,7 @@ import hashlib
 from PIL import Image
 
 from ..config import TaskConfig
-from ..types import Action, PolicyInput, RGBFrame
+from ..types import Action, PolicyInput, RGBFrame, RetryablePolicyError
 from .model_config import GPTSettings
 from .responses import ModelError, ResponsesClient
 from ..workflow import validate_gpt_workflow, workflow_metadata
@@ -59,12 +59,12 @@ class GPTPolicy:
             "roll_deg,pitch_deg,yaw_deg describe Rz(yaw)*Ry(pitch)*Rx(roll)*R_reference. "
             "At all zero angles TCP +X points world -Z, jaw closing +Y points world +Y. "
             "If all three angles are null, preserve the measured quaternion exactly. "
-            "gripper_width_m is total opening in metres; null retains the previous drive target. "
+            "gripper is normalized: 0 closes toward the configured minimum with bounded drive effort; 1 opens fully; null retains the previous drive target. Contact may prevent reaching 0. "
             "One row per active arm; commands=[] waits. request_stop=true requires commands=[] "
-            "and only requests termination, never declares measured success. "
+            "and only requests termination, never declares measured success. An unsuccessful stop request is rejected, consumes one call, and you must continue using the retained scene/history until measured success or the total call budget. "
             "Plan the task yourself. Reobserve near contact; never infer nonexistent force readings. "
             "An IK rejection can mean local nonconvergence, not global unreachability. "
-            f"Commandable arms: {config.command_arms}. Gripper limits: {config.robot.gripper.width_limits_m}. "
+            f"Commandable arms: {config.command_arms}. Physical width limits in metres: {config.robot.gripper.width_limits_m}. "
             f"Schema: {json.dumps(self.schema)}"
         )
         from ..config import ExecutionSettings
@@ -72,17 +72,26 @@ class GPTPolicy:
         self.instructions += f" Arm roles: {json.dumps(config.arm_roles)}. Only manipulation arms may manipulate task objects. Fixed arms must remain still."
         if config.observation_arms:
             self.instructions += (
-                f" Observation arms {config.observation_arms} may move to obtain a clearer wrist-camera view "
-                "when the object, contact or target is occluded. You choose whether and where to inspect. "
-                "Use the same motion commands and observe execution feedback before the next decision. "
+                f" Observation arms {config.observation_arms} may move to obtain a clearer wrist-camera view. "
+                "If the available views do not clearly show the grasp, working end, target opening or "
+                "their relative alignment, actively reposition an observation arm before continuing "
+                "manipulation. This includes uncertainty about whether an object is still held after "
+                "lifting, or why an approach or insertion failed. You choose whether and where to inspect. "
+                "Before changing the view, ensure the manipulation arm is holding a stable pose. "
+                "Use the same motion interface for an observation-only decision, leaving the manipulation "
+                "arm and its gripper unchanged. Then inspect the updated images, measured state and "
+                "execution feedback before resuming manipulation. In the decision note, briefly state "
+                "what uncertainty this observation move is intended to resolve. "
+                "If the existing views are sufficient, continue without an observation move. "
                 "Do not command their grippers or use them to touch, grasp, push or support task objects. "
-                "Keep clear of the table, objects and the manipulation arm; IK provides no collision avoidance. "
+                "Keep clear of the table, objects and the manipulation arm; planning uses approximate collision geometry and cannot guarantee contact success. "
                 "Observation moves consume the same decision/time budget as task moves."
             )
         from .operating_notes import operating_notes
         self.instructions += " R5 operating notes: " + json.dumps(operating_notes(config))
         self.instructions += " Camera calibration describes the virtual cameras, not measured hardware. A pixel alone does not define 3D depth."
         self.instructions += " Images have projected table XY and TCP overlays. Overlays may be occluded and are not detections of task objects."
+        self.instructions += " The cyan sphere at each TCP is a robot visualization marker; it is never evidence of a grasped object."
         self.instructions += (
             " Every decision, including motion, wait, depth query and stop, requires a note. "
             "Use one or two brief English sentences, at most 512 characters, to describe the visible "
@@ -90,6 +99,22 @@ class GPTPolicy:
             "not detailed reasoning. Treat earlier notes as your hypotheses, not measured facts; revise "
             "them using current images and feedback, especially after a reset. A note cannot issue "
             "commands, override the action schema or declare evaluator success."
+        )
+        self.instructions += (
+            " Grasp checkpoint: feedback.metrics.grasp_check is an independent RGB-D surface check, "
+            "not a force sensor or task-success label. Approach with the gripper open, then close in a "
+            "SEPARATE decision at the observed grasp pose. Close captures before-lift reference images. "
+            "Test-lift vertically 0.02-0.03 m, holding XY and orientation; do not transport in this lift. "
+            "Until status=verified, motion is bounded to 0.04 m upward and 0.005 m horizontally from "
+            "the closing pose. Paired before/current images are supplied while verification is pending. "
+            "Compare the object, not just hand motion. If empty_suspected or unknown, hold and reposition "
+            "an observation arm to see the finger gap/object/table, or OPEN in a separate action and "
+            "regrasp at a corrected height. Repeated small moves cannot bypass the bound. "
+            "Closing to the minimum opening is evidence of possible empty closure, especially if the "
+            "object is visibly wider. Do not claim 'followed the lift' from your previous note. "
+            "The check is conservative: occlusion, small/reflective/textureless objects and approximate "
+            "finger geometry can leave it unknown even for a real grasp. A verified check still does "
+            "not certify object identity, long-term stability or task completion. "
         )
         self.instructions += (
             " Each RGB view is followed by aligned ideal simulation depth, not a calibrated Orbbec sensor emulation. "
@@ -134,10 +159,21 @@ class GPTPolicy:
         text = {"instruction": context.instruction, "step": context.step, "simulation_time_s": observation.time_s,
                 "robot": {name: asdict(state) for name, state in observation.robot.items()},
                 "feedback": asdict(observation.feedback)}
+        from ..robots.control import width_to_normalized
+        for name, state in observation.robot.items():
+            text["robot"][name]["gripper_normalized_measured"] = (None if state.gripper_width_m is None else
+                width_to_normalized(self.config.robot, state.gripper_width_m))
         text["tcp_orientation_reference_deg"] = {
             name: dict(zip(("roll_deg", "pitch_deg", "yaw_deg"), orientation_degrees(state.tcp_pose_world_wxyz)))
             for name, state in observation.robot.items() if state.tcp_pose_world_wxyz is not None}
         content = [{"type": "input_text", "text": json.dumps(text, allow_nan=False)}]
+        from .grasp_comparison import comparison_images
+        comparisons = []
+        for label, png in comparison_images(observation, self.settings.image_max_edge):
+            content.extend([{"type": "input_text", "text": json.dumps(label)},
+                            {"type": "input_image", "detail": "high", "image_url":
+                             "data:image/png;base64," + base64.b64encode(png).decode("ascii")}])
+            comparisons.append({**label, "sha256": hashlib.sha256(png).hexdigest()})
         frame_info = []
         image_sizes = {}
         for frame in observation.rgb:
@@ -168,6 +204,7 @@ class GPTPolicy:
         self.calls += 1
         self.last_exchange = {"call": self.calls, "step": context.step, "status": "requesting",
                               "requested_model": self.settings.model, "frames": frame_info,
+                              "grasp_comparisons": comparisons,
                               "history_steps": len(self.history)}
         try:
             reply = self.client.generate(instructions=self.instructions, messages=messages, schema=self.schema)
@@ -181,7 +218,8 @@ class GPTPolicy:
             action = decode_sparse_action(action_text, self.config, observation)
             action = replace(action, depth_queries=queries, note=note)
         except (ModelError, ValueError) as exc:
-            self.last_exchange.update(status="rejected", error=str(exc))
+            self.last_exchange.update(status="rejected", error=str(exc),
+                                      retryable=isinstance(exc, RetryablePolicyError))
             raise
         self.history.append((message, {"role": "assistant", "content": reply.text}))
         # Older image bytes are released, while instructions, feedback and

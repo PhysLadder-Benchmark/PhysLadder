@@ -1,7 +1,10 @@
 """Real subprocess cancellation, using silent fixtures; no Isaac or model calls."""
 
 import json
+import io
 import os
+from contextlib import redirect_stdout
+from dataclasses import replace
 from pathlib import Path
 import signal
 import subprocess
@@ -9,7 +12,10 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest.mock import Mock, patch
 
+from robot_tasks.config import load_config
+from robot_tasks.integrationtest import simulation_process as sp
 from robot_tasks.paths import PROJECT_ROOT
 
 
@@ -33,6 +39,37 @@ def alive(pid):
         return not status.exists() or status.read_text().split(")", 1)[1].split()[0] != "Z"
     except ProcessLookupError:
         return False
+
+
+class ProcessBudgetTests(unittest.TestCase):
+    def test_worker_monitor_allows_no_deadline_but_enforces_finite_deadlines(self):
+        for deadline in (None, 10.0):
+            worker = Mock(stdout=io.StringIO("fixture output\n"))
+            worker.wait.return_value = 0
+            with self.subTest(deadline=deadline), redirect_stdout(io.StringIO()), \
+                    patch.object(sp.time, "monotonic", return_value=100.0):
+                if deadline is None:
+                    log = io.StringIO()
+                    self.assertEqual(sp._monitor_worker(worker, log, deadline), 0)
+                    self.assertEqual(log.getvalue(), "fixture output\n")
+                else:
+                    with self.assertRaises(subprocess.TimeoutExpired):
+                        sp._monitor_worker(worker, io.StringIO(), deadline)
+
+    def test_check_process_disables_watchdog_for_unlimited_config(self):
+        config = load_config(PROJECT_ROOT / "configs/tasks/gpt_single_arm_pick_place.toml")
+        for seconds, deadline in ((0.0, None), (30.0, 190.0)):
+            spec = Mock(preflight=None, output_prefix="fixture_")
+            spec.name = "gpt-pick-place"
+            spec.load_config.return_value = replace(config, max_wall_time_s=seconds)
+            worker = Mock(pid=12345, returncode=0)
+            with self.subTest(seconds=seconds), tempfile.TemporaryDirectory() as temporary, \
+                    redirect_stdout(io.StringIO()), patch.object(sp, "get_check", return_value=spec), \
+                    patch.object(sp.subprocess, "Popen", return_value=worker), \
+                    patch.object(sp.time, "monotonic", return_value=100.0), \
+                    patch.object(sp, "_monitor_worker", return_value=0) as monitor:
+                sp.run_check_process("gpt-pick-place", Path(temporary))
+                self.assertEqual(monitor.call_args.args[2], deadline)
 
 
 class ProcessCancellationTests(unittest.TestCase):

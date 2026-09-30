@@ -13,6 +13,9 @@ from robot_tasks.cameras.geometry import project_world, resized_intrinsics
 from robot_tasks.config import ExecutionSettings, load_config
 from robot_tasks.policies.gpt import GPTPolicy, prepare_frame
 from robot_tasks.policies.model_config import GPTSettings
+from robot_tasks.policies.operating_notes import manipulation_guidance
+from robot_tasks.registry import resolve_task
+from robot_tasks.tasks.l1.task import L1Task
 from robot_tasks.policies.responses import ModelReply
 from robot_tasks.policies.sparse_action import FIELDS, REFERENCE, decode_sparse_action, orientation_degrees
 from robot_tasks.robots.adapters import R5Adapter
@@ -57,12 +60,12 @@ class OptimizationTests(unittest.TestCase):
         np.testing.assert_allclose(orientation_degrees(command.values), (0, 0, 45), atol=1e-8)
 
     def test_gripper_only_does_not_create_motion(self):
-        command, = self.sparse(gripper_width_m=.06).commands
+        command, = self.sparse(gripper=1).commands
         self.assertEqual(command.kind, "gripper")
 
     def test_sparse_invalid_values_and_unknown_arm_are_rejected(self):
         for values in ({"arm": "right", "z_m": .2}, {"z_m": True}, {"z_m": float("nan")},
-                       {"roll_deg": 500}, {"gripper_width_m": .1}, {}):
+                       {"roll_deg": 500}, {"gripper": 1.1}, {}):
             with self.subTest(values=values), self.assertRaises(ValueError):
                 self.sparse(**values)
 
@@ -93,6 +96,25 @@ class OptimizationTests(unittest.TestCase):
         self.assertNotIn("source_x_m", policy.instructions)
         self.assertNotIn("transfer_y_m", policy.instructions)
         self.assertTrue(policy.run_metadata["workflow"]["visual_aids"])
+
+    def test_shared_advice_reaches_real_prompt_without_task_layout_or_recipe(self):
+        _, insertion = resolve_task("L1-01")
+        self.assertEqual(manipulation_guidance(self.config), manipulation_guidance(insertion))
+        policy = GPTPolicy(insertion, self.settings, client=self.client)
+        self.assertIn("held object's centre", policy.instructions)
+        self.assertIn("BEFORE approaching", policy.instructions)
+        self.assertIn("Recheck that the object is still held", policy.instructions)
+        # Public task dimensions/goals belong in the task message, not global advice.
+        self.assertNotIn("uniform cylindrical peg", policy.instructions)
+        prepared = L1Task.prepare_config(insertion)
+        self.assertIn("0.015 m insertion depth", prepared.instruction)
+        self.assertIn("Both flat ends are equivalent", prepared.instruction)
+        self.assertNotIn("front-row", prepared.instruction)
+        self.assertNotIn("0.36", prepared.instruction)
+        self.assertNotIn("BEFORE approaching", prepared.instruction)
+        self.assertNotIn("{", prepared.instruction)
+        self.assertEqual(policy.run_metadata["workflow"]["prompt_protocol"],
+                         "shared_operation_notes_task_goal_v5")
 
     def test_disclosed_calibration_tracks_actual_encoded_size(self):
         config = self.config
@@ -164,8 +186,12 @@ class OptimizationTests(unittest.TestCase):
         def send(targets):
             robot.targets = targets
         action = Action((ArmCommand("left", "joint_position", home), ArmCommand("left", "gripper", (.06,))), self.config.control_dt_s)
+        robot.state = Mock(return_value={"left": ArmState(joint_positions_rad=home, finger_positions_m=fingers)})
+        robot.backend = Mock()
+        robot.planner = Mock()
+        robot.planner.plan.return_value = {"paths": {"left": {"positions": [home,home]}}, "diagnostics": {}}
         ready = Feedback("executing", metrics={"arms": {"left": {"motion_reached": False}}})
-        with patch.object(robot, "_send_targets", side_effect=send), patch.object(robot, "_tracking_feedback", return_value=ready):
+        with patch("robot_tasks.planning.scene.snapshot", return_value={}), patch.object(robot, "_send_targets", side_effect=send), patch.object(robot, "_tracking_feedback", return_value=ready):
             robot.apply(action)
             self.assertEqual(robot.targets["left"][6:], fingers)
             robot.before_physics_step(1.)

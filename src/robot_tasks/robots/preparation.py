@@ -44,7 +44,7 @@ def preparation_action(config):
     """Point manipulation arms down and observation cameras toward their work area.
 
     The shared task launcher always supplies this action before model observation.
-    It uses the existing Lula executor, with no task-dependent motion mode.
+    It uses the shared trajectory executor, with no task-dependent motion mode.
     """
     commands = []
     bases = {m.name: pose_transform(m.base_pose_wxyz) for m in config.robot.mounts}

@@ -56,6 +56,7 @@ class InteractionScene:
         from pxr import PhysxSchema, UsdShade
 
         self.backend, self.config, self.settings = backend, config, settings
+        backend.planning_payloads = self.planning_payloads
         self.material = PhysicsMaterial("/World/Interaction/Material", static_friction=settings.friction,
                                         dynamic_friction=settings.friction, restitution=0.0)
         self.cube = backend.world.scene.add(DynamicCuboid(
@@ -111,7 +112,7 @@ class InteractionScene:
             "finger_contact_api": "RigidPrim.get_contact_force_matrix(dt=physics_dt_s)",
             "contact_sample_rate_hz": 1 / config.control_dt_s,
             "object_attached": False, "object_kinematic": False,
-            "ground_truth_use": "Measured cube state and contacts are evaluator-only. The scripted check separately uses known geometry.",
+            "ground_truth_use": "Cube state/contacts serve evaluation and privileged collision-only payload checks; never model input.",
         }
 
     def source(self, arm: str) -> tuple[float, float, float]:
@@ -142,3 +143,17 @@ class InteractionScene:
             "finger_normal_force_vectors_n": matrix[:, 0, :].tolist(),
             "finger_normal_force_n": np.linalg.norm(matrix[:, 0, :], axis=1).tolist(),
         }
+
+    def planning_payloads(self):
+        from ..planning.scene import box_surface
+        from ..robots.transforms import pose_transform
+        result = {}
+        for arm in self.config.arms:
+            sample = self.measure(arm)
+            if min(sample["finger_normal_force_n"]) <= .05:
+                continue
+            transform = pose_transform((*sample["position_m"], *sample["quaternion_wxyz"]))
+            local = box_surface([self.settings.cube_size_m]*3)
+            result[arm] = [{"surface_points_world": (local@transform[:3,:3].T+transform[:3,3]).tolist(),
+                            "source": "bilateral measured contact; not proof of successful lift"}]
+        return result

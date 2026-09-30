@@ -19,7 +19,7 @@ class TaskConfig:
     cameras: tuple[str, ...]
     seed: int
     max_steps: int
-    max_wall_time_s: float
+    max_wall_time_s: float  # Zero disables the episode wall-time limit.
     control_dt_s: float
     physics_dt_s: float
     include_robot_state: bool
@@ -86,11 +86,11 @@ class ExecutionSettings:
         for name in ("max_action_steps", "completion_samples", "wait_steps", "settle_steps", "stop_steps"):
             value = getattr(result, name)
             minimum = 0 if name in {"settle_steps", "stop_steps"} else 1
-            if type(value) is not int or not minimum <= value <= config.max_steps:
+            if type(value) is not int or value < minimum or (config.max_steps and value > config.max_steps):
                 raise ValueError(f"execution.{name} must be an integer in [{minimum}, max_steps]")
         if result.completion_samples > result.max_action_steps:
             raise ValueError("completion_samples cannot exceed max_action_steps")
-        if result.settle_steps >= config.max_steps:
+        if config.max_steps and result.settle_steps >= config.max_steps:
             raise ValueError("settle_steps must leave an action budget")
         if result.max_decisions is not None and (type(result.max_decisions) is not int
                                                or not 1 <= result.max_decisions <= 1000):
@@ -131,7 +131,7 @@ def load_config(path: Path) -> TaskConfig:
     from .workflow import load_workflow
     raw, workflow_source, workflow_settings = load_workflow(source, raw)
     if "planner" in raw:
-        raise ValueError("R5 uses Lula IK; remove the obsolete [planner] section")
+        raise ValueError("R5 uses the shared cuRobo planner; machine paths belong in runtime configuration")
     required = {"schema_version", "task", "robot", "runtime", "observation", "recording"}
     if not required.issubset(raw):
         raise ValueError(f"Missing config sections: {sorted(required - raw.keys())}")
@@ -164,8 +164,8 @@ def load_config(path: Path) -> TaskConfig:
         if not set(observation_arms).issubset(parents):
             raise ValueError("Each observation arm must carry a selected camera")
     max_steps, seed = runtime["max_steps"], runtime["seed"]
-    if type(max_steps) is not int or max_steps <= 0 or type(seed) is not int or seed < 0:
-        raise ValueError("max_steps must be a positive integer; seed a nonnegative integer")
+    if type(max_steps) is not int or max_steps < 0 or type(seed) is not int or seed < 0:
+        raise ValueError("max_steps and seed must be nonnegative integers; max_steps=0 disables the total tick limit")
     control_dt = _positive(runtime["control_dt_s"], "control_dt_s")
     physics_dt = _positive(runtime["physics_dt_s"], "physics_dt_s")
     ratio = control_dt / physics_dt
@@ -179,11 +179,15 @@ def load_config(path: Path) -> TaskConfig:
         raise ValueError("recording.save_depth requires observation.include_depth")
     if include_depth and not raw.get("simulation", {}).get("camera_profile"):
         raise ValueError("Depth requires simulation.camera_profile for RGB alignment and calibration")
+    wall_time = runtime["max_wall_time_s"]
+    if (isinstance(wall_time, bool) or not isinstance(wall_time, (int, float))
+            or not math.isfinite(wall_time) or wall_time < 0):
+        raise ValueError("max_wall_time_s must be finite and nonnegative; zero disables the limit")
     return TaskConfig(
         source=source, raw=raw, task_id=task["id"], instruction=task["instruction"],
         robot=profile, arms=arms, cameras=cameras,
         seed=seed, max_steps=max_steps,
-        max_wall_time_s=_positive(runtime["max_wall_time_s"], "max_wall_time_s"),
+        max_wall_time_s=float(wall_time),
         control_dt_s=control_dt, physics_dt_s=physics_dt,
         include_robot_state=_boolean(observation["include_robot_state"], "include_robot_state"),
         include_feedback=_boolean(observation["include_feedback"], "include_feedback"),

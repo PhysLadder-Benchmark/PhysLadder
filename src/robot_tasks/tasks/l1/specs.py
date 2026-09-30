@@ -8,6 +8,7 @@ from dataclasses import dataclass, replace
 import math
 import numpy as np
 from ...robots.transforms import origin_transform, transform_pose
+from .cylinder_insertion import CylinderInsertion
 
 RED = (0.85, 0.16, 0.05)
 BLUE = (0.08, 0.3, 0.8)
@@ -58,6 +59,9 @@ class Design:
     fixture_size: tuple = ()
     fixture_pose: tuple = ()
     provenance: str = "Project-authored parametric rigid test article v1"
+    version: str = "l1-rigid-v1"
+    insertion: CylinderInsertion | None = None
+    fixture_friction: float = 0.8
 
 
 def box(name, size, xyz=(0.0, 0.0, 0.0), color=GREY, rpy=(0.0, 0.0, 0.0), collision=True):
@@ -95,6 +99,40 @@ def _procedural_design(task_id):
     source = (0.36, 0.44)
     target = (0.36, 0.25)
     x, y = target
+    if task_id == "L1-01":
+        g = CylinderInsertion()
+        parts = (
+            Part("peg", (g.radius_m, g.radius_m, g.height_m), (0, 0, 0), shape="cylinder"),
+        )
+        # Tangent walls form an open circumscribed polygon. Never use one convex
+        # collider around the socket: that would seal its visible opening.
+        radius = g.hole_radius_m + g.wall_thickness_m / 2
+        tangential = 2 * (g.hole_radius_m + g.wall_thickness_m) * math.tan(math.pi / g.wall_segments)
+        fixtures = [box("floor", (0.085, 0.085, g.floor_thickness_m),
+                        (x, y, g.floor_thickness_m / 2), BLUE)]
+        for i in range(g.wall_segments):
+            angle = i * 2 * math.pi / g.wall_segments
+            fixtures.append(box(f"wall_{i}", (g.wall_thickness_m, tangential, g.hole_depth_m),
+                                (x + radius * math.cos(angle), y + radius * math.sin(angle),
+                                 g.floor_thickness_m + g.hole_depth_m / 2),
+                                BLUE, (0, 0, angle)))
+        article = Article("cylinder", parts, pose(0.36, 0.40, g.height_m / 2 + 0.001),
+                          pose(x, y, g.floor_thickness_m + g.height_m / 2))
+        return Design(
+            task_id, "圆柱插孔（等径宽容间隙）", "insert", (article,), tuple(fixtures),
+            f"Insert the orange uniform cylindrical peg into the single opening of the fixed blue socket. "
+            f"The peg is {2*g.radius_m:.3f} m in diameter throughout and {g.height_m:.3f} m tall. "
+            "Both flat ends are equivalent; either may enter the socket. Choose a grasp that leaves "
+            "the entering end and the fingers' approach clear of the socket rim. "
+            f"The socket opening is {2*g.hole_radius_m:.3f} m across and {g.hole_depth_m:.3f} m deep. "
+            f"After lifting, reach at least {g.required_depth_m:.3f} m insertion depth while grasping the peg; "
+            "then leave it seated inside the socket without robot support, with its upper end above the rim. "
+            "Peg/socket friction is zero; gravity, normal collisions and gripper friction remain enabled. "
+            "No force adjustment, press fit or deformation is required.",
+            fixture_top=g.rim_z_m, clearance=g.hole_radius_m-g.radius_m,
+            provenance="Project-authored single-socket rigid peg; not the original RoboDojo insert_tubes task",
+            version="l1-01-wide-clearance-v3", insertion=g, fixture_friction=0.0,
+        )
     if task_id == "L1-02":
         # T profile: horizontal head plus narrow stem; matching concave well.
         parts = (
@@ -248,36 +286,10 @@ FILES = (
 
 def build_design(task_id):
     """Explicit asset choices, identical on every OS; no runtime fallbacks."""
-    if task_id not in ("L1-01", "L1-03", "L1-05"):
+    if task_id not in ("L1-03", "L1-05"):
         return _procedural_design(task_id)
-    names = {"L1-01": "圆柱插孔", "L1-03": "插头插接", "L1-05": "钥匙插锁"}
+    names = {"L1-03": "插头插接", "L1-05": "钥匙插锁"}
     d = Design(task_id, names[task_id], "insert", (), (), "", release=task_id != "L1-05")
-    if task_id == "L1-01":
-        size = (0.03507, 0.03507, 0.117)
-        a = Article(
-            "cylinder",
-            (),
-            pose(0.36, 0.44, 0.018, roll=math.pi / 2),
-            # The rack has a 6 mm bottom plate; the tube rests on it,
-            # not on the bench beneath the fixture.
-            pose(0.36, 0.25, 0.006 + size[2] / 2),
-            0.06,
-            "Rigid/test_tube/00002",
-            size,
-            (math.pi / 2, 0, 0),
-        )
-        return replace(
-            d,
-            articles=(a,),
-            fixtures=(),
-            fixture_asset="Geometry/test_tube_slot/00000",
-            fixture_size=(0.246, 0.1152, 0.060),
-            fixture_pose=pose(0.36, 0.2716, 0.030),
-            fixture_top=0.060,
-            clearance=0.003,
-            instruction="Pick up the test tube lying on the table and insert its rounded lower end into the front-row centre hole of the rack with a blue top and grey base (the middle hole in the row nearer world -Y). Seat the rounded end on the rack's bottom plate through the hole, release and withdraw. Do not insert it upside down or use another hole.",
-            provenance="RoboDojo test_tube/00002 + test_tube_slot/00000; rack XY enlarged 20%; single-tube variant v2: corrected mesh bounds and 6 mm bottom-plate seating",
-        )
     if task_id == "L1-03":
         a = Article(
             "plug",

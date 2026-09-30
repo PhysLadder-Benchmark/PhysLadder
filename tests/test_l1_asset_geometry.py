@@ -11,15 +11,17 @@ except ImportError:
     Usd = None
 
 from robot_tasks.tasks.l1.assets import import_asset, verified_asset
-from robot_tasks.tasks.l1.specs import build_design
 
 
 @unittest.skipIf(Usd is None, "Requires Isaac Sim USD libraries")
 class RackGeometryTests(unittest.TestCase):
     def setUp(self):
-        self.design = build_design("L1-01")
+        # Retain the importer regression independently of the current L1-01,
+        # which now uses procedural geometry and no external rack asset.
+        self.asset = "Geometry/test_tube_slot/00000"
+        self.size = (0.246, 0.1152, 0.060)
         try:
-            path, _ = verified_asset(self.design.fixture_asset)
+            path, _ = verified_asset(self.asset)
         except FileNotFoundError:
             self.skipTest("Optional pinned L1 assets missing; run tools/fetch_l1_assets.py outside unit tests")
         self.path = path
@@ -27,8 +29,8 @@ class RackGeometryTests(unittest.TestCase):
         self.stage = Usd.Stage.CreateInMemory()
         UsdGeom.Xform.Define(self.stage, "/Fixture")
         self.colliders, self.record = import_asset(
-            self.stage, "/Fixture", self.design.fixture_asset,
-            self.design.fixture_size, (0, 0, 0), dynamic=False,
+            self.stage, "/Fixture", self.asset,
+            self.size, (0, 0, 0), dynamic=False,
         )
 
     def world_points(self, path):
@@ -44,7 +46,7 @@ class RackGeometryTests(unittest.TestCase):
         visual = self.world_points("/Fixture/Normalized/Source/visual/model")
         collision = np.concatenate([self.world_points(p) for p in self.colliders])
         for vertices in (visual, collision):
-            np.testing.assert_allclose(np.ptp(vertices, axis=0), self.design.fixture_size, atol=1e-7)
+            np.testing.assert_allclose(np.ptp(vertices, axis=0), self.size, atol=1e-7)
             np.testing.assert_allclose((vertices.max(0) + vertices.min(0)) / 2, 0, atol=1e-7)
         np.testing.assert_allclose(visual, collision, atol=1e-7)
         self.assertEqual(UsdGeom.Imageable(self.stage.GetPrimAtPath(

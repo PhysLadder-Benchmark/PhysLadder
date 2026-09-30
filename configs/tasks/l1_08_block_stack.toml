@@ -5,21 +5,14 @@ workflow_profile = "../workflows/gpt_default.toml"
 id = "L1-08"
 instruction = """
 Use the left R5 arm for manipulation. The right arm may move only to improve
-its wrist-camera view; do not use it to touch, grasp, push or support objects.
-Infer object locations and orientations from the three RGB-D views and feedback. Choose all grasps and motion targets
-yourself; reobserve and recover after missed grasps or rejected actions.
-Lift every manipulated object at least {lift_m} m above its initial centre
-while grasping it with both fingers for {grasp_hold_s} simulation seconds.
-After completing the goal, sustain it for {stability_s} simulation seconds.
-For tasks requiring release, open the gripper to 0.070 m and retreat at least
-0.065 m clear of the object. Empty commands wait with the existing targets held.
-Use small moves near contact. First open the gripper and choose an observation
-or approach pose above the work area; align the tool before descending.
-In sparse_eef, roll=pitch=yaw=0 points the fingers down; pitch=-90 keeps
-them horizontal. Null angles preserve the measured orientation. Read the
-measured state after preparation; choose positions from the images, not
-from the original home pose.
-Request stop only when the visible task requirements have been met.
+its wrist-camera view; it must not touch, grasp, push or support task objects.
+Choose object locations, grasp regions, poses and actions from the observations.
+Completion requires each manipulated object to have been lifted at least
+{lift_m} m above its initial centre while grasped by both fingers for at least
+{grasp_hold_s} simulation seconds. The final goal must remain stable for
+{stability_s} simulation seconds. When release is required, the final gripper
+opening must be at least 0.060 m, with no finger contact and at least
+{retreat_m} m clearance between the TCP and the object.
 """
 
 [robot]

@@ -38,7 +38,7 @@ TASKS = {
 
 for task_id, filename in zip(RIGID_IDS, FILES):
     TASKS[task_id] = TaskSpec(task_id, build_design(task_id).name, L1Task, (1,), True,
-        "Shared GPT RGB-D workflow with right-arm observation; measured goal/process scoring; l1-rigid-v1",
+        f"Shared GPT RGB-D workflow with right-arm observation; measured goal/process scoring; {build_design(task_id).version}",
         PROJECT_ROOT / f"configs/tasks/{task_id.lower().replace('-', '_')}_{filename}.toml")
 
 

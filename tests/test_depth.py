@@ -258,7 +258,8 @@ class DepthPolicyAndRecordingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary, redirect_stdout(StringIO()):
             _, result = run_episode(self.config, backend, robot, task, policy, Path(temporary))
         self.assertEqual(result["status"], "finished")
-        self.assertEqual(result["termination_reason"], "policy_requested_stop")
+        self.assertEqual(result["termination_reason"], "model_call_limit")
+        self.assertEqual(result["rejected_stop_requests"], 1)
         self.assertEqual(result["model_calls"], 3)
         self.assertEqual(result["completed_steps"], 1)
         robot.apply.assert_called_once()

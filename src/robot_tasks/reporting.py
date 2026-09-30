@@ -125,6 +125,8 @@ def write_run_report(directory: Path) -> Path:
         ("模型", data["provider"].get("model")), ("推理强度", data["provider"].get("reasoning_effort")),
         ("随机种子", manifest.get("seed")),
         ("IK 求解器", data["scene"].get("ik_solver")),
+        ("运动规划信息范围", data["scene"].get("motion_planner")),
+        ("停止协议", result.get("stop_protocol")),
         ("相机输入模态", manifest.get("observation_modalities")),
     ])
     if manifest.get("depth", {}).get("enabled"):
@@ -167,6 +169,12 @@ def write_run_report(directory: Path) -> Path:
         ("深度查询决策数（已包含在模型调用中）", data["depth_query_decisions"]),
         ("执行动作数", result.get("executed_actions")), ("动作拒绝数", result.get("rejected_actions")),
         ("无效模型动作数（计入调用预算）", result.get("invalid_model_actions")),
+        ("被拒绝的停止请求", result.get("rejected_stop_requests")),
+        ("可重试的生成异常次数", result.get("generation_failures")),
+        ("实际发起的模型重试次数", result.get("model_retry_attempts")),
+        ("抓取核验拦截次数", result.get("grasp_check_rejections")),
+        ("RGB-D 抬升核验通过次数（不代表任务成功）", result.get("grasp_visual_verifications")),
+        ("抓取核验协议", result.get("grasp_check_protocol")),
         ("动作超时数", result.get("action_timeouts")), ("错误宣告完成", result.get("false_completion")),
         ("现实耗时（秒）", result.get("wall_time_s")), ("仿真时间（秒）", result.get("simulation_time_s")),
         ("有时延记录的 API 耗时合计（秒）", data["api_latency_total_s"]),
