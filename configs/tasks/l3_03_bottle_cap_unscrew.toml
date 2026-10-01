@@ -59,8 +59,11 @@ upright and prevent it from rotating with the cap. Verify that both grasps are
 real; a blocked gripper command does not prove a secure grasp. Do not crush the
 bottle to compensate for slipping.
 
-Rotate the cap in the actual thread's opening direction in small, controlled
-increments about its axis. Observe the cap's motion relative to the bottle,
+Rotate the cap COUNTERCLOCKWISE as viewed from above in small, controlled
+increments about the vertical bottle axis. The coarse right-hand thread rises
+0.006 m per revolution: 30 degrees corresponds to about 0.0005 m axial rise.
+These are geometric expectations, not proof of actual motion. Observe the cap's
+top mark and its motion relative to the bottle,
 not just wrist rotation. As the thread loosens and the cap rises, coordinate
 rotation with axial motion instead of holding the cap at a fixed height or
 pulling it straight off an engaged thread. Inspect visible slip, tilt, resistance
@@ -74,11 +77,16 @@ keep it securely held rather than opening the hand while it is unsupported.
 If motion is blocked, inspect grip, alignment and the actual closure state;
 do not repeatedly apply larger rotations or infer progress from commands alone.
 
-Confirm complete physical separation of the cap and bottle mouth before final
-placement. Keep the open bottle upright, set it stably on the table if lifted,
+Confirm at least one full turn of actual net relative opening rotation while
+both parts are held and the thread is still engaged. After disengagement, clear
+the cap's open mouth at least 0.004 m above the neck, with at least 0.014 m rise
+relative to its initial seated position. Do not earn rotation by spinning a
+cap that is already free. Verify a separate part in each hand before placement.
+Keep the open bottle upright, set it stably on the table if lifted,
 and release it. Place the cap separately, then release it without dropping.
 Completion requires a fully detached cap, a stable undamaged bottle, and both
-parts independently supported after release. A partially loosened cap or two
+parts independently supported after release, more than 0.05 m apart horizontally,
+and still for 1.0 simulation seconds. A partially loosened cap or two
 parts still held in the air is not completion. Do not pour out the contents or
 retighten the cap as part of this task.
 

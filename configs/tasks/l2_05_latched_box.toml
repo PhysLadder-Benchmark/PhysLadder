@@ -53,13 +53,22 @@ Open the latched hinged box, remove the item inside, then close the lid and
 engage the latch again. The box starts on the table with the lid shut and the
 latch actually engaged. Do not assume it is already unlocked.
 Identify the box body, latch, hinge, opening direction and graspable regions.
-Stabilize the body with one hand as needed, then use the other to actuate the
-latch in its natural release direction. Verify unlocking before lifting the lid;
-do not pull the whole box upward to substitute for releasing the catch.
-Open the lid without overextending the hinge, remove the single item and place
-it on the table. Bring the lid back into alignment, close gently and engage the
-catch. If the lid or latch resists, inspect alignment and the lock state instead
-of forcing it. Confirm the lid remains shut after the hands release it.
+The blue body is fixed; do not spend a hand trying to grasp or lift it. Grasp the
+red spring slider with one hand and the green lid handle with the other. Pull
+the slider outward along world +X about 0.015 m to clear the catch, then lift the
+lid while keeping the slider clear. Verify unlocking before lifting; do not
+pull the whole box upward to substitute for releasing the catch.
+Open the lid at least about 40 degrees, without overextending its hinge. Once
+the tooth is clear, release the latch hand to pick up the yellow eraser, leaving
+the other hand supporting the open lid. Lift the eraser and place it on a free
+tabletop area outside the box, more than 0.13 m horizontally from the box centre.
+Then use the free hand to hold the slider out while closing the lid with the
+other. Release the slider to let its spring return the tooth below the catch,
+then release the lid. If the lid or latch resists, inspect alignment and the
+lock state instead of forcing it. Confirm the lid remains shut, the slider is
+back in its engaged position, and the eraser is independently supported after
+all releases for 1.0 simulation seconds. A hypothetical lock-status or force
+sensor is not available; verify through the images and measured robot state.
 Completion requires opening, item removal and verified re-latching, not merely
 lowering the lid onto the box. Do not claim that a flat closed lid proves locking.
 Inspect the actual released or completed state before requesting stop. A

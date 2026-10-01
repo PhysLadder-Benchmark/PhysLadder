@@ -16,7 +16,7 @@ def workflow_metadata() -> dict:
         "motion": "collision_checked_joint_trajectory",
         "stop_protocol": "evaluator_gated_continue_within_total_call_budget",
         "planner_information": "privileged collision geometry; no task goal or score",
-        "prompt_protocol": "shared_operation_notes_task_goal_v5",
+        "prompt_protocol": "shared_observe_plan_verify_task_goal_v6",
         "grasp_check": "rgbd_surface_comotion_v1",
         "grasp_check_information": "visible RGB-D, measured TCP/opening, known robot cavity and bench height; no object truth or contacts",
         "observation_modalities": ["rgb", "depth", "camera_calibration", "robot_state", "feedback"],

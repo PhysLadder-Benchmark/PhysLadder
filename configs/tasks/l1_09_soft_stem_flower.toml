@@ -57,8 +57,14 @@ Inspect the stem, flower head and vase opening. Select a grasp that supports the
 head while leaving enough free stem to enter the opening, without crushing petals
 or gripping an unsupported far end. Confirm the flower is stably carried before
 moving to the vase. Bring the free stem end over the opening and guide it inside
-with small motions while observing sag and clearance. Once the vase supports the
-flower, release gently and confirm the stem stays inside and the head is supported.
+with small motions while observing sag and clearance. Put the free green stem
+tip at least 0.025 m below the vase rim. Once the vase supports the flower, release
+gently and confirm the stem stays inside, the whole flower is clear of the table,
+and the vase carries it without either hand. The pink head may naturally drape
+below the rim; it need not remain above the rim, but must not rest on the table.
+Observe the released flower nearly still for 1.0 simulation seconds.
+This is a segmented spring-rod proxy with a rigid heavy head. Petal bruising and
+stem fracture are not modeled; do not claim they were measured.
 This L1 variant requires that choosing a suitable initial grasp is enough for
 the rest of the task under fixed basic control. If the specimen needs repeated
 support changes, regrasping or delicate force regulation, report that mismatch
@@ -75,6 +81,6 @@ description = """
 道具：七段柔性连接的细茎代理、较重的花头、高 180 mm 的固定宽口花瓶、操作台。
 布置：花材代理平放于桌面，花瓶在旁边；左臂操作，右臂主动观察，不提供第二只操作手托扶。
 操作：选择能支撑花头且露出可插入茎端的抓点，提起后调整自由茎端，将其送入瓶内，再松手。
-完成：实际抓起过花材，茎端进入瓶内规定深度，整株离桌并由花瓶承重，释放后稳定。
+完成：实际抓起过花材，自由茎端入瓶至少 25 mm，整株离桌并由花瓶承重，释放后稳定 1 秒；花头可自然垂于瓶沿下方。
 代理边界：柔性茎由刚体段与被动弯曲弹簧组成，不是真实植物组织；不模拟花瓣压伤或茎断裂。L1 仅评估初始抓点足以完成的版本；若必须反复托扶或重抓，应单独归为 L3。实物花种、柔软度、花头质量仍需对齐。
 """

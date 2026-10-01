@@ -54,16 +54,21 @@ compatible, wide-mouth, handleless cups designed to nest loosely, not fragile
 stemware or a tight press fit. Both cups start separately upright on the table,
 open ends upward; neither starts held or already stacked. The lower cup stays
 on the table and is not glued down.
-Identify the cup to move, the lower cup's opening and their upright axes. Choose
+Move the smaller RED cup into the larger BLUE cup; identify the blue opening
+and both upright axes. Choose
 a side grip that leaves the moved cup's lower portion free and does not trap the
 fingers between the two rims. Confirm an actual lift before transporting it.
 Keep the carried cup upright, move its base above the lower opening, align, and
 lower gently until the lower cup supports it. Stop and realign if the rims catch;
 do not force the walls together. Open in a separate decision, withdraw without
 lifting the placed cup, and confirm the two-cup stack stands independently.
-The upper cup may nest partly inside the lower cup. No yaw angle around the
-vertical axis is required for unmarked rotationally symmetric cups. Keep the
-lower cup upright and both cups on the table; do not squeeze or deform them.
+The red cup nests deeply inside the blue cup: its base should finish about
+0.002-0.013 m above the blue cup's base, with their axes within 0.005 m horizontally.
+Merely balancing the red cup on the blue rim is insufficient. No yaw angle around
+the vertical axis is required for these unmarked rotationally symmetric cups.
+Keep both cups upright, with the blue cup supported by the table and the red cup
+supported by the blue cup. After release, observe them still for 1.0 simulation
+seconds. Do not squeeze or deform them.
 Inspect the actual released or completed state before requesting stop. A
 commanded pose, blocked gripper, or completion claim is not evidence of success.
 If a grasp is lost or the scene resets, use new observations and reassess rather

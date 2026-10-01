@@ -62,10 +62,13 @@ and rotation. After each push, inspect actual sliding, rotation and contact loss
 then update the next contact point, direction, pose and motion increment.
 Do not continue pushing at a stale location after the block rotates. Keep the
 block flat and on the table, the tool grasp stable and the motion controlled.
-Finish with the T outline and block aligned within the agreed position and
-orientation tolerances. Move the tool off the block, set it down, and confirm
-the block remains in its target pose without tool support.
-Inspect the actual released or completed state before requesting stop. A
+Finish with the block's centre within 0.012 m of the green T footprint's centre
+and yaw within 12 degrees of that footprint. Keep the block flat and supported
+by the table. Retain the tool in the LEFT gripper and withdraw its head clear
+of the block; do not set the tool down before completion. Confirm the block
+remains still in its target pose for 1.0 simulation seconds without tool contact.
+Neither gripper may touch the T block directly, even to make a small correction.
+Inspect the actual completed state before requesting stop. A
 commanded pose, blocked gripper, or completion claim is not evidence of success.
 If a grasp is lost or the scene resets, use new observations and reassess rather
 than continuing with stale object positions. Do not invent force measurements

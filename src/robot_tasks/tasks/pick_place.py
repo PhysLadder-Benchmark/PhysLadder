@@ -57,7 +57,9 @@ class SingleArmPickPlace:
         settings = InteractionSettings.from_config(config)
         # Only public task requirements are substituted. No source/target object coordinates.
         fields = {"arm": config.arms[0], "lift_threshold_m": settings.lift_threshold_m,
-                  "stability_s": settings.stability_s, "open_width_m": settings.open_width_m}
+                  "stability_s": settings.stability_s, "open_width_m": settings.open_width_m,
+                  "cube_size_m": settings.cube_size_m,
+                  "placement_tolerance_m": settings.placement_tolerance_m}
         return replace(config, instruction=config.instruction.format_map(fields))
 
     def build_scene(self, backend, config: TaskConfig) -> None:

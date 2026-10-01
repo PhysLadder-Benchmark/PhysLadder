@@ -57,7 +57,8 @@ yourself; no exact grasp point or successful path is supplied.
 
 First approach the exposed body with the LEFT gripper open, keeping the fingers
 clear of the tabletop and the cap seam. Close in a separate decision, then lift
-the WHOLE capped marker a short distance. Verify that both body and attached cap
+the WHOLE capped marker about 0.03 m, keeping both parts clear of the tabletop.
+Verify that both body and attached cap
 follow the left hand. A blocked closing command alone is not proof of a grasp.
 If the marker rolls, slips or stays on the table, open, reobserve and correct the
 grasp before proceeding. Do not begin pulling the cap until the whole marker is
@@ -95,7 +96,8 @@ This interface controls pose and gripper opening, with fixed bounded drive
 parameters; it has NO direct force/torque command or live force sensor. Adjust
 opening and motion using measured robot feedback and visible behavior. No object
 is glued to a hand and no program removes the cap for you. After clearing the
-body, visibly confirm a gap and a separately held part in each hand. Only then
+body, visibly confirm at least 0.008 m clearance between the body tip and the
+cap's open mouth, with a separately held part in each hand. Only then
 place both parts anywhere on the tabletop. Colored squares are optional visual
 landmarks, not required destinations. Place each part gently in contact with the
 table, open its gripper in a SEPARATE decision, and stop touching it. No exact

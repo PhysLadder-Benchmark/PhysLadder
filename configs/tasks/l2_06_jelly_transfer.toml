@@ -50,19 +50,25 @@ must not touch or support the props. Keep the left arm steady while changing
 view. Choose grasp points, poses and motion from current images and available
 robot feedback; no object coordinates or successful action sequence is supplied.
 Pick up the soft jelly from the tabletop and place it on the green destination
-patch without dropping, tearing or visibly crushing it. Use an exposed jelly
+patch without dropping it or exceeding the elastic deformation limit. Use an exposed jelly
 piece, not a sealed rigid plastic cup that hides the intended soft contact.
 Inspect its shape, support surface and accessible gripping region. Select a
 broad, stable grasp and an approach that avoids piercing or cutting edges.
-Close gradually using the available interface, watch deformation and slip, and
+Close gradually using intermediate normalized gripper openings, not an immediate
+full-close command. Watch deformation and slip, and
 verify a small lift before transport. Keep the established grasp relationship
 stable and use slow, smooth motion. If the jelly visibly deforms excessively or
 slips, pause and adjust before continuing; do not squeeze harder blindly.
 Lower onto the destination patch so it is supported before opening. Release
-without dragging or stretching the jelly and confirm stable placement.
+without dragging or stretching the jelly. The whole object, not just its centre,
+must lie inside the green patch, supported by the table and clear of both fingers.
+Observe it still for 1.0 simulation seconds. The declared proxy strain limit is
+35% change in inter-cell spacing from the rest shape throughout the attempt.
+That measurement belongs to the evaluator; it is not a live sensor in your input.
 Use only actual visible deformation or measured feedback. In an elastic simulation
 proxy, distinguish a deformation-limit violation from real tearing or permanent
-damage; do not report unmodeled damage as a measured physical outcome.
+damage; real tearing, fracture and permanent crushing are not simulated and must
+not be reported as measured physical outcomes.
 Inspect the actual released or completed state before requesting stop. A
 commanded pose, blocked gripper, or completion claim is not evidence of success.
 If a grasp is lost or the scene resets, use new observations and reassess rather
