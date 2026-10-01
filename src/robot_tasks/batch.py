@@ -372,6 +372,7 @@ def create_batch(root, args, model, runtime):
     inputs += list(configs.glob("*.toml"))
     manifest = {"version": 1, "created_at": datetime.now(timezone.utc).isoformat(),
                 "model": load_gpt_settings(model).model, "python": runtime.python,
+                "transport": load_gpt_settings(model).transport,
                 "model_config": str(model_copy), "options": options, "tasks": tasks, "inputs": fingerprint(inputs)}
     write_json(root / "batch.json", manifest)
     write_json(root / "state.json", {})
@@ -426,7 +427,9 @@ def execute_batch(root, manifest, state, environment):
             return 2
         error = (summary.get("error") or "").lower()
         if any(code in error for code in ("responses http 401", "responses http 403", "invalid_api_key",
-                                         "insufficient_quota", "quota_exceeded", "billing_hard_limit", "额度已耗尽", "限额已用完")):
+                                         "insufficient_quota", "quota_exceeded", "billing_hard_limit", "额度已耗尽", "限额已用完",
+                                         "codex chatgpt call failed", "codex chatgpt decision timed out",
+                                         "subscription_sharing_usage")):
             print("Batch stopped: provider authentication/permission/quota error; fix it before --resume", flush=True)
             return 2
     counts = summarize(root, manifest, state)
@@ -497,7 +500,7 @@ def main(argv=None):
             return execute_batch(root, manifest, state, environment)
     except KeyboardInterrupt:
         return 130
-    except (OSError, ValueError, KeyError) as exc:
+    except (OSError, ValueError, KeyError, RuntimeError) as exc:
         print(f"Batch error: {exc}", file=sys.stderr)
         return 2
 
@@ -505,13 +508,17 @@ def main(argv=None):
 def worker_environment(env_file, manifest):
     environment = dict(os.environ)
     if not manifest["options"]["dry_run"]:
-        environment = load_env(env_file.expanduser().resolve(), environment)
         settings = load_gpt_settings(Path(manifest["model_config"]))
-        # Validate without changing the supervisor's environment or writing the key.
-        if not environment.get(settings.api_key_env, "").strip():
-            raise ValueError(f"Missing {settings.api_key_env}; export it or provide --env-file")
-        if any(c.isspace() for c in environment[settings.api_key_env].strip()):
-            raise ValueError(f"Invalid whitespace in {settings.api_key_env}")
+        if settings.transport == "codex_cli":
+            from .policies.codex_cli import CodexCLIClient
+            CodexCLIClient(settings).require_chatgpt_login()
+        else:
+            environment = load_env(env_file.expanduser().resolve(), environment)
+            # Validate without changing the supervisor's environment or writing the key.
+            if not environment.get(settings.api_key_env, "").strip():
+                raise ValueError(f"Missing {settings.api_key_env}; export it or provide --env-file")
+            if any(c.isspace() for c in environment[settings.api_key_env].strip()):
+                raise ValueError(f"Invalid whitespace in {settings.api_key_env}")
     environment.update(PYTHONPATH=str(PROJECT_ROOT / "src") + os.pathsep + environment.get("PYTHONPATH", ""),
                        PYTHONUTF8="1", PYTHONUNBUFFERED="1")
     return environment

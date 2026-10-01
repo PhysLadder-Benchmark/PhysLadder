@@ -21,8 +21,16 @@ class GPTSettings:
     history_steps: int = 2
     max_calls: int = 6
     image_max_edge: int = 768
+    transport: str = "responses"
+    codex_bin: str = "codex"
 
     def __post_init__(self):
+        if self.transport not in {"responses", "codex_cli"}:
+            raise ValueError("transport must be responses or codex_cli")
+        if not isinstance(self.codex_bin, str) or not self.codex_bin.strip() or any(c in self.codex_bin for c in "\n\r\x00"):
+            raise ValueError("codex_bin must be an executable name or path")
+        if self.transport == "codex_cli" and self.max_output_tokens is not None:
+            raise ValueError("codex_cli does not support max_output_tokens")
         url = urlsplit(self.base_url)
         if (url.scheme != "https" or not url.hostname or url.username or url.password
                 or url.query or url.fragment or self.base_url.endswith("/responses")):

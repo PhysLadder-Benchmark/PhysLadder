@@ -29,6 +29,11 @@ def _gpt_policy(config: TaskConfig, model_config: Path | None):
     decisions = ExecutionSettings.from_config(config).max_decisions
     if decisions is not None:
         settings = replace(settings, max_calls=decisions)
+    if settings.transport == "codex_cli":
+        from .policies.codex_cli import CodexCLIClient
+        client = CodexCLIClient(settings)
+        client.require_chatgpt_login()
+        return GPTPolicy(config, settings, client=client)
     read_api_key(settings.api_key_env)
     return GPTPolicy(config, settings)
 

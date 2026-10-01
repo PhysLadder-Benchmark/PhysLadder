@@ -144,7 +144,11 @@ class GPTPolicy:
 
     @property
     def run_metadata(self) -> dict:
-        return {"provider": self.settings.public_dict(), "instructions": self.instructions,
+        client_metadata = getattr(self.client, "provider_metadata", {})
+        if not isinstance(client_metadata, dict):
+            client_metadata = {}
+        return {"provider": {**self.settings.public_dict(),
+                             **client_metadata}, "instructions": self.instructions,
                 "action_schema": self.schema, "workflow": {
                     **workflow_metadata(),
                     "grasp_check": ("rgbd_surface_comotion_v1" if self.config.grasp_check_mode == "lift"
