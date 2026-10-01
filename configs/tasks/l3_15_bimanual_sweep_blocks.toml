@@ -52,18 +52,22 @@ Use the small broom and dustpan to collect the loose blocks from the tabletop
 into the dustpan. Both tools start separately on the table, neither pregrasped.
 The small rigid blocks begin scattered within a reachable tabletop area.
 Identify each tool's handle, the broom's working edge and the dustpan mouth.
-Choose one hand for the dustpan and one for the broom, and establish stable
-grasps. Bring the dustpan lip close to the tabletop without tipping the pan.
+Use the LEFT hand for the broom and the RIGHT hand for the dustpan, and establish
+stable grasps. Do not exchange those roles. Bring the dustpan lip close to the
+tabletop without tipping the pan.
 Sweep blocks toward and across the lip using controlled strokes. Inspect the
 remaining blocks, pile shape and lip contact after each stroke. Adjust the
 sweeping direction, tool contact and dustpan position as the arrangement changes.
 Keep both tools supported and coordinated; do not sweep blocks off the table,
 knock the pan over or individually pick up blocks to bypass sweeping.
-After the required fraction is inside, stop disturbing the contents, set the
-loaded dustpan and broom down safely, and verify that the collected blocks stay
-inside and none have fallen off the table. Do not count blocks merely touching
-the outer lip as collected.
-Inspect the actual released or completed state before requesting stop. A
+Collect ALL FIVE yellow blocks completely inside, supported by the dustpan floor.
+Then stop sweeping, keep BOTH tools grasped, hold the loaded pan level and still,
+and verify all five stay inside for 1.0 simulation seconds. The pan may rest on
+the table while held; releasing either tool before completion is not required
+and does not satisfy this version's final holding condition. Do not count blocks
+merely touching the outer lip as collected. Neither gripper may touch a block
+directly, even to make a small correction.
+Inspect the actual completed state before requesting stop. A
 commanded pose, blocked gripper, or completion claim is not evidence of success.
 If a grasp is lost or the scene resets, use new observations and reassess rather
 than continuing with stale object positions. Do not invent force measurements
@@ -74,7 +78,7 @@ or assume a force-control tool that the interface does not expose.
 description = """
 道具：刚性小扫具、带柄开放簸箕、五个 14 mm 小方块和操作台。
 布置：扫具与簸箕均放在桌面，小块散落在两者前方；两臂均承担操作。
-操作：自主抓取扫具和簸箕，一臂调整簸箕入口，另一臂推动小块进入；随小块与边缘接触调整扫动方向和簸箕位置。
+操作：左臂自主抓取扫具，右臂自主抓取并调整簸箕，随小块与边缘接触调整扫动方向和簸箕位置。
 完成：保持两工具抓持，记录扫具与块的实际接触；全部五块进入簸箕并被承托，簸箕和小块稳定，禁止夹爪直接拿块完成。
 代理边界：扫头是刚性推板，不模拟柔软刷毛；记录散落、接触与稳定性，未模拟刷毛变形和材料损坏。
 """

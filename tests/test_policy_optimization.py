@@ -13,9 +13,8 @@ from robot_tasks.cameras.geometry import project_world, resized_intrinsics
 from robot_tasks.config import ExecutionSettings, load_config
 from robot_tasks.policies.gpt import GPTPolicy, prepare_frame
 from robot_tasks.policies.model_config import GPTSettings
-from robot_tasks.policies.operating_notes import manipulation_guidance
-from robot_tasks.registry import resolve_task
-from robot_tasks.tasks.l1.task import L1Task
+from robot_tasks.policies.operating_notes import manipulation_guidance, task_execution_guidance
+from robot_tasks.registry import TASKS, resolve_task
 from robot_tasks.policies.responses import ModelReply
 from robot_tasks.policies.sparse_action import FIELDS, REFERENCE, decode_sparse_action, orientation_degrees
 from robot_tasks.robots.adapters import R5Adapter
@@ -106,15 +105,47 @@ class OptimizationTests(unittest.TestCase):
         self.assertIn("Recheck that the object is still held", policy.instructions)
         # Public task dimensions/goals belong in the task message, not global advice.
         self.assertNotIn("uniform cylindrical peg", policy.instructions)
-        prepared = L1Task.prepare_config(insertion)
-        self.assertIn("0.015 m insertion depth", prepared.instruction)
-        self.assertIn("Both flat ends are equivalent", prepared.instruction)
-        self.assertNotIn("front-row", prepared.instruction)
+        prepared = TASKS["L1-01"].factory.prepare_config(insertion)
+        self.assertIn("Insert at least 0.04 m", prepared.instruction)
+        self.assertIn("Keep the cap on", prepared.instruction)
+        self.assertNotIn("Both flat ends are equivalent", prepared.instruction)
         self.assertNotIn("0.36", prepared.instruction)
         self.assertNotIn("BEFORE approaching", prepared.instruction)
         self.assertNotIn("{", prepared.instruction)
         self.assertEqual(policy.run_metadata["workflow"]["prompt_protocol"],
-                         "shared_operation_notes_task_goal_v5")
+                         "shared_observe_plan_verify_task_goal_v6")
+
+    def test_all_runnable_tasks_send_shared_protocol_and_prepared_goal(self):
+        # Follow each task's registered factory, including mixed free/constrained
+        # contacts and the engineering check. The transport is mocked: no paid calls.
+        for task_id, spec in TASKS.items():
+            if not spec.implemented:
+                continue
+            with self.subTest(task=task_id):
+                _, config = resolve_task(task_id)
+                config = spec.factory.prepare_config(config)
+                frames = tuple(rgbd(name, time_s=1.) for name in config.cameras)
+                robot = {name: ArmState(tcp_pose_world_wxyz=self.pose)
+                         for name in config.command_arms}
+                observation = Observation(1., frames, robot, Feedback("completed"))
+                client = Mock()
+                client.generate.return_value = self.client.generate.return_value
+                policy = GPTPolicy(config, self.settings, client=client)
+                policy.act(PolicyInput(config.instruction, observation, 1))
+                sent = client.generate.call_args.kwargs
+                self.assertEqual(sent["instructions"].count(json.dumps(task_execution_guidance())), 1)
+                self.assertIn(json.dumps(config.arm_roles), sent["instructions"])
+                user = json.loads(sent["messages"][-1]["content"][0]["text"])
+                self.assertEqual(user["instruction"], config.instruction)
+                self.assertNotIn("{arm}", user["instruction"])
+                self.assertNotIn("{placement_tolerance_m}", user["instruction"])
+                if config.observation_arms:
+                    self.assertIn("actively reposition an observation arm", sent["instructions"])
+                else:
+                    self.assertNotIn("actively reposition an observation arm", sent["instructions"])
+                expected = ("Grasp checkpoint:" if config.grasp_check_mode == "lift"
+                            else "Constrained contact task:")
+                self.assertIn(expected, sent["instructions"])
 
     def test_disclosed_calibration_tracks_actual_encoded_size(self):
         config = self.config

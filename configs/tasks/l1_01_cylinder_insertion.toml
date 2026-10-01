@@ -55,16 +55,83 @@ a broad, open mouth and a loose, low-resistance fit: this is not press fitting.
 Identify the marker's upper graspable body, lower entering end, holder opening
 and their relative axes from observations. Grasp high enough that the lower
 end and the fingers can clear the holder rim during insertion.
-Approach with an open gripper and close in a separate decision. Make a small
-upward test lift and confirm the whole marker follows; correct a missed grasp
-before moving toward the holder. Carry with its lower end above the rim, align
-approximately vertically over the opening, and lower gently in small increments.
-If it rests on the rim, lift clear and correct alignment instead of pushing.
-Guide the marker inside to the task's configured seating depth, then open in a
-separate decision. Leave it supported by the holder with its upper portion
-visible and stable after release. Do not drop it in from above or keep supporting
-it with the hand. There is no need to uncap, write, rotate a thread or apply a
-precise insertion force.
+Prefer the straight upper-middle section of the yellow barrel, with substantial
+overlap between the barrel and both opposing finger pads. Centre the cylinder
+axis in the finger gap and contact opposite sides at similar heights. Avoid
+pinching only the cap tip, a narrow edge, the cap/barrel seam or a diameter step.
+Do not interpret "grasp high enough" as "grasp the very top". Select a stable
+body section that also leaves enough marker below the fingers to reach the
+required insertion depth without the fingers hitting the holder rim; the exact
+midpoint is not mandatory. Choose this region from the current images.
+
+Localize before approaching. Query depth at several clearly visible pixels
+inside the marker's upper body or cap, avoiding silhouettes, grippers, overlays,
+shadows and background. Use the current image's camera name and pixel dimensions.
+A depth query returns the visible surface at that pixel, not an object identity
+or the marker's centre. Compare the returned height with the known table height:
+a point near the tabletop cannot locate the upper graspable body of an upright
+marker. Do not keep that point's XY and merely replace its Z with a grasp height.
+Recheck pixel selection and query a clearer wrist view if points are inconsistent.
+Use multiple surface points, the visible cylinder and its stated diameter to
+estimate its axis; distinguish a near surface from the centre of the finger gap.
+
+Approach with an open gripper, then inspect before closing. Verify in two
+complementary views that the chosen body section is physically between the
+opposing finger contact surfaces, both laterally and in depth. A marker projected
+between the fingers in one wrist image can still be behind or in front of them.
+If that relationship is unclear, hold the left arm still and move the RIGHT
+observation arm to a clear oblique or side view, then use its updated image.
+Choose the left wrist orientation as needed; the downward startup pose is not
+a required grasp orientation. Keep the lower entering end unobstructed.
+
+Close in a separate decision. Compare measured opening with the marker diameter
+and inspect the actual images. Reaching the minimum opening around a visibly
+wider marker is strong evidence of an empty grasp, not a reason to squeeze harder.
+A blocked close alone also does not confirm a grasp. If capture is plausible,
+make a small vertical test lift within the allowed grasp-check limits and verify
+that the whole marker follows the fingers rather than remaining on the table.
+The marker remaining on the table immediately after closing, before any lift,
+does not by itself prove failure. Do not transport or insert before lift evidence.
+During the test lift, check for downward sliding or rotation relative to the
+finger pads. If the hold is slipping, lower the marker back onto the table
+while it is still controlled, then open, reposition for fuller opposing contact
+and repeat the grasp check. Avoid opening over an unsupported marker or trying
+to cure a poor edge grasp by squeezing harder while carrying it.
+
+After an empty close or failed lift, open the gripper and inspect again. Discard
+the failed grasp estimate, obtain fresh body-surface depth measurements and
+cross-check the horizontal alignment in another view. Correct XY and, as needed,
+height or orientation before closing again. Do not repeat open-close at the same
+pose, or only vary Z, without new evidence that the marker is now inside the gap.
+In your action note, state the observed mismatch and the correction being made;
+do not describe the fingers as centred solely because they appear so in one image.
+
+After a verified lift, keep the marker approximately vertical and carry with its
+LOWER END above the holder rim. Identify the interior opening from visible rim
+surfaces in complementary views; a depth sample through the opening may hit the
+bottom or background, not the mouth plane. Align the marker's lower-end axis
+inside that opening with enough clearance for its full cross-section. Being
+near the holder or over its outer wall is insufficient. Do not simply align the
+TCP with the apparent holder centre: estimate the marker's actual offset from
+the fingers and choose the TCP target that aligns the MARKER with the opening.
+
+Before descending, verify that the lower end is above the interior opening and
+that the barrel and fingers will clear the rim throughout the intended descent.
+Lower approximately vertically in small increments, checking that the lower end
+actually enters the cavity rather than moving beside the holder or resting on
+its rim. If alignment is uncertain or motion is rejected, inspect and re-localize
+the opening and marker before choosing a correction; do not continue blind
+descent or progressively longer detours. If the marker rests on the rim, lift
+clear before correcting XY instead of pushing sideways against it.
+
+Insert at least 0.04 m of the lower end below the rim and gently seat the marker
+so the holder can support it. Open in a separate decision, withdraw without
+dragging it, and observe the released state for at least one simulation second.
+Completion requires the lower end inside the cavity at the required depth,
+support by the holder, no finger support and a stable visible upper portion.
+Merely being vertical above the opening, touching the rim, or reaching the
+commanded TCP height is not completion. Do not drop it in from above. There is
+no need to uncap, write, rotate a thread or apply a precise insertion force.
 Inspect the actual released or completed state before requesting stop. A
 commanded pose, blocked gripper, or completion claim is not evidence of success.
 If a grasp is lost or the scene resets, use new observations and reassess rather

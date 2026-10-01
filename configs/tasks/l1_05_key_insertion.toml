@@ -50,17 +50,20 @@ must not touch or support the props. Keep the left arm steady while changing
 view. Choose grasp points, poses and motion from current images and available
 robot feedback; no object coordinates or successful action sequence is supplied.
 Pick up the key by its exposed bow and insert its shaft into the fixed lock.
-The key initially rests on a small support block: its bow overhangs the block so
-both fingers can reach it without scraping the table. The support does not glue,
+The key initially stands with its blade in a shallow open source cradle. The
+yellow bow protrudes above the cradle so both fingers can reach it without
+scraping the table. The support does not glue,
 clamp or attach the key. The lock and key start separate; the key is not engaged.
-Identify the bow, shaft, toothed or keyed functional profile, lock opening and
+Identify the yellow bow, grey rectangular blade, matching lock opening and
 required insertion direction. Choose a grip on the exposed bow, leaving the
 shaft unobstructed. Confirm the key lifts freely from the support before moving.
 Bring the shaft in line with the keyway, match its orientation and advance in
 small steps. If the tip catches, back off and correct alignment rather than
 forcing it. Use the observation arm when the narrow opening is hidden.
-Insert to the specified depth without turning the key. Keep the lock fixed and
-the key steady at completion. This is insert-only: unlocking, door motion,
+Insert the blade tip at least 0.028 m below the target keyway rim without turning
+the key. Align the full blade cross-section, not just the TCP. Keep the lock fixed
+and the inserted key steady for 1.0 simulation seconds at completion.
+This is insert-only: unlocking, door motion,
 regrasping another tool and transferring the key between hands are not required.
 The hand may continue holding the bow at the final inserted state; do not add a
 release requirement unless the final task protocol explicitly requires it.
@@ -76,6 +79,6 @@ description = """
 道具：刚性钥匙代理、使钥匙柄外露的起始支架、固定矩形锁孔、操作台。
 布置：钥匙功能端置于矮支架中，柄部伸出便于夹取；目标锁孔与钥匙轴线平行。柄厚约 23 mm，插舌截面 10×18 mm，锁孔 18×28 mm。
 操作：左臂自主抓住柄部、取出、调整功能端和锁孔相对关系，插入规定深度；右臂可换视角。
-完成：实际抓起过钥匙，插入位置、方向和深度满足要求并稳定；本任务不要求转动，也不强制松手。
+完成：实际抓起过钥匙，插舌端入目标锁孔至少 28 mm、截面方向正确并稳定 1 秒；不要求转动，也不强制松手。
 边界：只模拟宽松钥匙几何插入，没有弹子、开锁或精密齿形配合，不宣称对应特定实物锁。
 """

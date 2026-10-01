@@ -1,6 +1,8 @@
-# GPT-6 物理交互任务 Prompt
+# GPT-6 物理交互任务 Prompt（早期候选稿）
 
-本文保留任务级操作指导的候选稿，不是运行时自动加载的 Prompt。当前已实现任务使用共享系统操作说明与任务目标分离的版本；以 `policies/operating_notes.py`、任务 TOML 和每次运行保存的实际指令为准。L1-01 的单孔宽容版本及当前评分见 [L1 任务说明](l1_tasks.md)。
+本文保留早期任务池的候选提示，不是当前执行清单，也不是运行时自动加载的 Prompt。任务名称、道具和分层可能已调整，例如 L1-01 已改为马克笔入笔筒，L2-06 已改为果冻代理。当前以 [共享操作说明](../src/robot_tasks/policies/operating_notes.py)、[任务 TOML](../configs/tasks/) 和每次运行保存的实际指令为准。不要把下面的旧候选提示直接覆盖到现有任务。
+
+全部可运行任务由 `GPTPolicy` 自动加入公共闭环规则：理解目标与手臂角色，简要拆解阶段，再依据最新观测执行、核实和纠错；未确认抓持或对准就不推进，重置后重新确认，最终按当前任务的释放、握持和稳定要求申请停止。下面的共用约定仅用于说明，维护时以代码中的统一版本为准。
 
 目标是在任务原有成功标准与资源约束内，提高完整完成任务的机会。以下是首版候选提示，尚未通过实测证明达到最高成功率。它们包含操作建议，结果应标注为“有操作提示的测评”，不与只有一句目标指令的结果混用。
 
@@ -16,26 +18,26 @@
 
 这些参数用于指明物体、目标、允许操作和公开的完成标准，不提供隐藏的物体真值坐标、最佳抓点或评分结果。描述目标可用名称、可见标记或实际提供的参考图。若参数没有确定，先完成任务定义，不让模型猜测成功阈值。
 
-现有 `GPTPolicy` 已提供机器人身份、关节限制、坐标／单位约定和 JSON 动作协议。本文件作为任务 `instruction` 的候选内容，不替换该协议。当前接口只有关节位置、末端位姿和夹爪总开口；没有目标力／力矩、显式速度、触觉或六维力反馈。改变夹爪开口不等于指定夹持力，减小位移步长也不等于有速度控制。
+现有 `GPTPolicy` 已提供机器人身份、坐标／单位约定和 JSON 动作协议。本文件作为任务 `instruction` 的候选内容，不替换该协议。当前 GPT 下发稀疏 TCP 目标、参考欧拉角和归一化夹爪开口，并可查询已提供的 RGB-D 像素深度；关节轨迹由底层规划器生成。没有目标力／力矩、显式速度、触觉或六维力反馈。改变夹爪开口不等于指定夹持力，减小位移步长也不等于有速度控制。
 
 力控类任务的提示分清“操作目标”和“接口实现”：仅凭 RGB 与位姿可尝试可见的稳定操作，不能据此报告精确控力能力；需要力信号的任务必须先接入真实可用的观测与控制能力。文中的实现条件均不是已完成声明。
 
-`run GPT-PICK-PLACE`、`run L1-01`～`run L1-08` 已接入任务场景与评分；唯一手动集成入口仍是 `check gpt-pick-place`。其他候选任务还需实现相应场景、复位、评分与停止处理，不能只替换 instruction 就视为已实现。本文中的动作建议不能靠文字新增接口字段，候选稿与实际运行条件必须分开记录。
+当前已接入 16 个 L1—L3 仿真任务和 `run GPT-PICK-PLACE`；用 `python tools/launch.py list` 查看实际清单，唯一手动集成入口仍是 `check gpt-pick-place`。本文保留的其他候选任务不代表已有实现，不能只替换 instruction 就视为已实现。本文中的动作建议不能靠文字新增接口字段，候选稿与实际运行条件必须分开记录。
 
 ## 共用执行约定
 
 ```text
 You control an ARX R5 robot with two-finger grippers to complete the task below. Use the provided RGB images, robot state, execution feedback, and available history to choose grasp locations, approach directions, action order, and recovery actions. Use only the arms and action interfaces enabled for this episode.
 
-Return only the JSON required by the system action contract, without code, undeclared fields or text outside the JSON. If the contract includes a note, use one or two brief sentences to describe the visible situation and purpose of this decision. Follow the declared coordinate frames, units, and action limits. End-effector poses are absolute targets, and quaternions must have unit length. When retaining orientation, preserve the measured orientation from feedback. Arms without new commands retain their previous targets. request_stop ends decision-making; it does not automatically open grippers or retract the robot.
+Return only the JSON required by the system action contract, without code, undeclared fields or text outside the JSON. Every decision requires a brief English note within 512 characters: current stage, observed evidence or mismatch, intended action and expected visible result. Briefly name planned stages in the first note without spending a separate planning-only call. Follow the declared coordinate frames, units, and action limits. TCP positions are absolute world targets; orientation uses the declared sparse Euler-angle reference, not a quaternion action field. Null pose components retain latest measured values; a null gripper retains its drive target. request_stop only asks for termination: an unsuccessful request is rejected, consuming a call, and does not automatically open grippers or retract the robot.
 
-Identify the current task stage and the information needed for the next action. When a view is occluded, first use the other available views. If visibility remains insufficient, adjust the viewpoint or object pose while preserving established support. Do not treat visual estimates as exact measurements or assume access to depth, force, tactile signals, or ground-truth object coordinates that have not been provided.
+Before each decision, compare the last action's expected outcome with current RGB-D views, measured robot state and execution feedback. Advance only when prerequisites are observed; previous notes and completed commands are not object-progress evidence. Use depth queries and permitted observation-arm moves when geometry is unclear. Check that queried surfaces belong to the visible part rather than the background. Preserve support and follow arm-role restrictions. Do not invent force, tactile signals or hidden object coordinates. After a reset discard old grasp, alignment and completion assumptions and inspect the new scene.
 
 Make useful progress in clearly free space. Near objects, openings, edges, or changing contacts, use smaller translation or rotation increments and inspect feedback before proceeding. IK does not guarantee straight-line motion or collision avoidance; maintain clearance for the grippers, objects, and the other arm. Preserve any support that is still needed until a replacement support has been established.
 
 A completed joint target does not establish task success. During a grasp, contact may prevent the fingers from reaching the requested closing position, so executing does not by itself mean grasp failure. Assess object motion, gripper state, and actual feedback together. If expected progress is absent, make an evidence-based change to alignment, grasp, or approach instead of repeatedly advancing the same blocked target.
 
-Actively complete subsequent steps and recoverable errors within the episode budget. Before ending, inspect the required final state and release or support relationships. Use provided timestamps to verify hold durations. Empty commands with request_stop=false retain previous targets while waiting; first ensure those targets will not continue squeezing or pushing. Return empty commands with request_stop=true only when the goal is satisfied, the budget is exhausted, or further progress is no longer possible. A stop request is not a success claim; the external evaluator determines the outcome.
+Actively complete subsequent steps and recoverable errors within the episode budget. After repeated rejected targets, reobserve and revise the pose or clearance instead of extending speculative detours; planner failure does not establish a particular obstacle. Before requesting stop, inspect the task's required final support, release or continued holding, and stability. Not every task requires release. Use simulation timestamps to verify durations. Empty commands with request_stop=false hold existing drive targets; first ensure those targets will not continue squeezing or pushing. Request stop with empty commands only after checking completion; the runner enforces total budgets. An unsuccessful stop is rejected and the independent evaluator determines success.
 ```
 
 ## L1：任务相关 Affordance 与几何操作

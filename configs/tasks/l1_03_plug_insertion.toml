@@ -51,18 +51,22 @@ view. Choose grasp points, poses and motion from current images and available
 robot feedback; no object coordinates or successful action sequence is supplied.
 Pick up the unpowered plug from the table and insert it into the matching
 fixed socket. Use a low-insertion-force connector with no latch, screw or lock.
-Initially the plug's insertion axis is approximately parallel to the socket
-axis and its functional end faces toward the socket, but the parts are separated
-and not already aligned or engaged. This reduces gross reorientation; it does
-not supply the final insertion pose.
-Identify the insulating body, functional end, socket opening and any keyed
-orientation. Grip the insulating body without covering the entering end.
+Initially the blue plug stands upright with its grey rectangular tongue pointing
+downward. The fixed socket opens upward; both axes are vertical, but the parts
+are separated on the table and not already aligned or engaged. This reduces
+gross reorientation; it does not supply the final insertion pose.
+Identify the blue graspable body, grey functional tongue, rectangular socket
+opening and matching cross-section orientation. This is a rigid dummy connector;
+there are no exposed pins or flexible cable. Grip the body without covering the tongue.
 Open, approach, close, and verify a short lift before transporting the plug.
-Align both position and orientation above or in front of the opening, then
-advance gently along the socket axis. Do not force bent alignment or push on
-pins. If blocked, withdraw slightly and inspect the mismatch before correcting.
-Seat the plug to the agreed insertion depth and open the gripper separately.
-Confirm it remains in the socket without hand support. No power connection,
+Carry the tongue clear of the socket rim, align its entire rectangular section
+inside the opening, and lower approximately vertically. Account for the tongue's
+offset from the TCP; do not align the TCP alone. If blocked, withdraw slightly
+and inspect the mismatch before correcting rather than forcing a tilted tongue.
+Insert the tongue tip at least 0.022 m below the rim, seat it gently on the socket
+floor, and open the gripper separately. Withdraw without dragging the plug and
+confirm it remains supported in the socket for 1.0 simulation seconds without
+hand support. No power connection,
 electrical test, latch actuation, cable routing or twisting operation is required.
 Inspect the actual released or completed state before requesting stop. A
 commanded pose, blocked gripper, or completion claim is not evidence of success.
@@ -76,6 +80,6 @@ description = """
 道具：带可抓持壳体和矩形插舌的未通电插头代理、固定空心插座、操作台。
 布置：插头竖直放在桌面，与插座轴线平行；插舌为 22×14 mm，插口为 32×24 mm，排除锁扣与电气连接。
 操作：左臂自主抓取、抬升、对准插口和送入；右臂仅用于主动观察。
-完成：有真实抓持抬升记录，插舌方向和截面正确，达到规定深度，松手后保持支撑和稳定。
+完成：有真实抓持抬升记录，插舌方向和截面正确，舌尖入槽至少 22 mm，松手后由插座支撑并稳定 1 秒。
 边界：这是宽松几何插接代理，不对应某一商业插头；不模拟通电、弹性端子、插拔寿命或损坏。
 """

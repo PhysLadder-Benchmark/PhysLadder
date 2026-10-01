@@ -13,12 +13,17 @@ implementation = "real_only"
 launch_command = "Not applicable: real robot only; no simulation entry."
 instruction = """
 REAL ROBOT TASK ONLY. Do not create or substitute a simulated cleaning task.
+Before execution, the real-task card must specify arm roles, the visible residue
+threshold, allowable actions and the towel's final resting area. Do not invent
+those missing settings. Follow the shared observation-driven planning protocol:
+briefly identify stages, verify each action's outcome from current observations,
+and revise a stage if its prerequisites or expected results are absent.
 Use a damp towel to erase the visible marker writing on the secured whiteboard.
 The towel starts on the table and must be picked up autonomously. The board is
 initially placed horizontally on the work surface for this version.
 Identify the writing, grasp a useful part of the towel and establish wiping
 contact. Inspect what remains after each pass. Change the contact region,
-wiping direction, tool orientation and pressure as needed to erase residual
+wiping direction, tool orientation and contact motion as needed to erase residual
 marks while keeping the towel controlled. Do not count passing over an area
 as proof it is clean, and do not follow a fixed path without inspecting residue.
 Avoid pushing the board loose, losing the towel or damaging the surface. When
@@ -26,6 +31,9 @@ the remaining visible writing is below the agreed criterion, lift off, place
 the towel in its designated resting area and inspect the exposed board again.
 Use available real-camera and robot feedback; do not assume simulated stain
 labels, hidden clean-pixel masks or unprovided force measurements.
+Regulate pressure only through commands actually exposed by the real controller;
+if only pose and opening are available, adjust contact pose and motion rather
+than issuing an invented force or pressure command.
 Inspect the actual released or completed state before requesting stop. A
 commanded pose, blocked gripper, or completion claim is not evidence of success.
 If a grasp is lost or the scene resets, use new observations and reassess rather

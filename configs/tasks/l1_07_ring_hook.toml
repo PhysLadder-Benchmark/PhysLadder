@@ -71,7 +71,8 @@ decision and withdraw through a clear path without pulling the cup off the hook.
 Confirm that the released cup remains suspended by its handle, supported by the
 hook rather than by either gripper, the table or the rack base. Brief passive sway
 is acceptable if the cup remains securely hung; no arbitrary final cup yaw is
-required. Do not hook through the cup mouth instead of the handle.
+required. Wait until the released cup is nearly still for 1.0 simulation seconds
+before requesting stop. Do not hook through the cup mouth instead of the handle.
 Inspect the actual released state before requesting stop. A commanded pose,
 blocked gripper or completion claim is not evidence of success. If the cup is
 dropped or the scene resets, use new observations and reassess rather than

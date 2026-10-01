@@ -81,7 +81,7 @@ motion with the pitch: 15 degrees corresponds to about 0.0005 m, 30 degrees to
 0.001 m, and 90 degrees to 0.003 m. These are geometric expectations, not proof
 of progress; inspect the actual screw and its black head mark after each move.
 Use short rotation increments (e.g. 15-30 degrees) with small axial advances,
-retaining the grasp. Rotate the tool around the world vertical screw axis while
+retaining the grasp. Rotate the gripper around the world vertical screw axis while
 keeping the fingers pointed down. If the screw slips in the fingers, adjust the
 grasp and reobserve. If motion is blocked, correct alignment or back off slightly;
 do not claim progress from the requested pose or hand rotation alone.

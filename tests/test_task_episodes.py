@@ -292,10 +292,14 @@ class EpisodeExecutionTests(unittest.TestCase):
     def test_pick_place_goals_and_prompt_share_changed_parameters(self):
         config = load_config(ROOT / "configs/checks/gpt_single_arm_pick_place.toml")
         config = replace(config, raw={**config.raw, "interaction": {**config.raw["interaction"],
-                                                                  "lift_threshold_m": 0.09, "open_width_m": 0.06}})
+                                                                  "lift_threshold_m": 0.09, "open_width_m": 0.06,
+                                                                  "cube_size_m": 0.045,
+                                                                  "placement_tolerance_m": 0.018}})
         prepared = SingleArmPickPlace.prepare_config(config)
         self.assertIn("0.09 metres", prepared.instruction)
         self.assertIn("0.06 metres", prepared.instruction)
+        self.assertIn("0.045 metres", prepared.instruction)
+        self.assertIn("0.018 metres", prepared.instruction)
 
     def test_action_and_ik_use_the_same_quaternion_norm_tolerance(self):
         from robot_tasks.policies.action_codec import decode_action

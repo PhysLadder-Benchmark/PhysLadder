@@ -57,9 +57,14 @@ and wrist can follow the rail without hitting the frame. Pull gradually along
 the rail; observe drawer travel, resistance-related motion, slip and acceleration.
 Keep the primary grasp and rail relationship stable. Correct lateral misalignment
 rather than applying repeated large forces against the guides.
-Reach the specified open position, pause to confirm stability, then slide the
-drawer back smoothly along the same axis. Slow near the end stops, close fully
+Pull along world +X by at least 0.10 m from the initially closed state while
+holding the handle; the track's maximum travel is 0.13 m. Do not demand motion
+beyond that end stop. Pause to confirm the open state, then slide the drawer
+back smoothly along the same axis. Slow near the end stops, close fully
 without slamming, open the gripper and confirm the drawer remains closed.
+The final residual opening must be less than 0.006 m, released and nearly still
+for 1.0 simulation seconds. Excessive speed at either stop (over 0.25 m/s) fails
+the protocol; no live drawer force sensor is supplied.
 Do not lift or shift the organizer to simulate drawer travel, bypass the rail,
 or introduce an artificial blockage. No latch release or item retrieval is
 required in this version.
@@ -75,6 +80,6 @@ description = """
 道具：固定化妆盒式柜体、抽屉托盘、绿色把手、滑轨和操作台。
 布置：抽屉初始关闭，左臂自主抓持，右臂可观察把手和行程。
 操作：沿滑轨方向平稳拉开至少 100 mm，再推回关闭位置并松手；最大行程 130 mm。
-完成：有实际抓持开屉记录，之后关闭并释放稳定；接近行程端点时速度过大记为冲击失败。
+完成：先在夹持状态拉开至少 100 mm，再关到剩余开口小于 6 mm 并释放稳定 1 秒；终点速度不超过 0.25 m/s。
 边界：阻力来自托盘与轨道真实摩擦和关节阻尼，没有额外可调阻装置；柜体固定，不模拟柜体移动或塑料损坏。
 """

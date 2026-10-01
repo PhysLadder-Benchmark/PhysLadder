@@ -60,9 +60,15 @@ Use visible tilt, slip, particle motion and available feedback to adjust holding
 pose, opening and support. Avoid abrupt acceleration, squeezing damage, moving
 the bowl away mid-pour or losing particles over the rim. Do not chase particles
 with the receiving hand while abandoning the bowl.
-After the feeder reports or visibly completes its prescribed load, keep the full
-bowl stable, place it gently on the table and release without spilling. This
-first version uses rigid solid particles only; water is a later separate version.
+The prescribed load is six red rigid blocks. Use the latest images to confirm
+all six are wholly inside the bowl; a block on the rim or tabletop is not contained.
+After loading, keep BOTH hands holding the handles, the bowl clear of the table,
+level and nearly still for at least 2.0 simulation seconds before placing it.
+Then lower gently onto the table, open each gripper in a separate decision, and
+verify the released bowl stays upright with all six blocks contained and still
+for 1.0 simulation seconds. No live feeder-status sensor is provided: use images
+and simulation timestamps rather than assuming a feeder-completed flag.
+This first version uses rigid solid particles only; water is a later separate version.
 Inspect the actual released or completed state before requesting stop. A
 commanded pose, blocked gripper, or completion claim is not evidence of success.
 If a grasp is lost or the scene resets, use new observations and reassess rather
