@@ -1,0 +1,13 @@
+# Codex owns ChatGPT credentials and token renewal. No API key is needed.
+# base_url is unused by this transport; Codex uses its official OpenAI provider.
+[gpt]
+transport = "codex_cli"
+codex_bin = "codex"
+base_url = "https://api.openai.com/v1"
+model = "gpt-6-astra"
+reasoning_effort = "medium"
+timeout_s = 300.0
+structured_output = true
+history_steps = 2
+max_calls = 100
+image_max_edge = 768

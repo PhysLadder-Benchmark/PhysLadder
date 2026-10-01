@@ -57,8 +57,23 @@ Windows 普通检查也支持原来的 `tools/run_r5_check.ps1 -Check gpt-pick-p
 python3 tools/launch.py run GPT-PICK-PLACE --model-config /path/to/model.toml --gui
 ```
 
-跨平台入口共用现有模型 API、任务配置和评分实现；不包含 `active_agent` 或 `codex_cli` 通道。
-从此前本地版本迁移时，旧模型配置中的 `transport` 字段不再支持，请按原始模型模板配置。
+跨平台入口共用任务配置、控制、评分和录像实现。默认 `transport="responses"` 使用 API 凭据；
+`transport="codex_cli"` 通过本机 Codex CLI 已保存的 ChatGPT 登录进行模型决策，无需 API Key。
+该方式每次启动独立的模型决策调用，不继承当前聊天的上下文；任务所需历史由项目显式提供。
+不会读取、复制或保存 Codex 的登录令牌，也不会自动退回 API Key 或切换模型。
+
+```bash
+codex login status  # 应显示 Logged in using ChatGPT；未登录时运行 codex login
+python3 tools/launch.py run L1-01 --model-config configs/models/codex_chatgpt.toml --gui
+python3 tools/batch_run.py --all --model-config configs/models/codex_chatgpt.toml --reasoning-effort medium --gui
+```
+
+`codex_chatgpt.toml` 固定请求 `gpt-6-astra`、`medium`。需要能连通 ChatGPT 的网络，
+终端可能需要继承桌面代理，例如 `export HTTPS_PROXY=http://127.0.0.1:<本机代理端口>`。
+CLI 使用独立临时目录、只读沙箱、JSON Schema 和显式图像编号，只允许返回动作决策。
+其 JSONL 协议不提供服务端实际返回的模型 ID；日志标记模型验证方式为显式 CLI 配置，
+`response_id` 是 Codex thread ID。`model_calls` 统计决策调用，不等同于底层 HTTP 请求数；
+Codex 内部连接重试也占用每次决策的超时预算。CLI 报告的 token 使用量保存到原有结果中。
 抓放任务及其集成入口共用执行与记录模块，
 通过 `run` 或 `check` 启动均保存 `runtime_config.json` 和 `storage_config.json` 环境快照；
 `config.toml`、结果和日志记录实验，不记录 API 密钥。
@@ -581,6 +596,13 @@ MP4 保留所有控制周期的画面；GIF 是覆盖整轮的抽帧预览，最
 新任务使用 `run <任务ID>`。若需要当前没有的力控、触觉或新动作类型，才扩展公共接口和适配器。
 
 物体尺寸、初态、关节和评分阈值目前定义在对应任务实现中；TOML 不会覆盖代码中未公开的几何参数。
+
+## 批量运行与录像
+
+使用 `python3 tools/batch_run.py --all --output runs/gpt_master_baseline` 串行测评全部
+仿真任务并保存三路录像。入口自动加载 `.env`，默认每任务 100 次调用、60 分钟，
+支持 `--dry-run`、`--tasks`、`--resume`、结果/Token/视频汇总。详细步骤见
+[批量运行说明](docs/batch_run.md)。
 
 ## 哪些配置影响任务
 
