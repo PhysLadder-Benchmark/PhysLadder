@@ -1,6 +1,7 @@
 """Physical household scenes. Object pose writes are restricted to episode reset.
 
 Joint drives are passive springs except the explicitly declared bowl feeder.
+The push-to-open proxy changes its rail lock from measured compression/rebound.
 No success detector attaches, moves, releases or teleports task objects.
 """
 
@@ -57,6 +58,11 @@ class BenchScene(L1Scene):
         self.drives = {}
         for joint in spec.joints:
             self.create_joint(joint)
+        self.push_drawer = None
+        if spec.mechanism == "measured_stroke_push_latch_and_passive_ejector_proxy":
+            from .push_drawer_scene import PushDrawerMechanism
+
+            self.push_drawer = PushDrawerMechanism(self)
         self.feed_elapsed = None
         self.feed_armed = False
         previous = backend.before_physics_step
@@ -64,6 +70,8 @@ class BenchScene(L1Scene):
         def before_step(dt):
             if previous is not None:
                 previous(dt)
+            if self.push_drawer is not None:
+                self.push_drawer.step(dt)
             if self.feed_armed:
                 self.feed_elapsed = (self.feed_elapsed or 0.0) + dt
                 # Standardized environment actuation, never a robot policy.
@@ -188,6 +196,8 @@ class BenchScene(L1Scene):
         super().reset(seed)
         for view in (*self.arm_contacts.values(), *self.pairs.values()):
             view.initialize()
+        if self.push_drawer is not None:
+            self.push_drawer.reset()
 
     def measure(self):
         rows = super().measure()
@@ -229,6 +239,8 @@ class BenchScene(L1Scene):
                 and abs(bowl["pose"][2] - p["feed_z"]) < 0.02
             ):
                 self.feed_armed = True
+        if self.push_drawer is not None:
+            rows["upper_drawer"]["push_latch"] = self.push_drawer.measurement()
         return rows
 
     def planning_payloads(self):

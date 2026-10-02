@@ -45,7 +45,7 @@ class HouseholdTests(unittest.TestCase):
         tasks = [
             s for s in TASKS.values() if s.task_id.startswith("L") and s.implemented
         ]
-        self.assertEqual(len(tasks), 16)
+        self.assertEqual(len(tasks), 17)
         for spec in tasks:
             with self.subTest(task=spec.task_id):
                 _, cfg = resolve_task(spec.task_id)
@@ -290,7 +290,9 @@ class HouseholdTests(unittest.TestCase):
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
         rows["bottle"]["fingers"]["left"] = [1, 1]
         rows["cap"]["fingers"]["right"] = [1, 1]
-        rows["cap"]["pose"][2] = 0.25
+        rows["cap"]["pose"][2] = (
+            rows["bottle"]["pose"][2] + spec.parameters["engaged_cap_z_max"] + 0.10
+        )
         for i in range(1, 30):
             angle = i * 0.4
             rows["cap"]["pose"][3:] = [math.cos(angle / 2), 0, 0, math.sin(angle / 2)]

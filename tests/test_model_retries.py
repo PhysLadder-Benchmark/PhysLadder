@@ -1,6 +1,7 @@
 """Fixed generation retries reuse observations; no paid/network calls."""
 
 import json
+import subprocess
 import tempfile
 import unittest
 from contextlib import redirect_stdout
@@ -12,6 +13,7 @@ from unittest.mock import Mock, patch
 from fixtures import RGBDBackend, decision_document, gripper_command, robot_config
 
 from robot_tasks.backends.mock import MockRobot, MockTask
+from robot_tasks.policies.codex_cli import CodexCLIClient
 from robot_tasks.policies.gpt import GPTPolicy
 from robot_tasks.policies.model_config import GPTSettings
 from robot_tasks.policies.responses import ModelError, ModelReply, RetryableModelError
@@ -29,7 +31,7 @@ def reply(*, move=False):
 
 
 class ModelRetryTests(unittest.TestCase):
-    def run_fixture(self, replies, calls=10, *, interrupt=False):
+    def run_fixture(self, replies=None, calls=10, *, interrupt=False, client=None):
         config = robot_config()
         config = replace(
             config,
@@ -43,11 +45,15 @@ class ModelRetryTests(unittest.TestCase):
                 },
             },
         )
-        client = Mock()
-        client.generate.side_effect = replies
+        settings = GPTSettings("https://example.invalid", "fixture", max_calls=calls)
+        if client is None:
+            client = Mock()
+            client.generate.side_effect = replies
+        else:
+            settings = replace(client.settings, max_calls=calls)
         policy = GPTPolicy(
             config,
-            GPTSettings("https://example.invalid", "fixture", max_calls=calls),
+            settings,
             client=client,
         )
         robot, task = MockRobot(), MockTask()
@@ -70,6 +76,56 @@ class ModelRetryTests(unittest.TestCase):
                 for l in (output / "episode.jsonl").read_text().splitlines()
             ]
         return result, events, policy, robot, client, sleep
+
+    def codex_fixture(self):
+        settings = GPTSettings("https://example.invalid", "fixture", transport="codex_cli", timeout_s=2400)
+        with patch("robot_tasks.policies.codex_cli.CodexProcess") as host_type:
+            host_type.return_value.mode = "native"
+            host_type.return_value.path.side_effect = lambda path: path
+            client = CodexCLIClient(settings)
+        rows = [
+            {"type": "thread.started", "thread_id": "offline"},
+            {"type": "item.completed", "item": {"type": "agent_message", "text": reply(move=True).text}},
+            {"type": "turn.completed", "usage": {}},
+        ]
+        completed = subprocess.CompletedProcess([], 0, "\n".join(map(json.dumps, rows)).encode(), b"")
+        return client, completed
+
+    def test_codex_timeouts_retry_same_context_then_resume_after_three_retries(self):
+        client, completed = self.codex_fixture()
+        client.host.run.side_effect = [completed] + [subprocess.TimeoutExpired("codex", 2400)] * 3 + [completed]
+        result, events, policy, robot, _, sleep = self.run_fixture(calls=5, client=client)
+        self.assertEqual(result["status"], "finished")
+        self.assertEqual(result["model_calls"], 5)
+        self.assertEqual(result["model_retry_attempts"], 3)
+        self.assertEqual(robot.apply.call_count, 2)
+        self.assertEqual(len(policy.history), 2)
+        self.assertEqual([c.args[0] for c in sleep.call_args_list], [2.0, 4.0, 8.0])
+        calls = client.host.run.call_args_list
+        self.assertEqual(len(calls), 5)
+        self.assertTrue(all(c.kwargs["timeout_s"] == 2400 for c in calls))
+        # The request counter advances; sensor data and accepted history do not.
+        for step, call in enumerate(calls[1:], 2):
+            normalized = call.kwargs["data"].replace(f'"step": {step},'.encode(), b'"step": 2,')
+            self.assertEqual(normalized, calls[1].kwargs["data"])
+        exchanges = [e["exchange"] for e in events if e["event"] == "model_exchange"]
+        self.assertEqual([e["history_steps"] for e in exchanges], [0, 1, 1, 1, 1])
+        self.assertEqual([e["retryable"] for e in exchanges[1:4]], [True] * 3)
+        self.assertTrue(all(e["frames"] == exchanges[1]["frames"] for e in exchanges[1:]))
+
+    def test_four_codex_timeouts_stop_without_actions_or_fifth_request(self):
+        client, _completed = self.codex_fixture()
+        client.host.run.side_effect = subprocess.TimeoutExpired("codex", 2400, output=b"partial action")
+        result, events, policy, robot, _, _sleep = self.run_fixture(client=client)
+        self.assertEqual(result["status"], "error")
+        self.assertEqual(client.host.run.call_count, 4)
+        self.assertEqual(result["model_calls"], 4)
+        self.assertEqual(result["model_retry_attempts"], 3)
+        self.assertEqual(result["completed_steps"], 0)
+        self.assertFalse(policy.history)
+        robot.apply.assert_not_called()
+        exhausted = [e for e in events if e["event"] == "model_retry_exhausted"]
+        self.assertEqual(exhausted[0]["retry_exhaustion"], "retry_limit")
 
     def test_three_retries_then_success_execute_once_and_count_four_calls(self):
         result, events, policy, robot, client, sleep = self.run_fixture(

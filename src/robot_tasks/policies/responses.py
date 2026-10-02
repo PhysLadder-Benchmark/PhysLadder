@@ -21,7 +21,7 @@ class ModelError(RuntimeError):
 
 
 class RetryableModelError(ModelError, RetryablePolicyError):
-    """Provider generation failed/incomplete; no partial output is executable."""
+    """Generation failed, was incomplete or timed out; no output is executable."""
 
 
 def generation_error(document: dict, event_type: str, secret: str = "") -> ModelError:
@@ -178,7 +178,7 @@ def read_response(stream, *, expected_model: str, start: float, timeout_s: float
     data_lines = []
     while True:
         if time.monotonic() - start >= timeout_s:
-            raise ModelError("Model stream exceeded request time budget")
+            raise RetryableModelError("Model stream exceeded request time budget")
         line = stream.readline(limit + 1)
         total += len(line)
         if total > limit:
@@ -230,13 +230,19 @@ class ResponsesClient:
                 reply = read_response(stream, expected_model=settings.model, start=start,
                                       timeout_s=settings.timeout_s, secret=secret)
             if time.monotonic() - start > settings.timeout_s:
-                raise ModelError("Model request exceeded time budget; output discarded")
+                raise RetryableModelError("Model request exceeded time budget; output discarded")
             if secret in reply.text or secret in reply.response_id:
                 raise ModelError("Provider output contains a credential; output discarded")
             return reply
         except HTTPError as exc:
             raise ModelError(http_error_message(exc, secret)) from None
-        except (URLError, OSError, TimeoutError):
-            raise ModelError("Responses transport failed or timed out; no action accepted") from None
+        except TimeoutError:
+            raise RetryableModelError("Responses request timed out; no action accepted") from None
+        except URLError as exc:
+            if isinstance(exc.reason, TimeoutError):
+                raise RetryableModelError("Responses request timed out; no action accepted") from None
+            raise ModelError("Responses transport failed; no action accepted") from None
+        except OSError:
+            raise ModelError("Responses transport failed; no action accepted") from None
         except (ValueError, TypeError, AttributeError, KeyError):
             raise ModelError("Malformed Responses payload; no action accepted") from None

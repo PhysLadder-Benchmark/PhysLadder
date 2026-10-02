@@ -107,6 +107,16 @@ class BatchTests(unittest.TestCase):
             self.assertEqual(self.main("--resume", str(root)), 0)
         self.assertEqual(json.loads((root / "state.json").read_text())["L1-01"]["status"], "done")
 
+    def test_process_liveness_probe_preserves_live_process_and_accepts_exited_pid(self):
+        process = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"])
+        try:
+            self.assertTrue(batch.pid_alive(process.pid))
+            self.assertIsNone(process.poll())
+        finally:
+            process.terminate()
+            process.wait(timeout=5)
+        self.assertFalse(batch.pid_alive(process.pid))
+
     def test_missing_key_fails_before_creating_batch_or_launching_worker(self):
         root = self.root / "no_key"
         with patch.dict(os.environ, {}, clear=True), patch.object(batch, "run_job") as run, \

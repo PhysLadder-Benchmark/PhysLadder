@@ -22,7 +22,7 @@
 
 力控类任务的提示分清“操作目标”和“接口实现”：仅凭 RGB 与位姿可尝试可见的稳定操作，不能据此报告精确控力能力；需要力信号的任务必须先接入真实可用的观测与控制能力。文中的实现条件均不是已完成声明。
 
-当前已接入 16 个 L1—L3 仿真任务和 `run GPT-PICK-PLACE`；用 `python tools/launch.py list` 查看实际清单，唯一手动集成入口仍是 `check gpt-pick-place`。本文保留的其他候选任务不代表已有实现，不能只替换 instruction 就视为已实现。本文中的动作建议不能靠文字新增接口字段，候选稿与实际运行条件必须分开记录。
+当前已接入 17 个 L1—L3 仿真任务和 `run GPT-PICK-PLACE`；用 `python tools/launch.py list` 查看实际清单，唯一手动集成入口仍是 `check gpt-pick-place`。本文保留的其他候选任务不代表已有实现，不能只替换 instruction 就视为已实现。本文中的动作建议不能靠文字新增接口字段，候选稿与实际运行条件必须分开记录。
 
 ## 共用执行约定
 
@@ -248,12 +248,14 @@ Without actual force feedback, do not claim completion of this quantitative forc
 
 ### L3-03 自主抓持与重抓的旋拧瓶盖
 
+当前仿真采用 50×50×180 mm 方瓶身、加高圆瓶颈和约 43 mm 外径、40 mm 高的圆柱盖，总高约 250 mm。双手从空手开始，盖已旋合且未预松；瓶底落桌，左手夹持瓶身中下部，右手旋盖。评分仅累计瓶身直立受桌面支撑、双手持握且螺纹仍啮合时的相对旋转。相机及支架仍是未标定的视觉模型，空间诊断不代表真机或任意轨迹无碰撞。
+
 运行前填写：瓶子、旋开方向信息、瓶身与瓶盖放置区域。实现条件：真实螺纹／旋松与脱离机制；不能靠旋转达到角度后直接删除约束。准确扭矩控制仍需扩展接口。
 
 ```text
 Unscrew the cap of {{bottle_id}} until it is completely detached. Place the bottle and cap in {{respective_placement_regions}}. Keep the bottle stable and preserve the cap and bottle opening. Opening-direction information is {{provided_opening_direction_or_observe}}.
 
-Identify the bottle/cap boundary, rotation axis, and usable grasp regions. Stabilize the bottle with one arm and grasp the cap with the other, checking for interference. Rotate incrementally about the cap axis rather than sweeping it around an incorrect pivot. Adjust axial position as the cap loosens instead of continually pressing it onto the opening.
+Identify the bottle/cap boundary, rotation axis, and usable grasp regions. Keep the bottle bottom on the table, stabilize the parallel lower/middle body faces with the left arm, and grasp the cap with the right. Separate the grasp heights and inspect clearance for fingers, wrists, camera housings and brackets through approach, turning and regrasping. Rotate incrementally about the cap axis rather than sweeping it around an incorrect pivot. Adjust axial position as the cap loosens instead of continually pressing it onto the opening.
 
 Distinguish cap rotation relative to the bottle from whole-bottle rotation or gripper slip on the cap. If no actual loosening occurs, first restore bottle stabilization, check direction, or improve the cap grasp. Near a wrist range limit, regrasp only while the cap has reliable support and its state can be maintained; do not accumulate infeasible large-angle targets.
 

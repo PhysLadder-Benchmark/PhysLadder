@@ -27,6 +27,10 @@ def run(scene):
     from ..tasks.bench.spec import Joint
 
     task = scene.config.task_id
+    if task == "L3-16":
+        from .push_drawer_probe import run as probe_push_drawer
+
+        return probe_push_drawer(scene)
     result = {"task": task, "scope": "fixture-only, no robot policy or success score"}
     if task in {"L1-01", "L1-03", "L1-05", "L1-07", "L1-08"}:
         article = scene.design.articles[-1]
@@ -210,13 +214,13 @@ def run(scene):
         # Clamp the bottle only in this diagnostic. Cap is free to translate
         # along Z; bounded torque provides rotation, never commanded axial rise.
         scene.create_joint(
-            Joint("probe_hold_bottle", "", "bottle", (0.36, 0, 0.001), {})
+            Joint("probe_hold_bottle", "", "bottle", tuple(scene.initial["bottle"][:3]), {})
         )
         guide = UsdPhysics.Joint.Define(
             scene.stage, scene.root + "/Joints/probe_turn_cap"
         )
         guide.CreateBody1Rel().SetTargets([scene.root + "/cap"])
-        guide.CreateLocalPos0Attr(Gf.Vec3f(0.36, 0, 0.131))
+        guide.CreateLocalPos0Attr(Gf.Vec3f(*scene.initial["cap"][:3]))
         guide.CreateLocalPos1Attr(Gf.Vec3f(0, 0, 0))
         # Native D6 unlimited rotation is its X twist, not Y/Z swing. Map
         # local +X onto world +Z. Only lateral translations are locked;

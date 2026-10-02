@@ -9,28 +9,22 @@ CLI usage describes Codex turns, not a promise of one HTTP request per decision.
 import base64
 import binascii
 import json
-import os
 from pathlib import Path
 import re
-import shutil
-import signal
 import subprocess
 import tempfile
 import time
 
+from ..paths import PROJECT_ROOT
+from .codex_process import CodexProcess, codex_environment
 from .model_config import GPTSettings
-from .responses import ModelError, ModelReply, _safe_error_field
+from .responses import ModelError, ModelReply, RetryableModelError, _safe_error_field
 
 
-def codex_environment(environment=None):
-    """Keep desktop/network/auth paths, without forwarding API/application keys."""
-    source = os.environ if environment is None else environment
-    allowed = {"PATH", "HOME", "USER", "LOGNAME", "USERPROFILE", "APPDATA", "LOCALAPPDATA",
-               "SYSTEMROOT", "SystemRoot", "COMSPEC", "PATHEXT", "TEMP", "TMP", "TMPDIR",
-               "CODEX_HOME", "LANG", "LC_ALL", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME",
-               "XDG_RUNTIME_DIR", "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY",
-               "http_proxy", "https_proxy", "all_proxy", "no_proxy", "SSL_CERT_FILE", "SSL_CERT_DIR"}
-    return {key: value for key, value in source.items() if key in allowed}
+def _temporary_directory():
+    root = PROJECT_ROOT / "build/codex"
+    root.mkdir(parents=True, exist_ok=True)
+    return tempfile.TemporaryDirectory(prefix="decision-", dir=root)
 
 
 def safe_diagnostic(value):
@@ -127,24 +121,31 @@ class CodexCLIClient:
 
     def __init__(self, settings: GPTSettings):
         self.settings = settings
-        self.executable = shutil.which(settings.codex_bin)
-        if not self.executable:
-            raise ModelError("Codex CLI not found; install Codex or configure codex_bin")
+        try:
+            self.host = CodexProcess(settings.codex_bin)
+        except RuntimeError as exc:
+            raise ModelError(str(exc)) from None
+        self.provider_metadata = {**self.provider_metadata, "codex_host": self.host.mode}
 
     def require_chatgpt_login(self):
         try:
-            status = subprocess.run([self.executable, "login", "status"], capture_output=True, text=True,
-                                    timeout=15, env=codex_environment(), check=False)
+            with _temporary_directory() as temporary:
+                status = self.host.run(["login", "status"], directory=Path(temporary), timeout_s=15)
         except (OSError, subprocess.TimeoutExpired):
             raise ModelError("Cannot check Codex ChatGPT login; run codex login status") from None
-        if status.returncode != 0 or "Logged in using ChatGPT" not in status.stdout + status.stderr:
+        except RuntimeError as exc:
+            raise ModelError(str(exc)) from None
+        if status.returncode == 127:
+            raise ModelError("Codex CLI not found in WSL; check configs/runtime/codex.local.toml and codex_bin")
+        if status.returncode != 0 or b"Logged in using ChatGPT" not in status.stdout + status.stderr:
             raise ModelError("Codex ChatGPT login required; run codex login, then codex login status")
 
     def generate(self, *, instructions, messages, schema):
         settings = self.settings
         start = time.monotonic()
-        with tempfile.TemporaryDirectory(prefix="gpt-benchmark-codex-") as temporary:
+        with _temporary_directory() as temporary:
             directory = Path(temporary)
+            remote = self.host.path(directory)
             observations, images = serialize_observations(messages, directory)
             schema_file = directory / "action.schema.json"
             schema_file.write_text(json.dumps(schema, allow_nan=False), encoding="utf-8")
@@ -159,9 +160,9 @@ class CodexCLIClient:
                       "Image numbers in the records identify the ordered attachments. "
                       "Use the latest user record as the current observation; earlier records are history.\n"
                       + "\nOBSERVATION HISTORY:\n" + observations)
-            command = [self.executable, "exec", "--ignore-user-config", "--ephemeral", "--skip-git-repo-check",
-                       "--cd", temporary, "--sandbox", "read-only", "--model", settings.model,
-                       "--json", "--color", "never", "--output-schema", str(schema_file)]
+            command = ["exec", "--ignore-user-config", "--ephemeral", "--skip-git-repo-check",
+                       "--cd", str(remote), "--sandbox", "read-only", "--model", settings.model,
+                       "--json", "--color", "never", "--output-schema", str(remote / schema_file.name)]
             overrides = {"model_provider": "openai", "forced_login_method": "chatgpt",
                          "model_reasoning_effort": settings.reasoning_effort, "web_search": "disabled",
                          "features.shell_tool": False, "features.unified_exec": False,
@@ -170,54 +171,32 @@ class CodexCLIClient:
                          "features.image_generation": False, "features.hooks": False,
                          "features.skip_host_skill_discovery": True, "suppress_unstable_features_warning": True,
                          "features.unbounded_connection_retries": False,
-                         "model_instructions_file": str(instructions_file)}
+                         "model_instructions_file": str(remote / instructions_file.name)}
             for key, value in overrides.items():
                 command.extend(["-c", key + "=" + json.dumps(value)])
             for path in images:
-                command.extend(["--image", str(path)])
+                command.extend(["--image", str(remote / path.name)])
             command.append("-")
-            with (directory / "events.jsonl").open("w+b") as output, (directory / "stderr.log").open("w+b") as errors:
-                try:
-                    process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=output, stderr=errors,
-                                               env=codex_environment(), start_new_session=(os.name != "nt"))
-                except OSError:
-                    raise ModelError("Unable to start Codex CLI") from None
-                try:
-                    process.communicate(prompt.encode("utf-8"), timeout=settings.timeout_s)
-                except (subprocess.TimeoutExpired, KeyboardInterrupt) as exc:
-                    self._terminate(process)
-                    if isinstance(exc, KeyboardInterrupt):
-                        raise
-                    raise ModelError("Codex ChatGPT decision timed out; no action accepted") from None
-                output.seek(0)
-                stdout = output.read(4 * 1024 * 1024 + 1)
-                if len(stdout) > 4 * 1024 * 1024:
-                    raise ModelError("Codex event stream exceeds size limit")
-                stdout = stdout.decode("utf-8", errors="replace")
-                if process.returncode:
-                    # Prefer a bounded structured failure to arbitrary stderr (which
-                    # can contain local environment or provider details).
-                    for line in stdout.splitlines():
-                        try:
-                            event = json.loads(line)
-                        except ValueError:
-                            continue
-                        if event.get("type") == "turn.failed":
-                            error = event.get("error") or {}
-                            raise ModelError("Codex ChatGPT call failed: " + safe_diagnostic(error.get("message")))
-                    raise ModelError(f"Codex ChatGPT call failed (exit {process.returncode}); no action accepted")
-                return parse_events(stdout, model=settings.model, latency_s=time.monotonic() - start)
-
-    @staticmethod
-    def _terminate(process):
-        if process.poll() is not None:
-            return
-        if os.name == "nt":
-            subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"],
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10, check=False)
-        else:
             try:
-                os.killpg(process.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
-        process.wait(timeout=10)
+                result = self.host.run(command, directory=directory, data=prompt.encode("utf-8"),
+                                       timeout_s=settings.timeout_s)
+            except subprocess.TimeoutExpired:
+                raise RetryableModelError("Codex ChatGPT decision timed out; no action accepted") from None
+            except OSError:
+                raise ModelError("Unable to start Codex CLI") from None
+            except RuntimeError as exc:
+                raise ModelError(str(exc)) from None
+            stdout = result.stdout.decode("utf-8", errors="replace")
+            if result.returncode:
+                # Prefer structured failures; stderr may contain private paths.
+                for line in stdout.splitlines():
+                    try:
+                        event = json.loads(line)
+                    except ValueError:
+                        continue
+                    if isinstance(event, dict) and event.get("type") == "turn.failed":
+                        error = event.get("error") or {}
+                        message = error.get("message") if isinstance(error, dict) else error
+                        raise ModelError("Codex ChatGPT call failed: " + safe_diagnostic(message))
+                raise ModelError(f"Codex ChatGPT call failed (exit {result.returncode}); no action accepted")
+            return parse_events(stdout, model=settings.model, latency_s=time.monotonic() - start)

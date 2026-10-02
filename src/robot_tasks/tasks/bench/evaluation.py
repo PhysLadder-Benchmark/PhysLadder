@@ -45,6 +45,7 @@ class BenchEvaluator:
         self.timers = {}
         self.peak_force = self.max_strain = 0.0
         self.previous_angle = None
+        self.push_contact_pose = None
         self.net_turn = 0.0
 
     def update(self, now, rows):

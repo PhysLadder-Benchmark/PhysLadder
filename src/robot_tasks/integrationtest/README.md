@@ -32,3 +32,13 @@ python -m robot_tasks.integrationtest.scene_smoke --all --no-preparation
 加 `--prop-probe` 可对有检查定义的空腔承重、柔性杆、滑轨和螺纹做物理夹具诊断。
 `prop_physics.py` 会明确设置诊断初态或施加测试驱动，不能作为机器人任务成功视频或 GPT 成功率。
 结果位于 `runs/`，与正式测评分别保存。
+
+`L3-03` 的加高方瓶还提供独立空间诊断。在包含 NumPy、SciPy、trimesh 的规划器环境运行：
+
+```bash
+python -m robot_tasks.integrationtest.bottle_clearance
+# 在 Isaac Python 中渲染上一步报告保存的检查姿态：
+python -m robot_tasks.integrationtest.bottle_clearance --render
+```
+
+检查从瓶身接近、夹持到瓶盖旋转、张爪、退出及回转重抓的 1,420 个采样姿态，使用 URDF 网格包围盒和相机／支架 CAD 尺寸检查双臂互相及相机与道具的间隙；数值 IK 只用于此诊断，不接入生产控制。报告在 `runs/l3_03_square_clearance.json`，截图在同名目录。诊断姿态不替代模型抓持，不构成连续轨迹认证、真实接触稳定性、全身自碰撞或 GPT 成功证据；相机安装参数仍未标定。

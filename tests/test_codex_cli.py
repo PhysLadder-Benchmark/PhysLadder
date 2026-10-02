@@ -18,7 +18,7 @@ from robot_tasks import batch
 from robot_tasks.execution import _gpt_policy
 from robot_tasks.policies.codex_cli import CodexCLIClient, codex_environment, parse_events, serialize_observations
 from robot_tasks.policies.model_config import GPTSettings, load_gpt_settings
-from robot_tasks.policies.responses import ModelError
+from robot_tasks.policies.responses import ModelError, RetryableModelError
 from robot_tasks.registry import resolve_task
 
 
@@ -38,6 +38,9 @@ def events(*items, complete=True, text='{"commands": []}'):
 
 class CodexBoundaryTests(unittest.TestCase):
     def setUp(self):
+        settings = patch("robot_tasks.policies.codex_process._local_settings", return_value={})
+        settings.start()
+        self.addCleanup(settings.stop)
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
@@ -100,10 +103,10 @@ class CodexBoundaryTests(unittest.TestCase):
         self.assertEqual(set(result), {"HOME", "PATH", "CODEX_HOME", "HTTPS_PROXY"})
 
     def test_login_rejects_api_auth_even_if_cli_exits_zero(self):
-        with patch("robot_tasks.policies.codex_cli.shutil.which", return_value="fixture"):
+        with patch("robot_tasks.policies.codex_process.shutil.which", return_value="fixture"):
             client = CodexCLIClient(SETTINGS)
         for message in ("Logged in using an API key", "Not logged in"):
-            with patch("robot_tasks.policies.codex_cli.subprocess.run", return_value=subprocess.CompletedProcess([], 0, message, "")):
+            with patch.object(client.host, "run", return_value=subprocess.CompletedProcess([], 0, message.encode(), b"")):
                 with self.assertRaisesRegex(ModelError, "ChatGPT login required"):
                     client.require_chatgpt_login()
 
@@ -111,7 +114,7 @@ class CodexBoundaryTests(unittest.TestCase):
         model = self.root / "model.toml"
         model.write_text('[gpt]\nbase_url="https://api.openai.com/v1"\nmodel="gpt-6-astra"\ntransport="codex_cli"\n')
         _, config = resolve_task("L1-01")
-        with patch("robot_tasks.policies.codex_cli.shutil.which", return_value="fixture"), \
+        with patch("robot_tasks.policies.codex_process.shutil.which", return_value="fixture"), \
                 patch.object(CodexCLIClient, "require_chatgpt_login") as login, \
                 patch("robot_tasks.execution.read_api_key", side_effect=AssertionError("API credentials must not be used")), \
                 patch.object(batch, "load_env", side_effect=AssertionError(".env must not be loaded")):
@@ -152,7 +155,7 @@ class CodexBoundaryTests(unittest.TestCase):
                               f"print({events(complete=False)!r},flush=True)\ntime.sleep(30)\n")
         executable.chmod(0o700)
         client = CodexCLIClient(replace(SETTINGS, codex_bin=str(executable), timeout_s=.3))
-        with self.assertRaisesRegex(ModelError, "timed out"):
+        with self.assertRaisesRegex(RetryableModelError, "timed out"):
             client.generate(instructions="contract", messages=[], schema={})
         with self.assertRaises(ProcessLookupError):
             os.kill(int(pidfile.read_text()), 0)
