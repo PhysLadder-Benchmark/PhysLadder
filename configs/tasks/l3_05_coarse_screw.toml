@@ -76,8 +76,16 @@ rests on the rim or does not advance, inspect alignment, lift slightly only if
 unengaged, recenter, or rotate gently backwards to find the thread start. Do not
 repeat large downward commands against a blocked part.
 
-Once engaged, rotate CLOCKWISE as viewed from above and coordinate downward
-motion with the pitch: 15 degrees corresponds to about 0.0005 m, 30 degrees to
+Entering the bore, hand rotation and screw rotation do not by themselves prove
+thread engagement. Before continuing a series of turns, compare the actual head
+height against the fixed socket rim across successive observations and confirm
+repeatable axial advancement with the expected direction, without tilt or slip.
+Use complementary views if the working end is hidden. A rejected motion has not
+advanced the screw. After an execution timeout, use measured TCP and current
+images, and keep outstanding drive targets in mind when observing or waiting.
+
+Once engagement is confirmed, rotate CLOCKWISE as viewed from above and coordinate
+downward motion with the pitch: 15 degrees corresponds to about 0.0005 m, 30 degrees to
 0.001 m, and 90 degrees to 0.003 m. These are geometric expectations, not proof
 of progress; inspect the actual screw and its black head mark after each move.
 Use short rotation increments (e.g. 15-30 degrees) with small axial advances,
@@ -86,17 +94,31 @@ keeping the fingers pointed down. If the screw slips in the fingers, adjust the
 grasp and reobserve. If motion is blocked, correct alignment or back off slightly;
 do not claim progress from the requested pose or hand rotation alone.
 
-You may regrasp the head if wrist range requires it: leave the threaded screw
-supported by the socket, open, rotate/reposition the empty hand, and close again.
-After engagement, NEVER perform a free-object vertical test lift: it would pull
-against the thread. Recheck contact and actual rotation visually instead. The
+You may regrasp the head if wrist range requires it. Being inside the socket
+does not establish stable support. First confirm coupled rotation/advance and
+alignment. Reduce clamping in small opening increments while keeping the hand
+pose steady; inspect whether the head shifts or leans as contact releases. Open
+fully and reposition the empty hand only after checking stable support. If the
+part leans, stop the regrasp sequence and recover alignment before further turns.
+
+For a correctly engaged screw, do not perform a free-object vertical test lift;
+check contact and actual motion visually. Visible lean, lateral displacement or
+missing coupled advance means engagement must be re-established, not assumed
+from prior insertion. Use small reverse turns and controlled withdrawal along
+the estimated shaft axis when needed and clear; inspect after each step, restore
+upright alignment and find the thread start again. Do not force an inclined
+screw down, rotate it about a guessed world axis, or repeat rejected targets.
+Estimate the current screw-axis offset from the measured TCP when choosing
+rotation targets, including after every regrasp. The
 interface uses fixed drive parameters, not a direct torque/force controller;
 you can adjust poses, opening and motion increments. No live force sensor or
 simulator object pose is supplied to you.
 
 Completion requires genuine held rotation/downward progress of at least three
 quarters of a turn (about 0.009 m coupled advance), and the tip at least 0.021 m
-below the socket rim. The screw must remain upright and supported by the socket.
+below the socket rim. The final alignment limits are a tip-axis offset of at most 0.0025 m from the
+socket axis and a screw tilt of at most 10 degrees; aim comfortably inside these
+limits. The screw must remain upright and supported by the socket.
 Simply dropping it in, spinning in air, pushing straight down or turning an empty
 gripper does not count. Once seated, OPEN in a separate decision, move the empty
 hand clear without touching the screw, and observe it stable for 1 simulation
@@ -111,7 +133,7 @@ not restart. Every decision needs a brief English observation/action note.
 # Chinese setup/props description; keep this the final task attribute.
 description = """
 当前实现：已接入本地物理场景、共用 GPT 控制流程、独立评分及记录。参数为仿真工程值，需按实物校准；启动命令见本任务 launch_command。
-范围：保留当前已接入的仿真配置与英文 prompt；本轮不替换螺丝、孔座、动作流程或评分定义。
+范围：沿用现有仿真配置、螺丝、孔座和评分定义；本轮强化英文 prompt 的啮合确认、渐进释放及失稳恢复要求。
 道具：现有橙色粗螺丝、固定蓝色螺纹孔座和操作台；螺丝芯径约 26 mm、牙外径约 36 mm、头部直径约 44 mm、总高约 60 mm，右旋螺距 12 mm。
 布置：螺丝平底直立在桌面，孔座单独固定，二者分开放置、不预先啮合、不预抓持。左臂操作，右臂可按需移动相机观察。
 操作：自主抓住螺丝头、抬起、搬运对准、首次啮合，然后协调顺时针旋转与向下推进，必要时重抓，最后松手让孔座承托。
