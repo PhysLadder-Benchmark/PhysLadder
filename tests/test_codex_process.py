@@ -1,6 +1,7 @@
 """Offline native/WSL process lifecycle checks. Never call a model or account."""
 
 import os
+import hashlib
 from pathlib import Path
 import subprocess
 import sys
@@ -49,6 +50,36 @@ class CodexProcessTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "Codex CLI not found"):
                 codex_process.CodexProcess("missing")
 
+    def delayed_input_fixture(self):
+        # Larger than a pipe buffer, with a reader delayed beyond the 100 ms
+        # polling interval. Python 3.10 used to stop sending after that timeout.
+        payload = ("observation: \u6293\u53d6\u628a\u624b\n" * 32768).encode("utf-8")
+        script = ("import hashlib,sys,time\n"
+                  "time.sleep(.35)\n"
+                  "data=sys.stdin.buffer.read()\n"
+                  "print(str(len(data)) + ':' + hashlib.sha256(data).hexdigest(),flush=True)\n")
+        expected = f"{len(payload)}:{hashlib.sha256(payload).hexdigest()}".encode()
+        return payload, script, expected
+
+    def test_native_large_prompt_reaches_eof_without_truncation_or_duplication(self):
+        payload, script, expected = self.delayed_input_fixture()
+        with patch.object(codex_process, "_local_settings", return_value={"host": "native"}):
+            host = codex_process.CodexProcess(sys.executable)
+        lines = []
+        result = host.run(["-c", script], directory=self.root, data=payload, timeout_s=3,
+                          on_stdout_line=lines.append)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), expected)
+        self.assertEqual([line.strip() for line in lines], [expected])
+
+    @unittest.skipIf(os.name == "nt", "WSL worker requires POSIX")
+    def test_wsl_worker_large_prompt_reaches_eof_after_slow_reader_startup(self):
+        payload, script, expected = self.delayed_input_fixture()
+        result = subprocess.run(self.worker_command(sys.executable, 3, "-c", script),
+                                input=payload, capture_output=True, timeout=5)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), expected)
+
     def test_wsl_proxy_is_explicitly_forwarded_to_the_supervisor(self):
         with patch.object(codex_process, "_WINDOWS", True), \
                 patch.object(codex_process, "_local_settings", return_value={
@@ -67,12 +98,13 @@ class CodexProcessTests(unittest.TestCase):
         with patch.object(host, "command", return_value=["fixture"]), \
                 patch.object(codex_process.subprocess, "Popen") as popen:
             process = popen.return_value
-            process.communicate.side_effect = KeyboardInterrupt
+            process.wait.side_effect = [KeyboardInterrupt, None]
             process.poll.return_value = None
             with self.assertRaises(KeyboardInterrupt):
                 host.run(["exec"], directory=self.root, timeout_s=30)
         self.assertTrue((self.root / "cancel").is_file())
-        process.wait.assert_called_once_with(timeout=3)
+        self.assertEqual(process.wait.call_count, 2)
+        self.assertEqual(process.wait.call_args.kwargs, {"timeout": 3})
 
     @unittest.skipIf(os.name == "nt", "POSIX subprocess fixture")
     def test_wsl_worker_forwards_input_and_filters_api_keys(self):
@@ -95,7 +127,9 @@ class CodexProcessTests(unittest.TestCase):
     @unittest.skipIf(os.name == "nt", "POSIX subprocess fixture")
     def test_wsl_worker_timeout_reaps_its_codex_process(self):
         executable, pidfile = self.slow_fixture()
-        result = subprocess.run(self.worker_command(executable, .4), input=b"prompt", capture_output=True, timeout=5)
+        # Timeout must also work when the child never reads a large prompt.
+        result = subprocess.run(self.worker_command(executable, .4), input=b"x" * (256 * 1024),
+                                capture_output=True, timeout=5)
         self.assertEqual(result.returncode, 124, result.stderr)
         with self.assertRaises(ProcessLookupError):
             os.kill(int(pidfile.read_text()), 0)

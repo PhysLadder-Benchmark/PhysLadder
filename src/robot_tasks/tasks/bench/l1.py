@@ -1,6 +1,7 @@
 """Wide-clearance L1 props and one explicitly labelled flexible-stem proxy."""
 
 import math
+from dataclasses import replace
 
 from ..l1.specs import BLUE, GREEN, GREY, RED, Article, box, pose
 from .geometry import cup_parts, cylinder, design, translated
@@ -105,9 +106,10 @@ def mug():
     )
     a = Article("mug", parts, pose(0.35, 0.44, 0.001), pose(0.328, 0.21, 0.147), 0.060)
     return BenchSpec(
-        design("L1-07", "塑料杯挂上杯架", [a], fixtures),
-        facts="The small empty red cup has a rigid rectangular loop handle. Its body is about 0.054 m wide. Hang it through the HANDLE, not the mouth, on the single upward-ended rack hook. The handle opening is about 0.030 by 0.032 m and the hook is 0.008 m thick.",
+        replace(design("L1-07", "塑料杯挂上杯架", [a], fixtures), version="l1-07-hang-release-v2"),
+        facts="The small empty red cup has a rigid rectangular loop handle. Its body is about 0.054 m wide. Hang it through the HANDLE, not the mouth, on the single upward-ended rack hook. The handle opening is about 0.030 by 0.032 m and the hook is 0.008 m thick. Finish as soon as the cup is released, clear of the table and actually supported by the hook through its handle. Passive sway is allowed; no stillness threshold or stability waiting period is required.",
         parameters={
+            "hold_s": 0.0,
             "hook_start": (0.37, 0.17, 0.20),
             "hook_end": (0.37, 0.244, 0.20),
             "handle_centre": (0.042, 0, 0.037),

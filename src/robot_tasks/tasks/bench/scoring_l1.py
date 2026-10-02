@@ -92,8 +92,9 @@ def mug(e, rows):
         and np.min(np.asarray(r["corners"])[:, 2]) > 0.03
     )
     return (
-        through and supported and "mug" in e.grasped and released(r) and quiet(r),
-        {"hook_through_handle": through, "hanging_support": bool(supported)},
+        through and supported and "mug" in e.grasped and released(r),
+        {"hook_through_handle": through, "hanging_support": bool(supported),
+         "release_required": True, "stability_wait_s": 0.0},
         "",
     )
 

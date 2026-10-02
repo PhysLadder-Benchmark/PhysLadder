@@ -48,7 +48,9 @@ instruction = """
 Use the LEFT R5 arm to open the UPPER drawer of the two-level small cabinet.
 The upper drawer has a red front and a small green grasp tab. The lower blue
 drawer is NOT the target and must remain untouched and closed. The cabinet
-is fixed to the table with its drawer fronts already facing the robots (-X).
+is fixed on the table, with its drawer fronts facing the LEFT arm, world -X.
+Approach the front from the -X side. The front and full pull stroke remain
+in front of the arm, with room for pressing, withdrawal and grasping.
 Do not rotate or reposition the cabinet. Both grippers start empty; nothing is pre-grasped.
 
 The RIGHT arm is an observation arm. Move its wrist camera when the upper-front
@@ -70,7 +72,7 @@ Do not equate your commanded TCP travel with actual drawer compression. If the
 hand moves but the panel does not, inspect contact and correct the approach.
 Do not lift the drawer or use the free-object upward grasp verification here.
 
-After the press, unload and withdraw along world -X toward the robots, clear of the spring's
+After the press, unload and withdraw along world -X towards the LEFT arm, clear of the spring's
 pop-out path. Allow the simulator to advance with a wait decision if needed.
 The short ejector spring should leave a visible gap of roughly 20-40 mm. It
 does not perform the full pull. Verify that the drawer has actually popped
@@ -83,7 +85,8 @@ can sustain a horizontal pull. The tab is 38 mm wide, within the gripper's
 opening range. Approach with clearance and open fingers; close in a separate
 decision, then use a small outward move to verify that the upper drawer follows.
 For this rail-constrained prop, verify grip by horizontal following, not lifting.
-Pull smoothly along world -X toward the robots, retaining the rail height and orientation. Use
+Pull smoothly along world -X towards the LEFT arm, retaining the rail height and orientation.
+The rail runs along X; do not pull along Y. Use
 shorter moves if it resists, slips or approaches the stop; correct alignment
 instead of repeating larger pulls. Total outward travel from the initially
 closed pose must reach at least 100 mm; the physical limit is 115 mm.
@@ -105,9 +108,9 @@ cannot substitute for the press, released pop-out and grasped-pull sequence.
 # Chinese setup/props description; keep this the final task attribute.
 description = """
 道具：固定在桌面的双层小柜、上层红色抽屉及绿色抓持凸片、下层蓝色抽屉、滑轨与按压弹出机构代理。
-布置：柜体固定，抽屉正面已朝向机械臂（世界坐标 -X），无需模型转动或搬动柜子；柜体留出向机械臂方向拉开的空间。操作对象是上层抽屉，初始关闭且锁止；下层固定关闭作为非目标层。双手初始为空。
+布置：柜体固定，抽屉正面朝左臂（世界坐标 -X），无需模型转动或搬动柜子。按压起点、弹出后抓持点和完整拉出行程均位于左臂前方，并预留腕部和夹指空间。操作对象是上层抽屉，初始关闭且锁止；下层固定关闭作为非目标层。双手初始为空。
 分工：左臂操作，右臂可按需移动腕部相机观察上层缝隙、按压接触和抓持状态，但不接触道具。
-操作：沿世界坐标 +X 向柜内按压上层面板约 8—10 mm，沿 -X 松开并退让，待弹簧弹出约 20—40 mm；再抓住露出的绿色凸片，沿 -X 滑轨方向拉开至少 100 mm，最大行程 115 mm。
+操作：从 -X 一侧接近正面，沿世界坐标 +X 向柜内按压上层面板约 8—10 mm，沿 -X 松开并退让，待弹簧弹出约 20—40 mm；再抓住露出的绿色凸片，沿 -X 滑轨方向拉开至少 100 mm，最大行程 115 mm。不要沿 Y 方向侧拉。
 完成：实际出现按压、无手接触的释放弹出、抓持拉开，最后松手并保持稳定 1 秒。抽屉始终留在滑轨上，无需拿出盒体或另行放置。
 评分：独立记录按压、弹出和拉开过程，检查最终开度、释放、稳定性、轨道约束、速度及接触力代理阈值；初始关闭、直接拉、只弹出或直接给出最终位置均不算成功。
 代理边界：按实际压入及回弹行程切换锁止约束，有限行程的被动弹簧提供弹出力；不根据 GPT 命令或评分传送抽屉。未重建商业锁扣的心形凸轮、材料形变或损坏；首版只测一次开启，不测推回自锁。尺寸和弹簧参数为未标定工程值。

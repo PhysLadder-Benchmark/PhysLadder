@@ -118,11 +118,12 @@ class BenchEvaluator:
         if failure:
             return Assessment("failed", failure, metrics, retryable=True)
         stability = self.spec.parameters.get("hold_s", 1.0)
-        if duration >= stability - 1e-9:
+        if complete and duration >= stability - 1e-9:
             metrics["stage"] = "complete"
             return Assessment(
                 "succeeded",
-                "Measured physical goal and process constraints sustained",
+                "Measured physical goal and process constraints met" if stability == 0
+                else "Measured physical goal and process constraints sustained",
                 metrics,
             )
         return Assessment("running", "Waiting for measured task completion", metrics)

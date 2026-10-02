@@ -26,9 +26,10 @@ def run(scene):
         drive.CreateTargetPositionAttr(-0.10)
         advance(scene, 4)
         row = scene.measure()["middle_book"]
-        rear = float(np.max(np.asarray(row["corners"])[:, 0]))
-        result.update(rear_edge_x_m=rear, stack_front_x_m=scene.spec.parameters["stack_front_x"])
-        if rear >= scene.spec.parameters["stack_front_x"] - 0.004:
+        p = scene.spec.parameters
+        clearance = float(np.min((np.asarray(row["corners"]) - p["stack_front_world"]) @ p["outward_axis_world"]))
+        result.update(rear_clearance_m=clearance, outward_axis_world=p["outward_axis_world"])
+        if clearance < p["clearance_m"]:
             raise RuntimeError("Middle book cannot clear fixed neighbors: " + str(result))
     elif task == "L2-04":
         p = scene.spec.parameters
@@ -112,7 +113,7 @@ def run(scene):
         drive.CreateDampingAttr(0.15)
         advance(scene, 2)
         row = scene.measure()["drawer"]
-        travel = scene.initial["drawer"][0] - row["pose"][0]
+        travel = float((np.asarray(row["pose"][:3]) - scene.initial["drawer"][:3]) @ scene.spec.parameters["outward_axis_world"])
         result.update(outward_travel_m=travel, rail_support_n=row["fixture_force_n"])
         if not 0.10 <= travel <= 0.133 or row["fixture_force_n"] < 0.05:
             raise RuntimeError("Roofed drawer cannot open and remain supported: " + str(result))

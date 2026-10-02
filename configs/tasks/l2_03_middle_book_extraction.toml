@@ -52,7 +52,9 @@ and motion; do not infer successful contact from a command alone.
 Extract ONLY the red middle book from between the fixed blue lower book and
 fixed green upper book. The adjacent books and their supports are fixed by the
 environment; do not hold, move or evaluate their stability. The exposed end of
-the red book already faces the left robot, toward world -X. Do not turn the stack.
+the red book points toward the LEFT arm, world -X. The books remain stacked flat
+one above another, with their long axes along X. Do not stand them upright or
+turn the stack. The exposed end and full extraction stroke are in front of the arm.
 
 Inspect the protruding section, finger clearance and horizontal exit direction.
 Approach from the exposed -X side with fingers closing across the book's 45 mm
@@ -66,7 +68,8 @@ Pull gradually toward world -X while retaining the book's approximately level
 attitude and height. Do not perform a vertical test lift while the book is still
 between the fixed books. Observe whether the BOOK follows the hand; stop and
 regrasp if the fingers slide off or the book stays in place. Avoid upward or
-sideways targets that wedge it against the fixed neighbors.
+sideways targets that wedge it against the fixed neighbors. Do not pull along
+world Y; follow the book's visible exit axis toward the left arm.
 
 Extraction is complete only when the entire rear edge of the middle book has
 cleared the front edges of BOTH fixed books by at least 4 mm, with at least
@@ -82,8 +85,8 @@ Request stop only after observing the required final state and stability.
 # Chinese setup/props description; keep this the final task attribute.
 description = """
 道具：一册 120×45×24 mm 红色刚性中层书、固定蓝色下层书、固定绿色上层书及两块支撑物。
-布置：上下书和支撑物属于静态夹具，默认完全不动；中层书前端向左机械臂方向（世界 -X）突出约 65 mm，两侧留出夹指空间。
-操作：仅左臂从突出端上方或斜上方接近，夹指沿书宽方向闭合，沿 -X 平移抽出；书未离开夹层前不抬升。右臂仅负责按需观察，不扶书。
+布置：书本在桌面纵向摆放（长轴沿世界 X），仍为三本平放上下叠放，不把书立起来；上下书和支撑物固定不动，中层书前端朝左臂（世界 -X）突出约 65 mm，两侧留出夹指空间。抓持起点和完整抽取行程均留在左臂前方。
+操作：仅左臂从突出端上方或斜上方接近，夹指沿书宽（世界 Y）方向闭合，沿 -X 平移抽出；书未离开夹层前不抬升。右臂仅负责按需观察，不扶书。
 完成：整本中层书尾端越过固定书前缘至少 4 mm，向外位移至少 65 mm，仍由左手抓稳并静止 1 秒；不要求放下或释放。
 边界：本版不测上层支撑及剩余书本稳定性；仅测中层刚体的抓持、接触摩擦和抽取。
 """

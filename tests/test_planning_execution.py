@@ -1,18 +1,20 @@
 """Offline checks of trajectory bounds, atomic rejection and gripper semantics."""
 
 from dataclasses import replace
+from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 import numpy as np
 from fixtures import robot_config
 from robot_tasks.planning.trajectory import JointPath
 from robot_tasks.robots.control import (
+    bounded_measured_joints,
     normalized_to_width,
     width_to_normalized,
     width_to_joints,
 )
 from robot_tasks.robots.adapters import R5Adapter
-from robot_tasks.types import ArmState, Action, ArmCommand
+from robot_tasks.types import ArmState, Action, ArmCommand, Feedback
 
 
 class PlanningExecutionTests(unittest.TestCase):
@@ -133,6 +135,87 @@ class PlanningExecutionTests(unittest.TestCase):
         target = send.call_args.args[0]["left"]
         self.assertEqual(target[:6], states["left"].joint_positions_rad)
         self.assertEqual(target[6:], robot.targets["left"][6:])
+
+    def test_timeout_float32_limit_noise_does_not_block_gripper_recovery(self):
+        robot, states = self.robot()
+        q = list(states["right"].joint_positions_rad)
+        q[1] = 2.5000014305114746  # Recorded L2-04 PhysX measurement under load.
+        states["right"] = replace(states["right"], joint_positions_rad=tuple(q))
+        robot.motion_arms = {"right"}
+        def send(targets):
+            robot.targets = dict(targets)
+        with patch.object(robot, "_send_targets", side_effect=send):
+            robot.on_action_timeout()
+            self.assertEqual(robot.targets["right"][1], 2.5)
+            robot.apply(Action((ArmCommand("right", "gripper", (.07,)),),
+                               self.config.control_dt_s))
+        self.assertEqual(states["right"].joint_positions_rad[1], q[1])
+        self.assertEqual(robot.targets["right"][6:], width_to_joints(self.config.robot, .07))
+
+    def test_trajectory_does_not_reintroduce_measured_limit_noise(self):
+        actual = (0., 2.5000014305114746, 1.2, 0., 0., 0.)
+        bounded = (0., 2.5, 1.2, 0., 0., 0.)
+        end = (0., 2.49, 1.2, 0., 0., 0.)
+        path = JointPath.from_waypoints([bounded, end], actual, self.bounds)
+        self.assertEqual(path.positions[0], bounded)
+        self.assertTrue(all(row[1] <= 2.5 for row in path.positions))
+        # A genuinely out-of-range state or requested path must still fail.
+        with self.assertRaises(ValueError):
+            JointPath.from_waypoints([bounded, end], (0., 2.5001, 1.2, 0., 0., 0.), self.bounds)
+        with self.assertRaises(ValueError):
+            JointPath.from_waypoints([actual, end], actual, self.bounds)
+
+    def test_accepted_wait_clears_old_rejection_without_changing_drives(self):
+        robot, _ = self.robot()
+        robot.rejection = Feedback("rejected", "previous invalid target")
+        robot.last_plan = {"paths": {"right": {"positions": [[0.] * 6]}}}
+        before = dict(robot.targets)
+        with patch.object(robot, "_send_targets") as send:
+            robot.apply(Action((), self.config.control_dt_s))
+        send.assert_not_called()
+        self.assertEqual(robot.targets, before)
+        self.assertNotEqual(robot.feedback().status, "rejected")
+        self.assertIsNone(robot.last_plan)
+
+    def test_only_measured_roundoff_is_bounded_not_real_limit_violations(self):
+        q = (-2.5000016689300537, 2.5000014305114746, 0., 0., 0., 0.)
+        self.assertEqual(bounded_measured_joints(q, self.bounds), (-2.5, 2.5, 0., 0., 0., 0.))
+        for bad in ((-2.5001,) + q[1:], q[:1], (float("nan"),) + q[1:]):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                bounded_measured_joints(bad, self.bounds)
+
+    def test_planner_uses_bounded_start_and_preserves_raw_observation(self):
+        from robot_tasks.planning.worker import CuroboWorker
+
+        worker = CuroboWorker.__new__(CuroboWorker)
+        worker.profile = self.config.robot
+        worker.torch = SimpleNamespace(
+            tensor=lambda values, **kwargs: np.asarray(values), float32=np.float32,
+        )
+        worker.spheres = Mock(return_value={self.config.robot.ee_link: []})
+        worker.world = Mock(return_value={})
+        worker.check_payload = Mock()
+        worker.planner = Mock()
+        raw = (0., 2.5000016689300537, 1.2, 0., 0., 0.)
+        start = (0., 2.5, 1.2, 0., 0., 0.)
+        end = (0., 2.49, 1.2, 0., 0., 0.)
+        trajectory = Mock(joint_names=list(self.config.robot.joint_names))
+        trajectory.position.detach().cpu().numpy.return_value = np.array([start, end])
+        result = Mock(success=np.array([True]))
+        result.get_interpolated_plan.return_value = trajectory
+        worker.planner.plan_cspace.return_value = result
+        types = SimpleNamespace(
+            JointState=SimpleNamespace(from_position=lambda q, **kwargs: q),
+            GoalToolPose=Mock(),
+        )
+        request = {"id": 1, "commands": [{"arm": "right", "kind": "joint_position", "values": end}],
+                   "states": {"right": {"joint_positions_rad": raw}}}
+        with patch.dict("sys.modules", {"curobo.types": types}):
+            reply = worker.plan(request)
+        np.testing.assert_array_equal(worker.planner.plan_cspace.call_args.args[1], [start])
+        self.assertEqual(request["states"]["right"]["joint_positions_rad"], raw)
+        self.assertGreater(reply["diagnostics"]["right"]["start_joint_limit_correction_max_rad"], 0.)
+        self.assertEqual(reply["paths"]["right"]["positions"][0], start)
 
 
 class PayloadClearanceTests(unittest.TestCase):

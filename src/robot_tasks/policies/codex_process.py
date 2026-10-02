@@ -11,6 +11,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 from urllib.parse import urlsplit
 
@@ -122,11 +123,19 @@ class CodexProcess:
 
     def run(self, arguments, *, directory, data=b"", timeout_s, on_stdout_line=None):
         command = self.command(arguments, directory, timeout_s)
-        with (directory / "events.jsonl").open("w+b") as output, \
+        # A finite input file gives the child reliable EOF, even if it starts
+        # reading late. Repeated communicate(None) after a short timeout can
+        # abandon pending pipe writes on Python 3.10. Keep polling only wait().
+        # The temporary input stays in the request directory and is removed
+        # on close; never place observation data in a system temporary folder.
+        with tempfile.TemporaryFile(mode="w+b", dir=directory) as prompt, \
+                (directory / "events.jsonl").open("w+b") as output, \
                 (directory / "stderr.log").open("w+b") as errors, \
                 (directory / "events.jsonl").open("rb") as reader:
+            prompt.write(data)
+            prompt.seek(0)
             lines = _StdoutLines(reader, on_stdout_line)
-            process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=output, stderr=errors,
+            process = subprocess.Popen(command, stdin=prompt, stdout=output, stderr=errors,
                                        env=codex_environment(), start_new_session=(os.name != "nt"),
                                        creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0)
             try:
@@ -140,11 +149,10 @@ class CodexProcess:
                     try:
                         # Short waits let Python handle Ctrl+C/CTRL_BREAK on
                         # Windows even when the provider has not returned yet.
-                        process.communicate(data, timeout=min(.1, remaining))
+                        process.wait(timeout=min(.1, remaining))
                         lines.poll(final=True)
                         break
                     except subprocess.TimeoutExpired:
-                        data = None
                         lines.poll()
             except BaseException:
                 self.terminate(process, directory)
@@ -206,12 +214,13 @@ def wsl_worker(argv=None):
         print("Codex CLI not found for the selected WSL user", file=sys.stderr)
         return 127
     arguments = args.arguments[1:] if args.arguments[:1] == ["--"] else args.arguments
-    data = sys.stdin.buffer.read()
     environment = codex_environment()
     if args.proxy:
         for key in ("HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy"):
             environment[key] = args.proxy
-    process = subprocess.Popen([executable, *arguments], stdin=subprocess.PIPE,
+    # Hand the existing input descriptor directly to Codex. This supervisor
+    # must not drain/re-send the prompt or keep an extra pipe writer open.
+    process = subprocess.Popen([executable, *arguments], stdin=sys.stdin.buffer,
                                env=environment, start_new_session=True)
     deadline = time.monotonic() + args.timeout
     try:
@@ -221,10 +230,10 @@ def wsl_worker(argv=None):
             if time.monotonic() >= deadline:
                 return 124
             try:
-                process.communicate(data, timeout=0.1)
+                process.wait(timeout=0.1)
                 return process.returncode
             except subprocess.TimeoutExpired:
-                data = None
+                pass
     finally:
         _kill_group(process.pid)
         process.wait(timeout=3)

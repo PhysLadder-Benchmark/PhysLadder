@@ -1,6 +1,8 @@
 """Latch hysteresis and task-scoring regressions; no model or simulator calls."""
 
 import unittest
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 
@@ -9,6 +11,7 @@ from robot_tasks.registry import resolve_task
 from robot_tasks.robots.transforms import pose_transform
 from robot_tasks.tasks.bench.evaluation import BenchEvaluator
 from robot_tasks.tasks.bench.push_drawer import PushLatch, build
+from robot_tasks.tasks.bench.push_drawer_scene import PushDrawerMechanism
 
 
 class PushDrawerTests(unittest.TestCase):
@@ -52,21 +55,23 @@ class PushDrawerTests(unittest.TestCase):
         self.assertGreater(self.initial["upper_drawer"][2], self.initial["lower_drawer"][2])
         self.assertEqual(self.spec.joints[1].axes, {})
 
-    def test_front_and_full_pull_stroke_face_manipulation_arm(self):
+    def test_front_faces_left_arm_and_slide_matches(self):
         _, config = resolve_task("L3-16")
-        base = next(m.base_pose_wxyz[:3] for m in config.robot.mounts if m.name == "left")
+        mount = next(m for m in config.robot.mounts if m.name == "left")
         upper = self.spec.design.articles[0]
         initial = pose_transform(upper.initial)
         front = next(p for p in upper.parts if p.name == "upper_front")
         tab = next(p for p in upper.parts if p.name == "upper_tab")
         front_world = initial[:3, :3] @ front.position + initial[:3, 3]
         normal = initial[:3, 0]
-        self.assertGreater(float(normal @ (np.asarray(base) - front_world)), 0)
+        self.assertGreater(float(normal @ (np.asarray(mount.base_pose_wxyz[:3]) - front_world)), 0)
         np.testing.assert_allclose(normal, [-1, 0, 0], atol=1e-9)
         np.testing.assert_allclose(normal, self.spec.parameters["outward_axis_world"], atol=1e-9)
+        self.assertEqual(set(self.spec.joints[0].axes), {"transX"})
         self.assertLess(upper.goal[0], upper.initial[0])
+        self.assertAlmostEqual(upper.goal[1], upper.initial[1])
         full_pull_tab = pose_transform(upper.goal) @ (*tab.position, 1)
-        self.assertGreater(full_pull_tab[0], base[0] + .20)
+        self.assertGreater(full_pull_tab[0], .20)
         back = next(p for p in self.spec.design.fixtures if p.name == "cabinet_back")
         self.assertGreater(back.position[0], initial[0, 3])
 
@@ -80,6 +85,36 @@ class PushDrawerTests(unittest.TestCase):
         self.assertAlmostEqual(result.metrics["criteria"]["travel_m"], -.010)
         self.assertTrue(result.metrics["criteria"]["pressed_by_manipulation_arm"])
         self.assertFalse(result.metrics["criteria"]["grasped_pull_observed"])
+
+    def test_latch_adapter_drives_and_measures_the_rotated_rail(self):
+        physics = MagicMock()
+        drive = MagicMock()
+        body = MagicMock()
+        scene = SimpleNamespace(
+            design=self.spec.design, spec=self.spec, stage=MagicMock(), root="/Task",
+            drives={("upper_drawer_slide", "transX"): drive},
+            config=SimpleNamespace(physics_dt_s=1 / 240), bodies={"upper_drawer": body},
+        )
+        with patch.dict("sys.modules", {"pxr": SimpleNamespace(UsdPhysics=physics)}):
+            mechanism = PushDrawerMechanism(scene)
+        self.assertEqual(physics.LimitAPI.call_args.args[1], "transX")
+        drive.GetTargetPositionAttr().Set.assert_called_with(-.032)
+
+        # Sideways Y motion must not arm the X rail; actual inward X compression must.
+        position = np.array(self.initial["upper_drawer"][:3])
+        body.get_world_pose.return_value = (position + [0, .01, 0], None)
+        mechanism.step(.1)
+        self.assertEqual(mechanism.latch.phase, "locked")
+        body.get_world_pose.return_value = (position + [.01, 0, 0], None)
+        mechanism.step(.1)
+        self.assertEqual(mechanism.latch.phase, "armed")
+        body.get_world_pose.return_value = (position - [.002, 0, 0], None)
+        mechanism.step(.1)
+        self.assertEqual(mechanism.latch.phase, "open")
+        physics.LimitAPI().GetLowAttr().Set.assert_called_with(-.115)
+        physics.LimitAPI().GetHighAttr().Set.assert_called_with(.012)
+        mechanism.reset()
+        self.assertEqual(mechanism.latch.phase, "locked")
 
     def test_final_position_and_latch_state_without_process_are_not_success(self):
         for _ in range(20):

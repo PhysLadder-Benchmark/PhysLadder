@@ -45,18 +45,24 @@ def check(task):
     spec = build_spec(task)
     geometry = Geometry(config)
     samples = []
+    article_frame = pose_transform(spec.design.articles[0].initial)
+    article_yaw = math.atan2(article_frame[1, 0], article_frame[0, 0])
+
+    def placed(local):
+        return article_frame[:3, 3] + article_frame[:3, :3] @ local
+
     if task == "L2-03":
-        for x in np.linspace(.241, .301, 7):
-            samples.append(("approach", (x, .34, .064), 0., .070, {}))
-        for x in np.linspace(.301, .201, 11):
-            samples.append(("extract", (x, .34, .064), 0., .045, {}))
+        for x in np.linspace(-.094, -.034, 7):
+            samples.append(("approach", placed((x, 0, -.002)), article_yaw, .070, {}))
+        for x in np.linspace(-.034, -.134, 11):
+            samples.append(("extract", placed((x, 0, -.002)), article_yaw, .045, {}))
     elif task == "L2-07":
         # Grip the exposed front portion, 10 mm ahead of the handle centre,
         # so the rear of the fingers remains clear of the cabinet roof.
-        for x in np.linspace(.245, .305, 7):
-            samples.append(("approach", (x, .34, .067), 0., .070, {}))
-        for x in np.linspace(.305, .195, 12):
-            samples.append(("pull", (x, .34, .067), 0., .040, {}))
+        for x in np.linspace(-.195, -.135, 7):
+            samples.append(("approach", placed((x, 0, .053)), article_yaw, .070, {}))
+        for x in np.linspace(-.135, -.245, 12):
+            samples.append(("pull", placed((x, 0, .053)), article_yaw, .040, {}))
     else:
         anchor = np.array(spec.parameters["hinge_anchor"])
         latch = np.array(spec.design.articles[1].initial[:3]) - [.007, 0, 0]
@@ -76,7 +82,7 @@ def check(task):
              for p in spec.design.fixtures if p.collision]
     q = np.array(next(m for m in config.robot.mounts if m.name == "left").home_positions_rad)
     report = []
-    for phase, position, pitch, width, movable in samples:
+    for phase, position, yaw, width, movable in samples:
         obstacles = list(fixed)
         for name, transform in movable.items():
             article = next(a for a in spec.design.articles if a.name == name)
@@ -88,14 +94,14 @@ def check(task):
         last_error = None
         for pitch in (math.pi / 2, math.pi / 3, math.pi / 4, math.pi / 6, 0.):
             try:
-                q, worst, table_margin = solve_clear(geometry, origin_transform(position, (0, pitch, 0)), q, width, obstacles)
+                q, worst, table_margin = solve_clear(geometry, origin_transform(position, (0, pitch, yaw)), q, width, obstacles)
                 break
             except RuntimeError as exc:
                 last_error = exc
         else:
             raise RuntimeError(f"{task} {phase} at {position}: {last_error}")
         report.append({"phase": phase, "tcp_position": list(position), "joints": q.tolist(),
-                       "tool_pitch_deg": math.degrees(pitch), "worst_pair": worst[:2],
+                       "tool_pitch_deg": math.degrees(pitch), "tool_yaw_deg": math.degrees(yaw), "worst_pair": worst[:2],
                        "clearance_m": worst[2], "table_clearance_m": table_margin})
     return {"task": task, "passed": True, "samples": report}
 

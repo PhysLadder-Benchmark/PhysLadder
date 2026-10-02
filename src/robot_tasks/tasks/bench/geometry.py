@@ -61,6 +61,18 @@ def translated(parts, xyz, prefix=""):
     )
 
 
+def placed_parts(parts, xyz, yaw):
+    """Place a local fixture assembly with the same yaw as its moving props."""
+    c, s = math.cos(yaw), math.sin(yaw)
+    return tuple(
+        replace(p, position=(xyz[0] + c * p.position[0] - s * p.position[1],
+                             xyz[1] + s * p.position[0] + c * p.position[1],
+                             xyz[2] + p.position[2]),
+                rotation=(p.rotation[0], p.rotation[1], p.rotation[2] + yaw))
+        for p in parts
+    )
+
+
 def tray_parts(
     name, width=0.16, depth=0.12, wall_height=0.035, floor=0.004, color=BLUE
 ):

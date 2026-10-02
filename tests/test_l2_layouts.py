@@ -1,4 +1,4 @@
-"""Reach-facing props, contained ball packing and revised L2 process contracts."""
+"""Arm-facing layouts, contained ball packing and L2 process contracts."""
 
 import math
 import unittest
@@ -16,7 +16,7 @@ from test_household_tasks import measurement
 
 
 class L2LayoutTests(unittest.TestCase):
-    def test_single_arm_tasks_face_left_robot_and_keep_right_as_observer(self):
+    def test_single_arm_roles_and_arm_facing_extraction_axes(self):
         for task in ("L2-03", "L2-05", "L2-07"):
             with self.subTest(task=task):
                 _, config = resolve_task(task)
@@ -25,22 +25,64 @@ class L2LayoutTests(unittest.TestCase):
                 self.assertEqual(config.observation_arms, ("right",))
                 spec_task = resolve_task(task)[0]
                 spec_task.factory.prepare_config(config)
-                center = np.array(spec.design.articles[0].initial[:2])
-                mount = next(m for m in config.robot.mounts if m.name == "left")
-                toward_arm = np.array(mount.base_pose_wxyz[:2]) - center
-                self.assertGreater(toward_arm @ [-1, 0] / np.linalg.norm(toward_arm), .95)
+                article = spec.design.articles[0]
+                if task == "L2-05":
+                    center = np.array(article.initial[:2])
+                    mount = next(m for m in config.robot.mounts if m.name == "left")
+                    toward_arm = np.array(mount.base_pose_wxyz[:2]) - center
+                    self.assertGreater(toward_arm @ [-1, 0] / np.linalg.norm(toward_arm), .95)
+                else:
+                    outward = spec.parameters["outward_axis_world"]
+                    np.testing.assert_allclose(outward, [-1, 0, 0])
+                    # Local front, scoring direction and target must all rotate.
+                    np.testing.assert_allclose(-pose_transform(article.initial)[:3, 0], outward, atol=1e-12)
+                    travel = np.array(article.goal[:3]) - article.initial[:3]
+                    self.assertGreater(travel @ outward, .065)
+                    np.testing.assert_allclose(travel[[1, 2]], 0, atol=1e-12)
 
     def test_middle_book_has_exposed_grip_and_free_extraction_corridor(self):
         spec = build_spec("L2-03")
         book = spec.design.articles[0]
         fixtures = {p.name: p for p in spec.design.fixtures}
-        front = spec.parameters["stack_front_x"]
+        front = spec.parameters["stack_front_world"][0]
         self.assertLess(book.parts[0].size[1], .070)
         self.assertGreater(front - (book.initial[0] - .060), .050)
         self.assertLess(fixtures["lower_book"].position[2] + .013, book.initial[2] - .012)
         self.assertGreater(fixtures["upper_book"].position[2] - .013, book.initial[2] + .012)
         self.assertLess(book.goal[0] + .060, front - .004)
+        for name in ("lower_book", "upper_book"):
+            part = fixtures[name]
+            self.assertAlmostEqual(part.rotation[2], 0.)
+            self.assertAlmostEqual(part.position[0] - part.size[0] / 2, front)
         self.assertEqual(set(a.name for a in spec.design.articles), {"middle_book"})
+
+    def test_sideways_motion_cannot_count_as_front_extraction(self):
+        for task, object_name in (("L2-03", "middle_book"), ("L2-07", "drawer")):
+            with self.subTest(task=task):
+                spec = build_spec(task)
+                rows = measurement(spec)
+                row = rows[object_name]
+                row["pose"][1] -= .11
+                row["corners"] = (np.asarray(row["corners"]) - [0, .11, 0]).tolist()
+                row["fingers"]["left"] = [1, 1]
+                e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
+                for i in range(1, 15):
+                    self.assertEqual(e.update(i * .1, rows).status, "running")
+                self.assertNotIn("middle_extracted_while_held", e.flags)
+                self.assertNotIn("opened_while_held", e.flags)
+
+    def test_partly_extracted_book_is_not_complete(self):
+        spec = build_spec("L2-03")
+        rows = measurement(spec)
+        row = rows["middle_book"]
+        row["pose"][0] -= .04
+        row["corners"] = (np.asarray(row["corners"]) - [.04, 0, 0]).tolist()
+        row["fingers"]["left"] = [1, 1]
+        e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
+        for i in range(1, 15):
+            result = e.update(i * .1, rows)
+            self.assertEqual(result.status, "running")
+        self.assertLess(result.metrics["criteria"]["rear_clearance_m"], 0)
 
     def test_loaded_bowl_contains_separate_nonintersecting_real_spheres(self):
         spec = build_spec("L2-04")
@@ -114,6 +156,8 @@ class L2LayoutTests(unittest.TestCase):
         self.assertLess(drawer.initial[2] + tray_top,
                         fixtures["cabinet_roof"].position[2] - fixtures["cabinet_roof"].size[2] / 2)
         self.assertEqual(spec.joints[0].axes["transX"][:2], (-.13, 0))
+        self.assertNotIn("transY", spec.joints[0].axes)
+        self.assertAlmostEqual(fixtures["cabinet_roof"].rotation[2], 0.)
         # The rail surface must carry gravity before the vertical joint limit.
         rail_top = fixtures["rail_bottom"].position[2] + fixtures["rail_bottom"].size[2] / 2
         self.assertLess(drawer.initial[2] + spec.joints[0].axes["transZ"][0], rail_top)

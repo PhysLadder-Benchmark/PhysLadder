@@ -53,6 +53,16 @@ def query_document():
 
 
 class DepthGeometryTests(unittest.TestCase):
+    def test_preview_preserves_metric_depth_and_fixed_colours(self):
+        frame = rgbd(width=5, height=1)
+        values = np.array([[.01, .02, 2., 3., np.nan]], dtype="<f4")
+        frame = replace(frame, depth=replace(frame.depth, data=values.tobytes()))
+        png, _ = encode_depth_preview(frame, (5, 1))
+        pixels = np.asarray(Image.open(BytesIO(png)))[0]
+        np.testing.assert_array_equal(pixels, [[0, 80, 255], [0, 80, 255],
+                                             [255, 40, 0], [255, 40, 0], [0, 0, 0]])
+        np.testing.assert_equal(depth_array(frame), values)
+
     def test_optical_depth_and_usd_world_axes(self):
         frame = rgbd()
         query = DepthQuery("overview", 24, 6, 32, 24)

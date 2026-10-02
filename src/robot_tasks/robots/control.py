@@ -6,6 +6,34 @@ from ..types import Action
 from .profile import RobotProfile
 
 
+# PhysX limit solving can leave several float32 ULPs beyond a bound under load.
+# 1e-5 rad (~0.00057 degrees) covers recorded L2-04 noise, not physical overtravel.
+MEASURED_JOINT_LIMIT_TOLERANCE_RAD = 1e-5
+
+
+def bounded_measured_joints(positions, limits) -> tuple[float, ...]:
+    """Bound a measured reference, allowing only tiny solver/float32 limit noise.
+
+    Raw observations remain untouched. This is never used to repair requested
+    model joint goals or planned waypoints, which retain strict limit checks.
+    """
+    positions, limits = tuple(positions), tuple(limits)
+    if len(positions) != len(limits) or any(
+        isinstance(q, bool) or not math.isfinite(q) for q in positions
+    ):
+        raise ValueError("Measured arm joints require finite positions matching the limits")
+    result = []
+    for q, bound in zip(positions, limits):
+        if (q < bound.lower - MEASURED_JOINT_LIMIT_TOLERANCE_RAD
+                or q > bound.upper + MEASURED_JOINT_LIMIT_TOLERANCE_RAD):
+            raise ValueError(
+                f"Measured {bound.joint}: {q:.9g} outside configured limits "
+                f"[{bound.lower}, {bound.upper}] beyond numerical tolerance"
+            )
+        result.append(float(min(bound.upper, max(bound.lower, q))))
+    return tuple(result)
+
+
 def normalized_to_width(profile: RobotProfile, value: float) -> float:
     """Model protocol: 0 closes to the configured minimum; 1 opens fully."""
     if type(value) not in (int, float) or not math.isfinite(value) or not 0 <= value <= 1:

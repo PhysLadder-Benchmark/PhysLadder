@@ -2,7 +2,7 @@ from ..config import ExecutionSettings, TaskConfig
 from ..interfaces import Backend
 from ..types import Action, ArmState, Feedback
 from .audit import require_joint_sim_ready
-from .control import joints_to_width, plan_targets, width_to_joints
+from .control import bounded_measured_joints, joints_to_width, plan_targets, width_to_joints
 
 
 class RobotAdapter:
@@ -152,6 +152,10 @@ class R5Adapter(RobotAdapter):
                 plan_targets(
                     self.config.robot, self.config.command_arms, action, self.targets
                 )
+                # This new wait was accepted. Report current execution feedback,
+                # not the rejection of a previous decision or its old plan.
+                self.rejection = None
+                self.last_plan = None
                 return
             states = self.state()
             # Validate all non-Cartesian fields before calling the planner.
@@ -340,9 +344,11 @@ class R5Adapter(RobotAdapter):
         for name in self.motion_arms:
             self.cartesian_targets.pop(name, None)
         states = self.state()
+        limits_by_name = {x.joint: x for x in self.config.robot.operating_limits}
+        limits = [limits_by_name[n] for n in self.config.robot.joint_names]
         self._send_targets(
             {
-                name: states[name].joint_positions_rad + target[6:]
+                name: bounded_measured_joints(states[name].joint_positions_rad, limits) + target[6:]
                 for name, target in self.targets.items()
             }
         )
