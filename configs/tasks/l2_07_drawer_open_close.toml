@@ -51,13 +51,16 @@ camera calibration, robot state and execution feedback to select grasp points
 and motion; do not infer successful contact from a command alone.
 Pull open the drawer of the fixed cosmetics organizer using its green handle.
 The cabinet has a bottom, roof, side walls and rear wall. It is secured to the
-table and already faces the left robot; do not rotate it or hold it with the
-other arm. The drawer starts fully closed and unlocked. There is no push-to-open
+table, with its front pointing toward the LEFT arm (world -X). The exposed
+handle and full pull stroke remain in front of that arm. Do not rotate the
+cabinet or hold it with the other arm.
+The drawer starts fully closed and unlocked. There is no push-to-open
 latch, button, or obstruction to release.
 
 Inspect the protruding green handle, front panel and rail direction. Grasp the
 exposed front portion of the handle, away from the cabinet roof. Approach
-from the front (-X), with the fingers closing across the handle's 40 mm width,
+from the front (-X), with the fingers closing across the handle's 40 mm width
+(approximately world Y),
 leaving the finger bodies and wrist clear of the panel and roof. Use a downward
 or downward-tilted approach to the exposed handle if needed; do not insist on
 a low horizontal wrist pose. Close the
@@ -65,7 +68,8 @@ left gripper separately and verify that it surrounds the handle, rather than
 just touching the panel. Keep the handle's height and orientation during pull;
 do not apply a free-object vertical test lift to this rail-constrained drawer.
 
-Pull toward the robots along world -X in small steps. Check that the drawer
+Pull toward the LEFT arm along world -X in small steps, not along world Y.
+Check that the drawer
 front actually moves with the handle and that the fingers have not slipped.
 Correct sideways misalignment instead of applying larger off-axis motion.
 Open by 100-120 mm from the initial closed position; maximum travel is 130 mm.
@@ -86,7 +90,7 @@ Request stop only after observing the required final state and stability.
 # Chinese setup/props description; keep this the final task attribute.
 description = """
 道具：固定化妆抽屉式柜体（底板、顶板、侧板、后板）、抽屉托盘、向外突出的绿色可夹把手、滑轨。
-布置：柜体固定不滑动；抽屉关闭，正面和把手朝向左机械臂（世界 -X），把手宽 40 mm，留出夹指接近空间；右臂只观察。
+布置：柜体固定不滑动；抽屉关闭，正面和把手朝左臂（世界 -X）；把手沿世界 Y 方向宽 40 mm，留出夹指接近空间。初始把手及完整拉出行程均位于左臂前方，右臂只观察。
 操作：左臂抓把手，沿 -X 拉开 100—120 mm，再松手；最大滑轨行程 130 mm。无需扶柜、提起抽屉、取物或重新关闭。
 完成：实际夹持拉开至少 100 mm，松手后保持开启并静止 1 秒；终点不发生明显高速冲击。
 边界：柜体含上下封闭面，抽屉内腔保持敞开；接触摩擦及被动滑轨约束真实参与仿真，没有脚本自动拉出。

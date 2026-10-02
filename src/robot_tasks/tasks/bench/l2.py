@@ -5,28 +5,30 @@ import math
 from dataclasses import replace
 
 from ..l1.specs import BLUE, GREEN, GREY, RED, Article, Part, box, pose
-from .geometry import cup_parts, design, floor_target, translated
+from .geometry import cup_parts, design, floor_target, placed_parts, translated
 from .spec import BenchSpec, Joint
 
 
 def books():
     # Adjacent books are fixed fixtures; only the protruding middle book moves.
-    x, y = 0.42, 0.34
+    # Longitudinal stack, front toward the left arm. Keep room for the full pull.
+    x, y, yaw = 0.42, 0.34, 0.0
     middle = Article("middle_book", (box("cover", (0.12, 0.045, 0.024), color=RED),),
-                     pose(0.335, y, 0.066), pose(0.255, y, 0.066), 0.09)
-    fixtures = (
-        box("lower_book", (0.16, 0.056, 0.026), (x, y, 0.040), BLUE),
-        box("upper_book", (0.16, 0.056, 0.026), (x, y, 0.093), GREEN),
-        box("support_front", (0.022, 0.070, 0.027), (0.36, y, 0.0135), GREY),
-        box("support_back", (0.022, 0.070, 0.027), (0.48, y, 0.0135), GREY),
-    )
+                     pose(x - 0.085, y, 0.066, yaw=yaw),
+                     pose(x - 0.165, y, 0.066, yaw=yaw), 0.09)
+    fixtures = placed_parts((
+        box("lower_book", (0.16, 0.056, 0.026), (0, 0, 0.040), BLUE),
+        box("upper_book", (0.16, 0.056, 0.026), (0, 0, 0.093), GREEN),
+        box("support_front", (0.022, 0.070, 0.027), (-0.060, 0, 0.0135), GREY),
+        box("support_back", (0.022, 0.070, 0.027), (0.060, 0, 0.0135), GREY),
+    ), (x, y, 0), yaw)
     return BenchSpec(
         replace(design("L2-03", "固定上下层的单臂抽书", [middle], fixtures),
-                version="l2-03-fixed-stack-v2", release=False),
+                version="l2-03-fixed-stack-v4-front", release=False),
         mechanism="fixed_adjacent_books_and_free_middle_book",
         limitations="Upper/lower rigid books and supports are fixed. Only middle-book contact friction and extraction are tested; upper-book support/stability is excluded.",
-        facts="The red middle book is 120 x 45 x 24 mm and protrudes toward the LEFT robot (world -X). Upper green and lower blue books are fixed fixtures. Grasp the exposed front with the left fingers closing across its 45 mm width, then withdraw horizontally along -X until its entire rear edge clears the stack. Keep holding it still for one simulation second; placement and release are not required. The right arm may observe only.",
-        parameters={"stack_front_x": x - 0.080, "clearance_m": 0.004,
+        facts="The three books remain stacked horizontally on top of each other, with their long axes along world X. The red middle book is 120 x 45 x 24 mm and protrudes toward the LEFT arm (world -X). Upper green and lower blue books are fixed fixtures. Grasp the exposed front with the left fingers closing across its 45 mm width (world Y), then withdraw horizontally along -X until its entire rear edge clears the stack. Do not stand the books upright or pull along Y. Keep holding it still for one simulation second; placement and release are not required. The right arm may observe only.",
+        parameters={"stack_front_world": (x - 0.080, y, 0), "clearance_m": 0.004,
                     "minimum_travel_m": 0.065, "outward_axis_world": (-1.0, 0.0, 0.0)},
     )
 
@@ -159,8 +161,8 @@ def jelly():
 
 
 def drawer():
-    # A roofed cosmetics cabinet, fixed to the table, opens toward the robot.
-    x, y, z = 0.44, 0.34, 0.014
+    # Fixed cabinet opens toward the left arm, with an exposed handle and pull room.
+    x, y, z, yaw = 0.44, 0.34, 0.014, 0.0
     tray = (
         box("floor", (0.14, 0.12, 0.004), (0, 0, 0.002), BLUE),
         box("side_left", (0.14, 0.004, 0.040), (0, -0.058, 0.022), BLUE),
@@ -170,22 +172,22 @@ def drawer():
         box("handle_stem", (0.032, 0.014, 0.014), (-0.094, 0, 0.055), GREEN),
         box("handle", (0.040, 0.040, 0.026), (-0.125, 0, 0.055), GREEN),
     )
-    article = Article("drawer", tray, pose(x, y, z), pose(x - 0.11, y, z), 0.13)
-    fixtures = (
-        box("rail_bottom", (0.32, 0.15, 0.012), (x - 0.07, y, 0.006), GREY),
-        box("cabinet_left", (0.18, 0.008, 0.084), (x, y - 0.075, 0.042), BLUE),
-        box("cabinet_right", (0.18, 0.008, 0.084), (x, y + 0.075, 0.042), BLUE),
-        box("cabinet_back", (0.008, 0.15, 0.084), (x + 0.09, y, 0.042), BLUE),
-        box("cabinet_roof", (0.19, 0.158, 0.008), (x, y, 0.084), BLUE),
-    )
+    article = Article("drawer", tray, pose(x, y, z, yaw=yaw), pose(x - 0.11, y, z, yaw=yaw), 0.13)
+    fixtures = placed_parts((
+        box("rail_bottom", (0.32, 0.15, 0.012), (-0.07, 0, 0.006), GREY),
+        box("cabinet_left", (0.18, 0.008, 0.084), (0, -0.075, 0.042), BLUE),
+        box("cabinet_right", (0.18, 0.008, 0.084), (0, 0.075, 0.042), BLUE),
+        box("cabinet_back", (0.008, 0.15, 0.084), (0.09, 0, 0.042), BLUE),
+        box("cabinet_roof", (0.19, 0.158, 0.008), (0, 0, 0.084), BLUE),
+    ), (x, y, 0), yaw)
     joint = Joint("drawer_slide", "", "drawer", (x, y, z),
                   {"transX": (-0.13, 0, 0, 0.15), "transZ": (-0.004, 0.002, 0, 0)})
     return BenchSpec(
         replace(design("L2-07", "单臂拉开固定化妆抽屉", [article], fixtures, friction=0.25),
-                version="l2-07-front-pull-only-v2"),
+                version="l2-07-pull-only-v4-front"),
         joints=(joint,),
         mechanism="prismatic_rail_and_contact_friction",
-        facts="The cosmetics cabinet has a fixed bottom, roof, sides and rear. Its exposed green handle already faces the LEFT arm. Grasp that handle and pull toward the robots along world -X by 100-120 mm; maximum travel is 130 mm. Release and leave it open and still for one simulation second. Do not close it again or remove it from its rails. The right arm observes only; the cabinet needs no hand support.",
+        facts="The cosmetics cabinet has a fixed bottom, roof, sides and rear. Its green handle faces the LEFT arm (world -X). Grasp across the handle's 40 mm width (world Y) and pull along world -X by 100-120 mm; maximum travel is 130 mm. Do not pull along Y. Release and leave it open and still for one simulation second. Do not close it again or remove it from its rails. The right arm observes only; the cabinet needs no hand support.",
         parameters={"outward_axis_world": (-1.0, 0.0, 0.0), "required_open_m": 0.10,
                     "max_travel_m": 0.13, "max_speed_m_s": 0.25},
     )

@@ -17,7 +17,7 @@ from pathlib import Path
 from ..paths import PROJECT_ROOT
 
 
-def check(task_id, output, *, prepare=True, prop_probe=False):
+def check(task_id, output, *, prepare=True, prop_probe=False, capture_hook=None):
     import numpy as np
     from PIL import Image
 
@@ -90,6 +90,8 @@ def check(task_id, output, *, prepare=True, prop_probe=False):
             if np.frombuffer(frame.data, dtype=np.uint8).std() < 1:
                 raise RuntimeError("Blank camera: " + frame.camera)
             result["cameras"].append(frame.camera)
+        if capture_hook is not None:
+            result["preview"] = capture_hook(backend, task, output)
         # Initial state must be running, never already successful or physically failed.
         assessments = []
         for _ in range(14):

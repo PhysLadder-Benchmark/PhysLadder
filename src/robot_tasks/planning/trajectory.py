@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 import numpy as np
 
+from ..robots.control import bounded_measured_joints
+
 
 @dataclass(frozen=True)
 class JointPath:
@@ -35,6 +37,7 @@ class JointPath:
             raise ValueError(
                 "Planner path does not start at the measured configuration"
             )
+        start = np.asarray(bounded_measured_joints(start, limits))
         # Preserve its polyline; never interpolate straight from start to final IK.
         points = [start]
         times = [0.0]

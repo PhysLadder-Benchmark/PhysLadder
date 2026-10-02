@@ -70,20 +70,27 @@ def _tray(prefix, color):
 
 def build():
     p = PushLatchSettings()
-    # Local +X is the drawer front. Face it toward the robots at world X=0,
-    # leaving the full pull stroke in front of the cabinet, clear of the bases.
+    # Local +X is the drawer front. Face the left arm along world -X,
+    # leaving workspace for pressing, post-pop grasp and the full rail stroke.
     x, y, upper_z, lower_z = 0.43, 0.28, 0.101, 0.018
-    upper = Article("upper_drawer", _tray("upper", RED), pose(x, y, upper_z, yaw=math.pi),
-                    pose(x - p.outward_stop_m, y, upper_z, yaw=math.pi), 0.14)
-    lower = Article("lower_drawer", _tray("lower", BLUE), pose(x, y, lower_z, yaw=math.pi),
-                    pose(x, y, lower_z, yaw=math.pi), 0.14)
+    yaw = math.pi
+    upper = Article("upper_drawer", _tray("upper", RED), pose(x, y, upper_z, yaw=yaw),
+                    pose(x - p.outward_stop_m, y, upper_z, yaw=yaw), 0.14)
+    lower = Article("lower_drawer", _tray("lower", BLUE), pose(x, y, lower_z, yaw=yaw),
+                    pose(x, y, lower_z, yaw=yaw), 0.14)
+
+    def cabinet_part(name, size, offset, color):
+        # Same local frame as the drawers, including the asymmetric back wall.
+        return box(name, size, (x - offset[0], y - offset[1], offset[2]), color,
+                   (0.0, 0.0, yaw))
+
     fixtures = (
-        box("cabinet_base", (0.19, 0.174, 0.016), (x + 0.007, y, 0.008), GREY),
-        box("cabinet_separator", (0.19, 0.174, 0.008), (x + 0.007, y, 0.095), BLUE),
-        box("cabinet_roof", (0.19, 0.174, 0.008), (x + 0.007, y, 0.166), BLUE),
-        box("cabinet_left", (0.19, 0.008, 0.162), (x + 0.007, y + 0.083, 0.089), BLUE),
-        box("cabinet_right", (0.19, 0.008, 0.162), (x + 0.007, y - 0.083, 0.089), BLUE),
-        box("cabinet_back", (0.008, 0.174, 0.162), (x + 0.106, y, 0.089), BLUE),
+        cabinet_part("cabinet_base", (0.19, 0.174, 0.016), (-0.007, 0, 0.008), GREY),
+        cabinet_part("cabinet_separator", (0.19, 0.174, 0.008), (-0.007, 0, 0.095), BLUE),
+        cabinet_part("cabinet_roof", (0.19, 0.174, 0.008), (-0.007, 0, 0.166), BLUE),
+        cabinet_part("cabinet_left", (0.19, 0.008, 0.162), (-0.007, -0.083, 0.089), BLUE),
+        cabinet_part("cabinet_right", (0.19, 0.008, 0.162), (-0.007, 0.083, 0.089), BLUE),
+        cabinet_part("cabinet_back", (0.008, 0.174, 0.162), (-0.106, 0, 0.089), BLUE),
     )
     joints = (
         Joint("upper_drawer_slide", "", "upper_drawer", (x, y, upper_z),
@@ -92,7 +99,7 @@ def build():
     )
     return BenchSpec(
         replace(design("L3-16", "上层抽屉按压解锁、弹出与拉开", (upper, lower), fixtures, friction=0.15),
-                version="l3-16-household-v2"),
+                version="l3-16-household-v4-front"),
         joints=joints,
         mechanism="measured_stroke_push_latch_and_passive_ejector_proxy",
         limitations=("One opening cycle of an engineered push-to-open latch: measured compression/rebound "
@@ -100,8 +107,9 @@ def build():
                      "No commercial heart-cam geometry, automatic re-latching, fracture, or calibrated real forces. "
                      "Lower drawer is fixed closed. Cabinet is fixed; full opening stays rail-supported."),
         facts=("Only the UPPER red-front drawer is the target; the lower blue drawer remains closed. "
-               "The fixed cabinet already faces the manipulation arm; do not reposition or rotate it. "
-               "Inward pressing is world +X; outward pop-out and pulling toward the robots are -X. "
+               "The fixed cabinet front faces the LEFT arm, world -X; "
+               "do not reposition or rotate it. Approach its front from the -X side. "
+               "Inward pressing is world +X; outward pop-out and pulling are -X, not along world Y. "
                "Press the upper front inward about 8-10 mm, below its green tab; never exceed the 12 mm inward stop. "
                "A full press arms the latch; release pressure and withdraw to allow rebound and a roughly "
                "20-40 mm passive pop-out. Pulling alone cannot unlock it. After observing pop-out, grasp the "

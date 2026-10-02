@@ -51,9 +51,13 @@ def _colour(values: np.ndarray) -> np.ndarray:
     near, far = DISPLAY_RANGE_M
     t = np.clip((np.nan_to_num(values, nan=near) - near) / (far - near), 0, 1)
     anchors = np.array([[0, 80, 255], [0, 220, 220], [255, 230, 0], [255, 40, 0]])
-    rgb = np.stack([np.interp(t, [0, 1/3, 2/3, 1], anchors[:, i]) for i in range(3)], axis=-1)
+    # Avoid three simultaneous float64 channels plus a full float64 RGB copy.
+    # Keep the exact colour mapping; the raw metric depth is never quantized.
+    rgb = np.empty((*t.shape, 3), dtype=np.uint8)
+    for i in range(3):
+        rgb[..., i] = np.interp(t, [0, 1/3, 2/3, 1], anchors[:, i])
     rgb[~np.isfinite(values)] = 0
-    return rgb.astype(np.uint8)
+    return rgb
 
 
 def encode_depth_preview(frame: RGBFrame, size: tuple[int, int]) -> tuple[bytes, dict]:

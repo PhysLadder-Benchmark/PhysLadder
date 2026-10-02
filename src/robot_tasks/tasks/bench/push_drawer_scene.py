@@ -8,12 +8,21 @@ class PushDrawerMechanism:
         from pxr import UsdPhysics
 
         self.scene = scene
-        self.origin = scene.design.articles[0].initial[0]
-        self.outward_sign = scene.spec.parameters["outward_axis_world"][0]
+        outward = scene.spec.parameters["outward_axis_world"]
+        components = [i for i, value in enumerate(outward) if value != 0.0]
+        if len(components) != 1 or abs(outward[components[0]]) != 1.0:
+            raise ValueError("Push drawer needs a signed world-axis slide")
+        self.axis_index = components[0]
+        axis = "trans" + "XYZ"[self.axis_index]
+        self.origin = scene.design.articles[0].initial[self.axis_index]
+        self.outward_sign = outward[self.axis_index]
+        slide = next(j for j in scene.spec.joints if j.name == "upper_drawer_slide")
+        if set(slide.axes) != {axis}:
+            raise ValueError("Push drawer joint and outward direction disagree")
         prim = scene.stage.GetPrimAtPath(scene.root + "/Joints/upper_drawer_slide")
-        limit = UsdPhysics.LimitAPI(prim, "transX")
+        limit = UsdPhysics.LimitAPI(prim, axis)
         self.low, self.high = limit.GetLowAttr(), limit.GetHighAttr()
-        drive = scene.drives["upper_drawer_slide", "transX"]
+        drive = scene.drives["upper_drawer_slide", axis]
         self.stiffness = drive.GetStiffnessAttr()
         self.damping = drive.GetDampingAttr()
         self.target = drive.GetTargetPositionAttr()
@@ -39,7 +48,8 @@ class PushDrawerMechanism:
 
     def step(self, dt):
         position, _ = self.scene.bodies["upper_drawer"].get_world_pose()
-        self._apply(self.latch.update(self.outward_sign * (float(position[0]) - self.origin), dt))
+        travel = self.outward_sign * (float(position[self.axis_index]) - self.origin)
+        self._apply(self.latch.update(travel, dt))
 
     def measurement(self):
         # Privileged mechanism state stays in evaluation/recording, never in

@@ -71,8 +71,10 @@ decision and withdraw through a clear path without pulling the cup off the hook.
 Confirm that the released cup remains suspended by its handle, supported by the
 hook rather than by either gripper, the table or the rack base. Brief passive sway
 is acceptable if the cup remains securely hung; no arbitrary final cup yaw is
-required. Wait until the released cup is nearly still for 1.0 simulation seconds
-before requesting stop. Do not hook through the cup mouth instead of the handle.
+required. Once it is released, clear of the table and actually supported by the
+hook through its handle, the task is complete immediately. No stillness or
+additional waiting period is required. Do not hook through the cup mouth instead
+of the handle.
 Inspect the actual released state before requesting stop. A commanded pose,
 blocked gripper or completion claim is not evidence of success. If the cup is
 dropped or the scene resets, use new observations and reassess rather than
@@ -85,6 +87,6 @@ description = """
 道具：小号带把手的硬质塑料杯、固定桌面挂杯架，挂钩末端上弯，操作台。
 布置：杯子正立于桌面，杯把孔无遮挡；挂架固定。杯体外径约 54 mm，杯把开口约 30×32 mm。
 操作：左臂选择不遮挡杯把孔的抓持位置，抓起并调整杯把，使挂钩穿过杯把，下降让挂钩承重后松手；右臂可绕到侧面观察。
-完成：有真实抓持抬升记录，钩杆穿过杯把孔，有实际挂架接触承重，杯底离桌，释放后稳定 1 秒。
+完成：有真实抓持抬升记录，钩杆穿过杯把孔，有实际挂架接触承重，杯底离桌且已经松手即成功；允许自然晃动，不再等待稳定。
 边界：杯体和杯把分别保留空腔；不能只按杯中心接近挂架判断成功，不包含弹性卡扣。
 """

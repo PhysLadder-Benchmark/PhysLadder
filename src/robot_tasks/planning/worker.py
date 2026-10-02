@@ -12,6 +12,7 @@ _cache = Path(sys.prefix) / "cache"
 import numpy as np
 from .assets import TCP_FRAME, build_assets
 from ..robots.profile import load_robot_profile
+from ..robots.control import bounded_measured_joints
 from ..robots.transforms import (
     pose_transform,
     transform_pose,
@@ -175,6 +176,13 @@ class CuroboWorker:
         for command in request["commands"]:
             arm = command["arm"]
             state = states[arm]
+            bounds = [
+                next(x for x in self.profile.operating_limits if x.joint == n)
+                for n in self.profile.joint_names
+            ]
+            # PhysX can report a few float32 ULPs beyond a rail limit. Keep the
+            # raw observation, but supply a strictly bounded planning reference.
+            reference = bounded_measured_joints(state["joint_positions_rad"], bounds)
             rows = self.spheres(state)[self.profile.ee_link]
             spheres = torch.tensor(
                 [[*s["center"], s["radius"]] for s in rows],
@@ -186,7 +194,7 @@ class CuroboWorker:
             )
             self.planner.update_world(self.world(arm, request))
             q0 = torch.tensor(
-                [state["joint_positions_rad"]], device="cuda", dtype=torch.float32
+                [reference], device="cuda", dtype=torch.float32
             )
             start = JointState.from_position(
                 q0, joint_names=list(self.profile.joint_names)
@@ -231,10 +239,6 @@ class CuroboWorker:
                 trajectory.joint_names.index(n) for n in self.profile.joint_names
             ]
             q = q[:, indices]
-            bounds = [
-                next(x for x in self.profile.operating_limits if x.joint == n)
-                for n in self.profile.joint_names
-            ]
             path = JointPath.from_waypoints(q, state["joint_positions_rad"], bounds)
             if command["kind"] == "cartesian_pose":
                 error = pose_errors(self.kin.forward(path.positions[-1], arm), world)
@@ -246,6 +250,9 @@ class CuroboWorker:
                 "duration_s": path.duration_s,
                 "collision_checked": True,
                 "payload_guard": "no held object",
+                "start_joint_limit_correction_max_rad": max(
+                    abs(q - r) for q, r in zip(state["joint_positions_rad"], reference)
+                ),
             }
             self.check_payload(arm, path, request, diagnostics[arm])
         if len(paths) > 1:

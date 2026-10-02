@@ -287,6 +287,32 @@ class HouseholdTests(unittest.TestCase):
         r["pose"][0] -= 0.006
         self.assertFalse(mug(e, rows)[1]["hook_through_handle"])
 
+    def test_hanging_mug_succeeds_on_release_without_waiting_for_sway(self):
+        spec = build_spec("L1-07")
+        rows = measurement(spec)
+        e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
+        # Zero waiting time must not make the initial, unfinished scene pass.
+        self.assertEqual(e.update(.1, rows).status, "running")
+        r = rows["mug"]
+        r["pose"][:3] = [.317, .21, .163]
+        r["corners"] = [[.31, .20, .16]]
+        r["fixture_force_n"], r["bench_force_n"] = .6, 0.
+        r["linear_velocity"], r["angular_velocity"] = [.03, 0, 0], [0, 0, 1.]
+        r["fingers"]["left"] = [1, 1]
+        self.assertEqual(e.update(.2, rows).status, "running")
+        self.assertEqual(e.update(.4, rows).status, "running")
+        self.assertIn("mug", e.grasped)
+        r["fingers"]["left"] = [0, 0]
+        result = e.update(.5, rows)
+        self.assertEqual(result.status, "succeeded")
+        self.assertEqual(result.metrics["stable_duration_s"], 0.)
+        # A released cup with neither rack support nor grasp history cannot pass.
+        r["fixture_force_n"] = 0.
+        self.assertEqual(e.update(.6, rows).status, "running")
+        r["fixture_force_n"] = .6
+        fresh = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
+        self.assertEqual(fresh.update(.1, rows).status, "running")
+
     def test_spinning_cap_in_air_cannot_count_as_unscrewing(self):
         import math
 

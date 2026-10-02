@@ -12,15 +12,19 @@ from .evaluation import held, quiet, relative, released, table_placed, upright
 def books(e, rows):
     middle = rows["middle_book"]
     p = e.spec.parameters
-    travel = float((np.asarray(middle["pose"][:3]) - e.initial["middle_book"][:3]) @ p["outward_axis_world"])
-    rear = float(np.max(np.asarray(middle["corners"])[:, 0]))
-    extracted = rear <= p["stack_front_x"] - p["clearance_m"] and travel >= p["minimum_travel_m"]
+    outward = np.asarray(p["outward_axis_world"])
+    travel = float((np.asarray(middle["pose"][:3]) - e.initial["middle_book"][:3]) @ outward)
+    # The trailing corner must cross the fixed stack's exit plane. Projection
+    # includes every corner, so translating or rotating sideways cannot fake it.
+    rear_clearance = float(np.min((np.asarray(middle["corners"]) - p["stack_front_world"]) @ outward))
+    extracted = rear_clearance >= p["clearance_m"] and travel >= p["minimum_travel_m"]
     grasped = held(middle, "left")
     if extracted and grasped:
         e.flags.add("middle_extracted_while_held")
     complete = extracted and grasped and quiet(middle)
     return complete, {"middle_extracted": bool(extracted), "outward_travel_m": travel,
-                      "rear_edge_x_m": rear, "held_by_left": grasped,
+                      "rear_clearance_m": rear_clearance, "outward_axis_world": outward.tolist(),
+                      "held_by_left": grasped,
                       "adjacent_books": "fixed fixtures; no support evaluation",
                       "release_required": False}, ""
 
