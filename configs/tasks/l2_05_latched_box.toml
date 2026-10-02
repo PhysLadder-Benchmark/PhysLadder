@@ -1,11 +1,12 @@
-# Run from the repository root in the Isaac Sim environment; requires OPENAI_API_KEY.
+# Run from the repository root in the Isaac Sim environment; authentication follows the shared model config.
 # launch_command / launch_command_conda below are documentation, not auto-executed shell code.
 schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_bimanual_sim.toml"
-active_arms = ["left", "right"]
+profile = "../robots/r5_sim.toml"
+active_arms = ["left"]
+observation_arms = ["right"]
 
 [simulation]
 environment = "lab_room_v1"
@@ -34,55 +35,65 @@ retry_failed_attempts = true
 
 [task]
 id = "L2-05"
-name = "弹性卡扣翻盖盒开合"
+name = "单臂弹性卡扣翻盖盒开合"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented_proxy"
 id_status = "provisional_duplicate_L2_04_in_source"
 implementation = "household"
-simulation_limitations = "Enlarged spring-slider latch proxy, not a calibrated moulded flexure; no fracture model."
+simulation_limitations = "Fixed box; enlarged spring-slider latch used as a lifting handle. Lid opens past vertical to its gravity-supported 115 degree stop. Not a calibrated moulded flexure; no fracture model."
 launch_command = "python tools/launch.py run L2-05 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-05 --gui"
 instruction = """
-Both R5 arms may manipulate the props; neither is restricted to observation.
-Use the overview and both wrist-camera views. Choose grasp points, poses and
-motion from current observations and available robot feedback. Verify that
-objects actually follow the grippers before transport. Plan motions that keep
-the hands and held props clear of one another.
-Open the latched hinged box, remove the item inside, then close the lid and
-engage the latch again. The box starts on the table with the lid shut and the
-latch actually engaged. Do not assume it is already unlocked.
-Identify the box body, latch, hinge, opening direction and graspable regions.
-The blue body is fixed; do not spend a hand trying to grasp or lift it. Grasp the
-red spring slider with one hand and the green lid handle with the other. Pull
-the slider outward along world +X about 0.015 m to clear the catch, then lift the
-lid while keeping the slider clear. Verify unlocking before lifting; do not
-pull the whole box upward to substitute for releasing the catch.
-Open the lid at least about 40 degrees, without overextending its hinge. Once
-the tooth is clear, release the latch hand to pick up the yellow eraser, leaving
-the other hand supporting the open lid. Lift the eraser and place it on a free
-tabletop area outside the box, more than 0.13 m horizontally from the box centre.
-Then use the free hand to hold the slider out while closing the lid with the
-other. Release the slider to let its spring return the tooth below the catch,
-then release the lid. If the lid or latch resists, inspect alignment and the
-lock state instead of forcing it. Confirm the lid remains shut, the slider is
-back in its engaged position, and the eraser is independently supported after
-all releases for 1.0 simulation seconds. A hypothetical lock-status or force
-sensor is not available; verify through the images and measured robot state.
-Completion requires opening, item removal and verified re-latching, not merely
-lowering the lid onto the box. Do not claim that a flat closed lid proves locking.
-Inspect the actual released or completed state before requesting stop. A
-commanded pose, blocked gripper, or completion claim is not evidence of success.
-If a grasp is lost or the scene resets, use new observations and reassess rather
-than continuing with stale object positions. Do not invent force measurements
-or assume a force-control tool that the interface does not expose.
+Use the LEFT R5 arm for manipulation. The RIGHT arm may move its wrist camera
+for a clearer view, but must not touch, hold or support task objects. Keep the
+left arm steady while changing the observation view. Use current RGB-D images,
+camera calibration, robot state and execution feedback to select grasp points
+and motion; do not infer successful contact from a command alone.
+Open the latched box, take out the yellow eraser, then close and latch the box.
+The blue box body is fixed to the table and already faces the LEFT arm. No hand
+needs to hold the body. The lid starts closed and the red spring-return latch
+is mechanically engaged under a grey catch. The hinge is at the rear (+X).
+
+The RED latch is also the lifting handle: use the SAME left-hand grasp to unlock
+and raise the lid. Inspect its exposed sides and the catch, approach from the
+front (-X), and grasp across the red handle's width without trapping the catch.
+First retract the latch outward along world -X by about 15 mm (maximum 20 mm).
+Then, while keeping the tooth clear, lift the lid through that same handle in
+small steps following the arc around the rear hinge. Do not just pull upward
+while the tooth remains under the catch. The green auxiliary lid grip is not a
+second-hand requirement.
+Keep the finger closing axis across the latch width. The lid angle does NOT
+prescribe the gripper's pitch: choose reachable wrist orientations while the
+handle pivots between the finger pads, and verify continued contact. Do not
+request an unreachable wrist rotation merely to match the opening lid angle.
+
+Open beyond vertical to the rear stop, about 110-115 degrees, without forcing
+the hinge farther. Gravity supports the lid against this stop. Verify it stays
+open before releasing the latch and withdrawing the hand. Pick up the eraser
+from the open box, place it on clear tabletop more than 130 mm from the box
+centre, and release it only after support. The right arm may inspect but may
+not prop up the lid or participate in manipulation.
+
+Regrasp the red latch on the open lid. Retract it in its CURRENT lid-local
+outward direction, then guide the lid down along the hinge arc while keeping
+the tooth clear of the catch. Near closure the outward direction is world -X.
+Release the latch once the lid is seated so its spring returns the tooth under
+the catch. Inspect the lid/catch relationship, not just the commanded pose.
+Completion requires verified opening, grasped removal of the eraser, released
+eraser placement, and a closed, re-engaged, released lid/latch stable for one
+simulation second. Do not substitute moving the whole box for opening it.
+If a grasp is lost, stop advancing the old plan and inspect the actual object
+state. If the scene resets, rebuild the plan from the new observations. Use only
+available control commands and feedback; do not invent force measurements.
+Request stop only after observing the required final state and stability.
 """
 
 # Chinese setup/props description; keep this the final task attribute.
 description = """
-道具：固定蓝色翻盖盒、绿色提盖柄、红色被动弹簧滑扣、黄色橡皮和操作台。
-布置：盒盖关闭，滑扣齿位于固定卡缘下，橡皮在盒内。双臂空手。
-操作：一臂沿前方拉出滑扣约 15 mm，另一臂提盖；取出橡皮放在桌面，再保持滑扣退让、关闭盒盖并释放滑扣，使其回到扣合位置。
-完成：依次出现实际解锁、开盖、取出物品、关盖和扣合，橡皮放好，双手释放，过程和最终状态分别记录。
-代理边界：实现放大的弹簧滑扣与铰链接触，不是商业塑料卡扣的材料弯曲模型；没有断裂或疲劳。按现有任务编号保留 L2，但多阶段接触切换应在报告中说明。
+道具：固定蓝色翻盖盒、可同时用于提盖的红色弹簧滑扣、绿色辅助柄、后侧铰链、黄色橡皮。
+布置：正面和红色滑扣朝向左机械臂（世界 -X），柜体不滑动；盒盖初始扣合，后侧铰链允许开至 115 度。
+操作：仅左手抓红色滑扣并拉出约 15 mm，保持同一抓持提盖；开过竖直位置到后侧限位后，盒盖靠重力停靠，不需另一手扶住。左手再取橡皮、放到盒外，最后重新抓扣、关盖并释放扣合。右臂只观察。
+完成：实际解锁和开盖、橡皮被抓取移到盒外并释放、盒盖关闭且滑扣复位，最终稳定 1 秒。
+代理边界：固定盒体与放大弹簧滑扣，不是塑料弯曲卡扣；无自动提盖、自动关盖、自动抓取或材料损坏模型。
 """

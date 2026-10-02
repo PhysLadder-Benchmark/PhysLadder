@@ -150,6 +150,34 @@ def descendants(pid):
 
 
 def pid_alive(pid):
+    if os.name == "nt":
+        # os.kill(pid, 0) is not a safe existence probe on Windows: CPython
+        # routes non-console signals to TerminateProcess, and missing PIDs can
+        # raise WinError 87. Query the process's wait state instead.
+        import ctypes
+        from ctypes import wintypes
+        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+        kernel.OpenProcess.restype = wintypes.HANDLE
+        kernel.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+        kernel.WaitForSingleObject.restype = wintypes.DWORD
+        kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+        kernel.CloseHandle.restype = wintypes.BOOL
+        handle = kernel.OpenProcess(0x00100000, False, pid)  # SYNCHRONIZE
+        if not handle:
+            error = ctypes.get_last_error()
+            if error == 87:  # ERROR_INVALID_PARAMETER: PID no longer exists.
+                return False
+            if error == 5:  # ERROR_ACCESS_DENIED: conservatively treat as alive.
+                return True
+            raise ctypes.WinError(error)
+        try:
+            state = kernel.WaitForSingleObject(handle, 0)
+            if state == 0xFFFFFFFF:
+                raise ctypes.WinError(ctypes.get_last_error())
+            return state == 0x00000102  # WAIT_TIMEOUT, process still running.
+        finally:
+            kernel.CloseHandle(handle)
     try:
         os.kill(pid, 0)
         return True
@@ -398,7 +426,7 @@ def execute_batch(root, manifest, state, environment):
         # Recover a completed result after a supervisor crash before state was saved.
         if previous.get("directory") and (Path(previous["directory"]) / "process.json").is_file():
             directory = Path(previous["directory"])
-            process = json.loads((directory / "process.json").read_text())
+            process = json.loads((directory / "process.json").read_text(encoding="utf-8"))
             if not process.get("interrupted"):
                 previous.update(status="done", summary=collect_result(directory, process, options["dry_run"], task["cameras"]))
                 state[task["id"]] = previous

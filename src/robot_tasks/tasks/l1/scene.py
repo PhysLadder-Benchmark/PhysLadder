@@ -199,6 +199,9 @@ class L1Scene:
             shape.CreateRadiusAttr(part.size[0])
             shape.CreateHeightAttr(part.size[2])
             shape.CreateAxisAttr("Z")
+        elif part.shape == "sphere":
+            shape = UsdGeom.Sphere.Define(self.stage, path)
+            shape.CreateRadiusAttr(part.size[0])
         else:
             raise ValueError(f"Unsupported L1 part shape: {part.shape}")
         self.set_pose(path, transform_pose(origin_transform(part.position, part.rotation)))

@@ -2,7 +2,7 @@
 
 从仓库根目录使用 `python3 tools/batch_run.py`。入口由普通 Python 3.11+
 启动，自动使用 `configs/runtime/local.toml` 配置的 Isaac Python 执行任务，
-无需先激活 Isaac 环境。默认串行运行全部 16 个已实现仿真任务；L3-11
+无需先激活 Isaac 环境。默认串行运行全部 17 个已实现仿真任务；L3-11
 仅真机，记录为 `skipped`。不改变任务、评分或 GPT 控制流程。
 
 ## 先验证入口

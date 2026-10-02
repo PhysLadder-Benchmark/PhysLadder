@@ -13,6 +13,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 from .model_config import GPTSettings, read_api_key
+from .reasoning import ReasoningSummaries
 from ..types import RetryablePolicyError
 
 
@@ -21,7 +22,7 @@ class ModelError(RuntimeError):
 
 
 class RetryableModelError(ModelError, RetryablePolicyError):
-    """Provider generation failed/incomplete; no partial output is executable."""
+    """Generation failed, was incomplete or timed out; no output is executable."""
 
 
 def generation_error(document: dict, event_type: str, secret: str = "") -> ModelError:
@@ -166,19 +167,23 @@ def completed_response(document: dict, expected_model: str, latency_s: float,
 
 
 def read_response(stream, *, expected_model: str, start: float, timeout_s: float,
-                  secret: str = "") -> ModelReply:
+                  secret: str = "", on_reasoning=None) -> ModelReply:
     """Accept JSON or SSE, requiring the terminal response.completed object."""
     limit = 4 * 1024 * 1024
+    summaries = ReasoningSummaries(on_reasoning, secret=secret)
     if "text/event-stream" not in stream.headers.get("Content-Type", ""):
         raw = stream.read(limit + 1)
         if len(raw) > limit:
             raise ModelError("Provider response exceeds size limit")
-        return completed_response(json.loads(raw), expected_model, time.monotonic() - start, secret=secret)
+        document = json.loads(raw)
+        reply = completed_response(document, expected_model, time.monotonic() - start, secret=secret)
+        summaries.response(document)
+        return reply
     total = 0
     data_lines = []
     while True:
         if time.monotonic() - start >= timeout_s:
-            raise ModelError("Model stream exceeded request time budget")
+            raise RetryableModelError("Model stream exceeded request time budget")
         line = stream.readline(limit + 1)
         total += len(line)
         if total > limit:
@@ -196,6 +201,7 @@ def read_response(stream, *, expected_model: str, start: float, timeout_s: float
         if payload == b"[DONE]":
             raise ModelError("Stream ended without response.completed")
         event = json.loads(payload)
+        summaries.response_event(event)
         if event.get("type") == "response.completed":
             return completed_response(event.get("response"), expected_model, time.monotonic() - start, secret=secret)
         if event.get("type") in {"error", "response.failed", "response.incomplete"}:
@@ -206,7 +212,8 @@ class ResponsesClient:
     def __init__(self, settings: GPTSettings):
         self.settings = settings
 
-    def generate(self, *, instructions: str, messages: list[dict], schema: dict) -> ModelReply:
+    def generate(self, *, instructions: str, messages: list[dict], schema: dict,
+                 on_reasoning=None) -> ModelReply:
         settings = self.settings
         secret = read_api_key(settings.api_key_env)
         # Codex-compatible relays may replace top-level instructions. Preserve
@@ -214,7 +221,8 @@ class ResponsesClient:
         developer = {"role": "developer", "content": [{"type": "input_text", "text": instructions}]}
         payload = {"model": settings.model, "instructions": "Follow the developer's robot action contract.",
                    "input": [developer, *messages],
-                   "store": False, "stream": True, "reasoning": {"effort": settings.reasoning_effort}}
+                   "store": False, "stream": True,
+                   "reasoning": {"effort": settings.reasoning_effort, "summary": "auto"}}
         if settings.structured_output:
             payload["text"] = {"format": {"type": "json_schema", "name": "r5_action",
                                          "strict": True, "schema": schema}}
@@ -228,15 +236,21 @@ class ResponsesClient:
         try:
             with build_opener(_NoRedirect()).open(request, timeout=settings.timeout_s) as stream:
                 reply = read_response(stream, expected_model=settings.model, start=start,
-                                      timeout_s=settings.timeout_s, secret=secret)
+                                      timeout_s=settings.timeout_s, secret=secret, on_reasoning=on_reasoning)
             if time.monotonic() - start > settings.timeout_s:
-                raise ModelError("Model request exceeded time budget; output discarded")
+                raise RetryableModelError("Model request exceeded time budget; output discarded")
             if secret in reply.text or secret in reply.response_id:
                 raise ModelError("Provider output contains a credential; output discarded")
             return reply
         except HTTPError as exc:
             raise ModelError(http_error_message(exc, secret)) from None
-        except (URLError, OSError, TimeoutError):
-            raise ModelError("Responses transport failed or timed out; no action accepted") from None
+        except TimeoutError:
+            raise RetryableModelError("Responses request timed out; no action accepted") from None
+        except URLError as exc:
+            if isinstance(exc.reason, TimeoutError):
+                raise RetryableModelError("Responses request timed out; no action accepted") from None
+            raise ModelError("Responses transport failed; no action accepted") from None
+        except OSError:
+            raise ModelError("Responses transport failed; no action accepted") from None
         except (ValueError, TypeError, AttributeError, KeyError):
             raise ModelError("Malformed Responses payload; no action accepted") from None

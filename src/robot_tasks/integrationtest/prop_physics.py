@@ -27,6 +27,10 @@ def run(scene):
     from ..tasks.bench.spec import Joint
 
     task = scene.config.task_id
+    if task == "L3-16":
+        from .push_drawer_probe import run as probe_push_drawer
+
+        return probe_push_drawer(scene)
     result = {"task": task, "scope": "fixture-only, no robot policy or success score"}
     if task in {"L1-01", "L1-03", "L1-05", "L1-07", "L1-08"}:
         article = scene.design.articles[-1]
@@ -107,116 +111,23 @@ def run(scene):
             raise RuntimeError(
                 "Stem proxy is not sufficiently flexible: " + str(result)
             )
-    elif task == "L2-04":
-        from pxr import Gf, UsdPhysics
+    elif task in {"L2-03", "L2-04", "L2-05", "L2-07"}:
+        from .l2_prop_probe import run as probe_l2
 
-        from ..tasks.bench.evaluation import relative
-
-        _pose(scene, "bowl", [0.40, 0, 0.13, 1, 0, 0, 0])
-        scene.create_joint(
-            Joint("probe_bowl_holder", "", "bowl", (0.37, 0.21, 0.001), {})
-        )
-        joint = UsdPhysics.Joint.Get(
-            scene.stage, scene.root + "/Joints/probe_bowl_holder"
-        )
-        joint.CreateLocalPos0Attr(Gf.Vec3f(0.40, 0, 0.13))
-        scene.feed_armed = True  # Explicit test fixture trigger, not a model event.
-        _advance(scene, 5)
-        rows = scene.measure()
-        positions = [
-            relative(rows[f"load_{i}"], rows["bowl"])[:3, 3].tolist() for i in range(6)
-        ]
-        inside = all(
-            np.linalg.norm(p[:2]) < 0.052 and 0.01 <= p[2] <= 0.05 for p in positions
-        )
-        result.update(
-            load_positions_in_bowl=positions, feeder_gate_x=rows["feed_gate"]["pose"][0]
-        )
-        if not inside:
-            raise RuntimeError(
-                "Standardized feeder spilled outside receiving bowl: " + str(result)
-            )
-    elif task == "L2-05":
-        from ..robots.transforms import pose_transform
-
-        motor = scene.drives["lid_hinge", "rotY"]
-        motor.CreateTypeAttr("force")
-        motor.CreateStiffnessAttr(0.10)
-        motor.CreateDampingAttr(0.01)
-        motor.CreateMaxForceAttr(0.12)
-        motor.CreateTargetPositionAttr(-80.0)
-
-        def angle():
-            r = pose_transform(scene.measure()["lid"]["pose"])
-            return float(np.arctan2(r[2, 0], r[0, 0]))
-
-        _advance(scene, 2)
-        locked_angle = angle()
-        # Relieve upward latch load before pulling its slider, as a person
-        # would. This prevents the test fixture itself from wedging the tooth.
-        motor.CreateTargetPositionAttr(0.0)
-        _advance(scene, 1)
-        slider = scene.drives["latch_spring", "transX"]
-        slider.CreateTargetPositionAttr(0.018)
-        _advance(scene, 1)
-        motor.CreateTargetPositionAttr(-80.0)
-        _advance(scene, 3)
-        opened_angle = angle()
-        from ..tasks.bench.evaluation import relative
-
-        opened_rows = scene.measure()
-        extension = float(
-            relative(opened_rows["latch"], opened_rows["lid"])[0, 3] - 0.096
-        )
-        motor.CreateTargetPositionAttr(0.0)
-        _advance(scene, 3)
-        slider.CreateTargetPositionAttr(0.0)
-        _advance(scene, 2)
-        result.update(
-            locked_angle_rad=locked_angle,
-            open_angle_rad=opened_angle,
-            latch_extension_m=extension,
-            reclosed_angle_rad=angle(),
-        )
-        if locked_angle > 0.2 or opened_angle < 0.65 or abs(angle()) > 0.1:
-            raise RuntimeError(
-                "Physical latch did not block, unlock and reclose: " + str(result)
-            )
-    elif task == "L2-07":
-        from pxr import UsdPhysics
-
-        joint = UsdPhysics.Joint.Get(scene.stage, scene.root + "/Joints/drawer_slide")
-        drive = UsdPhysics.DriveAPI.Apply(joint.GetPrim(), "transX")
-        drive.CreateTypeAttr("force")
-        drive.CreateStiffnessAttr(30.0)
-        drive.CreateDampingAttr(4.0)
-        drive.CreateTargetPositionAttr(0.11)
-        _advance(scene, 4)
-        opened = scene.measure()["drawer"]["pose"][0] - scene.initial["drawer"][0]
-        drive.CreateTargetPositionAttr(0.0)
-        _advance(scene, 4)
-        row = scene.measure()["drawer"]
-        closed = row["pose"][0] - scene.initial["drawer"][0]
-        result.update(
-            opening_m=float(opened),
-            closing_error_m=float(closed),
-            rail_support_n=row["fixture_force_n"],
-        )
-        if opened < 0.08 or abs(closed) > 0.02 or row["fixture_force_n"] < 0.05:
-            raise RuntimeError("Drawer rail probe failed: " + str(result))
+        return probe_l2(scene)
     elif task == "L3-03":
         from pxr import Gf, UsdPhysics
 
         # Clamp the bottle only in this diagnostic. Cap is free to translate
         # along Z; bounded torque provides rotation, never commanded axial rise.
         scene.create_joint(
-            Joint("probe_hold_bottle", "", "bottle", (0.36, 0, 0.001), {})
+            Joint("probe_hold_bottle", "", "bottle", tuple(scene.initial["bottle"][:3]), {})
         )
         guide = UsdPhysics.Joint.Define(
             scene.stage, scene.root + "/Joints/probe_turn_cap"
         )
         guide.CreateBody1Rel().SetTargets([scene.root + "/cap"])
-        guide.CreateLocalPos0Attr(Gf.Vec3f(0.36, 0, 0.131))
+        guide.CreateLocalPos0Attr(Gf.Vec3f(*scene.initial["cap"][:3]))
         guide.CreateLocalPos1Attr(Gf.Vec3f(0, 0, 0))
         # Native D6 unlimited rotation is its X twist, not Y/Z swing. Map
         # local +X onto world +Z. Only lateral translations are locked;

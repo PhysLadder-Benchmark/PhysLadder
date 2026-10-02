@@ -1,6 +1,7 @@
 """Physical household scenes. Object pose writes are restricted to episode reset.
 
-Joint drives are passive springs except the explicitly declared bowl feeder.
+Joint drives are passive springs. Bowl contents move only under gravity/contact.
+The push-to-open proxy changes its rail lock from measured compression/rebound.
 No success detector attaches, moves, releases or teleports task objects.
 """
 
@@ -25,6 +26,8 @@ class BenchScene(L1Scene):
         super().__init__(backend, config, settings, design=spec.design)
         if spec.mechanism == "free_bottle_and_explicit_helical_contact":
             self.configure_thread_contacts()
+        if spec.mechanism == "preloaded_low_friction_spheres_transport":
+            self.configure_ball_contacts()
         paths = [self.root + "/" + a.name for a in self.design.articles]
         self.arm_contacts = {config.arms[0]: self.fingers}
         for mount in config.robot.mounts:
@@ -57,19 +60,18 @@ class BenchScene(L1Scene):
         self.drives = {}
         for joint in spec.joints:
             self.create_joint(joint)
-        self.feed_elapsed = None
-        self.feed_armed = False
+        self.push_drawer = None
+        if spec.mechanism == "measured_stroke_push_latch_and_passive_ejector_proxy":
+            from .push_drawer_scene import PushDrawerMechanism
+
+            self.push_drawer = PushDrawerMechanism(self)
         previous = backend.before_physics_step
 
         def before_step(dt):
             if previous is not None:
                 previous(dt)
-            if self.feed_armed:
-                self.feed_elapsed = (self.feed_elapsed or 0.0) + dt
-                # Standardized environment actuation, never a robot policy.
-                self.drives["feed_slide", "transX"].CreateTargetPositionAttr(
-                    min(0.15, 0.05 * self.feed_elapsed)
-                )
+            if self.push_drawer is not None:
+                self.push_drawer.step(dt)
 
         backend.before_physics_step = before_step
         report = backend.scene_report[self.report_key]
@@ -86,6 +88,31 @@ class BenchScene(L1Scene):
                 "damage": "proxy thresholds only; no material fracture",
             },
         )
+
+    def configure_ball_contacts(self):
+        """Slippery contents only; external bowl/handle grasp friction is retained."""
+        from isaacsim.core.api.materials import PhysicsMaterial
+        from pxr import PhysxSchema, UsdShade
+
+        friction = self.spec.parameters["ball_friction"]
+        self.ball_material = PhysicsMaterial(self.root + "/BallMaterial", static_friction=friction,
+                                             dynamic_friction=friction, restitution=0.0)
+        PhysxSchema.PhysxMaterialAPI.Apply(self.ball_material.material.GetPrim()).CreateFrictionCombineModeAttr("min")
+        for article in self.design.articles:
+            if not article.name.startswith("load_"):
+                continue
+            root = self.root + "/" + article.name
+            body = PhysxSchema.PhysxRigidBodyAPI.Apply(self.stage.GetPrimAtPath(root))
+            body.CreateSolverPositionIterationCountAttr(32)
+            body.CreateSolverVelocityIterationCountAttr(4)
+            body.CreateLinearDampingAttr(0.0)
+            body.CreateAngularDampingAttr(0.0)
+            for part in article.parts:
+                prim = self.stage.GetPrimAtPath(root + "/" + part.name)
+                PhysxSchema.PhysxCollisionAPI.Apply(prim).CreateContactOffsetAttr(0.0003)
+                UsdShade.MaterialBindingAPI.Apply(prim).Bind(
+                    self.ball_material.material, bindingStrength=UsdShade.Tokens.strongerThanDescendants,
+                    materialPurpose="physics")
 
     def configure_thread_contacts(self):
         """Thread clearance is smaller than general grasp contact offsets.
@@ -181,13 +208,13 @@ class BenchScene(L1Scene):
                 self.drives[spec.name, axis] = drive
 
     def reset(self, seed):
-        self.feed_elapsed = None
-        self.feed_armed = False
         for drive in self.drives.values():
             drive.CreateTargetPositionAttr(0.0)
         super().reset(seed)
         for view in (*self.arm_contacts.values(), *self.pairs.values()):
             view.initialize()
+        if self.push_drawer is not None:
+            self.push_drawer.reset()
 
     def measure(self):
         rows = super().measure()
@@ -215,20 +242,8 @@ class BenchScene(L1Scene):
                         map(float, np.linalg.norm(matrix[0], axis=1)),
                     )
                 )
-        if self.config.task_id == "L2-04":
-            bowl = rows["bowl"]
-            p = self.spec.parameters
-            held = all(
-                all(f > 0.05 for f in bowl["fingers"][arm]) for arm in self.config.arms
-            )
-            # Trigger the declared standardized feeder only at a held receiving pose.
-            # This does not contribute a grasp/success label to policy observations.
-            if (
-                held
-                and np.linalg.norm(np.asarray(bowl["pose"][:2]) - p["feed_xy"]) < 0.015
-                and abs(bowl["pose"][2] - p["feed_z"]) < 0.02
-            ):
-                self.feed_armed = True
+        if self.push_drawer is not None:
+            rows["upper_drawer"]["push_latch"] = self.push_drawer.measurement()
         return rows
 
     def planning_payloads(self):

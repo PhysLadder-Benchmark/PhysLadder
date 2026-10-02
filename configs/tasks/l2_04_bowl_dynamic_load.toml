@@ -1,4 +1,4 @@
-# Run from the repository root in the Isaac Sim environment; requires OPENAI_API_KEY.
+# Run from the repository root in the Isaac Sim environment; authentication follows the shared model config.
 # launch_command / launch_command_conda below are documentation, not auto-executed shell code.
 schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
@@ -34,53 +34,55 @@ retry_failed_attempts = true
 
 [task]
 id = "L2-04"
-name = "持碗动态固体负载保持"
+name = "满载低摩擦小球的碗搬运"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
 implementation = "household"
-simulation_limitations = "Engineering dimensions and friction; not calibrated to physical props."
+simulation_limitations = "Rigid low-friction spheres in a rigid bowl; no liquid or material damage. Ball contact friction is 0.03; bowl/handle grip friction remains unchanged."
 launch_command = "python tools/launch.py run L2-04 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-04 --gui"
 instruction = """
-Both R5 arms may manipulate the props; neither is restricted to observation.
-Use the overview and both wrist-camera views. Choose grasp points, poses and
-motion from current observations and available robot feedback. Verify that
-objects actually follow the grippers before transport. Plan motions that keep
-the hands and held props clear of one another.
-Pick up the receiving bowl and hold it steadily at the visible loading
-location while an external standardized feeder adds rigid particles. The feeder
-is part of the environment; do not invent a robot pouring action or operate its
-control. The bowl initially rests on the table and is not pregrasped.
-Use both hands to grasp the two handles securely, leaving
-the opening unobstructed. Lift, verify the grasp, keep the bowl approximately
-level and move it beneath the loading outlet. Once the loading phase begins,
-maintain the primary support relationship while responding to changing load.
-Use visible tilt, slip, particle motion and available feedback to adjust holding
-pose, opening and support. Avoid abrupt acceleration, squeezing damage, moving
-the bowl away mid-pour or losing particles over the rim. Do not chase particles
-with the receiving hand while abandoning the bowl.
-The prescribed load is six red rigid blocks. Use the latest images to confirm
-all six are wholly inside the bowl; a block on the rim or tabletop is not contained.
-After loading, keep BOTH hands holding the handles, the bowl clear of the table,
-level and nearly still for at least 2.0 simulation seconds before placing it.
-Then lower gently onto the table, open each gripper in a separate decision, and
-verify the released bowl stays upright with all six blocks contained and still
-for 1.0 simulation seconds. No live feeder-status sensor is provided: use images
-and simulation timestamps rather than assuming a feeder-completed flag.
-This first version uses rigid solid particles only; water is a later separate version.
-Inspect the actual released or completed state before requesting stop. A
-commanded pose, blocked gripper, or completion claim is not evidence of success.
-If a grasp is lost or the scene resets, use new observations and reassess rather
-than continuing with stale object positions. Do not invent force measurements
-or assume a force-control tool that the interface does not expose.
+Both R5 arms may manipulate. Use the overview and both wrist cameras; neither
+arm is observation-only. The blue bowl starts on the table already densely
+loaded with separate red balls. All balls are dynamic spheres with low contact
+friction: they can roll and slide against each other and the bowl. There is NO
+feeder, pouring step or subsequent loading trigger.
+
+Move this loaded bowl from its current location onto the green tabletop patch,
+keeping every ball inside. Identify the two external handles and leave the
+opening and contents unobstructed. Use the left hand on the +Y-side handle and
+the right hand on the -Y-side handle. Choose reachable grasps on the handles,
+close each hand deliberately, then make a short coordinated lift to verify that
+the bowl follows without appreciable tilt or handle slip. Both hands must hold
+the bowl during a lift of at least 25 mm clear of its initial height.
+
+Carry the bowl while keeping it approximately level. Use short translations
+with similar vertical height for the two handles. When updating one arm at a
+time, keep the height/position difference small instead of pulling one handle
+far ahead. Avoid abrupt acceleration, stop-start jerks and swinging rotations.
+Watch the balls rolling toward the rim; pause to let them settle and correct
+bowl tilt before continuing. Do not pick up individual balls or pour them out.
+If a ball spills, do not claim success or hide it by returning it to the bowl.
+
+Lower the bowl onto the green patch with its centre within 35 mm of the patch
+centre. Confirm support from the table before opening either gripper. Release
+both handles, observe the upright bowl and all balls contained below the rim,
+and allow the bowl to remain nearly still for one simulation second. Completion
+requires actual lifted transport and released placement at the NEW location;
+simply holding it at the start or placing an empty bowl does not complete it.
+This task simulates dry solid balls, not water or a fluid dynamics model.
+If a grasp is lost, stop advancing the old plan and inspect the actual object
+state. If the scene resets, rebuild the plan from the new observations. Use only
+available control commands and feedback; do not invent force measurements.
+Request stop only after observing the required final state and stability.
 """
 
 # Chinese setup/props description; keep this the final task attribute.
 description = """
-道具：蓝色双把手碗、灰色滑板加料器、六个 16 mm 红色刚性小块，每块 20 g、操作台。
-布置：碗放在桌面，两手空手；小块在上方滑板上。双臂分别抓持两侧把手，将碗移到加料区。
-操作：碗底约离桌 130 mm 且双手持稳后，环境加料器按固定节奏撤去滑板，约 3 秒内落料；模型负责持碗，不负责控制加料器。装满后持稳 2 秒，再放到桌面松手。
-完成：全部六块留在碗内，负载保持和最终放下稳定，无洒出。
-边界：只实现刚性固体负载，没有水；固定加料属于实验环境，不是脚本代替机器人执行任务。
+道具：蓝色双把手碗、独立动态红色小球（直径 20 mm，每球 4 g）、绿色目标区域和桌面。
+布置：启动时小球已密集装在碗内，低摩擦接触系数 0.03，可相互滚动、滑动；没有加料器。碗从桌面起点搬至相距 240 mm 的目标区。
+操作：双臂分别抓持两个外侧把手，抬起至少 25 mm，尽量保持水平并小步协调搬运；观察小球滚动、滑落趋势和碗倾斜，再放下并松开双手。
+完成：碗中心距目标中心不超过 35 mm，所有小球仍在碗内，碗已释放、落桌、正立且稳定 1 秒；任一小球洒出则该次尝试失败。
+边界：低摩擦仅设置在小球接触材料上，碗外部和把手仍保留正常夹持摩擦；没有液体、软材料或人为动画驱动。
 """

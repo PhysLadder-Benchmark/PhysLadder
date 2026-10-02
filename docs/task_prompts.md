@@ -22,7 +22,7 @@
 
 力控类任务的提示分清“操作目标”和“接口实现”：仅凭 RGB 与位姿可尝试可见的稳定操作，不能据此报告精确控力能力；需要力信号的任务必须先接入真实可用的观测与控制能力。文中的实现条件均不是已完成声明。
 
-当前已接入 16 个 L1—L3 仿真任务和 `run GPT-PICK-PLACE`；用 `python tools/launch.py list` 查看实际清单，唯一手动集成入口仍是 `check gpt-pick-place`。本文保留的其他候选任务不代表已有实现，不能只替换 instruction 就视为已实现。本文中的动作建议不能靠文字新增接口字段，候选稿与实际运行条件必须分开记录。
+当前已接入 17 个 L1—L3 仿真任务和 `run GPT-PICK-PLACE`；用 `python tools/launch.py list` 查看实际清单，唯一手动集成入口仍是 `check gpt-pick-place`。本文保留的其他候选任务不代表已有实现，不能只替换 instruction 就视为已实现。本文中的动作建议不能靠文字新增接口字段，候选稿与实际运行条件必须分开记录。
 
 ## 共用执行约定
 
@@ -172,32 +172,151 @@ Once the receiver has made contact and can constrain the object, gradually reduc
 Verify that the receiver holds the object independently and the donor is no longer providing hidden support. Use timestamps to confirm the required stable hold before ending.
 ```
 
-### L2-03 抽取中层并支撑上层
+### L2-03 固定上下层的单臂抽书
 
-对应原“固定接触点的抽取与支撑”；运行前填写：中层物体、上层物体、最终放置区域。实现条件：保留自主抓持；若实验固定抓点，需公开说明；不能把上层物体锁定为不受力的静态物体。
+当前实现与成功条件以 [任务配置](../configs/tasks/l2_03_middle_book_extraction.toml) 为准。
+
+道具：一册 120×45×24 mm 红色刚性中层书、固定蓝色下层书、固定绿色上层书及两块支撑物。
+布置：上下书和支撑物属于静态夹具，默认完全不动；中层书前端向左机械臂方向（世界 -X）突出约 65 mm，两侧留出夹指空间。
+操作：仅左臂从突出端上方或斜上方接近，夹指沿书宽方向闭合，沿 -X 平移抽出；书未离开夹层前不抬升。右臂仅负责按需观察，不扶书。
+完成：整本中层书尾端越过固定书前缘至少 4 mm，向外位移至少 65 mm，仍由左手抓稳并静止 1 秒；不要求放下或释放。
+边界：本版不测上层支撑及剩余书本稳定性；仅测中层刚体的抓持、接触摩擦和抽取。
 
 ```text
-Extract {{middle_object_id}} from the stack while preventing {{upper_object_id}} from falling onto the table or tipping over. Finally, place the middle and upper objects stably in {{respective_placement_regions}}.
+Use the LEFT R5 arm for manipulation. The RIGHT arm may move its wrist camera
+for a clearer view, but must not touch, hold or support task objects. Keep the
+left arm steady while changing the observation view. Use current RGB-D images,
+camera calibration, robot state and execution feedback to select grasp points
+and motion; do not infer successful contact from a command alone.
+Extract ONLY the red middle book from between the fixed blue lower book and
+fixed green upper book. The adjacent books and their supports are fixed by the
+environment; do not hold, move or evaluate their stability. The exposed end of
+the red book already faces the left robot, toward world -X. Do not turn the stack.
 
-Identify the current load-bearing relationships, extraction direction, and contact regions that can support the upper object without blocking the middle object's exit. Establish reliable support with one arm and grasp the middle object with the other. Do not begin substantial extraction before support is established.
+Inspect the protruding section, finger clearance and horizontal exit direction.
+Approach from the exposed -X side with fingers closing across the book's 45 mm
+width (approximately world Y), not through the upper or lower book. A downward
+or downward-tilted approach gives the wrist and arm clearance; do not insist on
+a low horizontal wrist pose. Choose a
+grasp within the exposed front section that keeps both fingers clear of the
+fixed stack. Close in a separate decision and verify two-sided contact.
 
-Extract incrementally along a feasible exit direction. Adjust support according to visible sinking, tilting, or movement of the upper object with the middle object. Avoid pressing the upper object against the middle one and thereby increasing extraction resistance. If the upper object becomes unstable, stop increasing the extraction distance, restore support, and then decide whether to retract slightly or adjust the pose.
+Pull gradually toward world -X while retaining the book's approximately level
+attitude and height. Do not perform a vertical test lift while the book is still
+between the fixed books. Observe whether the BOOK follows the hand; stop and
+regrasp if the fingers slide off or the book stays in place. Avoid upward or
+sideways targets that wedge it against the fixed neighbors.
 
-After full separation, continue supporting the upper object while placing both parts in an order that avoids collisions. Release them only after stable support is established. Verify that the upper object did not fall onto the table during extraction and that both objects are now stably placed.
+Extraction is complete only when the entire rear edge of the middle book has
+cleared the front edges of BOTH fixed books by at least 4 mm, with at least
+65 mm outward travel. Keep the extracted book securely held and nearly still
+for one simulation second. Extracting it is the whole task: no table placement,
+release, upper-book support or movement of other books is required.
+If a grasp is lost, stop advancing the old plan and inspect the actual object
+state. If the scene resets, rebuild the plan from the new observations. Use only
+available control commands and feedback; do not invent force measurements.
+Request stop only after observing the required final state and stability.
 ```
 
-### L2-04 持碗动态负载保持
+### L2-04 满载低摩擦小球的碗搬运
 
-运行前填写：碗、持碗侧、操作区域、投料完成信号及完成后保持时间。实现条件：倒料端按固定脚本执行；其完成状态需要实际提供给模型；如测定量力调节需补充接口。当前暂停式调用不能代表连续实时控制能力。
+当前实现与成功条件以 [任务配置](../configs/tasks/l2_04_bowl_dynamic_load.toml) 为准。
+
+道具：蓝色双把手碗、独立动态红色小球（直径 20 mm，每球 4 g）、绿色目标区域和桌面。
+布置：启动时小球已密集装在碗内，低摩擦接触系数 0.03，可相互滚动、滑动；没有加料器。碗从桌面起点搬至相距 240 mm 的目标区。
+操作：双臂分别抓持两个外侧把手，抬起至少 25 mm，尽量保持水平并小步协调搬运；观察小球滚动、滑落趋势和碗倾斜，再放下并松开双手。
+完成：碗中心距目标中心不超过 35 mm，所有小球仍在碗内，碗已释放、落桌、正立且稳定 1 秒；任一小球洒出则该次尝试失败。
+边界：低摩擦仅设置在小球接触材料上，碗外部和把手仍保留正常夹持摩擦；没有液体、软材料或人为动画驱动。
 
 ```text
-Use {{holding_arm}} to hold {{bowl_id}} steadily within {{operation_region}} while it receives material poured by a fixed external script. The external process controls pouring; do not take over the pouring side. Prevent spillage, slipping, tipping, or crushing of the bowl throughout the task.
+Both R5 arms may manipulate. Use the overview and both wrist cameras; neither
+arm is observation-only. The blue bowl starts on the table already densely
+loaded with separate red balls. All balls are dynamic spheres with low contact
+friction: they can roll and slide against each other and the bowl. There is NO
+feeder, pouring step or subsequent loading trigger.
 
-Before pouring begins, choose a grasp or support arrangement that accommodates the bowl and increasing load. Keep the opening accessible and approximately level. Once the main hold is established, maintain that relationship rather than repeatedly changing the grasp to chase individual falling items.
+Move this loaded bowl from its current location onto the green tabletop patch,
+keeping every ball inside. Identify the two external handles and leave the
+opening and contents unobstructed. Use the left hand on the +Y-side handle and
+the right hand on the -Y-side handle. Choose reachable grasps on the handles,
+close each hand deliberately, then make a short coordinated lift to verify that
+the bowl follows without appreciable tilt or handle slip. Both hands must hold
+the bowl during a lift of at least 25 mm clear of its initial height.
 
-Adjust the hold and supporting pose using bowl orientation, visible slip, signs of changing load, and actual feedback. Use only adjustments expressible through the available interface. Do not treat gripper opening as measured force or invent force values without observations. If the bowl tilts or slips downward, restore stability before making large movements that could cause further spillage.
+Carry the bowl while keeping it approximately level. Use short translations
+with similar vertical height for the two handles. When updating one arm at a
+time, keep the height/position difference small instead of pulling one handle
+far ahead. Avoid abrupt acceleration, stop-start jerks and swinging rotations.
+Watch the balls rolling toward the rim; pause to let them settle and correct
+bowl tilt before continuing. Do not pick up individual balls or pour them out.
+If a ball spills, do not claim success or hide it by returning it to the bowl.
 
-End only after receiving the actually provided {{pouring_completion_signal}} and maintaining a stable hold for another {{hold_time_s}} seconds. Keep holding the bowl when stopping; do not automatically release it. The evaluation includes stability, integrity, and spillage throughout the process.
+Lower the bowl onto the green patch with its centre within 35 mm of the patch
+centre. Confirm support from the table before opening either gripper. Release
+both handles, observe the upright bowl and all balls contained below the rim,
+and allow the bowl to remain nearly still for one simulation second. Completion
+requires actual lifted transport and released placement at the NEW location;
+simply holding it at the start or placing an empty bowl does not complete it.
+This task simulates dry solid balls, not water or a fluid dynamics model.
+If a grasp is lost, stop advancing the old plan and inspect the actual object
+state. If the scene resets, rebuild the plan from the new observations. Use only
+available control commands and feedback; do not invent force measurements.
+Request stop only after observing the required final state and stability.
+```
+
+### L2-05 单臂弹性卡扣翻盖盒开合
+
+当前实现与成功条件以 [任务配置](../configs/tasks/l2_05_latched_box.toml) 为准。
+
+道具：固定蓝色翻盖盒、可同时用于提盖的红色弹簧滑扣、绿色辅助柄、后侧铰链、黄色橡皮。
+布置：正面和红色滑扣朝向左机械臂（世界 -X），柜体不滑动；盒盖初始扣合，后侧铰链允许开至 115 度。
+操作：仅左手抓红色滑扣并拉出约 15 mm，保持同一抓持提盖；开过竖直位置到后侧限位后，盒盖靠重力停靠，不需另一手扶住。左手再取橡皮、放到盒外，最后重新抓扣、关盖并释放扣合。右臂只观察。
+完成：实际解锁和开盖、橡皮被抓取移到盒外并释放、盒盖关闭且滑扣复位，最终稳定 1 秒。
+代理边界：固定盒体与放大弹簧滑扣，不是塑料弯曲卡扣；无自动提盖、自动关盖、自动抓取或材料损坏模型。
+
+```text
+Use the LEFT R5 arm for manipulation. The RIGHT arm may move its wrist camera
+for a clearer view, but must not touch, hold or support task objects. Keep the
+left arm steady while changing the observation view. Use current RGB-D images,
+camera calibration, robot state and execution feedback to select grasp points
+and motion; do not infer successful contact from a command alone.
+Open the latched box, take out the yellow eraser, then close and latch the box.
+The blue box body is fixed to the table and already faces the LEFT arm. No hand
+needs to hold the body. The lid starts closed and the red spring-return latch
+is mechanically engaged under a grey catch. The hinge is at the rear (+X).
+
+The RED latch is also the lifting handle: use the SAME left-hand grasp to unlock
+and raise the lid. Inspect its exposed sides and the catch, approach from the
+front (-X), and grasp across the red handle's width without trapping the catch.
+First retract the latch outward along world -X by about 15 mm (maximum 20 mm).
+Then, while keeping the tooth clear, lift the lid through that same handle in
+small steps following the arc around the rear hinge. Do not just pull upward
+while the tooth remains under the catch. The green auxiliary lid grip is not a
+second-hand requirement.
+Keep the finger closing axis across the latch width. The lid angle does NOT
+prescribe the gripper's pitch: choose reachable wrist orientations while the
+handle pivots between the finger pads, and verify continued contact. Do not
+request an unreachable wrist rotation merely to match the opening lid angle.
+
+Open beyond vertical to the rear stop, about 110-115 degrees, without forcing
+the hinge farther. Gravity supports the lid against this stop. Verify it stays
+open before releasing the latch and withdrawing the hand. Pick up the eraser
+from the open box, place it on clear tabletop more than 130 mm from the box
+centre, and release it only after support. The right arm may inspect but may
+not prop up the lid or participate in manipulation.
+
+Regrasp the red latch on the open lid. Retract it in its CURRENT lid-local
+outward direction, then guide the lid down along the hinge arc while keeping
+the tooth clear of the catch. Near closure the outward direction is world -X.
+Release the latch once the lid is seated so its spring returns the tooth under
+the catch. Inspect the lid/catch relationship, not just the commanded pose.
+Completion requires verified opening, grasped removal of the eraser, released
+eraser placement, and a closed, re-engaged, released lid/latch stable for one
+simulation second. Do not substitute moving the whole box for opening it.
+If a grasp is lost, stop advancing the old plan and inspect the actual object
+state. If the scene resets, rebuild the plan from the new observations. Use only
+available control commands and feedback; do not invent force measurements.
+Request stop only after observing the required final state and stability.
 ```
 
 ### L2-06 夹面包
@@ -214,18 +333,54 @@ If the bread slips while deformation remains acceptable, make small evidence-bas
 Establish support in the target region before gradually releasing and withdrawing. Inspect the shape, integrity, and position after release. Merely retaining the bread in the gripper does not prove that it was not crushed.
 ```
 
-### L2-07 抽屉推拉与自然阻力适应
+### L2-07 单臂拉开固定化妆抽屉
 
-对应原“已知方向的变阻力抽屉推拉”；运行前填写：抽屉、开合目标与最终位置、是否公开滑轨方向。实现条件：采用真实存在的阻力条件，不为此提示额外制作调阻装置；准确力限值评价另需传感与接口。
+当前实现与成功条件以 [任务配置](../configs/tasks/l2_07_drawer_open_close.toml) 为准。
+
+道具：固定化妆抽屉式柜体（底板、顶板、侧板、后板）、抽屉托盘、向外突出的绿色可夹把手、滑轨。
+布置：柜体固定不滑动；抽屉关闭，正面和把手朝向左机械臂（世界 -X），把手宽 40 mm，留出夹指接近空间；右臂只观察。
+操作：左臂抓把手，沿 -X 拉开 100—120 mm，再松手；最大滑轨行程 130 mm。无需扶柜、提起抽屉、取物或重新关闭。
+完成：实际夹持拉开至少 100 mm，松手后保持开启并静止 1 秒；终点不发生明显高速冲击。
+边界：柜体含上下封闭面，抽屉内腔保持敞开；接触摩擦及被动滑轨约束真实参与仿真，没有脚本自动拉出。
 
 ```text
-Operate {{drawer_id}} by its handle to satisfy {{opening_closing_requirement_and_final_position}}. Keep the cabinet or base in place and avoid impacts at travel limits, derailment, damage, and handle slip. Rail-direction information is {{provided_rail_direction_or_observe}}.
+Use the LEFT R5 arm for manipulation. The RIGHT arm may move its wrist camera
+for a clearer view, but must not touch, hold or support task objects. Keep the
+left arm steady while changing the observation view. Use current RGB-D images,
+camera calibration, robot state and execution feedback to select grasp points
+and motion; do not infer successful contact from a command alone.
+Pull open the drawer of the fixed cosmetics organizer using its green handle.
+The cabinet has a bottom, roof, side walls and rear wall. It is secured to the
+table and already faces the left robot; do not rotate it or hold it with the
+other arm. The drawer starts fully closed and unlocked. There is no push-to-open
+latch, button, or obstruction to release.
 
-Choose a grasp and approach for the handle. Identify the motion axis from visible structure and any provided direction, then push or pull incrementally along it while maintaining the grasp. Reduce increments near a travel endpoint. Continuing to advance a target against a mechanical stop is not a completion strategy.
+Inspect the protruding green handle, front panel and rail direction. Grasp the
+exposed front portion of the handle, away from the cabinet roof. Approach
+from the front (-X), with the fingers closing across the handle's 40 mm width,
+leaving the finger bodies and wrist clear of the panel and roof. Use a downward
+or downward-tilted approach to the exposed handle if needed; do not insist on
+a low horizontal wrist pose. Close the
+left gripper separately and verify that it surrounds the handle, rather than
+just touching the panel. Keep the handle's height and orientation during pull;
+do not apply a free-object vertical test lift to this rail-constrained drawer.
 
-Use drawer progress, cabinet movement, and relative slip between gripper and handle to distinguish resistance from grasp instability or directional error. When blocked, first correct lateral misalignment or restore the grasp before changing the advancement target. If force feedback is available, use the actual signal to constrain adjustments; do not invent force values from vision.
+Pull toward the robots along world -X in small steps. Check that the drawer
+front actually moves with the handle and that the fingers have not slipped.
+Correct sideways misalignment instead of applying larger off-axis motion.
+Open by 100-120 mm from the initial closed position; maximum travel is 130 mm.
+Slow near the rail stop and avoid impact speeds above 0.25 m/s. Do not pull it
+out of the rails, lift the cabinet or force motion past its limit.
 
-Stop advancing once the required position is reached. Release and withdraw according to the permitted final state. Confirm that the drawer retains its position and the cabinet has not been dragged as a whole.
+Once sufficiently open, stop, release the handle and let the drawer remain open
+and nearly still for one simulation second. This version ends OPEN: do not push
+it shut again. No item retrieval, second-hand support or extra operation is
+required. A drawer at the target position while still held is not the final
+released state.
+If a grasp is lost, stop advancing the old plan and inspect the actual object
+state. If the scene resets, rebuild the plan from the new observations. Use only
+available control commands and feedback; do not invent force measurements.
+Request stop only after observing the required final state and stability.
 ```
 
 ### L2-09 弹性件定点按压
@@ -248,12 +403,14 @@ Without actual force feedback, do not claim completion of this quantitative forc
 
 ### L3-03 自主抓持与重抓的旋拧瓶盖
 
+当前仿真采用 50×50×180 mm 方瓶身、加高圆瓶颈和约 43 mm 外径、40 mm 高的圆柱盖，总高约 250 mm。双手从空手开始，盖已旋合且未预松；瓶底落桌，左手夹持瓶身中下部，右手旋盖。评分仅累计瓶身直立受桌面支撑、双手持握且螺纹仍啮合时的相对旋转。相机及支架仍是未标定的视觉模型，空间诊断不代表真机或任意轨迹无碰撞。
+
 运行前填写：瓶子、旋开方向信息、瓶身与瓶盖放置区域。实现条件：真实螺纹／旋松与脱离机制；不能靠旋转达到角度后直接删除约束。准确扭矩控制仍需扩展接口。
 
 ```text
 Unscrew the cap of {{bottle_id}} until it is completely detached. Place the bottle and cap in {{respective_placement_regions}}. Keep the bottle stable and preserve the cap and bottle opening. Opening-direction information is {{provided_opening_direction_or_observe}}.
 
-Identify the bottle/cap boundary, rotation axis, and usable grasp regions. Stabilize the bottle with one arm and grasp the cap with the other, checking for interference. Rotate incrementally about the cap axis rather than sweeping it around an incorrect pivot. Adjust axial position as the cap loosens instead of continually pressing it onto the opening.
+Identify the bottle/cap boundary, rotation axis, and usable grasp regions. Keep the bottle bottom on the table, stabilize the parallel lower/middle body faces with the left arm, and grasp the cap with the right. Separate the grasp heights and inspect clearance for fingers, wrists, camera housings and brackets through approach, turning and regrasping. Rotate incrementally about the cap axis rather than sweeping it around an incorrect pivot. Adjust axial position as the cap loosens instead of continually pressing it onto the opening.
 
 Distinguish cap rotation relative to the bottle from whole-bottle rotation or gripper slip on the cap. If no actual loosening occurs, first restore bottle stabilization, check direction, or improve the cap grasp. Near a wrist range limit, regrasp only while the cap has reliable support and its state can be maintained; do not accumulate infeasible large-angle targets.
 

@@ -21,7 +21,9 @@ class BenchTask:
             "L2-06",
             "L2-07",
             "L3-03",
+            "L3-14",
             "L3-15",
+            "L3-16",
         }
         return replace(
             config,

@@ -10,7 +10,7 @@ import tempfile
 import time
 import unittest
 from unittest.mock import Mock, patch
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 
 from PIL import Image
 
@@ -182,10 +182,66 @@ class ResponsesTests(unittest.TestCase):
         payload = json.loads(request.data)
         self.assertFalse(payload["store"])
         self.assertTrue(payload["stream"])
+        self.assertEqual(payload["reasoning"]["summary"], "auto")
         self.assertEqual(payload["input"][0]["role"], "developer")
         self.assertEqual(payload["input"][0]["content"][0]["text"], "ACTION CONTRACT")
         self.assertNotIn(b"test-private-token", request.data)
         self.assertNotIn("max_output_tokens", payload)
+
+    @patch.dict(os.environ, {"OPENAI_API_KEY": "test-private-token"})
+    def test_transport_timeouts_are_retryable_without_hidden_client_retries(self):
+        for failure in (TimeoutError("test-private-token"), URLError(socket.timeout("test-private-token"))):
+            with self.subTest(failure=type(failure).__name__):
+                opener = Mock()
+                opener.open.side_effect = failure
+                with patch("robot_tasks.policies.responses.build_opener", return_value=opener):
+                    with self.assertRaises(RetryableModelError) as error:
+                        ResponsesClient(SETTINGS).generate(instructions="", messages=[], schema={})
+                opener.open.assert_called_once()
+                self.assertNotIn("test-private-token", str(error.exception))
+
+    @patch.dict(os.environ, {"OPENAI_API_KEY": "test-private-token"})
+    def test_non_timeout_transport_error_remains_non_retryable(self):
+        opener = Mock()
+        opener.open.side_effect = URLError("connection refused")
+        with patch("robot_tasks.policies.responses.build_opener", return_value=opener):
+            with self.assertRaises(ModelError) as error:
+                ResponsesClient(SETTINGS).generate(instructions="", messages=[], schema={})
+        self.assertNotIsInstance(error.exception, RetryableModelError)
+        opener.open.assert_called_once()
+
+    def test_stream_time_budget_is_retryable_and_partial_output_is_discarded(self):
+        stream = Stream(event({"type": "response.output_text.delta", "delta": "partial action"}))
+        with patch("robot_tasks.policies.responses.time.monotonic", side_effect=[0, 0, 11]):
+            with self.assertRaisesRegex(RetryableModelError, "stream exceeded"):
+                read_response(stream, expected_model=SETTINGS.model, start=0, timeout_s=10)
+
+    @patch.dict(os.environ, {"OPENAI_API_KEY": "test-private-token"})
+    def test_read_timeout_after_partial_stream_is_retryable(self):
+        stream = Mock()
+        stream.headers = {"Content-Type": "text/event-stream"}
+        stream.__enter__ = Mock(return_value=stream)
+        stream.__exit__ = Mock(return_value=False)
+        stream.readline.side_effect = [b'data: {"type": "response.output_text.delta", "delta": "partial"}\n',
+                                       b'\n', socket.timeout("test-private-token")]
+        opener = Mock()
+        opener.open.return_value = stream
+        with patch("robot_tasks.policies.responses.build_opener", return_value=opener):
+            with self.assertRaises(RetryableModelError) as error:
+                ResponsesClient(SETTINGS).generate(instructions="", messages=[], schema={})
+        self.assertNotIn("test-private-token", str(error.exception))
+        stream.__exit__.assert_called_once()
+        opener.open.assert_called_once()
+
+    @patch.dict(os.environ, {"OPENAI_API_KEY": "test-private-token"})
+    def test_completed_response_after_deadline_is_discarded_and_retryable(self):
+        opener = Mock()
+        opener.open.return_value = Stream(json.dumps(response_document()).encode(), "application/json")
+        with patch("robot_tasks.policies.responses.build_opener", return_value=opener), \
+                patch("robot_tasks.policies.responses.time.monotonic", side_effect=[0, 11, 11]):
+            with self.assertRaisesRegex(RetryableModelError, "time budget; output discarded"):
+                ResponsesClient(replace(SETTINGS, timeout_s=10)).generate(instructions="", messages=[], schema={})
+        opener.open.assert_called_once()
 
     @patch.dict(os.environ, {"OPENAI_API_KEY": "test-private-token"})
     def test_http_failure_is_sanitized_and_never_retried(self):
@@ -267,6 +323,17 @@ class GPTPolicyTests(unittest.TestCase):
         self.assertEqual(image.size, (32, 24))
         self.assertEqual(sum(v["type"] == "input_image" for v in content), 6)
         self.assertNotIn("data:image", json.dumps(policy.last_exchange))
+
+    def test_public_summary_is_recorded_but_not_added_to_model_history(self):
+        def generate(**kwargs):
+            kwargs["on_reasoning"]("Inspect the handle before pulling.")
+            return self.client.generate.return_value
+
+        self.client.generate.side_effect = generate
+        policy = GPTPolicy(self.config, SETTINGS, client=self.client)
+        policy.act(self.context)
+        self.assertEqual(policy.last_exchange["reasoning_summary"], ["Inspect the handle before pulling."])
+        self.assertNotIn("Inspect the handle before pulling.", json.dumps(list(policy.history)))
 
     def test_history_bounded_and_reset_clears_budget(self):
         policy = GPTPolicy(self.config, replace(SETTINGS, max_calls=4), client=self.client)
