@@ -426,7 +426,7 @@ def execute_batch(root, manifest, state, environment):
         # Recover a completed result after a supervisor crash before state was saved.
         if previous.get("directory") and (Path(previous["directory"]) / "process.json").is_file():
             directory = Path(previous["directory"])
-            process = json.loads((directory / "process.json").read_text())
+            process = json.loads((directory / "process.json").read_text(encoding="utf-8"))
             if not process.get("interrupted"):
                 previous.update(status="done", summary=collect_result(directory, process, options["dry_run"], task["cameras"]))
                 state[task["id"]] = previous
