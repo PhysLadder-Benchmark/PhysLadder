@@ -1,11 +1,12 @@
-# Run from the repository root in the Isaac Sim environment; requires OPENAI_API_KEY.
+# Run from the repository root in the Isaac Sim environment; authentication follows the shared model config.
 # launch_command / launch_command_conda below are documentation, not auto-executed shell code.
 schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_bimanual_sim.toml"
-active_arms = ["left", "right"]
+profile = "../robots/r5_sim.toml"
+active_arms = ["left"]
+observation_arms = ["right"]
 
 [simulation]
 environment = "lab_room_v1"
@@ -34,56 +35,55 @@ retry_failed_attempts = true
 
 [task]
 id = "L2-03"
-name = "三本书中层抽取与上层支撑"
+name = "固定上下层的单臂抽书"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
 implementation = "household"
-simulation_limitations = "Engineering dimensions and friction; not calibrated to physical props."
+simulation_limitations = "Upper/lower rigid books and supports are fixed. Only middle-book contact friction and extraction are tested; upper-book support/stability is excluded."
 launch_command = "python tools/launch.py run L2-03 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-03 --gui"
 instruction = """
-Both R5 arms may manipulate the props; neither is restricted to observation.
-Use the overview and both wrist-camera views. Choose grasp points, poses and
-motion from current observations and available robot feedback. Verify that
-objects actually follow the grippers before transport. Plan motions that keep
-the hands and held props clear of one another.
-Remove the middle book from a three-book stack while supporting the upper
-book. The stack rests on support blocks beneath the bottom book. All books and
-support blocks start stationary and ungrasped. Use rigid book-shaped props for
-the first simulation version; preserve their realistic relative sizes.
-Identify the middle book, the upper load, accessible edges and the extraction
-axis. The red middle book protrudes toward world +X; use that exposed edge for
-horizontal extraction. Use one hand to establish a secure two-finger grasp on
-the green upper book, and the other
-to grasp the exposed edge of the middle book without pinching adjacent books.
-Touching the upper book with one finger or merely bracing it is insufficient:
-hold it securely while the other hand pulls out the middle book. Confirm support
-before pulling. Keep these primary contact roles stable while
-coordinating a gradual horizontal extraction with the support motion.
-Watch for upper-book tilt, slipping, drag on neighboring books and motion of the
-bottom supports. Pause or correct alignment and loading when those conditions
-appear; do not yank the middle book free. Extract until the middle book's centre
-is at least 0.14 m forward of the bottom book's centre, with both upper and middle
-books still grasped. Then place the middle and upper books separately on free
-tabletop areas, not back onto the remaining stack. Release each only after table
-support, and observe both released and still for 1.0 simulation seconds.
-Completion requires supported extraction, both removed books independently
-placed on the table, and the bottom book stable. The upper book must not fall
-onto the table or topple before extraction is complete; deliberate supported
-placement after extraction is allowed.
-Inspect the actual released or completed state before requesting stop. A
-commanded pose, blocked gripper, or completion claim is not evidence of success.
-If a grasp is lost or the scene resets, use new observations and reassess rather
-than continuing with stale object positions. Do not invent force measurements
-or assume a force-control tool that the interface does not expose.
+Use the LEFT R5 arm for manipulation. The RIGHT arm may move its wrist camera
+for a clearer view, but must not touch, hold or support task objects. Keep the
+left arm steady while changing the observation view. Use current RGB-D images,
+camera calibration, robot state and execution feedback to select grasp points
+and motion; do not infer successful contact from a command alone.
+Extract ONLY the red middle book from between the fixed blue lower book and
+fixed green upper book. The adjacent books and their supports are fixed by the
+environment; do not hold, move or evaluate their stability. The exposed end of
+the red book already faces the left robot, toward world -X. Do not turn the stack.
+
+Inspect the protruding section, finger clearance and horizontal exit direction.
+Approach from the exposed -X side with fingers closing across the book's 45 mm
+width (approximately world Y), not through the upper or lower book. A downward
+or downward-tilted approach gives the wrist and arm clearance; do not insist on
+a low horizontal wrist pose. Choose a
+grasp within the exposed front section that keeps both fingers clear of the
+fixed stack. Close in a separate decision and verify two-sided contact.
+
+Pull gradually toward world -X while retaining the book's approximately level
+attitude and height. Do not perform a vertical test lift while the book is still
+between the fixed books. Observe whether the BOOK follows the hand; stop and
+regrasp if the fingers slide off or the book stays in place. Avoid upward or
+sideways targets that wedge it against the fixed neighbors.
+
+Extraction is complete only when the entire rear edge of the middle book has
+cleared the front edges of BOTH fixed books by at least 4 mm, with at least
+65 mm outward travel. Keep the extracted book securely held and nearly still
+for one simulation second. Extracting it is the whole task: no table placement,
+release, upper-book support or movement of other books is required.
+If a grasp is lost, stop advancing the old plan and inspect the actual object
+state. If the scene resets, rebuild the plan from the new observations. Use only
+available control commands and feedback; do not invent force measurements.
+Request stop only after observing the required final state and stability.
 """
 
 # Chinese setup/props description; keep this the final task attribute.
 description = """
-道具：三本 140×56×25 mm 的刚性书本代理，两块矮支撑物、操作台。
-布置：三本书堆叠在支撑物上，红色中层书向前突出便于抽取；绿色上层书由中层承托，未预抓持。
-操作：双臂配合，一臂稳定或托住上层书，另一臂夹取并抽出中层书，随后将两本书稳定放在桌面。
-完成：中层中心沿抽取方向超过底层中心至少 140 mm 时，双手仍分别夹持中层与上层；此前上层不落桌或翻倒，最终两本书分别释放于桌面并稳定 1 秒、底层保持稳定。
-边界：书本作为刚体，没有软封面、书页和弯曲；阻力来自实际接触摩擦，不添加外部调阻装置。
+道具：一册 120×45×24 mm 红色刚性中层书、固定蓝色下层书、固定绿色上层书及两块支撑物。
+布置：上下书和支撑物属于静态夹具，默认完全不动；中层书前端向左机械臂方向（世界 -X）突出约 65 mm，两侧留出夹指空间。
+操作：仅左臂从突出端上方或斜上方接近，夹指沿书宽方向闭合，沿 -X 平移抽出；书未离开夹层前不抬升。右臂仅负责按需观察，不扶书。
+完成：整本中层书尾端越过固定书前缘至少 4 mm，向外位移至少 65 mm，仍由左手抓稳并静止 1 秒；不要求放下或释放。
+边界：本版不测上层支撑及剩余书本稳定性；仅测中层刚体的抓持、接触摩擦和抽取。
 """

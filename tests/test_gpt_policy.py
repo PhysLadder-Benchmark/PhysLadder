@@ -182,6 +182,7 @@ class ResponsesTests(unittest.TestCase):
         payload = json.loads(request.data)
         self.assertFalse(payload["store"])
         self.assertTrue(payload["stream"])
+        self.assertEqual(payload["reasoning"]["summary"], "auto")
         self.assertEqual(payload["input"][0]["role"], "developer")
         self.assertEqual(payload["input"][0]["content"][0]["text"], "ACTION CONTRACT")
         self.assertNotIn(b"test-private-token", request.data)
@@ -322,6 +323,17 @@ class GPTPolicyTests(unittest.TestCase):
         self.assertEqual(image.size, (32, 24))
         self.assertEqual(sum(v["type"] == "input_image" for v in content), 6)
         self.assertNotIn("data:image", json.dumps(policy.last_exchange))
+
+    def test_public_summary_is_recorded_but_not_added_to_model_history(self):
+        def generate(**kwargs):
+            kwargs["on_reasoning"]("Inspect the handle before pulling.")
+            return self.client.generate.return_value
+
+        self.client.generate.side_effect = generate
+        policy = GPTPolicy(self.config, SETTINGS, client=self.client)
+        policy.act(self.context)
+        self.assertEqual(policy.last_exchange["reasoning_summary"], ["Inspect the handle before pulling."])
+        self.assertNotIn("Inspect the handle before pulling.", json.dumps(list(policy.history)))
 
     def test_history_bounded_and_reset_clears_budget(self):
         policy = GPTPolicy(self.config, replace(SETTINGS, max_calls=4), client=self.client)

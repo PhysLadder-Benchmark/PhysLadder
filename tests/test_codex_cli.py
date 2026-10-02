@@ -132,19 +132,23 @@ class CodexBoundaryTests(unittest.TestCase):
             "a=sys.argv[1:]\n"
             "assert a[a.index('--model')+1]=='gpt-6-astra'\n"
             "assert 'model_reasoning_effort=\"medium\"' in a\n"
+            "assert 'model_reasoning_summary=\"auto\"' in a\n"
             "assert 'forced_login_method=\"chatgpt\"' in a\n"
             "assert 'OPENAI_API_KEY' not in os.environ\n"
             "assert json.loads(pathlib.Path(a[a.index('--output-schema')+1]).read_text())['type']=='object'\n"
             "assert pathlib.Path(a[a.index('--image')+1]).read_bytes().startswith(b'\\x89PNG')\n"
             "assert 'Attached image #1' in sys.stdin.read()\n"
-            f"print({events()!r})\n")
+            f"print({events({'type': 'item.completed', 'item': {'id': 'r1', 'type': 'reasoning', 'text': 'Inspect handle.'}})!r})\n")
         executable.chmod(0o700)
+        summaries = []
         with patch.dict(os.environ, {"OPENAI_API_KEY": "must-not-forward"}):
             client = CodexCLIClient(replace(SETTINGS, codex_bin=str(executable)))
             result = client.generate(instructions="Robot contract", schema={"type": "object"}, messages=[{
                 "role": "user", "content": [{"type": "input_text", "text": "RGB label"},
-                                             {"type": "input_image", "image_url": self.png_url()}]}])
+                                             {"type": "input_image", "image_url": self.png_url()}]}],
+                                     on_reasoning=summaries.append)
         self.assertEqual(result.usage["total_tokens"], 15)
+        self.assertEqual(summaries, ["Inspect handle."])
 
     @unittest.skipIf(os.name == "nt", "POSIX mock executable")
     def test_timeout_discards_partial_reply_and_stops_process(self):

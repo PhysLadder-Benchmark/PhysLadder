@@ -14,6 +14,7 @@ from ..config import TaskConfig
 from ..types import Action, PolicyInput, RGBFrame, RetryablePolicyError
 from .model_config import GPTSettings
 from .responses import ModelError, ResponsesClient
+from .reasoning import DecisionProgress
 from ..workflow import validate_gpt_workflow, workflow_metadata
 from .sparse_action import sparse_schema, decode_sparse_action, orientation_degrees
 from ..cameras.geometry import resized_intrinsics
@@ -229,7 +230,9 @@ class GPTPolicy:
                               "grasp_comparisons": comparisons,
                               "history_steps": len(self.history)}
         try:
-            reply = self.client.generate(instructions=self.instructions, messages=messages, schema=self.schema)
+            with DecisionProgress(context.step, self.last_exchange) as progress:
+                reply = self.client.generate(instructions=self.instructions, messages=messages, schema=self.schema,
+                                             on_reasoning=progress.summary)
             self.last_exchange.update(reply.metadata(), response_text=reply.text)
             action_text, queries, note = reply.text, (), ""
             from .decision_note import split_decision_note

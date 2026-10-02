@@ -37,6 +37,10 @@ def measurement(spec):
                 b.name: 0.0 for b in spec.design.articles if b.name != a.name
             },
         }
+        if spec.design.task_id == "L2-04" and a.name.startswith("load_"):
+            # The bottom layer rests on the bowl floor, not the tabletop.
+            result[a.name]["bench_force_n"] = 0.0
+            result[a.name]["pair_forces"]["bowl"] = a.mass * 9.81
     return result
 
 
@@ -185,70 +189,71 @@ class HouseholdTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             evaluator.update(0.2, bad)
 
-    def test_drawer_must_be_opened_while_held_before_closed_counts(self):
+    def test_drawer_requires_grasped_opening_then_release_while_open(self):
         spec = build_spec("L2-07")
         rows = measurement(spec)
-        e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
+        initial = {a.name: a.initial for a in spec.design.articles}
+        e = BenchEvaluator(spec, initial)
         for i in range(1, 20):
             self.assertEqual(e.update(i * 0.1, rows).status, "running")
-        rows["drawer"]["pose"][0] += 0.11
-        rows["drawer"]["fingers"]["left"] = [1, 1]
-        e.update(2, rows)
         rows["drawer"]["pose"][0] -= 0.11
+        rows["drawer"]["fingers"]["left"] = [1, 1]
+        self.assertEqual(e.update(2, rows).status, "running")
         rows["drawer"]["fingers"]["left"] = [0, 0]
         for i in range(21, 35):
             result = e.update(i * 0.1, rows)
         self.assertEqual(result.status, "succeeded")
+        rows["drawer"]["pose"][0] += 0.11
+        self.assertEqual(e.update(3.6, rows).status, "running")
+        fresh = BenchEvaluator(spec, initial)
+        rows["drawer"]["pose"][0] -= 0.11
+        self.assertEqual(fresh.update(0.1, rows).status, "running")
 
-    def test_books_require_supported_extraction_before_table_placement(self):
+    def test_books_only_require_single_arm_complete_extraction(self):
         spec = build_spec("L2-03")
+        self.assertEqual([a.name for a in spec.design.articles], ["middle_book"])
+        rows = measurement(spec)
+        e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
+        row = rows["middle_book"]
+        row["pose"][0] -= 0.10
+        row["corners"] = (np.asarray(row["corners"]) - [0.10, 0, 0]).tolist()
+        self.assertEqual(e.update(0.1, rows).status, "running")
+        row["fingers"]["left"] = [1, 1]
+        for i in range(2, 16):
+            result = e.update(i * 0.1, rows)
+        self.assertEqual(result.status, "succeeded")
+        self.assertFalse(result.metrics["criteria"]["release_required"])
+        row["fingers"]["left"] = [0, 0]
+        self.assertEqual(e.update(1.7, rows).status, "running")
+
+    def test_preloaded_bowl_requires_lift_transport_and_released_placement(self):
+        spec = build_spec("L2-04")
         rows = measurement(spec)
         initial = {a.name: a.initial for a in spec.design.articles}
         e = BenchEvaluator(spec, initial)
-        rows["upper_book"]["bench_force_n"] = 0.9
-        self.assertEqual(e.update(0.1, rows).status, "failed")
-        rows = measurement(spec)
-        e = BenchEvaluator(spec, initial)
-        rows["middle_book"]["pose"][0] += 0.16
-        for n in ("upper_book", "middle_book"):
-            rows[n]["fingers"]["left" if n == "upper_book" else "right"] = [1, 1]
-        e.update(0.1, rows)
-        for n in ("upper_book", "middle_book"):
-            rows[n]["fingers"] = {"left": [0, 0], "right": [0, 0]}
-            rows[n]["bench_force_n"] = 0.9
-            rows[n]["pose"][2] = 0.0125
-        for i in range(2, 20):
-            result = e.update(i * 0.1, rows)
-        self.assertEqual(result.status, "succeeded")
-
-    def test_bowl_requires_loaded_hold_then_released_placement(self):
-        spec = build_spec("L2-04")
-        rows = measurement(spec)
-        e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
-        bowl = rows["bowl"]
-        bowl["pose"][:3] = [0.40, 0, 0.13]
-        bowl["fingers"] = {"left": [1, 1], "right": [1, 1]}
-        bowl["bench_force_n"] = 0
-        rows["feed_gate"]["pose"][0] += 0.12
-        for i in range(6):
-            rows[f"load_{i}"]["pose"][:3] = [
-                0.38 + (i // 2) * 0.02,
-                (i % 2) * 0.02 - 0.01,
-                0.145,
-            ]
-        for i in range(1, 26):
+        for i in range(1, 15):
             self.assertEqual(e.update(i * 0.1, rows).status, "running")
-        self.assertIn("loaded_hold_completed", e.flags)
-        bowl["pose"][2] = 0
-        bowl["bench_force_n"] = 2
-        bowl["fingers"] = {"left": [0, 0], "right": [0, 0]}
-        for i in range(6):
-            rows[f"load_{i}"]["pose"][2] -= 0.13
-        for i in range(26, 40):
+        for row in rows.values():
+            row["pose"][2] += 0.04
+            row["corners"] = (np.asarray(row["corners"]) + [0, 0, 0.04]).tolist()
+            row["bench_force_n"] = 0
+        rows["bowl"]["fingers"] = {"left": [1, 1], "right": [1, 1]}
+        e.update(1.5, rows)
+        self.assertIn("loaded_bowl_lifted", e.flags)
+        for row in rows.values():
+            row["pose"][1] -= 0.24
+            row["pose"][2] -= 0.04
+        rows["bowl"]["bench_force_n"] = 3
+        rows["bowl"]["fingers"] = {"left": [0, 0], "right": [0, 0]}
+        for i in range(16, 30):
             result = e.update(i * 0.1, rows)
         self.assertEqual(result.status, "succeeded")
-        fresh = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
+        fresh = BenchEvaluator(spec, initial)
         self.assertEqual(fresh.update(0.1, rows).status, "running")
+        rows["load_0"]["bench_force_n"] = 0.039
+        self.assertEqual(e.update(3.0, rows).status, "failed")
+        rows["load_0"]["bench_force_n"] = 0
+        self.assertEqual(e.update(3.1, rows).status, "failed")
 
     def test_toppled_marker_retries_but_held_tilt_does_not(self):
         spec = build_spec("L1-01")

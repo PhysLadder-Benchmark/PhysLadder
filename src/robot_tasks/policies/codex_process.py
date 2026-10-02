@@ -17,6 +17,33 @@ from urllib.parse import urlsplit
 _WINDOWS = sys.platform == "win32"
 
 
+class _StdoutLines:
+    """Tail a separate read handle; never move the child's stdout file offset."""
+
+    def __init__(self, reader, callback):
+        self.reader, self.callback = reader, callback
+        self.pending = b""
+        self.total = 0
+
+    def poll(self, *, final=False):
+        limit = 4 * 1024 * 1024
+        chunk = self.reader.read(limit + 1 - self.total)
+        self.total += len(chunk)
+        if self.total > limit:
+            raise RuntimeError("Codex event stream exceeds size limit")
+        if self.callback is None:
+            return
+        self.pending += chunk
+        lines = self.pending.split(b"\n")
+        self.pending = lines.pop()
+        if final and self.pending:
+            lines.append(self.pending)
+            self.pending = b""
+        for line in lines:
+            if line.strip():
+                self.callback(line)
+
+
 def codex_environment(environment=None):
     """Keep desktop/network/auth paths, without forwarding API/application keys."""
     source = os.environ if environment is None else environment
@@ -93,9 +120,12 @@ class CodexProcess:
                 "--timeout", str(timeout_s),
                 *(["--proxy", self.proxy] if self.proxy else []), "--", *arguments]
 
-    def run(self, arguments, *, directory, data=b"", timeout_s):
+    def run(self, arguments, *, directory, data=b"", timeout_s, on_stdout_line=None):
         command = self.command(arguments, directory, timeout_s)
-        with (directory / "events.jsonl").open("w+b") as output, (directory / "stderr.log").open("w+b") as errors:
+        with (directory / "events.jsonl").open("w+b") as output, \
+                (directory / "stderr.log").open("w+b") as errors, \
+                (directory / "events.jsonl").open("rb") as reader:
+            lines = _StdoutLines(reader, on_stdout_line)
             process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=output, stderr=errors,
                                        env=codex_environment(), start_new_session=(os.name != "nt"),
                                        creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0)
@@ -111,10 +141,12 @@ class CodexProcess:
                         # Short waits let Python handle Ctrl+C/CTRL_BREAK on
                         # Windows even when the provider has not returned yet.
                         process.communicate(data, timeout=min(.1, remaining))
+                        lines.poll(final=True)
                         break
                     except subprocess.TimeoutExpired:
                         data = None
-            except (subprocess.TimeoutExpired, KeyboardInterrupt):
+                        lines.poll()
+            except BaseException:
                 self.terminate(process, directory)
                 raise
             output.seek(0)

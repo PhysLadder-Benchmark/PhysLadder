@@ -1,4 +1,4 @@
-# Run from the repository root in the Isaac Sim environment; requires OPENAI_API_KEY.
+# Run from the repository root in the Isaac Sim environment; authentication follows the shared model config.
 # launch_command / launch_command_conda below are documentation, not auto-executed shell code.
 schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
@@ -35,7 +35,7 @@ retry_failed_attempts = true
 
 [task]
 id = "L2-07"
-name = "化妆盒抽屉平稳推拉"
+name = "单臂拉开固定化妆抽屉"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
@@ -44,42 +44,50 @@ simulation_limitations = "Engineering dimensions and friction; not calibrated to
 launch_command = "python tools/launch.py run L2-07 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-07 --gui"
 instruction = """
-Use the LEFT R5 arm for manipulation. The RIGHT arm is an observation arm:
-it may move its wrist camera when a grasp, opening or contact is obscured, but
-must not touch or support the props. Keep the left arm steady while changing
-view. Choose grasp points, poses and motion from current images and available
-robot feedback; no object coordinates or successful action sequence is supplied.
-Open and close the drawer of the small storage or cosmetics organizer using
-its handle. The organizer body is secured on the table. The drawer starts closed,
-unlocked and ungrasped, with its handle accessible and no deliberate obstruction.
-Identify the handle and the natural sliding axis. Grip the handle so the fingers
-and wrist can follow the rail without hitting the frame. Pull gradually along
-the rail; observe drawer travel, resistance-related motion, slip and acceleration.
-Keep the primary grasp and rail relationship stable. Correct lateral misalignment
-rather than applying repeated large forces against the guides.
-Pull along world +X by at least 0.10 m from the initially closed state while
-holding the handle; the track's maximum travel is 0.13 m. Do not demand motion
-beyond that end stop. Pause to confirm the open state, then slide the drawer
-back smoothly along the same axis. Slow near the end stops, close fully
-without slamming, open the gripper and confirm the drawer remains closed.
-The final residual opening must be less than 0.006 m, released and nearly still
-for 1.0 simulation seconds. Excessive speed at either stop (over 0.25 m/s) fails
-the protocol; no live drawer force sensor is supplied.
-Do not lift or shift the organizer to simulate drawer travel, bypass the rail,
-or introduce an artificial blockage. No latch release or item retrieval is
-required in this version.
-Inspect the actual released or completed state before requesting stop. A
-commanded pose, blocked gripper, or completion claim is not evidence of success.
-If a grasp is lost or the scene resets, use new observations and reassess rather
-than continuing with stale object positions. Do not invent force measurements
-or assume a force-control tool that the interface does not expose.
+Use the LEFT R5 arm for manipulation. The RIGHT arm may move its wrist camera
+for a clearer view, but must not touch, hold or support task objects. Keep the
+left arm steady while changing the observation view. Use current RGB-D images,
+camera calibration, robot state and execution feedback to select grasp points
+and motion; do not infer successful contact from a command alone.
+Pull open the drawer of the fixed cosmetics organizer using its green handle.
+The cabinet has a bottom, roof, side walls and rear wall. It is secured to the
+table and already faces the left robot; do not rotate it or hold it with the
+other arm. The drawer starts fully closed and unlocked. There is no push-to-open
+latch, button, or obstruction to release.
+
+Inspect the protruding green handle, front panel and rail direction. Grasp the
+exposed front portion of the handle, away from the cabinet roof. Approach
+from the front (-X), with the fingers closing across the handle's 40 mm width,
+leaving the finger bodies and wrist clear of the panel and roof. Use a downward
+or downward-tilted approach to the exposed handle if needed; do not insist on
+a low horizontal wrist pose. Close the
+left gripper separately and verify that it surrounds the handle, rather than
+just touching the panel. Keep the handle's height and orientation during pull;
+do not apply a free-object vertical test lift to this rail-constrained drawer.
+
+Pull toward the robots along world -X in small steps. Check that the drawer
+front actually moves with the handle and that the fingers have not slipped.
+Correct sideways misalignment instead of applying larger off-axis motion.
+Open by 100-120 mm from the initial closed position; maximum travel is 130 mm.
+Slow near the rail stop and avoid impact speeds above 0.25 m/s. Do not pull it
+out of the rails, lift the cabinet or force motion past its limit.
+
+Once sufficiently open, stop, release the handle and let the drawer remain open
+and nearly still for one simulation second. This version ends OPEN: do not push
+it shut again. No item retrieval, second-hand support or extra operation is
+required. A drawer at the target position while still held is not the final
+released state.
+If a grasp is lost, stop advancing the old plan and inspect the actual object
+state. If the scene resets, rebuild the plan from the new observations. Use only
+available control commands and feedback; do not invent force measurements.
+Request stop only after observing the required final state and stability.
 """
 
 # Chinese setup/props description; keep this the final task attribute.
 description = """
-道具：固定化妆盒式柜体、抽屉托盘、绿色把手、滑轨和操作台。
-布置：抽屉初始关闭，左臂自主抓持，右臂可观察把手和行程。
-操作：沿滑轨方向平稳拉开至少 100 mm，再推回关闭位置并松手；最大行程 130 mm。
-完成：先在夹持状态拉开至少 100 mm，再关到剩余开口小于 6 mm 并释放稳定 1 秒；终点速度不超过 0.25 m/s。
-边界：阻力来自托盘与轨道真实摩擦和关节阻尼，没有额外可调阻装置；柜体固定，不模拟柜体移动或塑料损坏。
+道具：固定化妆抽屉式柜体（底板、顶板、侧板、后板）、抽屉托盘、向外突出的绿色可夹把手、滑轨。
+布置：柜体固定不滑动；抽屉关闭，正面和把手朝向左机械臂（世界 -X），把手宽 40 mm，留出夹指接近空间；右臂只观察。
+操作：左臂抓把手，沿 -X 拉开 100—120 mm，再松手；最大滑轨行程 130 mm。无需扶柜、提起抽屉、取物或重新关闭。
+完成：实际夹持拉开至少 100 mm，松手后保持开启并静止 1 秒；终点不发生明显高速冲击。
+边界：柜体含上下封闭面，抽屉内腔保持敞开；接触摩擦及被动滑轨约束真实参与仿真，没有脚本自动拉出。
 """

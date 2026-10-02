@@ -18,6 +18,7 @@ import time
 from ..paths import PROJECT_ROOT
 from .codex_process import CodexProcess, codex_environment
 from .model_config import GPTSettings
+from .reasoning import ReasoningSummaries
 from .responses import ModelError, ModelReply, RetryableModelError, _safe_error_field
 
 
@@ -140,7 +141,7 @@ class CodexCLIClient:
         if status.returncode != 0 or b"Logged in using ChatGPT" not in status.stdout + status.stderr:
             raise ModelError("Codex ChatGPT login required; run codex login, then codex login status")
 
-    def generate(self, *, instructions, messages, schema):
+    def generate(self, *, instructions, messages, schema, on_reasoning=None):
         settings = self.settings
         start = time.monotonic()
         with _temporary_directory() as temporary:
@@ -165,6 +166,7 @@ class CodexCLIClient:
                        "--json", "--color", "never", "--output-schema", str(remote / schema_file.name)]
             overrides = {"model_provider": "openai", "forced_login_method": "chatgpt",
                          "model_reasoning_effort": settings.reasoning_effort, "web_search": "disabled",
+                         "model_reasoning_summary": "auto",
                          "features.shell_tool": False, "features.unified_exec": False,
                          "features.multi_agent": False, "features.apps": False, "features.plugins": False,
                          "features.browser_use": False, "features.computer_use": False,
@@ -177,9 +179,10 @@ class CodexCLIClient:
             for path in images:
                 command.extend(["--image", str(remote / path.name)])
             command.append("-")
+            summaries = ReasoningSummaries(on_reasoning)
             try:
                 result = self.host.run(command, directory=directory, data=prompt.encode("utf-8"),
-                                       timeout_s=settings.timeout_s)
+                                       timeout_s=settings.timeout_s, on_stdout_line=summaries.codex_line)
             except subprocess.TimeoutExpired:
                 raise RetryableModelError("Codex ChatGPT decision timed out; no action accepted") from None
             except OSError:

@@ -142,6 +142,12 @@ def article_surface(article):
             weights = np.array([(i / 4, j / 4, 1 - (i + j) / 4)
                                 for i in range(5) for j in range(5 - i)])
             local = np.einsum("wk,fkd->fwd", weights, triangles).reshape(-1, 3)
+        elif part.shape == "sphere":
+            azimuth = np.linspace(0, 2 * np.pi, 32, endpoint=False)
+            polar = np.linspace(0, np.pi, 17)
+            local = np.array([(part.size[0] * np.sin(p) * np.cos(a),
+                               part.size[0] * np.sin(p) * np.sin(a), part.size[0] * np.cos(p))
+                              for p in polar for a in azimuth])
         else:
             radius, _, height = part.size
             angles = np.linspace(0, 2 * np.pi, 48, endpoint=False)

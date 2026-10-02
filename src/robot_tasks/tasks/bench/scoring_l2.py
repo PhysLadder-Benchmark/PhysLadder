@@ -10,95 +10,69 @@ from .evaluation import held, quiet, relative, released, table_placed, upright
 
 
 def books(e, rows):
-    middle, top, base = (rows[n] for n in ("middle_book", "upper_book", "lower_book"))
-    extracted = (
-        abs(middle["pose"][0] - base["pose"][0])
-        >= e.spec.parameters["extract_distance"]
-    )
-    if extracted and held(top) and held(middle):
-        e.flags.add("supported_extraction")
-    failure = ""
-    if "supported_extraction" not in e.flags and (
-        top["bench_force_n"] > 0.05 or not upright(top, 0.5)
-    ):
-        failure = "Upper book lost support before middle-book extraction"
-    complete = (
-        "supported_extraction" in e.flags
-        and table_placed(middle)
-        and table_placed(top)
-        and upright(base, 0.3)
-        and quiet(base)
-    )
-    return (
-        complete,
-        {
-            "middle_extracted": bool(extracted),
-            "support_witness": "supported_extraction" in e.flags,
-        },
-        failure,
-    )
+    middle = rows["middle_book"]
+    p = e.spec.parameters
+    travel = float((np.asarray(middle["pose"][:3]) - e.initial["middle_book"][:3]) @ p["outward_axis_world"])
+    rear = float(np.max(np.asarray(middle["corners"])[:, 0]))
+    extracted = rear <= p["stack_front_x"] - p["clearance_m"] and travel >= p["minimum_travel_m"]
+    grasped = held(middle, "left")
+    if extracted and grasped:
+        e.flags.add("middle_extracted_while_held")
+    complete = extracted and grasped and quiet(middle)
+    return complete, {"middle_extracted": bool(extracted), "outward_travel_m": travel,
+                      "rear_edge_x_m": rear, "held_by_left": grasped,
+                      "adjacent_books": "fixed fixtures; no support evaluation",
+                      "release_required": False}, ""
+
+
+def ball_contained(position, p):
+    """Sphere fits within every sloped polygon wall, floor and rim of the bowl."""
+    x, y, z = position
+    r = p["ball_radius_m"]
+    n = p["wall_segments"]
+    cosine = math.cos(math.pi / n)
+    slope = (p["top_radius_m"] - p["bottom_radius_m"]) / (p["height_m"] - p["floor_m"])
+    boundary = (p["bottom_radius_m"] + slope * (z - p["floor_m"])) * cosine
+    margin = r * math.sqrt(1 + (slope * cosine) ** 2)
+    normals = np.arange(n) * (2 * math.pi / n) + math.pi / n
+    return bool(z - r >= p["floor_m"] - 0.0015 and z + r <= p["height_m"] + 0.001
+                and np.all(x * np.cos(normals) + y * np.sin(normals) + margin <= boundary + 0.001))
 
 
 def bowl(e, rows):
     bowl = rows["bowl"]
     p = e.spec.parameters
-    if rows["feed_gate"]["pose"][0] > e.initial["feed_gate"][0] + 0.01:
-        e.flags.add("feeding_started")
     inside = []
-    spilled = []
     for i in range(p["count"]):
-        r = rows[f"load_{i}"]
-        t = relative(r, bowl)
-        radius = np.linalg.norm(t[:2, 3])
-        # Entire 16-mm block fits below the rim and above the bowl floor.
-        contained = (
-            radius + 0.012 < 0.045 + max(0, t[2, 3]) * (0.019 / 0.055)
-            and 0.010 <= t[2, 3] <= 0.048
-        )
-        inside.append(bool(contained))
-        if "feeding_started" in e.flags and (
-            r["bench_force_n"] > 0.05 or t[2, 3] < -0.015
-        ):
-            spilled.append(i)
-    holding = (
-        held(bowl, "left") and held(bowl, "right") and bowl["bench_force_n"] < 0.05
-    )
-    steady_load = all(inside) and holding and upright(bowl, 0.18) and quiet(bowl)
-    if steady_load:
-        e.timers.setdefault("loaded_hold", e.last_time)
-        if e.last_time - e.timers["loaded_hold"] >= 2.0:
-            e.flags.add("loaded_hold_completed")
-    else:
-        e.timers.pop("loaded_hold", None)
-    complete = (
-        all(inside)
-        and "loaded_hold_completed" in e.flags
-        and table_placed(bowl)
-        and upright(bowl, 0.18)
-    )
-    return (
-        complete,
-        {
-            "contained_blocks": sum(inside),
-            "required_blocks": p["count"],
-            "holding_both_handles": holding,
-            "loaded_hold_completed": "loaded_hold_completed" in e.flags,
-            "spilled": spilled,
-        },
-        ("Load spilled" if spilled else ""),
-    )
+        row = rows[f"load_{i}"]
+        point = relative(row, bowl)[:3, 3]
+        inside.append(ball_contained(point, p))
+        # A previously spilled ball remains a spill even if returned to the bowl.
+        if (row["bench_force_n"] > 0.005 or point[2] < -p["ball_radius_m"]
+                or np.linalg.norm(point[:2]) - p["ball_radius_m"] > p["top_radius_m"] + 0.008):
+            e.flags.add(f"spilled_ball_{i}")
+    spilled = [i for i in range(p["count"]) if f"spilled_ball_{i}" in e.flags]
+    holding = held(bowl, "left") and held(bowl, "right")
+    if holding and bowl["bench_force_n"] < 0.05 and bowl["pose"][2] - e.initial["bowl"][2] >= p["lift_m"]:
+        e.flags.add("loaded_bowl_lifted")
+    target_error = float(np.linalg.norm(np.asarray(bowl["pose"][:2]) - p["target_xy"]))
+    complete = (all(inside) and "loaded_bowl_lifted" in e.flags and table_placed(bowl)
+                and upright(bowl, 0.18) and target_error <= p["target_tolerance_m"])
+    return complete, {"contained_balls": sum(inside), "required_balls": p["count"],
+                      "holding_both_handles": holding, "target_error_m": target_error,
+                      "loaded_bowl_lifted": "loaded_bowl_lifted" in e.flags, "spilled": spilled}, ("Load spilled" if spilled else "")
 
 
 def latch(e, rows):
     lid, button, eraser = (rows[n] for n in ("lid", "latch", "eraser"))
-    rotation = pose_transform(lid["pose"])[:3, :3]
+    rotation = (np.linalg.inv(pose_transform(e.initial["lid"])) @ pose_transform(lid["pose"]))[:3, :3]
     angle = math.atan2(rotation[2, 0], rotation[0, 0])
-    extension = float(relative(button, lid)[0, 3] - 0.096)
-    if extension > 0.01 and held(button):
+    extension = float(relative(button, lid)[0, 3] - e.spec.parameters["latch_closed_x_local"])
+    if extension > 0.01 and held(button, "left"):
         e.flags.add("latch_retracted")
     if angle > 0.65 and "latch_retracted" in e.flags:
         e.flags.add("box_opened")
-    outside = np.linalg.norm(np.array(eraser["pose"][:2]) - (0.37, 0)) > 0.13
+    outside = np.linalg.norm(np.array(eraser["pose"][:2]) - e.spec.parameters["box_xy"]) > 0.13
     if outside and "box_opened" in e.flags and "eraser" in e.grasped:
         e.flags.add("item_removed")
     closed = abs(angle) < 0.06 and abs(extension) < 0.004
@@ -167,27 +141,18 @@ def jelly(e, rows):
 
 
 def drawer(e, rows):
-    r = rows["drawer"]
-    travel = r["pose"][0] - e.initial["drawer"][0]
-    if travel >= 0.10 and held(r):
+    row = rows["drawer"]
+    p = e.spec.parameters
+    travel = float((np.asarray(row["pose"][:3]) - e.initial["drawer"][:3]) @ p["outward_axis_world"])
+    if travel >= p["required_open_m"] and held(row, "left"):
         e.flags.add("opened_while_held")
-    at_stop = travel < 0.006 or travel > 0.124
-    impact = at_stop and np.linalg.norm(r["linear_velocity"]) > 0.25
-    complete = (
-        "opened_while_held" in e.flags
-        and abs(travel) < 0.006
-        and released(r)
-        and quiet(r)
-    )
-    return (
-        complete,
-        {
-            "opening_m": float(travel),
-            "opened_then_closed": "opened_while_held" in e.flags,
-            "impact_speed_limit_m_s": 0.25,
-        },
-        ("Excessive speed at drawer stop" if impact else ""),
-    )
+    at_stop = travel < 0.006 or travel > p["max_travel_m"] - 0.006
+    impact = at_stop and np.linalg.norm(row["linear_velocity"]) > p["max_speed_m_s"]
+    complete = ("opened_while_held" in e.flags and p["required_open_m"] <= travel <= p["max_travel_m"] + 0.003
+                and released(row) and quiet(row))
+    return complete, {"opening_m": travel, "opened_while_held": "opened_while_held" in e.flags,
+                      "final_state": "released and open", "impact_speed_limit_m_s": p["max_speed_m_s"]}, (
+        "Excessive speed at drawer stop" if impact else "")
 
 
 RULES = {"L2-03": books, "L2-04": bowl, "L2-05": latch, "L2-06": jelly, "L2-07": drawer}
