@@ -13,7 +13,10 @@ from robot_tasks.tasks.screw.spec import SPEC
 from robot_tasks.tasks.screw.task import ScrewTask
 
 
-def sample(z=0.03, yaw=0.0, *, held=True, support=True, xy=None):
+ENGAGED_Z = SPEC.socket_rim - 0.010
+
+
+def sample(z=ENGAGED_Z, yaw=0.0, *, held=True, support=True, xy=None):
     return {
         "pose": [
             *(SPEC.socket_xy if xy is None else xy),
@@ -82,11 +85,40 @@ class ScrewTests(unittest.TestCase):
                 edges[key] = edges.get(key, 0) + 1
         self.assertTrue(all(n == 2 for n in edges.values()))
 
+    def test_short_threads_fit_inside_the_shaft_and_socket(self):
+        male = np.concatenate([v for v, _ in helix_pieces()])
+        female = np.concatenate([v for v, _ in helix_pieces(female=True)])
+        self.assertGreater(male[:, 2].min(), 0)
+        self.assertLess(male[:, 2].max(), SPEC.shaft_length)
+        self.assertGreater(female[:, 2].min(), SPEC.socket_floor)
+        self.assertLess(female[:, 2].max(), SPEC.socket_rim)
+        self.assertAlmostEqual(SPEC.required_turn_rad / (2 * math.pi), .5)
+        self.assertAlmostEqual(SPEC.pitch * SPEC.required_turn_rad / (2 * math.pi),
+                               SPEC.required_threaded_advance)
+        # The head remains above the rim at the target, not flush with the socket.
+        self.assertGreaterEqual(SPEC.shaft_length - SPEC.required_depth, .014)
+        self.assertGreater(SPEC.socket_rim - SPEC.required_depth, SPEC.socket_floor)
+
+    def test_half_turn_and_release_pass_but_quarter_turn_does_not(self):
+        for steps, success in ((6, False), (12, True)):
+            with self.subTest(steps=steps):
+                evaluator = ScrewEvaluator()
+                evaluator.update(0, sample(0.07, support=False, xy=SPEC.source_xy))
+                for i in range(steps + 1):
+                    yaw = -i * math.pi / 12
+                    z = ENGAGED_Z + SPEC.pitch * yaw / (2 * math.pi)
+                    evaluator.update(i + 1, sample(z, yaw))
+                released = sample(z, yaw, held=False)
+                evaluator.update(steps + 2, released)
+                result = evaluator.update(steps + 3, released)
+                self.assertEqual(result.status == "succeeded", success)
+                self.assertEqual(result.metrics["task_version"], SPEC.version)
+
     def _turn(self):
         self.e.update(0, sample(0.07, support=False, xy=SPEC.source_xy))
         for i in range(25):
             yaw = -i * math.pi / 12
-            z = 0.037 + SPEC.pitch * yaw / (2 * math.pi)
+            z = ENGAGED_Z + SPEC.pitch * yaw / (2 * math.pi)
             result = self.e.update(i + 1, sample(z, yaw))
         self.assertTrue(result.metrics["guided_depth_seen"])
         return z, yaw
@@ -97,11 +129,11 @@ class ScrewTests(unittest.TestCase):
         self.assertEqual(self.e.update(26, row).status, "running")
         result = self.e.update(27, row)
         self.assertEqual(result.status, "succeeded")
-        self.assertGreaterEqual(result.metrics["held_thread_advance_m"], 0.009)
+        self.assertGreaterEqual(result.metrics["held_thread_advance_m"], SPEC.required_threaded_advance)
 
     def test_rotation_and_descent_in_alternating_samples_can_finish(self):
         self.e.update(0, sample(0.07, support=False, xy=SPEC.source_xy))
-        z, yaw = 0.037, 0.0
+        z, yaw = ENGAGED_Z, 0.0
         self.e.update(1, sample(z, yaw))
         # Contact settles after rotation, rather than in the same control tick.
         for i in range(12):
@@ -125,39 +157,40 @@ class ScrewTests(unittest.TestCase):
         self.assertAlmostEqual(result.metrics["held_thread_turn_rad"], 2 * math.pi)
 
     def test_back_and_forth_motion_cannot_create_progress(self):
-        self.e.update(0, sample(0.037))
+        self.e.update(0, sample(ENGAGED_Z))
         for i in range(100):
-            self.e.update(1 + 2 * i, sample(0.0375, math.pi / 12))
-            result = self.e.update(2 + 2 * i, sample(0.037))
+            self.e.update(1 + 2 * i, sample(ENGAGED_Z + 0.0005, math.pi / 12))
+            result = self.e.update(2 + 2 * i, sample(ENGAGED_Z))
         self.assertAlmostEqual(result.metrics["held_thread_turn_rad"], 0)
         self.assertAlmostEqual(result.metrics["held_thread_advance_m"], 0)
         self.assertFalse(result.metrics["guided_depth_seen"])
 
     def test_regrasp_preserves_controlled_net_motion(self):
-        self.e.update(0, sample(0.037))
+        self.e.update(0, sample(ENGAGED_Z))
         for i in range(1, 13):
-            self.e.update(i, sample(0.037 - i * 0.0005, -i * math.pi / 12))
-        self.e.update(13, sample(0.031, -math.pi, held=False))
-        self.e.update(14, sample(0.031, -math.pi))
+            self.e.update(i, sample(ENGAGED_Z - i * 0.0005, -i * math.pi / 12))
+        self.e.update(13, sample(ENGAGED_Z - 0.006, -math.pi, held=False))
+        self.e.update(14, sample(ENGAGED_Z - 0.006, -math.pi))
         for i in range(1, 13):
             result = self.e.update(
-                14 + i, sample(0.031 - i * 0.0005, -math.pi - i * math.pi / 12)
+                14 + i, sample(ENGAGED_Z - 0.006 - i * 0.0005, -math.pi - i * math.pi / 12)
             )
         self.assertAlmostEqual(result.metrics["held_thread_advance_m"], SPEC.pitch)
         self.assertTrue(result.metrics["guided_depth_seen"])
 
     def test_unheld_forward_motion_does_not_earn_controlled_progress(self):
-        self.e.update(0, sample(0.037))
-        for i in range(1, 13):
-            self.e.update(i, sample(0.037 - i * 0.0005, -i * math.pi / 12))
-        self.e.update(13, sample(0.031, -math.pi, held=False))
-        for i in range(1, 13):
+        self.e.update(0, sample(ENGAGED_Z))
+        # Only a quarter-turn is held; free motion must not complete the half-turn.
+        for i in range(1, 7):
+            self.e.update(i, sample(ENGAGED_Z - i * 0.0005, -i * math.pi / 12))
+        self.e.update(7, sample(ENGAGED_Z - 0.003, -math.pi / 2, held=False))
+        for i in range(1, 19):
             self.e.update(
-                13 + i,
-                sample(0.031 - i * 0.0005, -math.pi - i * math.pi / 12, held=False),
+                7 + i,
+                sample(ENGAGED_Z - 0.003 - i * 0.0005, -math.pi / 2 - i * math.pi / 12, held=False),
             )
-        result = self.e.update(26, sample(0.025, -2 * math.pi))
-        self.assertAlmostEqual(result.metrics["held_thread_advance_m"], 0.006)
+        result = self.e.update(26, sample(ENGAGED_Z - SPEC.pitch, -2 * math.pi))
+        self.assertAlmostEqual(result.metrics["held_thread_advance_m"], 0.003)
         self.assertFalse(result.metrics["guided_depth_seen"])
 
     def test_rollback_revokes_earned_completion_with_or_without_grip(self):
@@ -173,13 +206,13 @@ class ScrewTests(unittest.TestCase):
                 self.assertAlmostEqual(result.metrics["held_thread_advance_m"], 0)
                 self.assertFalse(result.metrics["guided_depth_seen"])
                 # A later straight push must not resurrect the old success witness.
-                self.e.update(50, sample(0.025, held=False))
+                self.e.update(50, sample(ENGAGED_Z - SPEC.pitch, held=False))
                 self.assertNotEqual(
-                    self.e.update(51, sample(0.025, held=False)).status, "succeeded"
+                    self.e.update(51, sample(ENGAGED_Z - SPEC.pitch, held=False)).status, "succeeded"
                 )
 
     def test_leaving_engagement_resets_credit(self):
-        for outside in (sample(0.044), sample(0.025, xy=SPEC.source_xy)):
+        for outside in (sample(SPEC.socket_rim - 0.003), sample(ENGAGED_Z - SPEC.pitch, xy=SPEC.source_xy)):
             with self.subTest(outside=outside):
                 self.e = ScrewEvaluator()
                 z, yaw = self._turn()
@@ -194,7 +227,7 @@ class ScrewTests(unittest.TestCase):
             with self.subTest(mode=mode):
                 evaluator = ScrewEvaluator()
                 for i in range(25):
-                    row = sample(0.037 - i * 0.0005, -i * math.pi / 12)
+                    row = sample(ENGAGED_Z - i * 0.0005, -i * math.pi / 12)
                     if mode == "unsupported":
                         row["fixture_force_n"] = 0
                     else:
@@ -208,11 +241,11 @@ class ScrewTests(unittest.TestCase):
 
         records = []
         for i in range(25):
-            row = sample(0.037 - i * 0.0005, -i * math.pi / 12)
+            row = sample(ENGAGED_Z - i * 0.0005, -i * math.pi / 12)
             records.append(self.e.update(i, row))
             row["pose"][2] = -100  # Reusing an input buffer cannot alter the log.
         for t in (25, 26):
-            records.append(self.e.update(t, sample(0.025, -2 * math.pi, held=False)))
+            records.append(self.e.update(t, sample(ENGAGED_Z - SPEC.pitch, -2 * math.pi, held=False)))
         replay = ScrewEvaluator()
         for expected in records:
             metrics = json.loads(json.dumps(expected.metrics, allow_nan=False))
@@ -236,8 +269,8 @@ class ScrewTests(unittest.TestCase):
         from robot_tasks.types import Action
 
         # Offline recorded-measurement fixture, not a robot control strategy.
-        rows = [sample(0.07, support=False, xy=SPEC.source_xy), sample(0.037)]
-        z, yaw = 0.037, 0.0
+        rows = [sample(0.07, support=False, xy=SPEC.source_xy), sample(ENGAGED_Z)]
+        z, yaw = ENGAGED_Z, 0.0
         for _ in range(12):
             yaw -= math.pi / 6
             rows.append(sample(z, yaw))
@@ -311,25 +344,25 @@ class ScrewTests(unittest.TestCase):
     def test_straight_push_cannot_pass(self):
         self.e.update(0, sample(0.07, support=False))
         for i in range(25):
-            result = self.e.update(i + 1, sample(0.039 - 0.0005 * i))
+            result = self.e.update(i + 1, sample(SPEC.socket_rim - 0.008 - 0.0005 * i))
         self.assertFalse(result.metrics["guided_depth_seen"])
         self.assertEqual(result.metrics["held_thread_turn_rad"], 0)
         for i in (26, 27, 28):
             self.assertNotEqual(
-                self.e.update(i, sample(0.024, held=False)).status, "succeeded"
+                self.e.update(i, sample(ENGAGED_Z - SPEC.pitch, held=False)).status, "succeeded"
             )
 
     def test_free_air_rotation_cannot_pass(self):
         for i in range(25):
             self.e.update(i, sample(0.08, -i * math.pi / 12, support=False))
         for i in (26, 27, 28):
-            result = self.e.update(i, sample(0.024, held=False))
+            result = self.e.update(i, sample(ENGAGED_Z - SPEC.pitch, held=False))
             self.assertNotEqual(result.status, "succeeded")
             self.assertEqual(result.metrics["held_thread_turn_rad"], 0)
 
     def test_already_seated_without_process_is_not_success(self):
         for i in range(5):
-            result = self.e.update(i, sample(0.024, held=False))
+            result = self.e.update(i, sample(ENGAGED_Z - SPEC.pitch, held=False))
             self.assertNotEqual(result.status, "succeeded")
         self.assertFalse(result.metrics["pickup_seen"])
 

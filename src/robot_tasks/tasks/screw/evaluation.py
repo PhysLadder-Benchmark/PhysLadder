@@ -157,6 +157,8 @@ class ScrewEvaluator:
             "pickup_seen": self.pickup_seen,
             "insertion_depth_m": float(depth),
             "required_depth_m": s.required_depth,
+            "required_turn_rad": s.required_turn_rad,
+            "required_threaded_advance_m": s.required_threaded_advance,
             "axis_error_m": radial_error,
             "tilt_rad": tilt,
             "held_thread_turn_rad": self.thread_turn,

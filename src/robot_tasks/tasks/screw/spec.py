@@ -6,28 +6,28 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class ScrewSpec:
-    version: str = "l3-05-coarse-thread-v1"
+    version: str = "l3-05-short-half-turn-v2"
     core_radius: float = 0.013
     crest_radius: float = 0.018
     head_radius: float = 0.022
-    shaft_length: float = 0.042
+    shaft_length: float = 0.030
     head_height: float = 0.018
     pitch: float = 0.012
     thread_start: float = 0.008
-    thread_turns: float = 2.0
+    thread_turns: float = 1.5
     thread_root_width: float = 0.006
     thread_crest_width: float = 0.003
     radial_clearance: float = 0.0015
     segments_per_turn: int = 32
     socket_radius: float = 0.032
     socket_floor: float = 0.005
-    socket_rim: float = 0.047
+    socket_rim: float = 0.035
     socket_thread_start: float = 0.010
-    socket_thread_turns: float = 2.5
+    socket_thread_turns: float = 1.5
     friction: float = 0.15
-    required_depth: float = 0.021
-    required_threaded_advance: float = 0.009
-    required_turn_rad: float = 1.5 * math.pi
+    required_depth: float = 0.015
+    required_threaded_advance: float = 0.006
+    required_turn_rad: float = math.pi
     alignment_tolerance: float = 0.0025
     tilt_tolerance_rad: float = math.radians(10)
     stability_s: float = 1.0
