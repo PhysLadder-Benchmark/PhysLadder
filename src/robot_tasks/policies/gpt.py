@@ -168,10 +168,8 @@ class GPTPolicy:
         self.calls = 0
         self.last_exchange = {}
 
-    def act(self, context: PolicyInput) -> Action:
-        self.last_exchange = {}  # Input validation errors must not re-log an earlier API call.
-        if self.calls >= self.settings.max_calls:
-            raise ModelError("Episode model-call budget exhausted")
+    def observation_message(self, context: PolicyInput):
+        """Encode disclosed sensor input without calling the provider or changing history."""
         if not context.observation.rgb:
             raise ValueError("GPT robot policy requires at least one real RGB frame")
         observation = context.observation
@@ -223,6 +221,22 @@ class GPTPolicy:
             frame_info[-1]["depth"] = {**depth_info, "png_bytes": len(depth_png),
                                        "sha256": hashlib.sha256(depth_png).hexdigest()}
         message = {"role": "user", "content": content}
+        return message, frame_info, comparisons, image_sizes
+
+    def remember(self, message, response_text):
+        self.history.append((message, {"role": "assistant", "content": response_text}))
+        # Release old image bytes but preserve accepted action/observation text.
+        cutoff = len(self.history) - self.settings.history_steps
+        for index, (user, assistant) in enumerate(self.history):
+            if index < cutoff:
+                user["content"] = [item for item in user["content"] if item["type"] != "input_image"]
+
+    def act(self, context: PolicyInput) -> Action:
+        self.last_exchange = {}  # Input validation errors must not re-log an earlier API call.
+        if self.calls >= self.settings.max_calls:
+            raise ModelError("Episode model-call budget exhausted")
+        message, frame_info, comparisons, image_sizes = self.observation_message(context)
+        observation = context.observation
         messages = [item for pair in self.history for item in pair] + [message]
         self.calls += 1
         self.last_exchange = {"call": self.calls, "step": context.step, "status": "requesting",
@@ -245,13 +259,10 @@ class GPTPolicy:
         except (ModelError, ValueError) as exc:
             self.last_exchange.update(status="rejected", error=str(exc),
                                       retryable=isinstance(exc, RetryablePolicyError))
+            diagnostic = getattr(self.client, "last_diagnostic", None)
+            if isinstance(diagnostic, dict):
+                self.last_exchange["provider_diagnostic"] = diagnostic
             raise
-        self.history.append((message, {"role": "assistant", "content": reply.text}))
-        # Older image bytes are released, while instructions, feedback and
-        # accepted action text remain available for this episode only.
-        cutoff = len(self.history) - self.settings.history_steps
-        for index, (user, assistant) in enumerate(self.history):
-            if index < cutoff:
-                user["content"] = [item for item in user["content"] if item["type"] != "input_image"]
+        self.remember(message, reply.text)
         self.last_exchange.update(status="accepted", action=asdict(action))
         return action

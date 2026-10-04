@@ -138,6 +138,11 @@ class EpisodeRecorder:
                 "feedback": asdict(observation.feedback)}
 
     def event(self, value: dict) -> None:
+        exchange = value.get("exchange", {})
+        if value.get("event") == "model_exchange" and exchange.get("provider_diagnostic"):
+            directory = self.directory / "model_errors"
+            directory.mkdir(exist_ok=True)
+            write_json(directory / f"request_{exchange['call']:04d}.json", exchange["provider_diagnostic"])
         with (self.directory / "episode.jsonl").open("a", encoding="utf-8") as f:
             f.write(json.dumps(value, ensure_ascii=False, allow_nan=False) + "\n")
 

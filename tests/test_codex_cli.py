@@ -16,7 +16,8 @@ from PIL import Image
 
 from robot_tasks import batch
 from robot_tasks.execution import _gpt_policy
-from robot_tasks.policies.codex_cli import CodexCLIClient, codex_environment, parse_events, serialize_observations
+from robot_tasks.policies.codex_cli import (CodexCLIClient, codex_environment, parse_events,
+                                          serialize_observations, failure_diagnostic, codex_failure)
 from robot_tasks.policies.model_config import GPTSettings, load_gpt_settings
 from robot_tasks.policies.responses import ModelError, RetryableModelError
 from robot_tasks.registry import resolve_task
@@ -94,6 +95,52 @@ class CodexBoundaryTests(unittest.TestCase):
         self.assertIn("quota exceeded", str(caught.exception))
         for private in ("secret", "sk-private", "eyJtest"):
             self.assertNotIn(private, str(caught.exception))
+
+    def test_error_event_and_stderr_survive_unknown_cli_exit_without_private_output(self):
+        stream = events({"type": "error", "message": "stream disconnected"}, complete=False,
+                        text="private model output")
+        diagnostic = failure_diagnostic(stream, "TLS failure Bearer secret sk-private eyJabc.xyz.sig", 1)
+        failure = codex_failure(diagnostic)
+        self.assertIsInstance(failure, RetryableModelError)
+        self.assertIn("stream disconnected", str(failure))
+        self.assertIn("TLS failure", str(failure))
+        for secret in ("private model output", "secret", "sk-private", "eyJabc"):
+            self.assertNotIn(secret, json.dumps(diagnostic))
+
+    def test_quota_login_and_context_errors_are_not_retried(self):
+        for message in ("You've hit your usage limit", "quota exceeded", "not logged in",
+                        "input exceeds the context window", "authentication failed", "input_too_large",
+                        "Input exceeds the maximum length of 1048576 characters"):
+            with self.subTest(message=message):
+                failure = codex_failure(failure_diagnostic("", message, 1))
+                self.assertIsInstance(failure, ModelError)
+                self.assertNotIsInstance(failure, RetryableModelError)
+
+    def test_recovered_error_event_does_not_discard_completed_decision(self):
+        self.assertEqual(parse_events(events({"type": "error", "message": "reconnecting"}),
+                                      model="fixture", latency_s=0).text, '{"commands": []}')
+
+    def test_compaction_preserves_history_and_distinct_task_instructions(self):
+        messages = [{"role": "user", "content": [{"type": "input_text", "text": json.dumps({
+            "instruction": instruction, "step": step, "robot": {"position": [1., 2., 3.]}})}]}
+                    for step, instruction in enumerate(("same long task", "same long task", "new task"), 1)]
+        before = json.dumps(messages)
+        prompt, images = serialize_observations(messages, self.root)
+        self.assertEqual(prompt.count("same long task"), 1)
+        self.assertEqual(prompt.count('"task_instruction_ref":"task_1"'), 2)
+        self.assertIn('"task_instruction_ref":"task_2"', prompt)
+        for step in range(1, 4):
+            self.assertIn(f'"step":{step}', prompt)
+        self.assertEqual(json.dumps(messages), before)
+        self.assertFalse(images)
+
+    def test_oversized_history_is_rejected_before_starting_codex(self):
+        with patch("robot_tasks.policies.codex_cli.CodexProcess") as host:
+            host.return_value.path.side_effect = lambda path: path
+            client = CodexCLIClient(SETTINGS)
+            with self.assertRaisesRegex(ModelError, "input_too_large"):
+                client.generate(instructions="contract", messages=[{"role": "user", "content": "x" * 1_048_576}], schema={})
+            host.return_value.run.assert_not_called()
 
     def test_environment_drops_api_keys_and_application_secrets(self):
         result = codex_environment({"HOME": "/identity", "PATH": "/bin", "CODEX_HOME": "/auth",

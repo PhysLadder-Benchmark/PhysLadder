@@ -1,4 +1,4 @@
-# Run from the repository root in the Isaac Sim environment; requires OPENAI_API_KEY.
+# Run from the repository root in the Isaac Sim environment, using the configured model transport.
 # launch_command / launch_command_conda below are documentation, not auto-executed shell code.
 schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
@@ -35,7 +35,7 @@ retry_failed_attempts = true
 
 [task]
 id = "L3-05"
-name = "粗螺丝对准与旋入（保留现有版）"
+name = "短粗螺丝对准与半圈旋入"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
@@ -56,9 +56,9 @@ grasp regions and poses from current RGB-D and camera calibration. Nominal sizes
 below describe the object, not a supplied grasp pose or an action sequence.
 
 Geometry: shaft core diameter 0.026 m, thread outer diameter 0.036 m, shaft length
-0.042 m; the orange grasping head is 0.044 m across and 0.018 m tall. Overall
-height is 0.060 m. The thread is a coarse RIGHT-HAND thread, pitch 0.012 m per
-full revolution. The socket rim is 0.047 m above the tabletop. Both parts are
+0.030 m; the orange grasping head is 0.044 m across and 0.018 m tall. Overall
+height is 0.048 m. The thread is a coarse RIGHT-HAND thread, pitch 0.012 m per
+full revolution. The socket rim is 0.035 m above the tabletop. Both parts are
 rigid. There is generous engineering clearance and low thread friction, but
 the thread is a physical obstacle: straight downward pushing is not screwing.
 
@@ -69,6 +69,9 @@ measured opening. A blocked opening alone does not prove a grasp. Before leaving
 the source, make a small vertical lift and visually confirm the whole screw
 follows. If not, stop transport, open and correct the grasp. Use the observation
 arm if the object is occluded. Carry with the entire tip above the socket rim.
+Before engagement, choose a starting wrist orientation that leaves room for the
+clockwise half-turn within joint limits. The round head permits different grasp
+directions; avoid starting near a rotation limit. Regrasp safely if needed.
 
 Keep the screw upright and its tip centred over the bore. Approach in small
 increments. Establish first engagement without forcing the part down. If it
@@ -114,8 +117,13 @@ interface uses fixed drive parameters, not a direct torque/force controller;
 you can adjust poses, opening and motion increments. No live force sensor or
 simulator object pose is supplied to you.
 
-Completion requires genuine held rotation/downward progress of at least three
-quarters of a turn (about 0.009 m coupled advance), and the tip at least 0.021 m
+This is a short, partial-insertion task: do not drive the screw to the socket
+floor or try to make the head flush with the rim. The head remains above the rim,
+with room for the fingers. A half-turn means the ACTUAL screw turns after
+engagement; unsuccessful commands or earlier free-air rotation do not count.
+
+Completion requires genuine held rotation/downward progress of at least half
+a turn (180 degrees, about 0.006 m coupled advance), and the tip at least 0.015 m
 below the socket rim. The final alignment limits are a tip-axis offset of at most 0.0025 m from the
 socket axis and a screw tilt of at most 10 degrees; aim comfortably inside these
 limits. The screw must remain upright and supported by the socket.
@@ -133,10 +141,10 @@ not restart. Every decision needs a brief English observation/action note.
 # Chinese setup/props description; keep this the final task attribute.
 description = """
 当前实现：已接入本地物理场景、共用 GPT 控制流程、独立评分及记录。参数为仿真工程值，需按实物校准；启动命令见本任务 launch_command。
-范围：沿用现有仿真配置、螺丝、孔座和评分定义；本轮强化英文 prompt 的啮合确认、渐进释放及失稳恢复要求。
-道具：现有橙色粗螺丝、固定蓝色螺纹孔座和操作台；螺丝芯径约 26 mm、牙外径约 36 mm、头部直径约 44 mm、总高约 60 mm，右旋螺距 12 mm。
+范围：短杆半圈版本 l3-05-short-half-turn-v2；同步缩短螺杆、孔座与螺纹，保留共用控制流程和净旋转／推进评分算法。旧版运行不按新阈值重判。
+道具：橙色短粗螺丝、固定蓝色螺纹孔座和操作台；芯径 26 mm、牙外径 36 mm、螺杆长 30 mm、抓持头直径 44 mm 且高 18 mm、总高 48 mm；孔座高 35 mm，右旋螺距 12 mm，内外螺纹均为 1.5 圈。
 布置：螺丝平底直立在桌面，孔座单独固定，二者分开放置、不预先啮合、不预抓持。左臂操作，右臂可按需移动相机观察。
 操作：自主抓住螺丝头、抬起、搬运对准、首次啮合，然后协调顺时针旋转与向下推进，必要时重抓，最后松手让孔座承托。
-完成：沿用现有净旋转、有效推进、入孔深度及释放稳定判据；任务阈值和本轮之前修正的评分逻辑不变。
+完成：实际抓持且接触孔座时净旋转至少半圈、有效推进约 6 mm；端部进入孔口至少 15 mm，保持对准、释放后由孔座稳定承托 1 秒。不要求拧到底或头部贴住孔口，给夹指留出净空。
 边界：这是粗牙简化接触任务，未模拟或验证滑牙、材料损伤和真实紧固扭矩；不能将其解释为标准紧固件验收。
 """

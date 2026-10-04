@@ -106,7 +106,7 @@ class ModelRetryTests(unittest.TestCase):
         self.assertTrue(all(c.kwargs["timeout_s"] == 2400 for c in calls))
         # The request counter advances; sensor data and accepted history do not.
         for step, call in enumerate(calls[1:], 2):
-            normalized = call.kwargs["data"].replace(f'"step": {step},'.encode(), b'"step": 2,')
+            normalized = call.kwargs["data"].replace(f'"step":{step},'.encode(), b'"step":2,')
             self.assertEqual(normalized, calls[1].kwargs["data"])
         exchanges = [e["exchange"] for e in events if e["event"] == "model_exchange"]
         self.assertEqual([e["history_steps"] for e in exchanges], [0, 1, 1, 1, 1])
@@ -126,6 +126,31 @@ class ModelRetryTests(unittest.TestCase):
         robot.apply.assert_not_called()
         exhausted = [e for e in events if e["event"] == "model_retry_exhausted"]
         self.assertEqual(exhausted[0]["retry_exhaustion"], "retry_limit")
+
+    def test_unknown_codex_exit_retries_three_times_and_preserves_diagnostics(self):
+        client, completed = self.codex_fixture()
+        failure = subprocess.CompletedProcess([], 1, b'{"type":"error","message":"connection reset"}',
+                                              b"upstream stream closed")
+        client.host.run.side_effect = [failure] * 3 + [completed]
+        result, events, policy, robot, _, sleep = self.run_fixture(calls=4, client=client)
+        self.assertEqual(result["status"], "finished")
+        self.assertEqual(result["model_retry_attempts"], 3)
+        self.assertEqual(robot.apply.call_count, 1)
+        self.assertEqual(len(policy.history), 1)
+        exchanges = [e["exchange"] for e in events if e["event"] == "model_exchange"]
+        self.assertEqual(exchanges[0]["provider_diagnostic"]["stderr_excerpt"], "upstream stream closed")
+        self.assertNotIn("provider_diagnostic", exchanges[-1])
+
+    def test_codex_quota_exit_and_user_cancellation_do_not_retry(self):
+        for code, stderr, status in ((1, b"You've hit your usage limit", "error"), (130, b"", "cancelled")):
+            with self.subTest(code=code):
+                client, _ = self.codex_fixture()
+                client.host.run.return_value = subprocess.CompletedProcess([], code, b"", stderr)
+                result, events, policy, robot, _, sleep = self.run_fixture(client=client)
+                self.assertEqual(result["status"], status)
+                self.assertEqual(result["model_calls"], 1)
+                robot.apply.assert_not_called()
+                sleep.assert_not_called()
 
     def test_three_retries_then_success_execute_once_and_count_four_calls(self):
         result, events, policy, robot, client, sleep = self.run_fixture(

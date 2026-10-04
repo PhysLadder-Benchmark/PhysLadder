@@ -117,6 +117,11 @@ def write_run_report(directory: Path) -> Path:
     outcome = ("成功" if result.get("success") is True else "失败" if result.get("success") is False
                else "未确定") if evaluated else "未评估（工程检查、演练或异常回合不计为任务成功／失败）"
     lines = ["# 任务测评报告", "", "根据本回合已有记录生成；不重新评分。单回合结果不代表任务成功率。", ""]
+    if result.get("continuation"):
+        lines += ["**本次为重建末态续跑，不是独立的新回合，也不是无中断的物理仿真。**",
+                  "保留前次模型历史、累计调用和评分过程；PhysX 接触缓存未恢复。录像仅包含本次续跑。",
+                  f"来源：`{result['continuation']['source_run']}`。此前调用 {result.get('previous_model_calls')} 次，"
+                  f"本段新增 {result.get('new_model_calls')} 次；其他动作数、耗时和录像为本段数据。", ""]
     lines += _table(("项目", "结果"), [
         ("任务", result.get("task_id", manifest.get("task_id", directory.name))),
         ("运行模式", result.get("mode", manifest.get("kind", manifest.get("mode")))),

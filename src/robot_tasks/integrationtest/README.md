@@ -28,6 +28,8 @@ python -m robot_tasks.integrationtest.scene_smoke --all
 python -m robot_tasks.integrationtest.scene_smoke --all --no-preparation
 ```
 
+短杆螺丝的空间诊断：在规划器环境运行 `python -m robot_tasks.integrationtest.screw_clearance`，检查接近、抓持、半圈旋转与张爪的采样姿态。复用 CAD／URDF 包围盒与数值 IK，只检查关节限位及桌面／孔座间隙；不执行机器人任务，不向 GPT 提供诊断姿态，也不证明实际啮合或连续路径可行。结果默认写入 `runs/screw_short_clearance.json`。
+
 前者验证共同准备动作、场景、RGB-D 和初始评分；后者跳过规划器，只验证物理场景。
 加 `--prop-probe` 可对有检查定义的空腔承重、柔性杆、滑轨和螺纹做物理夹具诊断。
 `prop_physics.py` 会明确设置诊断初态或施加测试驱动，不能作为机器人任务成功视频或 GPT 成功率。
