@@ -5,7 +5,19 @@ import math
 import numpy as np
 
 from ...robots.transforms import pose_transform
-from .evaluation import held, quiet, relative, released, table_placed, upright
+from .evaluation import held, quiet, relative, released, sustained, table_placed, upright
+
+
+def _contact_moved_object(e, key, row, active):
+    """Distinguish a brief touch from sustained manipulation of a forbidden prop."""
+    if not active:
+        e.contact_motion.pop(key, None)
+        return False
+    pose = np.array(row["pose"])
+    start_time, start_pose = e.contact_motion.setdefault(key, (e.last_time, pose.copy()))
+    distance = np.linalg.norm(pose[:3] - start_pose[:3])
+    angle = 2 * math.acos(float(np.clip(abs(pose[3:] @ start_pose[3:]), 0, 1)))
+    return e.last_time - start_time >= 0.15 - 1e-9 and (distance > 0.003 or angle > 0.05)
 
 
 def bottle(e, rows):
@@ -89,20 +101,18 @@ def pushing(e, rows):
     else:
         e.push_contact_pose = None
     failure = ""
-    if max(block["fingers"]["right"]) > 0.05:
+    observer_contact = max(block["fingers"]["right"]) > 0.05
+    if observer_contact:
         e.flags.add("observation_arm_touched_block")
-    if min(c[2] for c in block["corners"]) > p["max_lift_m"]:
-        e.flags.add("block_lifted_from_table")
+    lifted = min(c[2] for c in block["corners"]) > p.get("table_z", 0) + p["max_lift_m"]
+    if lifted:
+        e.flags.add("block_left_table_during_push")
     if not upright(block, 0.30):
-        e.timers.setdefault("t_block_tipped", e.last_time)
-        if e.last_time - e.timers["t_block_tipped"] >= 0.15 - 1e-9:
-            e.flags.add("block_toppled")
-    else:
-        e.timers.pop("t_block_tipped", None)
-    if "observation_arm_touched_block" in e.flags:
-        failure = "The observation arm touched the T block"
-    if "block_lifted_from_table" in e.flags or "block_toppled" in e.flags:
-        failure = "T block was lifted or toppled; use planar pushing on the table"
+        e.flags.add("block_tipped_during_push")
+    if _contact_moved_object(e, "observer_push", block, observer_contact and not contact):
+        failure = "The observation arm manipulated the T block"
+    if sustained(e, "held_block_lift", lifted and not supported and held(block, "left")):
+        failure = "T block was grasped and carried; use planar pushing on the table"
     complete = (
         outside_area <= 1e-9
         and abs(yaw) <= p["yaw_tolerance_rad"]
@@ -123,6 +133,11 @@ def pushing(e, rows):
             "yaw_tolerance_rad": p["yaw_tolerance_rad"],
             "gripper_push_witness": "gripper_pushed_block" in e.flags,
             "grippers_clear": released(block),
+            "quality_warnings": [message for flag, message in (
+                ("observation_arm_touched_block", "Observation arm contact observed"),
+                ("block_left_table_during_push", "T block left the tabletop during pushing"),
+                ("block_tipped_during_push", "T block tipped; recovery by pushing is allowed"),
+            ) if flag in e.flags],
         },
         failure,
     )
@@ -147,7 +162,10 @@ def sweeping(e, rows):
         inside.append(contained and support)
         if broom["pair_forces"].get(name, 0) > 0.015 and holds:
             e.flags.add("swept_" + name)
-        if any(max(fs) > 0.05 for fs in block["fingers"].values()):
+        direct_contact = any(max(fs) > 0.05 for fs in block["fingers"].values())
+        if direct_contact:
+            e.flags.add("direct_block_contact")
+        if _contact_moved_object(e, "direct_" + name, block, direct_contact):
             failure = "A block was manipulated directly by a gripper"
     complete = (
         sum(inside) >= e.spec.parameters["required"]
@@ -163,6 +181,8 @@ def sweeping(e, rows):
             "blocks_in_pan": sum(inside),
             "required": e.spec.parameters["required"],
             "both_tools_held": holds,
+            "quality_warnings": (["Direct gripper/block contact observed"]
+                                 if "direct_block_contact" in e.flags else []),
         },
         failure,
     )
@@ -188,21 +208,22 @@ def push_drawer(e, rows):
     failure = ""
     lower_contact = any(max(fs) > 0.5 for fs in lower["fingers"].values())
     if lower_contact:
-        e.timers.setdefault("wrong_layer_contact", e.last_time)
-        if e.last_time - e.timers["wrong_layer_contact"] >= 0.15 - 1e-9:
-            failure = "The lower drawer was operated; the target is the upper drawer"
-    else:
-        e.timers.pop("wrong_layer_contact", None)
-    if lower_drift > 0.003 or alignment > 0.004 or not upright(upper, 0.10):
-        failure = "Cabinet/drawer guide constraint was violated"
-    if travel > p["outward_stop_m"] + 0.003 or travel < p["inward_stop_m"] - 0.003:
-        failure = "Upper drawer exceeded its mechanical stop"
+        e.flags.add("lower_drawer_touched")
+    guide_deviation = alignment > 0.004 or not upright(upper, 0.10)
+    beyond_stop = travel > p["outward_stop_m"] + 0.003 or travel < p["inward_stop_m"] - 0.003
+    if sustained(e, "lower_drawer_displaced", lower_drift > 0.003):
+        failure = "The lower drawer was displaced; the target is the upper drawer"
+    if sustained(e, "guide_deviation", guide_deviation):
+        failure = "Cabinet/drawer guide constraint was persistently violated"
+    if sustained(e, "beyond_stop", beyond_stop):
+        failure = "Upper drawer persistently exceeded its mechanical stop"
     if np.linalg.norm(upper["linear_velocity"]) > p["max_speed_m_s"]:
-        failure = "Upper drawer motion exceeded the declared gentle-motion limit"
+        e.flags.add("drawer_speed_reference_exceeded")
     if e.peak_force > p["max_finger_force_n"]:
-        failure = "Finger contact exceeded the engineering force threshold"
+        e.flags.add("drawer_force_reference_exceeded")
     complete = ("upper_drawer_pulled_open" in e.flags and phase == "open"
-                and travel >= p["open_min_m"] and released(upper) and quiet(upper))
+                and travel >= p["open_min_m"] and released(upper) and quiet(upper)
+                and not guide_deviation and not beyond_stop and lower_drift <= 0.003)
     next_stage = next((stage for flag, stage in (
         ("upper_drawer_pressed", "press_upper_drawer"),
         ("upper_drawer_popped_free", "release_and_observe_popout"),
@@ -215,6 +236,12 @@ def push_drawer(e, rows):
         "released_popout_observed": "upper_drawer_popped_free" in e.flags,
         "grasped_pull_observed": "upper_drawer_pulled_open" in e.flags,
         "released_at_finish": released(upper), "lower_drawer_drift_m": float(lower_drift),
+        "peak_speed_m_s": e.peak_speeds.get("upper_drawer", 0.0),
+        "quality_warnings": [message for flag, message in (
+            ("lower_drawer_touched", "Lower drawer contact observed"),
+            ("drawer_speed_reference_exceeded", "Drawer speed exceeded engineering reference"),
+            ("drawer_force_reference_exceeded", "Finger force exceeded uncalibrated engineering reference"),
+        ) if flag in e.flags],
     }, failure
 
 

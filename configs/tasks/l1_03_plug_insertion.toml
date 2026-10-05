@@ -1,21 +1,20 @@
-# Run from the repository root in the Isaac Sim environment; requires OPENAI_API_KEY.
+# Run from the repository root in the Isaac Sim environment; uses the selected model provider.
 # launch_command / launch_command_conda below are documentation, not auto-executed shell code.
 schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_sim.toml"
+profile = "../robots/r5_tuojing_lab.toml"
 active_arms = ["left"]
 observation_arms = ["right"]
 
 [simulation]
-environment = "lab_room_v1"
-robot_appearance = "r5_black_silver_v1"
-camera_profile = "../cameras/r5_orbbec_provisional.toml"
-asset_directory = "../../build/r5"
+environment = "tuojing_lab_v4"
+camera_profile = "../cameras/r5_tuojing_lab.toml"
+asset_directory = "../../build/tuojing_lab"
 headless = true
-width = 640
-height = 480
+width = 1280
+height = 720
 fps = 12
 arm_stiffness = 1500.0
 arm_damping = 80.0
@@ -24,23 +23,20 @@ finger_damping = 40.0
 self_collision = false
 solver_position_iterations = 32
 solver_velocity_iterations = 0
-camera_position = [1.6, 0.0, 1.4]
-camera_target = [0.28, 0.0, 0.20]
+camera_position = [0.21354960845762927, 0.48765041712220114, 1.32]
+camera_target = [0.1643434123515941, 1.0254038459952994, 0.78]
 
 [policy]
 model_config = "../models/gpt.toml"
 
-[execution]
-retry_failed_attempts = true
-
 [task]
 id = "L1-03"
-name = "低阻力插头插接"
+name = "USB 充电器插入固定插线板"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented_proxy"
 implementation = "household"
-simulation_limitations = "Rigid dummy connector; no cable, electrical continuity, retention spring or commercial connector fidelity."
+simulation_limitations = "Photo-estimated rigid charger and fixed strip; native slots retained, 0.55 mm minimum side clearance. Zero fixture friction; no electrical contacts, spring retention or flexible cable. More precise than the former enlarged L1 proxy."
 launch_command = "python tools/launch.py run L1-03 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L1-03 --gui"
 instruction = """
@@ -49,37 +45,39 @@ it may move its wrist camera when a grasp, opening or contact is obscured, but
 must not touch or support the props. Keep the left arm steady while changing
 view. Choose grasp points, poses and motion from current images and available
 robot feedback; no object coordinates or successful action sequence is supplied.
-Pick up the unpowered plug from the table and insert it into the matching
-fixed socket. Use a low-insertion-force connector with no latch, screw or lock.
-Initially the blue plug stands upright with its grey rectangular tongue pointing
-downward. The fixed socket opens upward; both axes are vertical, but the parts
-are separated on the table and not already aligned or engaged. This reduces
-gross reorientation; it does not supply the final insertion pose.
-Identify the blue graspable body, grey functional tongue, rectangular socket
-opening and matching cross-section orientation. This is a rigid dummy connector;
-there are no exposed pins or flexible cable. Grip the body without covering the tongue.
-Open, approach, close, and verify a short lift before transporting the plug.
-Carry the tongue clear of the socket rim, align its entire rectangular section
-inside the opening, and lower approximately vertically. Account for the tongue's
-offset from the TCP; do not align the TCP alone. If blocked, withdraw slightly
-and inspect the mismatch before correcting rather than forcing a tilted tongue.
-Insert the tongue tip at least 0.022 m below the rim, seat it gently on the socket
-floor, and open the gripper separately. Withdraw without dragging the plug and
-confirm it remains supported in the socket for 1.0 simulation seconds without
-hand support. No power connection,
-electrical test, latch actuation, cable routing or twisting operation is required.
+Pick up the white USB charger lying on its side and insert its two metal blades
+into the MIDDLE blue two-slot socket of the fixed, unpowered white power strip.
+Grip plastic, not metal blades; the USB output opening is not the entering end.
+The strip's coiled cable is fixed and is not a manipulation target.
+Locate the housing and both slots from RGB-D views. Query depth on solid visible
+surfaces, not dark holes or silhouettes. The housing's 27 mm thickness fits the
+70 mm gripper opening. Leave both blades exposed. Close, make a short lift and
+verify the whole charger follows before transport. Regrasp after an empty close.
+Reorient both blades downward and carry their tips clear of the strip. Account
+for their offset from the TCP and align BOTH blades with BOTH middle slots.
+Use a clear oblique right-wrist view if alignment is obscured. Native minimum
+side clearance is 0.55 mm; do not assume the old enlarged dummy socket geometry.
+Lower vertically in small, slow increments. If blocked, withdraw, inspect and
+correct; do not force or twist a blade caught on an edge. Seat the housing gently
+on the socket face, with both blade tips at least 15 mm below that face. Open
+separately and withdraw without dragging. Inspect released support for one
+simulation second. No electricity, latch operation or cable routing is required.
+A miss, temporary tilt or a recoverable tabletop placement permits another
+approach in this scene. Physical insertion still needs both blades inside.
+No automatic reset occurs.
+
 Inspect the actual released or completed state before requesting stop. A
 commanded pose, blocked gripper, or completion claim is not evidence of success.
-If a grasp is lost or the scene resets, use new observations and reassess rather
+If a grasp is lost, use new observations and reassess rather
 than continuing with stale object positions. Do not invent force measurements
 or assume a force-control tool that the interface does not expose.
 """
 
 # Chinese setup/props description; keep this the final task attribute.
 description = """
-道具：带可抓持壳体和矩形插舌的未通电插头代理、固定空心插座、操作台。
-布置：插头竖直放在桌面，与插座轴线平行；插舌为 22×14 mm，插口为 32×24 mm，排除锁扣与电气连接。
-操作：左臂自主抓取、抬升、对准插口和送入；右臂仅用于主动观察。
-完成：有真实抓持抬升记录，插舌方向和截面正确，舌尖入槽至少 22 mm，松手后由插座支撑并稳定 1 秒。
-边界：这是宽松几何插接代理，不对应某一商业插头；不模拟通电、弹性端子、插拔寿命或损坏。
+道具：交付 USB 充电器和插线板，原生尺寸、材质及两片插脚/插孔碰撞体；插线板固定且不通电。
+布置：拓境实验室、原生 R5 双臂及三相机。充电器侧躺在左臂前方，目标为插线板中间的蓝色双孔；右臂仅观察。
+操作：自主抓塑料壳，确认抬起后调整为插脚向下，同时对齐两孔，轻插、松手并退出。
+完成：真实抓持抬升后，两插脚均进入对应孔至少 15 mm，壳体就位，松手后由插座承托并稳定 1 秒。
+边界：插脚 1.5×6.3 mm，孔 2.6×8.2 mm，最小单侧间隙 0.55 mm，比旧代理更精密，不能标成同等难度。插座零摩擦，不模拟电接触或弹簧卡持。
 """

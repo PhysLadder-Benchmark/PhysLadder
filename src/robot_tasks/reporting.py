@@ -153,6 +153,19 @@ def write_run_report(directory: Path) -> Path:
         lines += [f"运行异常：{_cell(result['error'])}", ""]
     if data["warnings"]:
         lines += ["记录缺项：", "", *(f"- {_cell(w)}" for w in data["warnings"]), ""]
+    metrics = result.get("assessment", {}).get("metrics", {})
+    if metrics.get("scoring_protocol") == "recoverable_progress_v1":
+        lines += ["## 任务目标与过程约束", "",
+                  "目标状态、必要过程约束和工程参考值分别记录；完整任务结果以上方任务评价为准。"
+                  "过程约束栏表示截至当前是否记录违规，不代表尚未执行的步骤已经完成。"
+                  "未经标定的力／速度超标仅作过程记录，不代表已测得材料损坏。", ""]
+        lines += _table(("指标", "结果"), [
+            ("评分协议", metrics["scoring_protocol"]),
+            ("目标状态满足（仍需满足稳定时间）", metrics.get("goal_complete")),
+            ("必要过程约束满足", metrics.get("process_constraints_satisfied")),
+            ("违反的必要约束", metrics.get("constraint_violations", [])),
+            ("过程记录（不直接判失败）", metrics.get("quality_warnings", [])),
+        ])
     if result.get("evaluation_protocol") == "retry_with_history":
         lines += ["## 失败复位与重试", "",
                   "本次采用保留模型历史的复位重试，所有尝试共享调用、物理步和现实时间预算。"

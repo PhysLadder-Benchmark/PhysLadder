@@ -27,11 +27,17 @@ class IsaacSimBackend:
         self.include_depth = False
         self.before_physics_step = None
         self.environment_report = {"profile": "plain"}
+        self.lab_asset = None
+        self.planning_environment_paths = ()
+        self.planning_legacy_bench = True
 
     def open(self, config: TaskConfig) -> None:
         if self.app is not None:
             raise RuntimeError("Isaac Sim backend is already open")
         self.settings = SimulationSettings.from_config(config)
+        if self.settings.environment == "tuojing_lab_v4":
+            from .tuojing_lab import require_lab_assets
+            self.lab_asset = require_lab_assets()
         self.environment_report = {"profile": self.settings.environment}
         self.camera_names = config.cameras
         self.include_depth = config.include_depth
@@ -60,11 +66,28 @@ class IsaacSimBackend:
             from isaacsim.core.api.objects import FixedCuboid
             from pxr import PhysxSchema, UsdLux
 
+            world_options = {}
+            if self.lab_asset is not None:
+                import omni.usd
+                from isaacsim.core.utils.stage import open_stage
+                from .tuojing_lab import configure_stage, validate_robot_binding
+
+                if not open_stage(str(self.lab_asset)):
+                    raise RuntimeError(f"Could not open laboratory: {self.lab_asset}")
+                stage = omni.usd.get_context().get_stage()
+                self.environment_report = configure_stage(stage, self.camera_profile)
+                validate_robot_binding(stage, config.robot)
+                if not self.camera_profile or any(not s.existing_prim_path for s in self.camera_profile.select(config.cameras)):
+                    raise ValueError("Laboratory cameras must bind to the supplied USD cameras")
+                self.planning_environment_paths = self.environment_report["planning_environment_paths"]
+                self.planning_legacy_bench = False
+                world_options["physics_prim_path"] = "/World/PhysicsScene"
             self.world = World(
                 stage_units_in_meters=1.0, physics_dt=config.physics_dt_s,
                 rendering_dt=1 / self.settings.fps, backend="numpy", device="cpu",
                 sim_params={"use_gpu_pipeline": False, "use_fabric": False,
                             "enable_scene_query_support": True},
+                **world_options,
             )
             physics = self.world.get_physics_context()
             physics.enable_gpu_dynamics(False)
@@ -72,11 +95,12 @@ class IsaacSimBackend:
             # Permit zero TGS velocity iterations; record actual per-arm values below.
             scene_api = PhysxSchema.PhysxSceneAPI.Apply(physics.get_current_physics_scene_prim())
             scene_api.CreateMinVelocityIterationCountAttr(0)
-            self.world.scene.add(FixedCuboid(
-                prim_path="/World/Bench", name="bench", position=np.array(BENCH_POSITION),
-                scale=np.array(BENCH_SIZE), size=1.0, color=np.array([0.24, 0.29, 0.34]),
-            ))
-            UsdLux.DomeLight.Define(self.world.stage, "/World/Light").CreateIntensityAttr(1100)
+            if self.lab_asset is None:
+                self.world.scene.add(FixedCuboid(
+                    prim_path="/World/Bench", name="bench", position=np.array(BENCH_POSITION),
+                    scale=np.array(BENCH_SIZE), size=1.0, color=np.array([0.24, 0.29, 0.34]),
+                ))
+                UsdLux.DomeLight.Define(self.world.stage, "/World/Light").CreateIntensityAttr(1100)
             if self.settings.environment == "lab_room_v1":
                 from .lab_room import build_lab_room
                 self.environment_report = build_lab_room(self.world.stage)
@@ -108,25 +132,33 @@ class IsaacSimBackend:
 
         if self.world is None or self.articulations:
             raise RuntimeError("R5 loading requires an open, empty backend")
-        usd_path, self.import_report = convert_r5(profile, self.settings)
+        if self.lab_asset is None:
+            usd_path, self.import_report = convert_r5(profile, self.settings)
+        else:
+            usd_path = self.lab_asset
+            self.import_report = {"source": str(usd_path), "binding": "existing_articulations",
+                                  "source_lock": "assets/tuojing/source.lock.json"}
         self.scene_report = {"asset": str(usd_path), "physics_device": "cpu", "arms": {},
                              "environment": self.environment_report,
-                             "robot_appearance": self.settings.robot_appearance,
+                             "robot_appearance": "delivered_tuojing_lab_v4" if self.lab_asset else self.settings.robot_appearance,
                              "storage": storage_report(self.runtime_storage, kit_started=True),
                              "self_collision": self.settings.self_collision,
                              "drive_type": "force", "gravity_m_s2": 9.81,
                              "solver_type": "TGS",
                              "solver_position_iterations": self.settings.solver_position_iterations,
                              "solver_velocity_iterations": self.settings.solver_velocity_iterations,
-                             "collision_approximation": "convex_decomposition"}
+                             "collision_approximation": "delivered_USD; see per-arm approximations" if self.lab_asset else "convex_decomposition"}
         for mount in profile.mounts:
-            root = add_reference_to_stage(str(usd_path), mount.prim_path)
             position, quaternion = mount.base_pose_wxyz[:3], mount.base_pose_wxyz[3:]
-            transform = UsdGeom.Xformable(root)
-            transform.ClearXformOpOrder()
-            transform.AddTranslateOp().Set(Gf.Vec3d(*position))
-            transform.AddOrientOp(UsdGeom.XformOp.PrecisionDouble).Set(
-                Gf.Quatd(quaternion[0], Gf.Vec3d(*quaternion[1:])))
+            if self.lab_asset is None:
+                root = add_reference_to_stage(str(usd_path), mount.prim_path)
+                transform = UsdGeom.Xformable(root)
+                transform.ClearXformOpOrder()
+                transform.AddTranslateOp().Set(Gf.Vec3d(*position))
+                transform.AddOrientOp(UsdGeom.XformOp.PrecisionDouble).Set(
+                    Gf.Quatd(quaternion[0], Gf.Vec3d(*quaternion[1:])))
+            else:
+                root = self.world.stage.GetPrimAtPath(mount.prim_path)
             descendants = list(Usd.PrimRange(root, Usd.TraverseInstanceProxies()))
             roots = [prim for prim in descendants if prim.HasAPI(UsdPhysics.ArticulationRootAPI)]
             if len(roots) != 1:
@@ -161,22 +193,27 @@ class IsaacSimBackend:
                 VisualSphere(prim_path=tip_path + "/tcp_marker", name=f"tcp_{mount.name}",
                              translation=np.array(profile.tcp_pose_wxyz[:3]), radius=TCP_MARKER_RADIUS_M,
                              color=np.array([0.0, 0.9, 0.9]))
-            self.world.scene.add(FixedCuboid(
-                prim_path=f"/World/Stand_{mount.name}", name=f"stand_{mount.name}",
-                position=np.array([position[0], position[1], position[2] / 2]),
-                scale=np.array([0.16, 0.18, position[2]]), size=1.0,
-                color=np.array([0.16, 0.46, 0.70] if mount.name == "left" else [0.8, 0.38, 0.16]),
-            ))
+            if self.lab_asset is None:
+                self.world.scene.add(FixedCuboid(
+                    prim_path=f"/World/Stand_{mount.name}", name=f"stand_{mount.name}",
+                    position=np.array([position[0], position[1], position[2] / 2]),
+                    scale=np.array([0.16, 0.18, position[2]]), size=1.0,
+                    color=np.array([0.16, 0.46, 0.70] if mount.name == "left" else [0.8, 0.38, 0.16]),
+                ))
             colliders = [str(prim.GetPath()) for prim in descendants if prim.HasAPI(UsdPhysics.CollisionAPI)]
             if not colliders:
                 raise RuntimeError(f"{mount.name}: imported robot contains no collision geometry")
             self.scene_report["arms"][mount.name] = {
                 "prim_path": mount.prim_path, "articulation_root": str(roots[0].GetPath()),
                 "collider_count": len(colliders), "colliders": colliders,
+                "collision_approximations": sorted({
+                    str(UsdPhysics.MeshCollisionAPI(p).GetApproximationAttr().Get())
+                    for p in descendants if p.HasAPI(UsdPhysics.CollisionAPI)
+                }),
                 "configured_base_pose_wxyz": mount.base_pose_wxyz,
                 "ee_link_path": tip_path, "tcp_pose_in_ee_wxyz": profile.tcp_pose_wxyz,
             }
-            if self.settings.robot_appearance == "r5_black_silver_v1":
+            if self.lab_asset is None and self.settings.robot_appearance == "r5_black_silver_v1":
                 from .appearance import apply_r5_appearance
                 self.scene_report["arms"][mount.name]["appearance"] = apply_r5_appearance(
                     self.world.stage, mount.prim_path)
@@ -291,5 +328,9 @@ class IsaacSimBackend:
             self.before_physics_step = None
             self.articulations.clear()
             self.ee_views.clear()
+            self.lab_asset = None
+            self.planning_environment_paths = ()
+            self.planning_legacy_bench = True
+            self.__dict__.pop("_planner_static_scene", None)
             if app is not None:
                 app.close()

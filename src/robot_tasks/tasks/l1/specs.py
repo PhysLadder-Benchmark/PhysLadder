@@ -47,6 +47,7 @@ class Article:
     asset: str = ""
     asset_size: tuple = ()
     asset_rotation: tuple = (0.0, 0.0, 0.0)
+    asset_bounds: tuple = ()  # Optional (min_xyz, max_xyz), for native uncentred metre assets.
 
 
 @dataclass(frozen=True)
@@ -352,6 +353,8 @@ def local_corners(article):
     from itertools import product
 
     if article.asset:
+        if article.asset_bounds:
+            return np.array(list(product(*zip(*article.asset_bounds))))
         return np.array(list(product(*[(-s / 2, s / 2) for s in article.asset_size])))
     points = []
     for part in article.parts:

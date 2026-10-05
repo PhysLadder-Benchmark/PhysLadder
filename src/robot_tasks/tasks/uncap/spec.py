@@ -8,7 +8,7 @@ import numpy as np
 
 @dataclass(frozen=True)
 class MarkerSpec:
-    version: str = "l2-01-table-pickup-v3"
+    version: str = "l2-01-table-pickup-v4-recoverable"
     body_radius: float = 0.015
     body_length: float = 0.120
     cap_radius: float = 0.021
@@ -20,7 +20,7 @@ class MarkerSpec:
     sleeve_friction: float = 0.4
     contact_threshold: float = 0.05
     max_finger_force: float = (
-        25.0  # Simulation protocol threshold, not a material damage law.
+        25.0  # Advisory engineering reference, not a material damage law.
     )
     max_pair_force: float = 15.0
     stability_s: float = 1.0

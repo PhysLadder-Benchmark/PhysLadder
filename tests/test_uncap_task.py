@@ -85,7 +85,7 @@ class UncapTests(unittest.TestCase):
         self.assertNotIn(
             "during a short lift", operating_notes(cfg)["manipulation_guidance"]
         )
-        self.assertEqual(len(preparation_action(cfg).commands), 2)
+        self.assertEqual(preparation_action(cfg).commands, ())
         self.assertFalse(hasattr(UncapTask, "initialize_episode"))
         with self.assertRaises(ValueError):
             UncapTask.prepare_config(replace(cfg, arms=("left",)))
@@ -178,19 +178,36 @@ class UncapTests(unittest.TestCase):
         self.assertEqual(self.e.update(0.7, rows, self.robot).status, "running")
         self.assertEqual(self.e.update(1.2, rows, self.robot).status, "succeeded")
 
-    def test_release_in_air_is_failure(self):
+    def test_short_release_descent_can_settle_and_complete(self):
+        self.e.update(0, objects(separated=True), self.robot)
         rows = objects(separated=True, held=False)
         rows["cap"]["linear_velocity"][2] = -0.2
-        self.assertEqual(self.e.update(0, rows, self.robot).status, "failed")
+        self.assertEqual(self.e.update(0.1, rows, self.robot).status, "running")
+        self.assertEqual(self.e.update(0.2, placed(), self.robot).status, "running")
+        self.assertEqual(self.e.update(1.3, placed(), self.robot).status, "succeeded")
 
-    def test_excessive_force_is_failure_not_damage_claim(self):
+    def test_force_reference_is_advisory_not_damage_claim(self):
         rows = objects()
         rows["cap"]["fingers"]["right"] = [26, 1]
         result = self.e.update(0, rows, self.robot)
-        self.assertEqual(result.status, "failed")
+        self.assertEqual(result.status, "running")
+        self.assertTrue(result.metrics["force_reference_exceeded"])
+        self.assertTrue(result.metrics["quality_warnings"])
         self.assertEqual(
             result.metrics["damage_model"], "none; force limits are protocol proxies"
         )
+        self.e.update(0.1, objects(separated=True), self.robot)
+        self.e.update(0.2, placed(), self.robot)
+        result = self.e.update(1.3, placed(), self.robot)
+        self.assertEqual(result.status, "succeeded")
+        self.assertTrue(result.metrics["quality_warnings"])
+
+    def test_part_lost_below_table_ends_episode(self):
+        rows = objects(separated=True, held=False)
+        rows["cap"]["pose"][2] = -0.2
+        result = self.e.update(0, rows, self.robot)
+        self.assertEqual(result.status, "failed")
+        self.assertFalse(result.retryable)
 
     def test_placement_outside_colored_zones_is_allowed(self):
         self.e.update(0, objects(separated=True), self.robot)

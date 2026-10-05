@@ -40,8 +40,10 @@ class SimulationSettings:
         if not isinstance(directory, str) or not directory:
             raise ValueError("simulation.asset_directory must be a path")
         result = cls(asset_directory=(config.source.parent / directory).resolve(), **data)
-        if result.environment not in {"plain", "lab_room_v1"}:
-            raise ValueError("simulation.environment must be plain or lab_room_v1")
+        if result.environment not in {"plain", "lab_room_v1", "tuojing_lab_v4"}:
+            raise ValueError("simulation.environment must be plain, lab_room_v1 or tuojing_lab_v4")
+        if result.environment == "tuojing_lab_v4" and not result.camera_profile:
+            raise ValueError("tuojing_lab_v4 requires its existing-camera profile")
         if result.robot_appearance not in {"vendor_white", "r5_black_silver_v1"}:
             raise ValueError("simulation.robot_appearance must be vendor_white or r5_black_silver_v1")
         if not isinstance(result.camera_profile, str):

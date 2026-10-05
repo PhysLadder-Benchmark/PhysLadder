@@ -16,11 +16,13 @@ def collider_meshes(backend):
     result = {
         "cuboid": {
             "bench": {"pose": [*BENCH_POSITION, 1, 0, 0, 0], "dims": list(BENCH_SIZE)}
-        },
+        } if getattr(backend, "planning_legacy_bench", True) else {},
         "mesh": {},
     }
     cache = UsdGeom.XformCache(Usd.TimeCode.Default())
-    fixture_paths = set(getattr(backend, "planning_fixture_paths", ()))
+    task_fixture_paths = set(getattr(backend, "planning_fixture_paths", ()))
+    fixture_paths = set(task_fixture_paths)
+    fixture_paths.update(getattr(backend, "planning_environment_paths", ()))
     for prim in backend.world.stage.Traverse():
         path = str(prim.GetPath())
         if path not in fixture_paths or not prim.HasAPI(UsdPhysics.CollisionAPI):
@@ -64,6 +66,16 @@ def collider_meshes(backend):
                 [1, 5, 7],
                 [1, 7, 3],
             ]
+        elif prim.IsA(UsdGeom.Capsule):
+            shape = UsdGeom.Capsule(prim)
+            vertices, faces = capsule_mesh(shape.GetRadiusAttr().Get(), shape.GetHeightAttr().Get())
+            axis = shape.GetAxisAttr().Get()
+            if axis == "X":
+                vertices = vertices[:, [2, 1, 0]]
+                faces = np.asarray(faces)[:, ::-1].tolist()
+            elif axis == "Y":
+                vertices = vertices[:, [0, 2, 1]]
+                faces = np.asarray(faces)[:, ::-1].tolist()
         elif prim.IsA(UsdGeom.Cylinder):
             shape = UsdGeom.Cylinder(prim)
             radius, height = shape.GetRadiusAttr().Get(), shape.GetHeightAttr().Get()
@@ -95,7 +107,43 @@ def collider_meshes(backend):
             "vertices": vertices.tolist(),
             "faces": faces,
         }
+    if len(task_fixture_paths) > 128:
+        # Concatenate surfaces, never take their convex hull: hundreds of native
+        # socket wall pieces must preserve apertures and fit the planner cache.
+        names = [p.replace("/", "_") for p in sorted(task_fixture_paths)
+                 if p.replace("/", "_") in result["mesh"]]
+        vertices, faces = [], []
+        for name in names:
+            entry = result["mesh"].pop(name)
+            faces.extend((np.asarray(entry["faces"]) + len(vertices)).tolist())
+            vertices.extend(entry["vertices"])
+        if vertices:
+            result["mesh"]["task_fixture_surfaces"] = {
+                "pose": [0, 0, 0, 1, 0, 0, 0], "vertices": vertices, "faces": faces}
     return result
+
+
+def capsule_mesh(radius, height, segments=32, rings=16):
+    """Closed Z-axis capsule surface; height is the straight portion, as in USD."""
+    angles = np.arange(segments) * 2 * np.pi / segments
+    polar = np.linspace(-np.pi / 2, np.pi / 2, rings + 1)[1:-1]
+    rows = []
+    for p in polar:
+        z = radius * np.sin(p) + (-height / 2 if p < 0 else height / 2)
+        if abs(p) < 1e-8:
+            rows.append([(radius * np.cos(a), radius * np.sin(a), -height / 2) for a in angles])
+        rows.append([(radius * np.cos(p) * np.cos(a), radius * np.cos(p) * np.sin(a), z) for a in angles])
+    vertices = np.array([v for row in rows for v in row] + [(0, 0, -height / 2 - radius), (0, 0, height / 2 + radius)])
+    faces = []
+    for row in range(len(rows) - 1):
+        for i in range(segments):
+            a, b = row * segments + i, row * segments + (i + 1) % segments
+            faces.extend([[a, b, b + segments], [a, b + segments, a + segments]])
+    for i in range(segments):
+        j = (i + 1) % segments
+        offset = (len(rows) - 1) * segments
+        faces.extend([[len(vertices) - 2, j, i], [len(vertices) - 1, offset + i, offset + j]])
+    return vertices, faces
 
 
 def snapshot(backend):
@@ -105,6 +153,7 @@ def snapshot(backend):
     return {
         "obstacles": backend._planner_static_scene,
         "payloads": callback() if callback is not None else {},
+        "table_surface_z_m": getattr(backend, "environment_report", {}).get("table_surface_z_m", 0.0),
         "information_source": "privileged simulator collision geometry; never task targets or score",
         "limitations": "unheld movable objects excluded for contact; approximate R5 collision spheres",
     }
@@ -128,8 +177,11 @@ def box_surface(size, resolution=5):
 def article_surface(article):
     from ..robots.transforms import origin_transform
 
-    if article.asset:
+    if article.asset and not article.parts:
         # Conservative box for imported objects, disclosed as such in planner logs.
+        if article.asset_bounds:
+            low, high = np.asarray(article.asset_bounds)
+            return box_surface(high - low) + (low + high) / 2
         return box_surface(article.asset_size)
     points = []
     for part in article.parts:

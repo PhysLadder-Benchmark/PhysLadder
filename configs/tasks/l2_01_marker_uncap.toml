@@ -23,14 +23,11 @@ finger_damping = 40.0
 self_collision = false
 solver_position_iterations = 32
 solver_velocity_iterations = 0
-camera_position = [1.6, 0.0, 1.4]
-camera_target = [0.28, 0.0, 0.20]
+camera_position = [1.25, 0.0, 0.54]
+camera_target = [0.71, 0.0, 0.0]
 
 [policy]
 model_config = "../models/gpt.toml"
-
-[execution]
-retry_failed_attempts = true
 
 [task]
 id = "L2-01"
@@ -101,14 +98,16 @@ cap's open mouth, with a separately held part in each hand. Only then
 place both parts anywhere on the tabletop. Colored squares are optional visual
 landmarks, not required destinations. Place each part gently in contact with the
 table, open its gripper in a SEPARATE decision, and stop touching it. No exact
-opening width or retreat distance is required. Do not release in midair.
+opening width or retreat distance is required. Releasing close to the tabletop
+and allowing a short settling descent is permitted; wait for actual support.
 Wait until both parts are supported and still for 1.0 simulation seconds.
 Success requires autonomous pickup of the whole capped marker from the table,
 separation while BOTH parts are grasped, and separate released stable placement.
-Merely opening hands, dropping, or claiming success does not count. Do not
-request_stop before those conditions are visible. If an automatic reset is
-reported, restart from the capped marker lying on the table with both hands
-empty; reassess the new images. History and the shared 100-call budget do not restart.
+Merely opening hands without separating the parts does not count. Do not
+request_stop before those conditions are visible. Regrasping a part on the
+table is allowed; falling below the work surface ends the episode. Contact
+force peaks are recorded against engineering references, not treated as
+measured material damage or automatic failure. There is no automatic reset.
 """
 
 # Chinese setup/props description; keep this the final task attribute.
@@ -117,5 +116,5 @@ description = """
 布置：完整带帽马克笔横躺在桌面；双手空手，初始化不会把笔放进夹爪，也不会自动夹起。
 操作：左臂自主拿起并稳定笔身，右臂抓住笔帽，沿自然轴线拔出；两臂都参与操作，不设置专用观察臂。
 完成：记录从桌面拿起整支笔、双侧真实抓持和完全分离；最终笔身、笔帽分别放在桌面上并释放，稳定即可，无需放到指定色块中心。
-边界：采用被动柔顺接触与摩擦配合，没有按距离自动脱扣；材料、配合和过力阈值为工程代理，不表示真实马克笔损坏测试。
+边界：采用被动柔顺接触与摩擦配合，没有按距离自动脱扣；放手后的短距离自然下落不直接判失败。力峰值按未标定工程参考记录，不据此判定损坏或自动失败；实际掉下桌面仍结束回合，不复位。
 """

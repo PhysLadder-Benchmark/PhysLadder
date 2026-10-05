@@ -57,7 +57,9 @@ class CuroboWorker:
             MotionPlannerCfg.create(
                 robot=self.assets["config"],
                 scene_model={"cuboid": {}},
-                collision_cache={"obb": 256, "mesh": 128},
+                # Delivered room (126 fixed colliders) plus a 49-piece cup and
+                # task fixtures exceed the previous 128-mesh capacity.
+                collision_cache={"obb": 256, "mesh": 256},
                 position_tolerance=0.001,
                 orientation_tolerance=0.01,
                 optimizer_collision_activation_distance=0.002,
@@ -308,7 +310,7 @@ class CuroboWorker:
             for t in np.arange(0, path.duration_s + 0.02, 0.02):
                 pose = pose_transform(self.kin.forward(path.sample(t), arm))
                 world = local @ pose[:3, :3].T + pose[:3, 3]
-                if world[:, 2].min() < -0.002:
+                if world[:, 2].min() < request["scene"].get("table_surface_z_m", 0.0) - 0.002:
                     raise ValueError(
                         f"{arm}: carried-object clearance intersects table; lift before transport"
                     )

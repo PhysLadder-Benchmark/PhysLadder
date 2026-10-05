@@ -37,12 +37,12 @@ joint_offset_m = [0.0, 0.0]
 [arms.left]
 prim_path = "/World/R5/left"
 base_pose_wxyz = [0.0, 0.42, 0.04, 1.0, 0.0, 0.0, 0.0]
-home_positions_rad = [0.0, 1.2, 1.2, 0.0, 0.0, 0.0]
+home_positions_rad = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 [arms.right]
 prim_path = "/World/R5/right"
 base_pose_wxyz = [0.0, -0.42, 0.04, 1.0, 0.0, 0.0, 0.0]
-home_positions_rad = [0.0, 1.2, 1.2, 0.0, 0.0, 0.0]
+home_positions_rad = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 [operating_limits]
 joint1 = {lower = -2.5, upper = 2.5, effort = 40.0, velocity = 0.5}

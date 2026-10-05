@@ -1,21 +1,20 @@
-# Run from the repository root in the Isaac Sim environment; requires OPENAI_API_KEY.
+# Run from the repository root in the Isaac Sim environment; uses the selected model provider.
 # launch_command / launch_command_conda below are documentation, not auto-executed shell code.
 schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_sim.toml"
+profile = "../robots/r5_tuojing_lab.toml"
 active_arms = ["left"]
 observation_arms = ["right"]
 
 [simulation]
-environment = "lab_room_v1"
-robot_appearance = "r5_black_silver_v1"
-camera_profile = "../cameras/r5_orbbec_provisional.toml"
-asset_directory = "../../build/r5"
+environment = "tuojing_lab_v4"
+camera_profile = "../cameras/r5_tuojing_lab.toml"
+asset_directory = "../../build/tuojing_lab"
 headless = true
-width = 640
-height = 480
+width = 1280
+height = 720
 fps = 12
 arm_stiffness = 1500.0
 arm_damping = 80.0
@@ -24,23 +23,20 @@ finger_damping = 40.0
 self_collision = false
 solver_position_iterations = 32
 solver_velocity_iterations = 0
-camera_position = [1.6, 0.0, 1.4]
-camera_target = [0.28, 0.0, 0.20]
+camera_position = [0.21354960845762927, 0.48765041712220114, 1.32]
+camera_target = [0.1643434123515941, 1.0254038459952994, 0.78]
 
 [policy]
 model_config = "../models/gpt.toml"
 
-[execution]
-retry_failed_attempts = true
-
 [task]
 id = "L1-09"
-name = "软茎花材插瓶（柔性杆代理）"
+name = "刚体玫瑰插花"
 execution_target = "simulation_and_real"
 simulation_enabled = true
-status = "implemented_proxy"
+status = "implemented"
 implementation = "household"
-simulation_limitations = "Segmented bending rod and heavy head; not calibrated plant tissue, no petal bruising or stem fracture. Only the initial-grasp version is assigned L1."
+simulation_limitations = "Photo-estimated native rigid artificial rose and rigid fixed paper cup. Stem, calyx and petals move together; no bending or damage model. Narrow stem/wider bud proxy is used only for planner clearance; physical colliders remain native."
 launch_command = "python tools/launch.py run L1-09 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L1-09 --gui"
 instruction = """
@@ -49,38 +45,50 @@ it may move its wrist camera when a grasp, opening or contact is obscured, but
 must not touch or support the props. Keep the left arm steady while changing
 view. Choose grasp points, poses and motion from current images and available
 robot feedback; no object coordinates or successful action sequence is supplied.
-Place the soft-stem flower into the fixed vase. Use a flower whose stem bends
-and whose head visibly droops when held only near the stem's far end. Do not
-assume it behaves as a rigid rod. The flower starts on the table, separate from
-the vase, with accessible stem and head-support regions.
-Inspect the stem, flower head and vase opening. Select a grasp that supports the
-head while leaving enough free stem to enter the opening, without crushing petals
-or gripping an unsupported far end. Confirm the flower is stably carried before
-moving to the vase. Bring the free stem end over the opening and guide it inside
-with small motions while observing sag and clearance. Put the free green stem
-tip at least 0.025 m below the vase rim. Once the vase supports the flower, release
-gently and confirm the stem stays inside, the whole flower is clear of the table,
-and the vase carries it without either hand. The pink head may naturally drape
-below the rim; it need not remain above the rim, but must not rest on the table.
-Observe the released flower nearly still for 1.0 simulation seconds.
-This is a segmented spring-rod proxy with a rigid heavy head. Petal bruising and
-stem fracture are not modeled; do not claim they were measured.
-This L1 variant requires that choosing a suitable initial grasp is enough for
-the rest of the task under fixed basic control. If the specimen needs repeated
-support changes, regrasping or delicate force regulation, report that mismatch
-rather than treating those added requirements as the intended L1 task.
+Pick up the rigid red artificial rose from the table and place its green stem
+end into the fixed red-brown ripple paper cup used as the flower holder.
+The whole rose is a single rigid body: stem, calyx and petals move together.
+Do not expect bending, drooping, petal crushing or a need to support a soft stem.
+
+Identify the free green stem tip, wider flower head and open cup. The stem is
+only about 2.1 mm thick, narrower than this gripper's 12 mm minimum opening.
+Do NOT try to pinch the thin stem, even if an asset marker suggests that point.
+Grasp opposing sides of the wider bud or calyx instead (bud about 34-36 mm wide).
+Choose your wrist orientation and pad height from the current RGB-D views so
+both fingers clear the table and contact the flower head. Leave the stem free.
+Use the right wrist camera to clarify hidden contact while holding the left
+arm still. Close separately, then make a short test lift and verify that the
+whole rigid rose follows. An empty close or blocked fingers are not a grasp.
+
+After a verified lift, reorient the free stem end downward. The rose is about
+302 mm long, so check clearance along the entire stem during rotation and travel.
+Carry the stem tip above the cup rim, align the TIP with the interior opening
+rather than simply centring the TCP, and lower in small increments. The cup is
+107.5 mm tall with an inside mouth about 78.6 mm wide. Get the free stem end
+inside the opening, then lower gently toward support, keeping the bud above
+the rim and the fingers clear. Do not balance the stem on the rim or release
+above the opening. If contact blocks entry, lift slightly and correct alignment.
+
+Open in a separate action, withdraw without dragging the rose, and observe it
+supported by the cup for one simulation second. Natural rigid-body leaning
+against the inner cup wall is allowed; no fixed tilt-angle or 25 mm depth
+threshold is required. Actual cavity fit and cup support determine the result.
+Completion requires the stem end genuinely inside the cup, the flower head
+above the rim, no table or finger support, and stable cup support. No bending,
+petal damage or material fracture is evaluated in this rigid version.
 Inspect the actual released or completed state before requesting stop. A
 commanded pose, blocked gripper, or completion claim is not evidence of success.
-If a grasp is lost or the scene resets, use new observations and reassess rather
+If a grasp is lost, use new observations and reassess rather
 than continuing with stale object positions. Do not invent force measurements
 or assume a force-control tool that the interface does not expose.
 """
 
 # Chinese setup/props description; keep this the final task attribute.
 description = """
-道具：七段柔性连接的细茎代理、较重的花头、高 180 mm 的固定宽口花瓶、操作台。
-布置：花材代理平放于桌面，花瓶在旁边；左臂操作，右臂主动观察，不提供第二只操作手托扶。
-操作：选择能支撑花头且露出可插入茎端的抓点，提起后调整自由茎端，将其送入瓶内，再松手。
-完成：实际抓起过花材，自由茎端入瓶至少 25 mm，整株离桌并由花瓶承重，释放后稳定 1 秒；花头可自然垂于瓶沿下方。
-代理边界：柔性茎由刚体段与被动弯曲弹簧组成，不是真实植物组织；不模拟花瓣压伤或茎断裂。L1 仅评估初始抓点足以完成的版本；若必须反复托扶或重抓，应单独归为 L3。实物花种、柔软度、花头质量仍需对齐。
+道具：交付原生红色仿真玫瑰（整株刚体，长约 302 mm、质量约 8 g）及原生波纹纸杯（高约 107.5 mm、内口径约 78.6 mm）。纸杯固定作为插花容器。
+布置：拓境实验室、原生 R5 双臂和三相机，桌面世界高度 0.78 m。玫瑰横放于左臂前方，纸杯在旁边；左臂操作，右臂只可主动观察。
+抓持：花茎约 2.1 mm，比夹爪 12 mm 最小开口细，不能抓紧细茎；选花头或花萼较宽部位相向夹持，花头约宽 34–36 mm。原资产细茎抓点不作为本任务的推荐抓点。
+操作：确认抓起整株后，调整茎端向下，将茎端实际送入杯内，再轻放、松手并退出；允许刚体自然靠在杯内壁，不另设固定倾角或 25 mm 深度门槛。
+完成：有真实抓持及抬升记录，茎端在杯腔内且不穿透杯壁，花头在杯沿上方，整株由杯体承托且无桌面或夹指支撑，稳定 1 秒。
+实现：直接引用交付 USD，保留原尺寸、材质和碰撞体；没有柔性连接、弯曲弹簧或软茎评分，也不模拟花瓣压伤。规划净空按细茎与较宽花头分别近似，物理仿真仍使用原生碰撞体。
 """

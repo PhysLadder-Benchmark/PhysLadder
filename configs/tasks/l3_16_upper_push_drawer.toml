@@ -24,14 +24,11 @@ finger_damping = 40.0
 self_collision = false
 solver_position_iterations = 32
 solver_velocity_iterations = 0
-camera_position = [1.6, 0.0, 1.4]
-camera_target = [0.28, 0.0, 0.20]
+camera_position = [1.25, 0.0, 0.54]
+camera_target = [0.71, 0.0, 0.0]
 
 [policy]
 model_config = "../models/gpt.toml"
-
-[execution]
-retry_failed_attempts = true
 
 [task]
 id = "L3-16"
@@ -96,11 +93,14 @@ REMAINS SUPPORTED by its guides. Do not detach it, lift out the tray, move the
 cabinet, remove contents, close it again or operate the lower layer. After
 opening, release the tab and move clear. Observe that it stays open and nearly
 still for at least one simulation second before requesting stop. The declared
-gentle-motion limits are 0.35 m/s drawer speed and a 40 N per-finger engineering
-contact threshold, not calibrated damage limits or live force readings.
+gentle-motion references are 0.35 m/s drawer speed and 40 N per-finger
+contact. Exceedances are recorded without automatic failure; they are not
+calibrated damage limits or live force readings. Brief incidental contact
+with the lower layer is recorded. Actual lower-layer displacement or persistent
+rail/stop violations still fail the task.
 
-If the scene resets, restart from current images and the closed upper drawer;
-discard earlier assumptions about its latch state. Report only visible
+Reobserve after unexpected motion and reassess the actual latch stage.
+There is no automatic reset. Report only visible
 evidence in the decision note. A final position or completion claim alone
 cannot substitute for the press, released pop-out and grasped-pull sequence.
 """
@@ -112,6 +112,6 @@ description = """
 分工：左臂操作，右臂可按需移动腕部相机观察上层缝隙、按压接触和抓持状态，但不接触道具。
 操作：从 -X 一侧接近正面，沿世界坐标 +X 向柜内按压上层面板约 8—10 mm，沿 -X 松开并退让，待弹簧弹出约 20—40 mm；再抓住露出的绿色凸片，沿 -X 滑轨方向拉开至少 100 mm，最大行程 115 mm。不要沿 Y 方向侧拉。
 完成：实际出现按压、无手接触的释放弹出、抓持拉开，最后松手并保持稳定 1 秒。抽屉始终留在滑轨上，无需拿出盒体或另行放置。
-评分：独立记录按压、弹出和拉开过程，检查最终开度、释放、稳定性、轨道约束、速度及接触力代理阈值；初始关闭、直接拉、只弹出或直接给出最终位置均不算成功。
+评分：独立记录按压、弹出和拉开过程，检查最终开度、释放、稳定性及轨道约束。短暂碰触下层及速度／接触力峰值仅记录；下层持续移位、持续脱轨或越过限位仍判失败。初始关闭、直接拉、只弹出或直接给出最终位置均不算成功。
 代理边界：按实际压入及回弹行程切换锁止约束，有限行程的被动弹簧提供弹出力；不根据 GPT 命令或评分传送抽屉。未重建商业锁扣的心形凸轮、材料形变或损坏；首版只测一次开启，不测推回自锁。尺寸和弹簧参数为未标定工程值。
 """

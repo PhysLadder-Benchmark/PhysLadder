@@ -67,7 +67,14 @@ class L2LayoutTests(unittest.TestCase):
                 row["fingers"]["left"] = [1, 1]
                 e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
                 for i in range(1, 15):
-                    self.assertEqual(e.update(i * .1, rows).status, "running")
+                    result = e.update(i * .1, rows)
+                    if task == "L2-07" and i >= 4:
+                        # A persistently detached drawer violates its physical rail;
+                        # a free book may instead be moved back and extracted correctly.
+                        self.assertEqual(result.status, "failed")
+                        self.assertIn("guide", result.reason)
+                        break
+                    self.assertEqual(result.status, "running")
                 self.assertNotIn("middle_extracted_while_held", e.flags)
                 self.assertNotIn("opened_while_held", e.flags)
 

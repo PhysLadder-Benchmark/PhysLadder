@@ -6,7 +6,7 @@ import math
 import numpy as np
 
 from ...robots.transforms import pose_transform
-from .evaluation import held, quiet, relative, released, table_placed, upright
+from .evaluation import held, quiet, relative, released, sustained, table_placed, upright
 
 
 def books(e, rows):
@@ -60,11 +60,14 @@ def bowl(e, rows):
     if holding and bowl["bench_force_n"] < 0.05 and bowl["pose"][2] - e.initial["bowl"][2] >= p["lift_m"]:
         e.flags.add("loaded_bowl_lifted")
     target_error = float(np.linalg.norm(np.asarray(bowl["pose"][:2]) - p["target_xy"]))
-    complete = (all(inside) and "loaded_bowl_lifted" in e.flags and table_placed(bowl)
-                and upright(bowl, 0.18) and target_error <= p["target_tolerance_m"])
+    transported = ("loaded_bowl_lifted" in e.flags and table_placed(bowl)
+                   and upright(bowl, 0.18) and target_error <= p["target_tolerance_m"])
+    complete = transported and (all(inside) or bool(spilled))
     return complete, {"contained_balls": sum(inside), "required_balls": p["count"],
                       "holding_both_handles": holding, "target_error_m": target_error,
-                      "loaded_bowl_lifted": "loaded_bowl_lifted" in e.flags, "spilled": spilled}, ("Load spilled" if spilled else "")
+                      "loaded_bowl_lifted": "loaded_bowl_lifted" in e.flags, "spilled": spilled,
+                      "transport_complete": bool(transported), "no_spill": not bool(spilled),
+                      "constraint_violations": ["Load spilled"] if spilled else []}, ""
 
 
 def latch(e, rows):
@@ -134,29 +137,43 @@ def jelly(e, rows):
             "strain": float(strain),
             "peak_strain": e.max_strain,
             "within_target": contained,
+            "transport_complete": bool(complete),
+            "strain_limit": p["strain_limit"],
+            "strain_limit_satisfied": e.max_strain <= p["strain_limit"],
+            "constraint_violations": (["Elastic proxy exceeded strain limit"]
+                                      if e.max_strain > p["strain_limit"] else []),
             "damage_model": "elastic strain proxy only",
         },
-        (
-            "Elastic proxy exceeded strain limit"
-            if e.max_strain > p["strain_limit"]
-            else ""
-        ),
+        "",
     )
 
 
 def drawer(e, rows):
     row = rows["drawer"]
     p = e.spec.parameters
-    travel = float((np.asarray(row["pose"][:3]) - e.initial["drawer"][:3]) @ p["outward_axis_world"])
+    displacement = np.asarray(row["pose"][:3]) - e.initial["drawer"][:3]
+    outward = np.asarray(p["outward_axis_world"])
+    travel = float(displacement @ outward)
+    guide_deviation = np.linalg.norm(displacement - travel * outward) > 0.008 or not upright(row, 0.15)
+    beyond_stop = travel < -0.006 or travel > p["max_travel_m"] + 0.006
+    failure = ""
+    if sustained(e, "drawer_guide_deviation", guide_deviation):
+        failure = "Drawer guide constraint was persistently violated"
+    if sustained(e, "drawer_beyond_stop", beyond_stop):
+        failure = "Drawer persistently exceeded its mechanical stop"
     if travel >= p["required_open_m"] and held(row, "left"):
         e.flags.add("opened_while_held")
     at_stop = travel < 0.006 or travel > p["max_travel_m"] - 0.006
     impact = at_stop and np.linalg.norm(row["linear_velocity"]) > p["max_speed_m_s"]
+    if impact:
+        e.flags.add("drawer_speed_reference_exceeded")
     complete = ("opened_while_held" in e.flags and p["required_open_m"] <= travel <= p["max_travel_m"] + 0.003
-                and released(row) and quiet(row))
+                and released(row) and quiet(row) and not guide_deviation and not beyond_stop)
     return complete, {"opening_m": travel, "opened_while_held": "opened_while_held" in e.flags,
-                      "final_state": "released and open", "impact_speed_limit_m_s": p["max_speed_m_s"]}, (
-        "Excessive speed at drawer stop" if impact else "")
+                      "final_state": "released and open", "impact_speed_reference_m_s": p["max_speed_m_s"],
+                      "peak_speed_m_s": e.peak_speeds.get("drawer", 0.0),
+                      "quality_warnings": (["Drawer speed at stop exceeded engineering reference"]
+                                           if "drawer_speed_reference_exceeded" in e.flags else [])}, failure
 
 
 RULES = {"L2-03": books, "L2-04": bowl, "L2-05": latch, "L2-06": jelly, "L2-07": drawer}

@@ -9,6 +9,7 @@ from .assets import import_asset
 from .evaluation import InsertionAttemptMonitor
 from .shaped_recess import ShapedRecess
 from .specs import build_design, local_corners
+from ...backends.scene_geometry import bench_geometry
 
 
 class L1Scene:
@@ -22,6 +23,7 @@ class L1Scene:
         from pxr import PhysxSchema, UsdGeom, UsdPhysics, UsdShade
 
         self.backend, self.config, self.settings = backend, config, settings
+        self.bench = bench_geometry(config)
         backend.planning_payloads = self.planning_payloads
         self.design = design if design is not None else build_design(config.task_id)
         self.bodies, self.contacts = {}, {}
@@ -85,7 +87,7 @@ class L1Scene:
         # Keep grasp and bench friction; the fixture has its own material.
         paths = (
             self.colliders
-            + ["/World/Bench"]
+            + [self.bench.prim_path]
             + [p for a in backend.scene_report["arms"].values() for p in a["colliders"]]
         )
         for path in paths:
@@ -118,7 +120,7 @@ class L1Scene:
             disable_stablization=False,
         )
         self.support_filters = [p for p in self.colliders if p.startswith(self.root + "/Fixture/")] + [
-            "/World/Bench"
+            self.bench.prim_path
         ]
         backend.planning_fixture_paths = tuple(self.support_filters[:-1])
         self.supports = {
@@ -163,11 +165,11 @@ class L1Scene:
                 "adapter": "R5Adapter / cuRobo trajectory",
                 "motion_mode": "collision_checked_trajectory",
                 "gripper_timing": "after_motion",
-                "startup_preparation": "downward_ready_v1",
-                "observation_preparation": "face_manipulation_workspace_v1",
+                "startup_preparation": "hold_joint_home_v1",
+                "observation_preparation": "model_controlled_from_joint_home",
             },
             "arm_roles": config.arm_roles,
-            "physics_variant": "CPU PhysX, fixed mesh cavities, dynamic convex decomposition",
+            "physics_variant": "CPU PhysX, fixed fixture colliders, dynamic primitives/convex shapes; see asset overrides",
             "object_attachment": False,
             "initial_poses": {},
         }

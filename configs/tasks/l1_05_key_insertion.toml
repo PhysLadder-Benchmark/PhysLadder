@@ -1,21 +1,20 @@
-# Run from the repository root in the Isaac Sim environment; requires OPENAI_API_KEY.
+# Run from the repository root in the Isaac Sim environment; uses the selected model provider.
 # launch_command / launch_command_conda below are documentation, not auto-executed shell code.
 schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_sim.toml"
+profile = "../robots/r5_tuojing_lab.toml"
 active_arms = ["left"]
 observation_arms = ["right"]
 
 [simulation]
-environment = "lab_room_v1"
-robot_appearance = "r5_black_silver_v1"
-camera_profile = "../cameras/r5_orbbec_provisional.toml"
-asset_directory = "../../build/r5"
+environment = "tuojing_lab_v4"
+camera_profile = "../cameras/r5_tuojing_lab.toml"
+asset_directory = "../../build/tuojing_lab"
 headless = true
-width = 640
-height = 480
+width = 1280
+height = 720
 fps = 12
 arm_stiffness = 1500.0
 arm_damping = 80.0
@@ -24,14 +23,11 @@ finger_damping = 40.0
 self_collision = false
 solver_position_iterations = 32
 solver_velocity_iterations = 0
-camera_position = [1.6, 0.0, 1.4]
-camera_target = [0.28, 0.0, 0.20]
+camera_position = [0.21354960845762927, 0.48765041712220114, 1.32]
+camera_target = [0.1643434123515941, 1.0254038459952994, 0.78]
 
 [policy]
 model_config = "../models/gpt.toml"
-
-[execution]
-retry_failed_attempts = true
 
 [task]
 id = "L1-05"
@@ -67,15 +63,19 @@ This is insert-only: unlocking, door motion,
 regrasping another tool and transferring the key between hands are not required.
 The hand may continue holding the bow at the final inserted state; do not add a
 release requirement unless the final task protocol explicitly requires it.
+Temporary tilt or a missed insertion is not a terminal failure: withdraw,
+reobserve and regrasp on the table if needed. The blade must genuinely enter
+the keyway; proximity alone is insufficient. No automatic reset occurs.
 Inspect the actual released or completed state before requesting stop. A
 commanded pose, blocked gripper, or completion claim is not evidence of success.
-If a grasp is lost or the scene resets, use new observations and reassess rather
+If a grasp is lost, use new observations and reassess rather
 than continuing with stale object positions. Do not invent force measurements
 or assume a force-control tool that the interface does not expose.
 """
 
 # Chinese setup/props description; keep this the final task attribute.
 description = """
+替换范围：交付包没有钥匙和锁，保留已有钥匙/锁孔代理并重新摆放。使用拓境实验室、原生 R5 双臂和三相机；桌面世界高度 0.78 m。
 道具：刚性钥匙代理、使钥匙柄外露的起始支架、固定矩形锁孔、操作台。
 布置：钥匙功能端置于矮支架中，柄部伸出便于夹取；目标锁孔与钥匙轴线平行。柄厚约 23 mm，插舌截面 10×18 mm，锁孔 18×28 mm。
 操作：左臂自主抓住柄部、取出、调整功能端和锁孔相对关系，插入规定深度；右臂可换视角。

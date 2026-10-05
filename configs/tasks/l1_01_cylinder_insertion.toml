@@ -1,21 +1,20 @@
-# Run from the repository root in the Isaac Sim environment; requires OPENAI_API_KEY.
+# Run from the repository root in the Isaac Sim environment; uses the selected model provider.
 # launch_command / launch_command_conda below are documentation, not auto-executed shell code.
 schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_sim.toml"
+profile = "../robots/r5_tuojing_lab.toml"
 active_arms = ["left"]
 observation_arms = ["right"]
 
 [simulation]
-environment = "lab_room_v1"
-robot_appearance = "r5_black_silver_v1"
-camera_profile = "../cameras/r5_orbbec_provisional.toml"
-asset_directory = "../../build/r5"
+environment = "tuojing_lab_v4"
+camera_profile = "../cameras/r5_tuojing_lab.toml"
+asset_directory = "../../build/tuojing_lab"
 headless = true
-width = 640
-height = 480
+width = 1280
+height = 720
 fps = 12
 arm_stiffness = 1500.0
 arm_damping = 80.0
@@ -24,23 +23,20 @@ finger_damping = 40.0
 self_collision = false
 solver_position_iterations = 32
 solver_velocity_iterations = 0
-camera_position = [1.6, 0.0, 1.4]
-camera_target = [0.28, 0.0, 0.20]
+camera_position = [0.21354960845762927, 0.48765041712220114, 1.32]
+camera_target = [0.1643434123515941, 1.0254038459952994, 0.78]
 
 [policy]
 model_config = "../models/gpt.toml"
 
-[execution]
-retry_failed_attempts = true
-
 [task]
 id = "L1-01"
-name = "马克笔入笔筒"
+name = "白板笔入固定纸杯笔筒"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
 implementation = "household"
-simulation_limitations = "Engineering dimensions and friction; not calibrated to physical props."
+simulation_limitations = "Native photo-estimated marker and rigid ripple cup; flat barrel collider, fixed zero-friction cup. Not hardware calibrated."
 launch_command = "python tools/launch.py run L1-01 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L1-01 --gui"
 instruction = """
@@ -49,20 +45,21 @@ it may move its wrist camera when a grasp, opening or contact is obscured, but
 must not touch or support the props. Keep the left arm steady while changing
 view. Choose grasp points, poses and motion from current images and available
 robot feedback; no object coordinates or successful action sequence is supplied.
-Pick up the capped marker standing upright on the table and place its lower
-end into the single fixed, upright pen holder. Keep the cap on. The holder has
+Get the capped marker standing upright on the table into the single fixed,
+upright red-brown ripple paper cup used as a pen holder. Keep the cap on. The holder has
 a broad, open mouth and a loose, low-resistance fit: this is not press fitting.
-Identify the marker's upper graspable body, lower entering end, holder opening
-and their relative axes from observations. Grasp high enough that the lower
-end and the fingers can clear the holder rim during insertion.
-Prefer the straight upper-middle section of the yellow barrel, with substantial
-overlap between the barrel and both opposing finger pads. Centre the cylinder
-axis in the finger gap and contact opposite sides at similar heights. Avoid
-pinching only the cap tip, a narrow edge, the cap/barrel seam or a diameter step.
-Do not interpret "grasp high enough" as "grasp the very top". Select a stable
-body section that also leaves enough marker below the fingers to reach the
-required insertion depth without the fingers hitting the holder rim; the exact
-midpoint is not mandatory. Choose this region from the current images.
+Identify the marker's upper graspable section, lower entering end, cup opening
+from observations. Either end may enter; keeping the cap up is a suggested
+approach, not a completion requirement. This cup is tall relative to the
+marker: grasping the middle of the barrel may leave the fingers too low to
+insert and open without striking the rim. Prefer a stable upper section with
+substantial overlap against BOTH opposing finger pads, including the ribbed
+body of the cap when that provides the needed clearance. The cap remains on
+and is part of the same rigid marker in this simulation. Avoid pinching only
+the very tip, a narrow edge or the cap/barrel seam. Centre the cylinder axis
+in the finger gap and contact opposite sides at similar heights. Choose the
+grip and release height from the actual marker-to-finger geometry, rather than
+assuming that centring the TCP above the cup is sufficient.
 
 Localize before approaching. Query depth at several clearly visible pixels
 inside the marker's upper body or cap, avoiding silhouettes, grippers, overlays,
@@ -81,8 +78,8 @@ opposing finger contact surfaces, both laterally and in depth. A marker projecte
 between the fingers in one wrist image can still be behind or in front of them.
 If that relationship is unclear, hold the left arm still and move the RIGHT
 observation arm to a clear oblique or side view, then use its updated image.
-Choose the left wrist orientation as needed; the downward startup pose is not
-a required grasp orientation. Keep the lower entering end unobstructed.
+Choose the left wrist orientation as needed; the initial zero-joint pose is not
+a required grasp orientation. Keep the chosen entering end unobstructed.
 
 Close in a separate decision. Compare measured opening with the marker diameter
 and inspect the actual images. Reaching the minimum opening around a visibly
@@ -90,13 +87,16 @@ wider marker is strong evidence of an empty grasp, not a reason to squeeze harde
 A blocked close alone also does not confirm a grasp. If capture is plausible,
 make a small vertical test lift within the allowed grasp-check limits and verify
 that the whole marker follows the fingers rather than remaining on the table.
-The marker remaining on the table immediately after closing, before any lift,
-does not by itself prove failure. Do not transport or insert before lift evidence.
-During the test lift, check for downward sliding or rotation relative to the
-finger pads. If the hold is slipping, lower the marker back onto the table
-while it is still controlled, then open, reposition for fuller opposing contact
-and repeat the grasp check. Avoid opening over an unsupported marker or trying
-to cure a poor edge grasp by squeezing harder while carrying it.
+The marker remaining upright at its initial tabletop position immediately after
+closing, before any lift, does not by itself prove failure. Confirm control of
+the marker before choosing transport or release.
+During the test lift, check for downward sliding relative to the finger pads.
+If the grip is slipping but the marker remains held, correct the grip while
+maintaining control. Do not intentionally put it back on the table and release:
+once the marker has left the table, a released landing on the table is failure.
+Knocking the initially standing marker down onto the tabletop is also failure.
+The episode ends on such a failure; no reset or second attempt will follow.
+Tilt in the air is allowed and by itself does not fail the task.
 
 After an empty close or failed lift, open the gripper and inspect again. Discard
 the failed grasp estimate, obtain fresh body-surface depth measurements and
@@ -106,44 +106,42 @@ pose, or only vary Z, without new evidence that the marker is now inside the gap
 In your action note, state the observed mismatch and the correction being made;
 do not describe the fingers as centred solely because they appear so in one image.
 
-After a verified lift, keep the marker approximately vertical and carry with its
-LOWER END above the holder rim. Identify the interior opening from visible rim
-surfaces in complementary views; a depth sample through the opening may hit the
-bottom or background, not the mouth plane. Align the marker's lower-end axis
-inside that opening with enough clearance for its full cross-section. Being
-near the holder or over its outer wall is insufficient. Do not simply align the
-TCP with the apparent holder centre: estimate the marker's actual offset from
-the fingers and choose the TCP target that aligns the MARKER with the opening.
+After a verified lift, carry with enough clearance for the whole marker and
+fingers. Identify the cup's interior opening from complementary views; a depth
+sample through the opening may hit the bottom rather than the mouth plane.
+Account for the marker's offset from the TCP. Centering the TCP alone does not
+ensure that the marker will enter the cup.
 
-Before descending, verify that the lower end is above the interior opening and
-that the barrel and fingers will clear the rim throughout the intended descent.
-Lower approximately vertically in small increments, checking that the lower end
-actually enters the cavity rather than moving beside the holder or resting on
-its rim. If alignment is uncertain or motion is rejected, inspect and re-localize
-the opening and marker before choosing a correction; do not continue blind
-descent or progressively longer detours. If the marker rests on the rim, lift
-clear before correcting XY instead of pushing sideways against it.
+A controlled placement is a useful strategy, but neither a vertical trajectory
+nor a particular angle or insertion depth is required. You may release above
+the opening and let the marker drop in if the whole motion will clear the rim.
+Either end may enter and the marker may lean against the inner wall. Choose the
+release pose from the observed object and cup geometry, not an assumed grasp.
+If the pen catches on the rim while still held, lift clear and correct alignment.
+Do not continue a transport plan after losing the object.
 
-Insert at least 0.04 m of the lower end below the rim and gently seat the marker
-so the holder can support it. Open in a separate decision, withdraw without
-dragging it, and observe the released state for at least one simulation second.
-Completion requires the lower end inside the cavity at the required depth,
-support by the holder, no finger support and a stable visible upper portion.
-Merely being vertical above the opening, touching the rim, or reaching the
-commanded TCP height is not completion. Do not drop it in from above. There is
-no need to uncap, write, rotate a thread or apply a precise insertion force.
+Open in a separate decision, withdraw without dragging the marker, and observe
+one simulation second of released cup support. Success requires an end genuinely
+inside the cup and the marker supported by the cup, without finger or tabletop
+support. Resting across the rim, remaining above the opening or merely reaching
+a commanded TCP pose is not enough. There is no mandatory 40 mm insertion or
+upright-angle threshold. A confirmed earlier test lift is useful feedback but
+is not an extra scoring requirement. Dropping onto the table or off the table
+ends this episode as a failure without resetting the props or robot.
+There is no need to uncap, write, rotate a thread or apply a precise insertion force.
 Inspect the actual released or completed state before requesting stop. A
 commanded pose, blocked gripper, or completion claim is not evidence of success.
-If a grasp is lost or the scene resets, use new observations and reassess rather
+If a grasp is lost, use new observations and reassess rather
 than continuing with stale object positions. Do not invent force measurements
 or assume a force-control tool that the interface does not expose.
 """
 
 # Chinese setup/props description; keep this the final task attribute.
 description = """
-道具：直径约 30 mm、总高 125 mm 的刚性马克笔，固定的蓝色空心笔筒，操作台。
-布置：马克笔竖直放在桌面，笔筒在旁边；双手空手。左臂操作，右臂可主动换视角但不能接触道具。
-操作：自主选抓点，抓起马克笔，保持竖直，对准宽松笔筒口后放入并松手。
-完成：有实际抓持抬升记录，笔下端入筒至少 40 mm，笔筒实际承重，松手后稳定 1 秒。
-边界：固定基础控制、低摩擦和宽松间隙；笔筒由独立碰撞壁片组成，孔口没有被凸包封住。道具为项目程序生成的工程尺寸，需再与实物核对。
+道具：交付包中的黑色白板笔（高约 151 mm，笔身直径 16.2 mm，最大宽约 18 mm，质量估计 22 g）及波纹纸杯（高约 107.5 mm，内口径约 78.6 mm）。纸杯固定，用作收笔容器；不是实物笔筒标定模型。
+布置：使用拓境实验室、原生 R5 双臂和三路相机。桌面世界高度 0.78 m。笔竖直放在左臂前方，空纸杯在旁边；左臂操作，右臂只可换视角，不能接触道具。
+操作：自主选抓点并结合观测将笔送入杯内；允许倾斜、任一端入杯，也允许从杯口上方松手后落入。抓取与短抬核验是操作建议，不指定唯一入杯轨迹。
+完成：笔的一端真正进入杯腔，由杯体承重、无夹指或桌面支撑，释放后稳定 1 秒。不设置竖直角度或 40 mm 深度门槛，也不强制某种夹持过程。
+失败：初始竖立在桌上不算失败；操作中离桌后掉回桌面、被碰倒躺到桌面或掉下桌面即失败结束。全程不自动复位重试。
+适配：保留交付尺寸、材质和独立杯壁碰撞体；将笔身圆底胶囊碰撞体替换为与可见平底相符的圆柱，防止初始竖立失稳。杯壁摩擦为零，抓持保持基础摩擦；源 USD 不修改。尺寸、质量与摩擦均未真机标定。
 """

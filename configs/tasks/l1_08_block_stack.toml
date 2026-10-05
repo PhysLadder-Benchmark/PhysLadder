@@ -1,21 +1,20 @@
-# Run from the repository root in the Isaac Sim environment; requires OPENAI_API_KEY.
+# Run from the repository root in the Isaac Sim environment; uses the selected model provider.
 # launch_command / launch_command_conda below are documentation, not auto-executed shell code.
 schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_sim.toml"
+profile = "../robots/r5_tuojing_lab.toml"
 active_arms = ["left"]
 observation_arms = ["right"]
 
 [simulation]
-environment = "lab_room_v1"
-robot_appearance = "r5_black_silver_v1"
-camera_profile = "../cameras/r5_orbbec_provisional.toml"
-asset_directory = "../../build/r5"
+environment = "tuojing_lab_v4"
+camera_profile = "../cameras/r5_tuojing_lab.toml"
+asset_directory = "../../build/tuojing_lab"
 headless = true
-width = 640
-height = 480
+width = 1280
+height = 720
 fps = 12
 arm_stiffness = 1500.0
 arm_damping = 80.0
@@ -24,23 +23,20 @@ finger_damping = 40.0
 self_collision = false
 solver_position_iterations = 32
 solver_velocity_iterations = 0
-camera_position = [1.6, 0.0, 1.4]
-camera_target = [0.28, 0.0, 0.20]
+camera_position = [0.21354960845762927, 0.48765041712220114, 1.32]
+camera_target = [0.1643434123515941, 1.0254038459952994, 0.78]
 
 [policy]
 model_config = "../models/gpt.toml"
 
-[execution]
-retry_failed_attempts = true
-
 [task]
 id = "L1-08"
-name = "两个杯子宽松套叠"
+name = "两个波纹纸杯套叠"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
 implementation = "household"
-simulation_limitations = "Engineering dimensions and friction; not calibrated to physical props."
+simulation_limitations = "Native photo-estimated rigid paper cups, identical taper and size; no paper crushing. Lower-body grasp followed by shallow entry and passive settling; thin-wall pinch is incompatible with the current 12 mm minimum opening."
 launch_command = "python tools/launch.py run L1-08 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L1-08 --gui"
 instruction = """
@@ -49,38 +45,46 @@ it may move its wrist camera when a grasp, opening or contact is obscured, but
 must not touch or support the props. Keep the left arm steady while changing
 view. Choose grasp points, poses and motion from current images and available
 robot feedback; no object coordinates or successful action sequence is supplied.
-Stack one rigid cup into the other to form a stable two-cup stack. Use two
-compatible, wide-mouth, handleless cups designed to nest loosely, not fragile
-stemware or a tight press fit. Both cups start separately upright on the table,
-open ends upward; neither starts held or already stacked. The lower cup stays
-on the table and is not glued down.
-Move the smaller RED cup into the larger BLUE cup; identify the blue opening
-and both upright axes. Choose
-a side grip that leaves the moved cup's lower portion free and does not trap the
-fingers between the two rims. Confirm an actual lift before transporting it.
-Keep the carried cup upright, move its base above the lower opening, align, and
-lower gently until the lower cup supports it. Stop and realign if the rims catch;
-do not force the walls together. Open in a separate decision, withdraw without
-lifting the placed cup, and confirm the two-cup stack stands independently.
-The red cup nests deeply inside the blue cup: its base should finish about
-0.002-0.013 m above the blue cup's base, with their axes within 0.005 m horizontally.
-Merely balancing the red cup on the blue rim is insufficient. No yaw angle around
-the vertical axis is required for these unmarked rotationally symmetric cups.
-Keep both cups upright, with the blue cup supported by the table and the red cup
-supported by the blue cup. After release, observe them still for 1.0 simulation
-seconds. Do not squeeze or deform them.
+Nest the cup initially nearer the LEFT robot inside the farther cup. Both are
+identical empty red-brown ripple cups; remember their initial roles before moving.
+Both start upright and both are movable. Each mouth is about 85 mm wide, exceeding
+your 70 mm maximum opening. Your minimum opening is 12 mm, so pinching a 3 mm
+single wall is also unsuitable. Instead grasp opposite OUTER sides of the narrower
+lower body, about 56-67 mm wide within the bottom 40 mm. Select pad height and wrist
+orientation from current images so both tips clear the table and oppose the body.
+Close gently, inspect actual contact and verify a short lift. If capture is empty
+or slipping, put it down safely and revise the grasp. Do not carry on with an empty
+hand or keep squeezing at the same missed pose.
+Carry upright with the bottom clear of the destination rim. Align the CUP's bottom
+axis with the visible opening, accounting for its offset from the TCP. Inspect in
+a second view if needed. Lower only until the bottom is 5-8 mm INSIDE the mouth,
+while keeping both fingers above and clear of the lower rim. Do not try to push
+the lower-body grasp all the way down into the destination cup. Open separately
+once the bottom has entered, then withdraw without hitting either rim. Gravity
+may finish settling the already-entered cup onto the tapered walls. Prefer this
+controlled entry before release to avoid missing the opening. If fingers would strike the rim before any entry,
+withdraw and adjust the supported grasp first.
+Identical cups nest on their tapers: a typical upper-rim height is roughly
+20-35 mm above the lower rim, not flush or resting on the lower floor. This is
+an example, not a required height band. Actual cavity fit and support decide
+completion; there is no separate 3 mm centre-error or small-angle cutoff. Inspect both cups
+upright, released and genuinely nested for one simulation second. Side-by-side
+touching, balancing on an edge or holding the upper cup is insufficient. No yaw target.
+A temporary tilt or a missed placement can be recovered in the same scene.
+There is no automatic reset; an object lost below the table ends the episode.
+
 Inspect the actual released or completed state before requesting stop. A
 commanded pose, blocked gripper, or completion claim is not evidence of success.
-If a grasp is lost or the scene resets, use new observations and reassess rather
+If a grasp is lost, use new observations and reassess rather
 than continuing with stale object positions. Do not invent force measurements
 or assume a force-control tool that the interface does not expose.
 """
 
 # Chinese setup/props description; keep this the final task attribute.
 description = """
-道具：两个无柄刚性空心杯，下杯内口直径约 66 mm、高 60 mm，上杯较窄且高 73 mm。
-布置：两杯分开正立在桌面，均未抓持，下杯不固定。
-操作：左臂抓起较小上杯，保持正立，对准下杯口轻放套入；抓点需露出杯底且避免夹指夹在杯沿之间。右臂仅观察。
-完成：上杯经过抓持抬升，套入后由下杯实际承重，双杯释放后保持正立、稳定 1 秒。
-边界：宽松套叠，不是压装；无标记圆杯不要求绕竖直轴的特定角度。杯壁分片碰撞，杯口真实开放。
+道具：两只交付波纹纸杯，原生相同尺寸，杯高约 107.5 mm、外口径约 85 mm、各重约 14 g；保留空心碰撞体，不再使用一大一小的彩色代理杯。
+布置：拓境实验室、原生 R5 双臂及三相机。两杯竖直且未固定，移动初始靠近左臂的一杯套入较远的一杯；右臂仅观察。
+操作：夹爪范围 12–70 mm，既夹不住 85 mm 宽杯口，也不能直接夹紧约 3 mm 薄壁。选择底部 40 mm 范围内约 56–67 mm 宽的外壁相向夹持；建议将杯底送入目标杯口 5–8 mm、夹指仍在杯沿上方时松手，允许杯子自然落稳。
+完成：真实抓持抬升后，上杯底部实际进入下杯、杯壁不穿透且由下杯承重，杯口朝上，松手稳定 1 秒。20–35 mm 杯底高差仅为典型姿态，不设单独的中心误差或小倾角门槛；临时倾斜和放偏允许原地调整，不复位。
+边界：纸杯按刚体处理，不模拟压皱损坏；抓法和评分随原生尺寸调整。
 """

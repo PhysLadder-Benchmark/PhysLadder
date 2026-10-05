@@ -68,7 +68,6 @@ class ExecutionSettings:
     settle_steps: int = 0
     stop_steps: int = 0
     max_decisions: int | None = None
-    retry_failed_attempts: bool = False
     fixed_arm_tolerance_rad: float = 0.01
 
     @property
@@ -83,10 +82,6 @@ class ExecutionSettings:
             raise ValueError(f"Unknown execution settings: {sorted(unknown)}")
         result = cls(**data)
         _positive(result.fixed_arm_tolerance_rad, "execution.fixed_arm_tolerance_rad")
-        if type(result.retry_failed_attempts) is not bool:
-            raise ValueError("execution.retry_failed_attempts must be a boolean")
-        if result.retry_failed_attempts and not config.include_feedback:
-            raise ValueError("Retrying attempts requires observation.include_feedback")
         for name in ("max_action_steps", "completion_samples", "wait_steps", "settle_steps", "stop_steps"):
             value = getattr(result, name)
             minimum = 0 if name in {"settle_steps", "stop_steps"} else 1

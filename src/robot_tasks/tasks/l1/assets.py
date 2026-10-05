@@ -33,6 +33,11 @@ def import_asset(stage, parent, name, size, rotation, *, dynamic):
     triangle meshes for fixed fixtures because the shared executor uses CPU
     PhysX. This declared variant is common to Linux and Windows.
     """
+    if name.startswith("tuojing:"):
+        if size or any(rotation):
+            raise ValueError("Tuojing props retain native metre dimensions and axes; scale/rotation must not be hidden in import")
+        return import_tuojing_asset(stage, parent, name.split(":", 1)[1], dynamic=dynamic)
+
     import numpy as np
     from pxr import Gf, Usd, UsdGeom, UsdPhysics
     from ...robots.transforms import origin_transform
@@ -139,3 +144,39 @@ def import_asset(stage, parent, name, size, rotation, *, dynamic):
         "repaired_mesh_extents": repaired_extents,
         "collision_adapter": "convexDecomposition" if dynamic else "static triangle mesh",
     }
+
+
+def import_tuojing_asset(stage, parent, name, *, dynamic):
+    """Reference native geometry, material and origin; apply declared task overrides."""
+    from pxr import Gf, Usd, UsdGeom, UsdPhysics
+    from ...asset_delivery import verified_prop
+
+    if name not in {"whiteboard_marker", "ripple_paper_cup", "usb_charger", "power_strip", "wooden_rack", "artificial_rose"}:
+        raise ValueError(f"Tuojing prop has no validated task adapter yet: {name}")
+    path, evidence = verified_prop(name)
+    prim = stage.GetPrimAtPath(parent)
+    prim.GetReferences().AddReference(str(path))
+    if not dynamic:
+        # A fixed receptacle has static colliders, not a driven/teleported body.
+        prim.RemoveAPI(UsdPhysics.RigidBodyAPI)
+        prim.RemoveAPI("PhysxRigidBodyAPI")
+    overrides = []
+    if name == "whiteboard_marker":
+        # The delivered capsule extends below the flat visible end and balances
+        # on a rounded point. Match the barrel/end envelope with a flat cylinder
+        # so an upright initial pose rests naturally, without a hidden constraint.
+        barrel = UsdGeom.Cylinder.Define(stage, parent + "/Colliders/Barrel")
+        barrel.CreateRadiusAttr(0.0081)
+        barrel.CreateHeightAttr(0.111)
+        barrel.CreateAxisAttr("Z")
+        xform = UsdGeom.Xformable(barrel)
+        xform.ClearXformOpOrder()
+        xform.AddTranslateOp().Set(Gf.Vec3d(0, 0, 0.0555))
+        overrides.append("Barrel capsule replaced by radius 8.1 mm, height 111 mm flat-ended cylinder; cap capsule retained")
+    colliders = [str(p.GetPath()) for p in Usd.PrimRange(prim, Usd.TraverseInstanceProxies())
+                 if p.HasAPI(UsdPhysics.CollisionAPI) and UsdPhysics.CollisionAPI(p).GetCollisionEnabledAttr().Get()]
+    if not colliders:
+        raise ValueError(f"Tuojing prop has no active collision shapes: {name}")
+    return colliders, {**evidence, "native_metres": True, "origin": "delivered bottom centre",
+                       "dynamic": dynamic, "source_modified": False,
+                       "overrides": overrides, "collision_adapter": "native separate convex/primitives; cavity retained"}

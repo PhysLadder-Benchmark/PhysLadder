@@ -223,6 +223,8 @@ class ResponsesClient:
                    "input": [developer, *messages],
                    "store": False, "stream": True,
                    "reasoning": {"effort": settings.reasoning_effort, "summary": "auto"}}
+        if settings.service_tier is not None:
+            payload["service_tier"] = settings.service_tier
         if settings.structured_output:
             payload["text"] = {"format": {"type": "json_schema", "name": "r5_action",
                                          "strict": True, "schema": schema}}
