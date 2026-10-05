@@ -2,7 +2,7 @@
 
 import numpy as np
 
-from ..robots.transforms import transform_pose
+from ..robots.transforms import pose_transform, transform_pose
 from ..types import DepthFrame, RGBFrame
 from .profile import CameraRigProfile
 from . import RGBNotReady
@@ -15,6 +15,40 @@ def _set_pose(prim, pose):
     xform.ClearXformOpOrder()
     xform.AddTranslateOp().Set(Gf.Vec3d(*pose[:3]))
     xform.AddOrientOp(UsdGeom.XformOp.PrecisionDouble).Set(Gf.Quatd(pose[3], Gf.Vec3d(*pose[4:])))
+
+
+def validate_existing_camera(stage, spec, parent):
+    """Reject stale calibration or a wrist camera attached to the wrong link."""
+    from pxr import UsdGeom
+
+    prim = stage.GetPrimAtPath(spec.existing_prim_path)
+    if not prim or not prim.IsA(UsdGeom.Camera):
+        raise ValueError(f"{spec.name}: missing USD camera {spec.existing_prim_path}")
+    if not spec.existing_prim_path.startswith(parent + "/"):
+        raise ValueError(f"{spec.name}: camera must descend from {parent}")
+    camera = UsdGeom.Camera(prim)
+    if camera.GetProjectionAttr().Get() != "perspective" or any(spec.distortion):
+        raise ValueError(f"{spec.name}: existing camera must use an undistorted perspective lens")
+    w, h = spec.resolution
+    focal = camera.GetFocalLengthAttr().Get()
+    ha, va = camera.GetHorizontalApertureAttr().Get(), camera.GetVerticalApertureAttr().Get()
+    if not np.isclose(ha / va, w / h, rtol=1e-4):
+        raise ValueError(f"{spec.name}: render resolution must preserve the USD camera aspect ratio")
+    # Delivered pinhole lenses use centred principal points; do not silently
+    # interpret an offset using a different renderer convention.
+    if camera.GetHorizontalApertureOffsetAttr().Get() or camera.GetVerticalApertureOffsetAttr().Get():
+        raise ValueError(f"{spec.name}: offset lenses require an explicit calibration adapter")
+    intrinsic = (w * focal / ha, h * focal / va, w / 2, h / 2)
+    if not np.allclose(intrinsic, spec.intrinsics, rtol=1e-6, atol=1e-4):
+        raise ValueError(f"{spec.name}: camera profile intrinsics differ from the supplied USD")
+    cache = UsdGeom.XformCache()
+    world = np.array(cache.GetLocalToWorldTransform(prim)).T
+    base = np.array(cache.GetLocalToWorldTransform(stage.GetPrimAtPath(parent))).T
+    if not np.allclose(np.linalg.inv(base) @ world, pose_transform(spec.optical_pose_wxyz), atol=1e-6):
+        raise ValueError(f"{spec.name}: camera mount differs from the supplied USD")
+    if not np.allclose(camera.GetClippingRangeAttr().Get(), spec.clipping_m, atol=1e-6):
+        raise ValueError(f"{spec.name}: clipping range differs from the supplied USD")
+    return str(prim.GetPath())
 
 
 class IsaacCameraRig:
@@ -32,21 +66,24 @@ class IsaacCameraRig:
                   "hardware_calibrated": False, "notes": self.profile.notes, "cameras": {}}
         for spec in self.specs:
             parent = "/World" if spec.parent == "world" else ee_paths[spec.parent]
-            root_path = f"{parent}/Sensors/{spec.name}"
-            root = UsdGeom.Xform.Define(self.stage, root_path)
-            _set_pose(root.GetPrim(), spec.optical_pose_wxyz)
-            housing = UsdGeom.Xform.Define(self.stage, root_path + "/Housing")
-            housing.GetPrim().GetReferences().AddReference(str(spec.asset))
-            _set_pose(housing.GetPrim(), spec.asset_pose_wxyz)
-            camera = UsdGeom.Camera.Define(self.stage, root_path + "/RGB")
-            camera.CreateClippingRangeAttr(spec.clipping_m)
-            camera.CreateFStopAttr(0.0)
-            # USD camera looks down -Z. The optical root carries all mount transforms.
-            sensor = Camera(str(camera.GetPath()), name=spec.name, resolution=spec.resolution)
-            fx, fy, cx, cy = spec.intrinsics
-            sensor.set_opencv_pinhole_properties(cx=cx, cy=cy, fx=fx, fy=fy, pinhole=list(spec.distortion))
-            self.sensors[spec.name] = sensor
-            self.paths[spec.name] = str(camera.GetPath())
+            if spec.existing_prim_path:
+                self.paths[spec.name] = validate_existing_camera(self.stage, spec, parent)
+            else:
+                root_path = f"{parent}/Sensors/{spec.name}"
+                root = UsdGeom.Xform.Define(self.stage, root_path)
+                _set_pose(root.GetPrim(), spec.optical_pose_wxyz)
+                housing = UsdGeom.Xform.Define(self.stage, root_path + "/Housing")
+                housing.GetPrim().GetReferences().AddReference(str(spec.asset))
+                _set_pose(housing.GetPrim(), spec.asset_pose_wxyz)
+                camera = UsdGeom.Camera.Define(self.stage, root_path + "/RGB")
+                camera.CreateClippingRangeAttr(spec.clipping_m)
+                camera.CreateFStopAttr(0.0)
+                # USD camera looks down -Z. The optical root carries all mount transforms.
+                sensor = Camera(str(camera.GetPath()), name=spec.name, resolution=spec.resolution)
+                fx, fy, cx, cy = spec.intrinsics
+                sensor.set_opencv_pinhole_properties(cx=cx, cy=cy, fx=fx, fy=fy, pinhole=list(spec.distortion))
+                self.sensors[spec.name] = sensor
+                self.paths[spec.name] = str(camera.GetPath())
             product = self.rep.create.render_product(self.paths[spec.name], spec.resolution)
             self.products[spec.name] = product
             annotator = self.rep.AnnotatorRegistry.get_annotator("rgb")
@@ -58,6 +95,7 @@ class IsaacCameraRig:
                 depth.attach(product)
             report["cameras"][spec.name] = {**spec.metadata(), "parent_prim": parent,
                                            "camera_prim": self.paths[spec.name],
+                                           "binding": "existing" if spec.existing_prim_path else "created",
                                            "depth_enabled": self.include_depth,
                                            "depth_source": "ideal_rendered_optical_axis_m" if self.include_depth else None,
                                            "hardware_depth_emulated": False}

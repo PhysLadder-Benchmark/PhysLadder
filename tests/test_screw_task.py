@@ -371,10 +371,22 @@ class ScrewTests(unittest.TestCase):
         for i in (26, 27, 28):
             self.assertEqual(self.e.update(i, sample(z, yaw)).status, "running")
 
-    def test_drop_is_retryable(self):
+    def test_drop_ends_episode_without_reset(self):
         result = self.e.update(0, sample(-0.04, held=False, support=False))
         self.assertEqual(result.status, "failed")
-        self.assertTrue(result.retryable)
+        self.assertFalse(result.retryable)
+
+    def test_tilt_or_unsupported_descent_above_table_allows_recovery(self):
+        row = sample(.10, held=False, support=False)
+        row["linear_velocity"][2] = -.2
+        for now in (0, .3, .6):
+            self.assertEqual(self.e.update(now, row).status, "running")
+        row["pose"][2] = .018
+        row["pose"][3:] = [math.sqrt(.5), math.sqrt(.5), 0, 0]
+        row["linear_velocity"][2] = 0
+        row["bench_force_n"] = 1
+        for now in (1, 2):
+            self.assertEqual(self.e.update(now, row).status, "running")
 
     def test_invalid_samples_fail_explicitly(self):
         self.e.update(1, sample())

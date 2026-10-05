@@ -86,9 +86,7 @@ class EpisodeRecorder:
                       "queries_share_model_budget": True},
             "execution": config.raw.get("execution", {}),
             "episode_isolation": "fresh scene/robot/task and policy history at run start; unique output; no previous runs loaded",
-            "retry_protocol": ("reset scene/robot/task; retain policy history and shared budgets"
-                               if mode != "dry_run" and config.raw.get("execution", {}).get("retry_failed_attempts")
-                               else "no automatic retry"),
+            "retry_protocol": "no automatic retry",
         })
         (self.directory / "instruction.txt").write_text(config.instruction, encoding="utf-8")
 

@@ -111,7 +111,12 @@ def build_assets(profile, directory):
     )
     arm_urdf = output / "arm.urdf"
     ET.ElementTree(root).write(arm_urdf, encoding="utf-8")
-    links = list(spheres)
+    # The anchored base never moves with a joint trajectory. Its conservative
+    # bounding sphere protrudes below the physical base and can intersect the
+    # mounting surface, falsely invalidating every start state in a lab scene.
+    # Exclude only this fixed link from the active robot's world/self checks;
+    # keep its geometry in `spheres` for the OTHER arm's obstacle model.
+    links = [name for name in spheres if name != profile.base_link]
     ignore = {a: links[i + 1 : i + 3] for i, a in enumerate(links)}
     cfg = {
         "robot_cfg": {
@@ -122,7 +127,7 @@ def build_assets(profile, directory):
                 "base_link": profile.base_link,
                 "tool_frames": [TCP_FRAME],
                 "collision_link_names": links,
-                "collision_spheres": spheres,
+                "collision_spheres": {name: spheres[name] for name in links},
                 "collision_sphere_buffer": 0.0,
                 "self_collision_ignore": ignore,
                 "self_collision_buffer": {a: 0.0 for a in links},
@@ -151,6 +156,7 @@ def build_assets(profile, directory):
             "tcp_frame": TCP_FRAME,
             "geometry": "URDF mesh-fitted spheres; approximate, not exact collision geometry",
             "self_collision": "nonadjacent links; immediate two neighbours excluded",
+            "fixed_base_collision": "anchored base excluded from own motion checks; retained as other-arm obstacle",
             "finger_geometry": "updated from measured finger positions",
             "fallback": None,
             "asset_identity": identity,

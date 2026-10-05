@@ -9,12 +9,13 @@ class BenchTask:
     @staticmethod
     def prepare_config(config):
         spec = build_spec(config.task_id)
+        if config.task_id.startswith("L1-") and config.raw.get("simulation", {}).get("environment") != "tuojing_lab_v4":
+            raise ValueError(f"{config.task_id} uses the Tuojing laboratory layout; use its current task config")
         if config.arms != spec.arms or config.observation_arms != spec.observers:
             raise ValueError(
                 f"{config.task_id} requires manipulation={spec.arms}, observation={spec.observers}"
             )
         constrained = config.task_id in {
-            "L1-09",
             "L2-03",
             "L2-04",
             "L2-05",

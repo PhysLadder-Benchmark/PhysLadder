@@ -1,0 +1,130 @@
+{
+  "status": "l1_integrated_with_declared_proxy_exceptions",
+  "path_base": "source/<package.directory>/",
+  "units": {
+    "length": "metre",
+    "up_axis": "Z"
+  },
+  "parameter_status": "Engineering estimates; not hardware calibration.",
+  "entries": [
+    {
+      "id": "lab",
+      "package": "lab_v4",
+      "path": "tuojing_lab.usda",
+      "role": "environment",
+      "notes": "Default 44.07 cm arm spacing; placement and camera calibration are estimated."
+    },
+    {
+      "id": "lab_axis_51cm",
+      "package": "lab_v4",
+      "path": "tuojing_lab_axis_51cm.usda",
+      "role": "alternative_environment",
+      "notes": "Optional 51 cm layout, not selected as the default."
+    },
+    {
+      "id": "wooden_rack",
+      "package": "photo_props",
+      "path": "assets/wooden_rack/wooden_rack.usda",
+      "role": "prop",
+      "notes": "L1-07: native fixed 82 cm rack, lowest diagonal peg; existing project handled cup retained."
+    },
+    {
+      "id": "power_strip",
+      "package": "photo_props",
+      "path": "assets/power_strip/power_strip.usda",
+      "role": "prop",
+      "notes": "L1-03: fixed native strip; middle two-slot socket, zero fixture friction; 0.55 mm minimum side clearance."
+    },
+    {
+      "id": "whiteboard_marker",
+      "package": "photo_props",
+      "path": "assets/whiteboard_marker/whiteboard_marker.usda",
+      "role": "prop",
+      "notes": "L1-01: native rigid capped marker; flat barrel collision override. Not a removable cap for L2-01."
+    },
+    {
+      "id": "ripple_paper_cup",
+      "package": "photo_props",
+      "path": "assets/ripple_paper_cup/ripple_paper_cup.usda",
+      "role": "prop",
+      "notes": "L1-01 pen holder, L1-08 two movable nesting cups, and L1-09 fixed flower holder; native hollow colliders, no deformation."
+    },
+    {
+      "id": "usb_charger",
+      "package": "photo_props",
+      "path": "assets/usb_charger/usb_charger.usda",
+      "role": "prop",
+      "notes": "L1-03: native side-lying charger; two-blade geometry and release scoring; housing/blade payload samples."
+    },
+    {
+      "id": "artificial_rose",
+      "package": "photo_props",
+      "path": "assets/artificial_rose/artificial_rose.usda",
+      "role": "prop",
+      "notes": "L1-09: native rigid artificial rose; grasp wider bud/calyx, insert stem into fixed ripple cup. No bending or damage model."
+    },
+    {
+      "id": "yellow_visor",
+      "package": "photo_props",
+      "path": "assets/yellow_visor/yellow_visor.usda",
+      "role": "prop",
+      "notes": "No automatic mapping to an existing benchmark task."
+    },
+    {
+      "id": "green_board",
+      "package": "photo_props",
+      "path": "assets/green_board/green_board.usda",
+      "role": "prop",
+      "notes": "Future wiping prop; visual asset alone does not provide an erasing mechanism."
+    },
+    {
+      "id": "desk_organizer",
+      "package": "photo_props",
+      "path": "assets/desk_organizer/desk_organizer.usda",
+      "role": "prop",
+      "notes": "Sliding drawers; push-to-open latch is not established by this delivery."
+    },
+    {
+      "id": "all_props",
+      "package": "photo_props",
+      "path": "all_assets.usda",
+      "role": "showcase"
+    },
+    {
+      "id": "new_props",
+      "package": "photo_props",
+      "path": "showcase.usda",
+      "role": "showcase"
+    },
+    {
+      "id": "orange_segment",
+      "package": "orange_soft",
+      "path": "assets/orange_segment/asset.usda",
+      "role": "prop"
+    },
+    {
+      "id": "orange_left_fragment",
+      "package": "orange_soft",
+      "path": "assets/rupture_left/asset.usda",
+      "role": "fragment_template"
+    },
+    {
+      "id": "orange_right_fragment",
+      "package": "orange_soft",
+      "path": "assets/rupture_right/asset.usda",
+      "role": "fragment_template"
+    },
+    {
+      "id": "orange_validation",
+      "package": "orange_soft",
+      "path": "validation_scene.usda",
+      "role": "vendor_validation"
+    },
+    {
+      "id": "orange_rupture",
+      "package": "orange_soft",
+      "path": "rupture_scene.usda",
+      "role": "vendor_demo"
+    }
+  ]
+}

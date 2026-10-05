@@ -20,14 +20,14 @@ from .sparse_action import sparse_schema, decode_sparse_action, orientation_degr
 from ..cameras.geometry import resized_intrinsics
 
 
-def prepare_frame(frame: RGBFrame, max_edge: int, *, robot=None):
+def prepare_frame(frame: RGBFrame, max_edge: int, *, robot=None, bench=None):
     if min(frame.width, frame.height) <= 0 or len(frame.data) != frame.width * frame.height * 3:
         raise ValueError("Invalid packed RGB8 frame")
     image = Image.frombytes("RGB", (frame.width, frame.height), frame.data)
     if frame.calibration is None:
         raise ValueError("RGB has no camera metadata; the GPT workflow requires calibration")
     from ..cameras.visual_aids import annotate
-    image = annotate(image, frame.calibration, robot or {})
+    image = annotate(image, frame.calibration, robot or {}, bench=bench)
     image.thumbnail((max_edge, max_edge), Image.Resampling.LANCZOS)
     buffer = BytesIO()
     image.save(buffer, format="PNG")
@@ -42,6 +42,8 @@ def prepare_frame(frame: RGBFrame, max_edge: int, *, robot=None):
 class GPTPolicy:
     def __init__(self, config: TaskConfig, settings: GPTSettings, *, client=None):
         self.config, self.settings = config, settings
+        from ..backends.scene_geometry import bench_geometry
+        self.bench = bench_geometry(config)
         self.client = client if client is not None else ResponsesClient(settings)
         validate_gpt_workflow(config)
         self.schema = sparse_schema(config.command_arms)
@@ -154,10 +156,9 @@ class GPTPolicy:
                     **workflow_metadata(),
                     "grasp_check": ("rgbd_surface_comotion_v1" if self.config.grasp_check_mode == "lift"
                                     else "contact_inspection_no_lift_gate"),
-                    "startup_preparation": ("task_defined_initial_state" if self.config.initial_state_description
-                                            else "downward_ready_v1"),
                 },
                 "arm_roles": self.config.arm_roles,
+                "task_initial_state": self.config.initial_state_description,
                 "grasp_check_mode": self.config.grasp_check_mode,
                 "observation_modalities": workflow_metadata()["observation_modalities"],
                 "observation_format": "RGB PNG + aligned depth preview + metric pixel queries; full text history, bounded image history"}
@@ -199,7 +200,7 @@ class GPTPolicy:
         image_sizes = {}
         for frame in observation.rgb:
             encoded, size, calibration = prepare_frame(frame, self.settings.image_max_edge,
-                                                       robot=observation.robot)
+                                                       robot=observation.robot, bench=self.bench)
             label = {"camera": frame.camera, "timestamp_s": frame.timestamp_s,
                      "modality": "rgb", "rgb_image_size": list(size)}
             image_sizes[frame.camera] = size

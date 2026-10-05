@@ -84,8 +84,10 @@ class BenchScene(L1Scene):
             joints=[asdict(j) for j in spec.joints],
             scoring={
                 "version": "household-v1",
-                "stable_s": 1.0,
+                "scoring_protocol": "recoverable_progress_v1",
+                "stable_s": spec.parameters.get("hold_s", 1.0),
                 "damage": "proxy thresholds only; no material fracture",
+                "quality_references": "uncalibrated force/speed excursions are advisory, not damage or automatic failure",
             },
         )
 

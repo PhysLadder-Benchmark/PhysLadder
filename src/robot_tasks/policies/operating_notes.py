@@ -2,7 +2,7 @@
 
 from ..config import ExecutionSettings
 from ..robots.kinematics import R5Kinematics
-from ..backends.scene_geometry import BENCH_POSITION, BENCH_SIZE, BENCH_TOP
+from ..backends.scene_geometry import bench_geometry
 
 
 def task_execution_guidance() -> str:
@@ -17,8 +17,8 @@ def task_execution_guidance() -> str:
         "observed; a sent command, old note or execution-completed flag is not proof of object progress. "
         "Choose an action with a concrete observable outcome, then check that outcome on the next turn. "
         "Use the retained text history to track confirmed progress and failed attempts, but revalidate "
-        "anything that may have changed. After a scene reset discard previous grasp, alignment and "
-        "completion assumptions and plan from the new initial observation. "
+        "anything that may have changed. Use current observations to reassess previous grasp, alignment and "
+        "completion assumptions and plan from the latest observation. "
         "When an outcome differs from expectation, identify the observable mismatch and revise the "
         "relevant stage before continuing. After repeated planning rejections, stop extending speculative "
         "detours: reobserve the target, working end, held-object offset and clearance, using depth queries "
@@ -52,7 +52,8 @@ def manipulation_guidance(config) -> str:
         "sample's XY and merely replace its Z. Cross-check complementary views before closing. "
         "After a missed grasp, re-localize and correct the full pose, not only its height. "
         "Use an observation arm when needed, following its role restrictions. "
-        "The downward startup pose is preparation, not a required orientation for every task.\n\n"
+        "Both arms start at their configured joint home, without a scripted downward or viewing pose. "
+        "Choose reachable approach and viewing poses from the measured state; do not assume a ready grasp pose.\n\n"
         "Choose grips that leave functional ends and the later approach path clear. Check clearance "
         "for the complete fingers and carried object, not only the TCP. A held object's centre, axis "
         "and working tip may be offset from the TCP; estimate that relationship from the actual grasp "
@@ -68,7 +69,8 @@ def manipulation_guidance(config) -> str:
         "Recheck that the object is still held before every transport or insertion decision. "
         "If it slips, falls or is no longer visible between the fingers, do not continue the old "
         "insertion plan or assume its previous offset from the TCP is valid. Reobserve and "
-        "re-establish the grasp, or follow an attempt-reset notice if one is provided.\n\n"
+        "re-establish the grasp if the task has not ended. Terminal failure ends the episode; "
+        "there is no automatic scene reset or another attempt.\n\n"
         "Move efficiently in clear free space; near contact use millimetre-scale corrections and "
         "reobserve. Before transporting, ensure the lowest part of the payload clears intervening "
         "surfaces. The planner checks approximate robot/table/fixture geometry and measured held-object clearance. This is planner-only privileged geometry, not task reasoning or proof of a grasp; moving unheld objects are excluded to allow task contact. A planned path can still deviate under physical contact. Large simultaneous "
@@ -88,11 +90,12 @@ def manipulation_guidance(config) -> str:
 def operating_notes(config) -> dict:
     profile = config.robot
     kinematics = R5Kinematics(profile)
+    bench = bench_geometry(config)
     notes = {
         "units": "metres, radians unless explicitly labelled degrees; quaternion wxyz",
-        "world_axes": "+Z up; +X forward from the configured bases; +Y toward the left base",
+        "world_axes": bench.world_axes,
         "base_poses_world_wxyz": {m.name: m.base_pose_wxyz for m in profile.mounts},
-        "bench": {"centre_m": BENCH_POSITION, "size_m": BENCH_SIZE, "surface_world_z_m": BENCH_TOP},
+        "bench": {"centre_m": bench.centre, "size_m": bench.size, "surface_world_z_m": bench.top},
         "tcp": {"pose_in_link6_wxyz": profile.tcp_pose_wxyz, "source": profile.tcp_source,
                 "meaning": "Control point between distal fingers. Command this point directly; do not add a tool offset.",
                 "axes": "+X forward along fingers; +Y jaw closing; +Z transverse"},
@@ -114,11 +117,11 @@ def operating_notes(config) -> dict:
                                  for c in load_camera_rig(config.source.parent / camera_path).select(config.cameras)}
     notes["motion_backend"] = "curobo_trajectory"
     notes["startup_preparation"] = (
-        "Before your first observation the manipulation arm moved to a fixed downward-facing ready pose. "
-        "This is robot-only preparation, not a model action or a grasp. Use the measured TCP state. "
-        "Observation arms start with their wrist cameras facing the manipulation workspace. "
-        "You may reposition them for a clearer view using the same motion interface."
+        "Before your first observation the arms settle at their configured joint home. "
+        "No scripted downward movement or observation-arm aiming has occurred. Use the measured TCP state. "
+        "You may move an observation arm for a clearer view using the same motion interface, "
+        "within its declared role restrictions."
     )
     if config.initial_state_description:
-        notes["startup_preparation"] = config.initial_state_description
+        notes["startup_preparation"] += " " + config.initial_state_description
     return notes

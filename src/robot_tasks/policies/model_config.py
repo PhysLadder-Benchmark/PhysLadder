@@ -23,6 +23,7 @@ class GPTSettings:
     image_max_edge: int = 768
     transport: str = "responses"
     codex_bin: str = "codex"
+    service_tier: str | None = None  # Omit to preserve the provider's default speed.
 
     def __post_init__(self):
         if self.transport not in {"responses", "codex_cli"}:
@@ -44,6 +45,10 @@ class GPTSettings:
             raise ValueError("timeout_s must be a finite positive number")
         if self.reasoning_effort not in {"low", "medium", "high", "xhigh", "max"}:
             raise ValueError("Unsupported reasoning_effort")
+        if self.service_tier is not None and (
+            not isinstance(self.service_tier, str) or self.service_tier not in {"fast", "ultrafast"}
+        ):
+            raise ValueError("service_tier must be fast or ultrafast; omit it for the provider default")
         if type(self.structured_output) is not bool:
             raise ValueError("structured_output must be boolean")
         for name, lower, upper in (("history_steps", 0, 20), ("max_calls", 1, 1000), ("image_max_edge", 64, 2048)):

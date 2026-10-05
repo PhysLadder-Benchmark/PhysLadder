@@ -125,6 +125,22 @@ class ReportingTests(unittest.TestCase):
         self.assertIn("Cylinder was knocked over", text)
         self.assertIn("不能当作独立单次尝试的成功率", text)
 
+    def test_physical_goal_and_process_violation_do_not_become_full_success(self):
+        self.events([])
+        assessment = {"status": "failed", "reason": "Physical goal reached; load spilled",
+                      "metrics": {"scoring_protocol": "recoverable_progress_v1",
+                                  "goal_complete": True, "process_constraints_satisfied": False,
+                                  "constraint_violations": ["Load spilled"],
+                                  "quality_warnings": ["Speed reference exceeded"]}}
+        finish_run(self.run, self.result(assessment=assessment, false_completion=False))
+        text = (self.run / "report.md").read_text(encoding="utf-8")
+        self.assertIn("| 任务评价 | 失败 |", text)
+        self.assertIn("| 目标状态满足（仍需满足稳定时间） | 是 |", text)
+        self.assertIn("| 必要过程约束满足 | 否 |", text)
+        self.assertIn("Load spilled", text)
+        self.assertIn("Speed reference exceeded", text)
+        self.assertIn("不代表已测得材料损坏", text)
+
 
 if __name__ == "__main__":
     unittest.main()

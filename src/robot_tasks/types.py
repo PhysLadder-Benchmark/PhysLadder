@@ -123,4 +123,4 @@ class Assessment:
     status: Literal["not_evaluated", "running", "succeeded", "failed"]
     reason: str
     metrics: dict = field(default_factory=dict)
-    retryable: bool = False  # Explicit task failure eligible for an opt-in scene reset.
+    retryable: bool = False  # Legacy metadata; the runner never retries terminal task failures.

@@ -1,21 +1,20 @@
-# Run from the repository root in the Isaac Sim environment; requires OPENAI_API_KEY.
+# Run from the repository root in the Isaac Sim environment; uses the selected model provider.
 # launch_command / launch_command_conda below are documentation, not auto-executed shell code.
 schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_sim.toml"
+profile = "../robots/r5_tuojing_lab.toml"
 active_arms = ["left"]
 observation_arms = ["right"]
 
 [simulation]
-environment = "lab_room_v1"
-robot_appearance = "r5_black_silver_v1"
-camera_profile = "../cameras/r5_orbbec_provisional.toml"
-asset_directory = "../../build/r5"
+environment = "tuojing_lab_v4"
+camera_profile = "../cameras/r5_tuojing_lab.toml"
+asset_directory = "../../build/tuojing_lab"
 headless = true
-width = 640
-height = 480
+width = 1280
+height = 720
 fps = 12
 arm_stiffness = 1500.0
 arm_damping = 80.0
@@ -24,69 +23,54 @@ finger_damping = 40.0
 self_collision = false
 solver_position_iterations = 32
 solver_velocity_iterations = 0
-camera_position = [1.6, 0.0, 1.4]
-camera_target = [0.28, 0.0, 0.20]
+camera_position = [0.21354960845762927, 0.48765041712220114, 1.32]
+camera_target = [0.1643434123515941, 1.0254038459952994, 0.78]
 
 [policy]
 model_config = "../models/gpt.toml"
 
-[execution]
-retry_failed_attempts = true
-
 [task]
 id = "L1-07"
-name = "塑料杯挂上杯架"
+name = "塑料杯挂上木质挂架"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
 implementation = "household"
-simulation_limitations = "Engineering dimensions and friction; not calibrated to physical props."
+simulation_limitations = "Native photo-estimated 82 cm wooden rack fixed to bench; no delivered handled cup, so the original rigid hollow cup is retained. No material damage model."
 launch_command = "python tools/launch.py run L1-07 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L1-07 --gui"
 instruction = """
 Use the LEFT R5 arm for manipulation. The RIGHT arm is an observation arm:
-it may move its wrist camera when the grasp, handle opening or hook contact is
-obscured, but must not touch or support the cup or rack. Keep the left arm steady
-while changing view. Choose grasp points, poses and motion from current images
-and available robot feedback; no object coordinates or successful action sequence
-is supplied.
-Hang the small rigid plastic cup by its handle on the designated open hook of
-the fixed desktop mug rack. The empty cup starts upright on the table, separate
-from the rack and not held. The rack has a rounded, upward-ended hook with ample
-clearance through the handle opening; there is no latch, snap fit or spring gate.
-Identify the cup body, the handle's enclosed opening, the hook's free tip and
-the supporting section behind the tip. Choose a grasp that supports the cup
-without obstructing the handle opening or trapping the fingers against the rack.
-Do not assume gripping across the hole will leave room for the hook.
-After closing the gripper, make a short lift and verify that the cup actually
-follows and clears the table. A blocked gripper or commanded lift alone does not
-prove a grasp. If the cup stays behind or slips, inspect and grasp again before
-attempting the hanging motion.
-Carry the cup with enough clearance from the rack and table. Orient its handle
-so the hook tip can pass through the opening, then use small observed motions
-to guide the opening over the tip and onto the supporting section. If the handle
-catches, stop and correct the relative position or orientation; do not force it.
-Lower gently until the handle rests on the hook. Open the gripper in a separate
-decision and withdraw through a clear path without pulling the cup off the hook.
-Confirm that the released cup remains suspended by its handle, supported by the
-hook rather than by either gripper, the table or the rack base. Brief passive sway
-is acceptable if the cup remains securely hung; no arbitrary final cup yaw is
-required. Once it is released, clear of the table and actually supported by the
-hook through its handle, the task is complete immediately. No stillness or
-additional waiting period is required. Do not hook through the cup mouth instead
-of the handle.
-Inspect the actual released state before requesting stop. A commanded pose,
-blocked gripper or completion claim is not evidence of success. If the cup is
-dropped or the scene resets, use new observations and reassess rather than
-continuing with stale object positions. Do not invent force measurements or
-assume a force-control tool that the interface does not expose.
+it may move its wrist camera when a grasp, opening or contact is obscured, but
+must not touch or support the props. Keep the left arm steady while changing
+view. Choose grasp points, poses and motion from current images and available
+robot feedback; no object coordinates or successful action sequence is supplied.
+Pick up the small red handled cup and hang its HANDLE on the LOWEST sloping peg
+of the fixed wooden rack. Higher pegs and the trunk are not targets. The native
+rack is 0.82 m tall; do not assume the previous miniature J hook. The selected
+peg is 20 mm thick, slopes upward and points toward the robots.
+Grasp the cup body (about 54 mm wide) without covering its 30 x 32 mm handle hole.
+Verify a short lift. Use the right wrist camera to inspect the peg tip and handle
+opening when occluded. Raise and orient the handle so the rounded peg tip can
+pass through the loop, checking clearance for the WHOLE cup and both fingers.
+Pass the loop over the lowest tip and slightly inward along the peg. Lower until
+the upper inner handle wall rests on the peg; do not insert the peg into the cup
+mouth or balance on its tip. Open separately and withdraw without knocking it
+off. Completion requires actual support through the handle and clearance above
+the table. Passive sway is allowed; no stability waiting period is required.
+
+Inspect the actual released or completed state before requesting stop. A
+commanded pose, blocked gripper, or completion claim is not evidence of success.
+If a grasp is lost, use new observations and reassess rather
+than continuing with stale object positions. Do not invent force measurements
+or assume a force-control tool that the interface does not expose.
 """
 
 # Chinese setup/props description; keep this the final task attribute.
 description = """
-道具：小号带把手的硬质塑料杯、固定桌面挂杯架，挂钩末端上弯，操作台。
-布置：杯子正立于桌面，杯把孔无遮挡；挂架固定。杯体外径约 54 mm，杯把开口约 30×32 mm。
-操作：左臂选择不遮挡杯把孔的抓持位置，抓起并调整杯把，使挂钩穿过杯把，下降让挂钩承重后松手；右臂可绕到侧面观察。
-完成：有真实抓持抬升记录，钩杆穿过杯把孔，有实际挂架接触承重，杯底离桌且已经松手即成功；允许自然晃动，不再等待稳定。
-边界：杯体和杯把分别保留空腔；不能只按杯中心接近挂架判断成功，不包含弹性卡扣。
+道具：交付原生木质挂架（高 82 cm，最低挂杆直径 20 mm），以及原有红色硬质带把手杯；交付包没有带把手杯。
+布置：拓境实验室、原生 R5 双臂及三相机。挂架固定，最低斜挂杆朝向机械臂；杯子立在左臂前方。
+操作：左臂抓杯体并留出把手孔，从最低挂杆圆头套入并放低；右臂仅观察。
+完成：有真实抓持抬升，把手穿过指定挂杆，松手后由其承重且离开桌面；不要求等待静止。
+边界：挂架不缩放、不改为旧 J 钩；杯子为保留的空心刚体代理。
 """

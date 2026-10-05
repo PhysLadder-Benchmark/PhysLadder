@@ -9,7 +9,7 @@ from dataclasses import dataclass, replace
 
 import numpy as np
 
-from .backends.scene_geometry import BENCH_TOP
+from .backends.scene_geometry import bench_geometry
 from .cameras.grasp_evidence import (
     Surface,
     changed_surface_support,
@@ -42,6 +42,7 @@ class Attempt:
 class GraspGuard:
     def __init__(self, config):
         self.config = config
+        self.table_z_m = bench_geometry(config).top
         self.attempts: dict[str, Attempt] = {}
         self.rejections = 0
         self.verifications = 0
@@ -136,7 +137,7 @@ class GraspGuard:
                 arm, observation.time_s, observation.rgb, observation.robot
             )
             surfaces = visible_surfaces(
-                observation.rgb, state.tcp_pose_world_wxyz, width, BENCH_TOP
+                observation.rgb, state.tcp_pose_world_wxyz, width, self.table_z_m
             )
             self.attempts[arm] = Attempt(reference, surfaces)
             references.append(reference)
@@ -207,7 +208,7 @@ class GraspGuard:
                     "For an object wider than this measured gap, inspect its location and regrasp."
                 )
                 continue
-            current = visible_surfaces(observation.rgb, pose, width, BENCH_TOP)
+            current = visible_surfaces(observation.rgb, pose, width, self.table_z_m)
             evidence = match_surfaces(attempt.surfaces, current, width)
             if rise >= MIN_LIFT_M and not attempt.verified_once:
                 evidence.update(

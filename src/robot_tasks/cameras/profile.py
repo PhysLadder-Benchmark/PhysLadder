@@ -24,10 +24,11 @@ class CameraSpec:
     asset_pose_wxyz: tuple[float, ...]  # CAD frame relative to optical frame
     asset_pose_source: str
     clipping_m: tuple[float, float] = (0.005, 20.0)
+    existing_prim_path: str = ""  # Bind a camera supplied by the environment, without duplicating it.
 
     def metadata(self) -> dict:
         return {**asdict(self), "asset": str(self.asset),
-                "asset_sha256": hashlib.sha256(self.asset.read_bytes()).hexdigest(),
+                "asset_sha256": hashlib.sha256(self.asset.read_bytes()).hexdigest() if self.asset.is_file() else None,
                 "axes": "USD: +X right, +Y up, -Z forward",
                 "housing_physics": "visual_only; no added mass or collision",
                 "image_model": "OpenCV pinhole; no exposure/noise/rolling-shutter simulation"}
@@ -64,7 +65,7 @@ def load_camera_rig(path: Path) -> CameraRigProfile:
         raise ValueError("Camera rig must define at least one camera")
     result = []
     fields = set(CameraSpec.__dataclass_fields__) - {"name"}
-    required = fields - {"clipping_m"}
+    required = fields - {"clipping_m", "existing_prim_path"}
     for name, data in raw["cameras"].items():
         if not name.replace("_", "").isalnum():
             raise ValueError("Camera names must be simple identifiers")
@@ -75,6 +76,11 @@ def load_camera_rig(path: Path) -> CameraRigProfile:
                 raise ValueError(f"{name}.{key} must be nonempty")
         if data["parent"] not in {"world", "left", "right"}:
             raise ValueError(f"{name}: parent must be world, left or right")
+        existing = data.get("existing_prim_path", "")
+        if not isinstance(existing, str) or (existing and (
+            not existing.startswith("/World/") or ".." in existing.split("/")
+        )):
+            raise ValueError(f"{name}: existing_prim_path must be an absolute /World prim path")
         resolution = data["resolution"]
         if not isinstance(resolution, list) or len(resolution) != 2 or any(
             type(v) is not int or v <= 0 for v in resolution
@@ -93,7 +99,7 @@ def load_camera_rig(path: Path) -> CameraRigProfile:
         if not 0 < near < far:
             raise ValueError(f"{name}: clipping must satisfy 0 < near < far")
         asset = (source.parent / data["asset"]).resolve()
-        if not asset.is_file() or asset.suffix not in {".usd", ".usda", ".usdc"}:
+        if (not asset.is_file() and not existing) or asset.suffix not in {".usd", ".usda", ".usdc"}:
             raise ValueError(f"{name}: camera USD asset does not exist: {asset}")
         values = {**data, "name": name, "asset": asset}
         for key in ("resolution", "intrinsics", "distortion", "optical_pose_wxyz", "asset_pose_wxyz", "clipping_m"):

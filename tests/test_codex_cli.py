@@ -171,6 +171,39 @@ class CodexBoundaryTests(unittest.TestCase):
             self.assertIn("PYTHONPATH", environment)
             self.assertEqual(login.call_count, 2)
 
+    def test_optional_service_tier_reaches_each_codex_decision_separately_from_effort(self):
+        for tier in (None, "fast", "ultrafast"):
+            with self.subTest(tier=tier), patch("robot_tasks.policies.codex_cli.CodexProcess") as host:
+                host.return_value.path.side_effect = lambda path: path
+                host.return_value.run.return_value = subprocess.CompletedProcess([], 0, events().encode(), b"")
+                client = CodexCLIClient(replace(SETTINGS, service_tier=tier))
+                for _ in range(2):
+                    client.generate(instructions="Robot contract", messages=[], schema={"type": "object"})
+                for call in host.return_value.run.call_args_list:
+                    command = call.args[0]
+                    overrides = dict(command[i + 1].split("=", 1) for i, arg in enumerate(command) if arg == "-c")
+                    self.assertEqual(json.loads(overrides["model_reasoning_effort"]), "medium")
+                    if tier is None:
+                        self.assertNotIn("service_tier", overrides)
+                        self.assertNotIn("features.fast_mode", overrides)
+                    else:
+                        self.assertEqual(json.loads(overrides["service_tier"]), tier)
+                        self.assertEqual(overrides["features.fast_mode"], "true")
+
+    def test_ultrafast_profile_survives_task_policy_overrides(self):
+        root = Path(__file__).resolve().parents[1]
+        model = root / "configs/models/codex_ultrafast.toml"
+        _, config = resolve_task("L1-03")
+        with patch("robot_tasks.policies.codex_cli.CodexProcess"), \
+                patch.object(CodexCLIClient, "require_chatgpt_login"), \
+                patch("robot_tasks.execution.read_api_key", side_effect=AssertionError("No API key")):
+            policy = _gpt_policy(config, model)
+        self.assertEqual(policy.settings.transport, "codex_cli")
+        self.assertEqual(policy.settings.service_tier, "ultrafast")
+        self.assertEqual(policy.settings.reasoning_effort, "medium")
+        self.assertEqual(policy.settings.max_calls, 100)
+        self.assertEqual(policy.run_metadata["provider"]["service_tier"], "ultrafast")
+
     @unittest.skipIf(os.name == "nt", "POSIX mock executable")
     def test_real_cli_boundary_gets_images_schema_model_and_clean_env(self):
         executable = self.root / "codex-fixture"

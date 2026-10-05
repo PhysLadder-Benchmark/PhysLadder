@@ -1,7 +1,7 @@
 # 临时工程参数：用户允许先估算。未经过现场标定，不可作为真机内外参。
 schema_version = 1
 calibration_status = "provisional_uncalibrated"
-notes = "Supplier camera and R5 bracket CAD; wrist direction follows the bracket mounting face. Both arms use the same provisional local mount. Bracket-to-link6 registration, optical-centre offsets, nominal-FOV intrinsics and zero distortion remain engineering estimates. Visual geometry only: no added mass/collision or camera noise/exposure. Replace after on-site calibration."
+notes = "Supplier camera and R5 bracket CAD with user-requested 45 degree wrist tilt. Legacy world uses tabletop Z=0: overview Z=0.54 corresponds to 1.32 m floor height for the 0.78 m laboratory table. Overview is 0.25 m outside the front edge, facing the original direction with 45 degree depression. Bracket registration, optical centres, nominal-FOV intrinsics and zero distortion remain uncalibrated estimates."
 
 [cameras.overview]
 model = "Wheeltec Gemini Pro / Orbbec Gemini module"
@@ -13,9 +13,10 @@ distortion = [0.0, 0.0, 0.0, 0.0, 0.0]
 intrinsics_source = "Nominal RGB FOV H71.5 V56.7: https://orbbec.com.cn/index/Product/info.html?cate=38&id=16 ; 640x480 engineering mode, no per-device calibration."
 # xyz metres + scalar-first quaternion; optical axes are USD: -Z forward, +Y up.
 # 正对双臂：世界 +X 为机械臂前方，Y=0 为两底座中线；从高处朝下看。
-# 光心高于桌面 1.4 m，朝 [0.28, 0, 0.20]，俯角约 42.3°；距离/高度为估计值。
-optical_pose_wxyz = [1.6, 0.0, 1.4, 0.646659260, 0.286062583, 0.286062583, 0.646659260]
-pose_source = "User-described front-centred elevated view of both R5 arms. Estimated world eye [1.6,0,1.4], target [0.28,0,0.20], world +Z up; Y=0 is the arm-base midpoint. Approximately 42.3 degrees downward. Position, height and pitch are not measured or hardware-calibrated."
+# 旧场景桌面 Z=0；1.32 m 离地高度减去实验室桌高 0.78 m，得到相对桌面高度 0.54 m。
+# 桌前沿 X=1.0，相机在外侧 0.25 m；保留朝 -X 的方向，俯视 45°。
+optical_pose_wxyz = [1.25, 0.0, 0.54, 0.6532814824381883, 0.2705980500730985, 0.2705980500730985, 0.6532814824381883]
+pose_source = "User installation interpreted in tabletop coordinates: eye [1.25,0,0.54], floor-equivalent height 1.32 m for a 0.78 m table, 0.25 m horizontal front-edge clearance, downward 45 degrees, existing -X heading preserved. Not hardware calibrated."
 asset = "../../assets/cameras/gemini_pro.usdc"
 asset_pose_wxyz = [0.0, 0.0, 0.035, 0.707106781, 0.707106781, 0.0, 0.0]
 asset_pose_source = "Assumed optical centre at housing front; centred CAD +Y mapped to camera +Z. Optical offset/sign not surveyed."
@@ -29,10 +30,10 @@ intrinsics = [298.404828, 296.512194, 320.0, 200.0]
 distortion = [0.0, 0.0, 0.0, 0.0, 0.0]
 intrinsics_source = "Nominal full RGB FOV H94 V68: https://www.orbbec.com/gemini-305/ ; half-resolution 640x400 synthetic stream. Native sensor/channel and actual hardware mode pending."
 # 同向安装在两侧 link6 的 +Z 一侧；这里的“上方”随末端转动，不是世界坐标上方。
-# 固定座原始 CAD 坐标暂按 link6 对齐；朝向取安装斜面，光心取外壳中心向前 14 mm。
+# 保留原光心偏移，将相机及固定座朝向微调为相对 link6 +X 向 -Z 倾斜 45°。
 # 装配依据和可替换的估计量见 assets/cameras/gemini305_r5_mounted.json。
-optical_pose_wxyz = [0.093654885, 0.000000000, 0.071184894, 0.639018950, 0.302745408, -0.302745408, -0.639018950]
-pose_source = "Bracket mounting face and user installation video 20260927-190354.mp4; original bracket CAD axes provisionally aligned with left R5 link6. Optical centre estimated 14 mm forward of housing centre; image right along link -Y. Same local mount on both arms; not hand-eye calibrated."
+optical_pose_wxyz = [0.093654885, 0.0, 0.071184894, 0.6532814824381883, 0.2705980500730985, -0.2705980500730985, -0.6532814824381883]
+pose_source = "Original bracket/CAD optical centre retained; user-requested 45 degree tilt from link6 +X toward -Z, image right -Y. Camera and housing rotate together; same mount on both arms, not hand-eye calibrated."
 asset = "../../assets/cameras/gemini305_r5_mounted.usda"
 asset_pose_wxyz = [0.0, 0.0, 0.014, 0.707106781, 0.707106781, 0.0, 0.0]
 asset_pose_source = "Assembly origin is the centred Gemini305 CAD frame; +Y maps to optical +Z. Includes supplied bracket with provisional link6 registration. RGB/IR imager offset and image roll not measured."
@@ -46,8 +47,8 @@ intrinsics = [298.404828, 296.512194, 320.0, 200.0]
 distortion = [0.0, 0.0, 0.0, 0.0, 0.0]
 intrinsics_source = "Nominal full RGB FOV H94 V68: https://www.orbbec.com/gemini-305/ ; half-resolution 640x400 synthetic stream. Native sensor/channel and actual hardware mode pending."
 # 与左侧共用相同局部安装方向；现场校准时可分别修改两侧位姿。
-optical_pose_wxyz = [0.093654885, 0.000000000, 0.071184894, 0.639018950, 0.302745408, -0.302745408, -0.639018950]
-pose_source = "Bracket mounting face and user installation video 20260927-190354.mp4; original bracket CAD axes provisionally aligned with right R5 link6. Optical centre estimated 14 mm forward of housing centre; image right along link -Y. Same local mount on both arms; not hand-eye calibrated."
+optical_pose_wxyz = [0.093654885, 0.0, 0.071184894, 0.6532814824381883, 0.2705980500730985, -0.2705980500730985, -0.6532814824381883]
+pose_source = "Original bracket/CAD optical centre retained; user-requested 45 degree tilt from link6 +X toward -Z, image right -Y. Camera and housing rotate together; same mount on both arms, not hand-eye calibrated."
 asset = "../../assets/cameras/gemini305_r5_mounted.usda"
 asset_pose_wxyz = [0.0, 0.0, 0.014, 0.707106781, 0.707106781, 0.0, 0.0]
 asset_pose_source = "Assembly origin is the centred Gemini305 CAD frame; +Y maps to optical +Z. Includes supplied bracket with provisional link6 registration. RGB/IR imager offset and image roll not measured."

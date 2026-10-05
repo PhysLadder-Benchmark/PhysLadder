@@ -78,6 +78,13 @@ def check(task_id, output, *, prepare=True, prop_probe=False, capture_hook=None)
         rows = task.scene.measure()
         frames = backend.capture_rgb()
         result["cameras"] = []
+        result["camera_capture"] = {}
+        from ..backends.scene_geometry import bench_geometry
+        from ..policies.gpt import prepare_frame
+        from ..policies.operating_notes import operating_notes
+
+        result["operating_notes"] = operating_notes(config)
+        state = robot.state()
         for frame in frames:
             from ..cameras.depth import depth_array
 
@@ -90,6 +97,15 @@ def check(task_id, output, *, prepare=True, prop_probe=False, capture_hook=None)
             if np.frombuffer(frame.data, dtype=np.uint8).std() < 1:
                 raise RuntimeError("Blank camera: " + frame.camera)
             result["cameras"].append(frame.camera)
+            # Use the same overlay and calibration resizing as the policy, but
+            # never instantiate a model client or send a request in this check.
+            preview, size, calibration = prepare_frame(frame, 768, robot=state, bench=bench_geometry(config))
+            (output / ("model_preview_" + frame.camera + ".png")).write_bytes(preview)
+            np.save(output / (frame.camera + "_depth.npy"), depth)
+            result["camera_capture"][frame.camera] = {
+                "calibration": frame.calibration, "preview_calibration": calibration,
+                "preview_resolution": size, "valid_depth_fraction": float(np.mean(np.isfinite(depth) & (depth > 0))),
+            }
         if capture_hook is not None:
             result["preview"] = capture_hook(backend, task, output)
         # Initial state must be running, never already successful or physically failed.

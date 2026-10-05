@@ -187,6 +187,18 @@ class ResponsesTests(unittest.TestCase):
         self.assertEqual(payload["input"][0]["content"][0]["text"], "ACTION CONTRACT")
         self.assertNotIn(b"test-private-token", request.data)
         self.assertNotIn("max_output_tokens", payload)
+        self.assertNotIn("service_tier", payload)
+
+    @patch.dict(os.environ, {"OPENAI_API_KEY": "test-private-token"})
+    def test_speed_tier_is_forwarded_independently_of_reasoning_effort(self):
+        opener = Mock()
+        opener.open.return_value = Stream(event({"type": "response.completed", "response": response_document()}))
+        settings = replace(SETTINGS, service_tier="ultrafast", reasoning_effort="medium")
+        with patch("robot_tasks.policies.responses.build_opener", return_value=opener):
+            ResponsesClient(settings).generate(instructions="contract", messages=[], schema={})
+        payload = json.loads(opener.open.call_args.args[0].data)
+        self.assertEqual(payload["service_tier"], "ultrafast")
+        self.assertEqual(payload["reasoning"]["effort"], "medium")
 
     @patch.dict(os.environ, {"OPENAI_API_KEY": "test-private-token"})
     def test_transport_timeouts_are_retryable_without_hidden_client_retries(self):
@@ -388,6 +400,15 @@ class GPTPolicyTests(unittest.TestCase):
 
 
 class SettingsTests(unittest.TestCase):
+    def test_service_tier_validation_does_not_conflate_speed_with_reasoning(self):
+        for tier in (None, "fast", "ultrafast"):
+            self.assertEqual(replace(SETTINGS, service_tier=tier).service_tier, tier)
+        for tier in ("ultra fast", "medium", "", True, []):
+            with self.subTest(tier=tier), self.assertRaisesRegex(ValueError, "service_tier"):
+                replace(SETTINGS, service_tier=tier)
+        with self.assertRaisesRegex(ValueError, "reasoning_effort"):
+            replace(SETTINGS, reasoning_effort="ultrafast")
+
     def test_committed_config_has_no_credentials(self):
         settings = load_gpt_settings(ROOT / "configs/models/gpt.example.toml")
         self.assertEqual(settings.api_key_env, "OPENAI_API_KEY")

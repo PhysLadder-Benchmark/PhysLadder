@@ -106,7 +106,9 @@ class OptimizationTests(unittest.TestCase):
         # Public task dimensions/goals belong in the task message, not global advice.
         self.assertNotIn("uniform cylindrical peg", policy.instructions)
         prepared = TASKS["L1-01"].factory.prepare_config(insertion)
-        self.assertIn("Insert at least 0.04 m", prepared.instruction)
+        self.assertNotIn("Insert at least 0.04 m", prepared.instruction)
+        self.assertIn("Either end may enter", prepared.instruction)
+        self.assertIn("no automatic reset/retry", prepared.instruction)
         self.assertIn("Keep the cap on", prepared.instruction)
         self.assertNotIn("Both flat ends are equivalent", prepared.instruction)
         self.assertNotIn("0.36", prepared.instruction)

@@ -110,13 +110,37 @@ class PushTTests(unittest.TestCase):
         self.block["linear_velocity"] = [.04, 0, 0]
         self.assertEqual(self.assess(1.1).status, "running")
 
-    def test_lifting_or_observer_contact_fails(self):
+    def test_incidental_lift_and_observer_touch_allow_recovery(self):
         self.place((.39, .30, .04))
-        self.assertEqual(self.assess().status, "failed")
-        rows = measurement(self.spec)
-        rows["t_block"]["fingers"]["right"] = [1, 0]
-        fresh = BenchEvaluator(self.spec, {self.article.name: self.article.initial})
-        self.assertEqual(fresh.update(.1, rows).status, "failed")
+        self.assertEqual(self.assess().status, "running")
+        self.block["fingers"]["right"] = [1, 0]
+        self.assertEqual(self.assess().status, "running")
+        self.block["fingers"]["right"] = [0, 0]
+        self.place(self.article.initial[:3])
+        self.push_witness()
+        self.place(self.article.goal[:3])
+        self.block["fingers"]["left"] = [0, 0]
+        self.assess()
+        result = self.assess(1.1)
+        self.assertEqual(result.status, "succeeded")
+        self.assertTrue(result.metrics["quality_warnings"])
+
+    def test_grasped_carrying_is_still_a_process_violation(self):
+        self.place((.39, .30, .04))
+        self.block["bench_force_n"] = 0
+        self.block["fingers"]["left"] = [1, 1]
+        self.assertEqual(self.assess().status, "running")
+        result = self.assess(.3)
+        self.assertEqual(result.status, "failed")
+        self.assertIn("carried", result.reason)
+
+    def test_observer_manipulation_is_still_a_process_violation(self):
+        self.block["fingers"]["right"] = [1, 0]
+        self.assess()
+        self.place((self.article.initial[0] + .01, *self.article.initial[1:3]))
+        result = self.assess(.2)
+        self.assertEqual(result.status, "failed")
+        self.assertIn("observation arm manipulated", result.reason)
 
 
 if __name__ == "__main__":

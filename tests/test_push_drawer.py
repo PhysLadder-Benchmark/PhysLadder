@@ -147,21 +147,47 @@ class PushDrawerTests(unittest.TestCase):
         fresh = BenchEvaluator(self.spec, self.initial)
         self.assertEqual(fresh.update(.1, self.rows).status, "running")
 
-    def test_lower_layer_operation_fails(self):
+    def test_lower_touch_is_advisory_but_sustained_displacement_fails(self):
         self.rows["lower_drawer"]["fingers"]["left"] = [1, 1]
         self.assertEqual(self.assess(0, "locked").status, "running")
         result = self.assess(0, "locked", dt=.2)
+        self.assertEqual(result.status, "running")
+        self.assertTrue(result.metrics["quality_warnings"])
+        self.rows["lower_drawer"]["pose"][0] += .006
+        self.assertEqual(self.assess(0, "locked").status, "running")
+        result = self.assess(0, "locked", dt=.3)
         self.assertEqual(result.status, "failed")
         self.assertIn("lower", result.reason)
 
-    def test_excessive_force_speed_and_broken_guide_fail(self):
-        for field, value in (("linear_velocity", [0.5, 0, 0]), ("pose", [0.335, .30, .101, 1, 0, 0, 0])):
-            with self.subTest(field=field):
-                rows = measurement(self.spec)
-                rows["upper_drawer"][field] = value
-                result = BenchEvaluator(self.spec, self.initial).update(.1, rows)
-                self.assertEqual(result.status, "failed")
-        self.assertEqual(self.assess(-.01, "armed", (45, 0)).status, "failed")
+    def test_force_and_speed_references_do_not_prevent_legitimate_completion(self):
+        upper = self.rows["upper_drawer"]
+        upper["linear_velocity"] = [.5, 0, 0]
+        result = self.assess(-.01, "armed", (45, 0))
+        self.assertEqual(result.status, "running")
+        self.assertEqual(len(result.metrics["quality_warnings"]), 2)
+        upper["linear_velocity"] = [0, 0, 0]
+        self.assess(.03, "open")
+        self.assess(.105, "open", (1, 1))
+        self.assess(.105, "open")
+        result = self.assess(.105, "open", dt=1.05)
+        self.assertEqual(result.status, "succeeded")
+        self.assertEqual(len(result.metrics["quality_warnings"]), 2)
+
+    def test_guide_deviation_must_persist_and_cannot_complete(self):
+        upper = self.rows["upper_drawer"]
+        upper["pose"][1] += .01
+        self.assertEqual(self.evaluator.update(.1, self.rows).status, "running")
+        upper["pose"][1] -= .01
+        self.assertEqual(self.evaluator.update(.3, self.rows).status, "running")
+        upper["pose"][1] += .01
+        self.assertEqual(self.evaluator.update(.4, self.rows).status, "running")
+        result = self.evaluator.update(.7, self.rows)
+        self.assertEqual(result.status, "failed")
+        self.assertIn("guide", result.reason)
+
+    def test_persistent_mechanical_stop_violation_fails(self):
+        self.assertEqual(self.assess(.13, "open").status, "running")
+        self.assertEqual(self.assess(.13, "open", dt=.3).status, "failed")
 
 
 if __name__ == "__main__":

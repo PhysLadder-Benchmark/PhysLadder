@@ -265,6 +265,11 @@ class CodexCLIClient:
                          "features.skip_host_skill_discovery": True, "suppress_unstable_features_warning": True,
                          "features.unbounded_connection_retries": False,
                          "model_instructions_file": str(remote / instructions_file.name)}
+            if settings.service_tier is not None:
+                # exec ignores user config, so the requested tier must travel
+                # with every independent decision, separately from reasoning.
+                overrides["service_tier"] = settings.service_tier
+                overrides["features.fast_mode"] = True
             for key, value in overrides.items():
                 command.extend(["-c", key + "=" + json.dumps(value)])
             for path in images:

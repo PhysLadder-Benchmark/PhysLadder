@@ -32,12 +32,20 @@ def run(scene):
 
         return probe_push_drawer(scene)
     result = {"task": task, "scope": "fixture-only, no robot policy or success score"}
-    if task in {"L1-01", "L1-03", "L1-05", "L1-07", "L1-08"}:
+    if task in {"L1-01", "L1-03", "L1-05", "L1-07", "L1-08", "L1-09"}:
         article = scene.design.articles[-1]
         goal = list(article.goal)
         goal[2] += 0.008
+        if task == "L1-08":
+            # Check a reachable release *inside* the mouth before fingers on
+            # the narrower lower body would hit the other cup's rim. This is a
+            # gravity/contact diagnostic, not a scripted robot grasp or success.
+            lower = scene.measure()["lower_cup"]["pose"]
+            p = scene.spec.parameters
+            goal[:3] = [lower[0], lower[1], lower[2] + p["cup_height"] - p["entry_depth"]]
+            result["release_entry_depth_m"] = p["entry_depth"]
         _pose(scene, article.name, goal)
-        _advance(scene, 2)
+        _advance(scene, 4 if task == "L1-09" else 2)
         row = scene.measure()[article.name]
         support = row["fixture_force_n"] + sum(row["pair_forces"].values())
         drift = float(np.linalg.norm(np.array(row["pose"][:2]) - goal[:2]))
@@ -58,59 +66,28 @@ def run(scene):
             "L1-05": "inside_socket",
             "L1-07": "hook_through_handle",
             "L1-08": "nested",
+            "L1-09": "stem_end_inside",
         }[task]
         if not criteria[key]:
             raise RuntimeError(
                 "Physical resting pose rejected by geometry scorer: " + str(result)
             )
-        if support < 0.05 or drift > (0.08 if task == "L1-07" else 0.02):
+        drift_limit = 0.02
+        if task == "L1-09":
+            # A rigid rose can lean until its tip rests at the cup's inner wall.
+            drift_limit = scene.spec.parameters["radius"] + scene.spec.parameters["stem_radius"]
+        if task == "L1-07":
+            # A hanging cup naturally slides inward along a sloping peg and
+            # pivots around its handle. Bound that excursion by the actual peg
+            # and cup span, not the old miniature J-hook's 8-cm heuristic.
+            from ..tasks.l1.specs import local_corners
+
+            peg_span = np.linalg.norm(np.array(scene.spec.parameters["hook_end"])
+                                      - scene.spec.parameters["hook_start"])
+            drift_limit = float(peg_span + np.linalg.norm(np.ptp(local_corners(article), axis=0)))
+        result["horizontal_drift_limit_m"] = drift_limit
+        if support < scene.spec.parameters.get("min_support_n", 0.05) or drift > drift_limit:
             raise RuntimeError("Open-cavity/hook support probe failed: " + str(result))
-    elif task == "L1-09":
-        from ..tasks.bench.evaluation import BenchEvaluator
-        from ..tasks.bench.scoring_l1 import flower
-
-        # A released candidate placement must be physically supportable before
-        # assessing the separate end-held sag experiment below.
-        for i, a in enumerate(scene.design.articles):
-            _pose(scene, a.name, [0.36, 0.20, 0.018 + i * 0.028, 1, 0, 0, 0])
-        _advance(scene, 3)
-        placed = scene.measure()
-        _, criteria, _ = flower(BenchEvaluator(scene.spec, scene.initial), placed)
-        result["placement_criteria"] = criteria
-        result["placement_head_z"] = placed["flower_head"]["pose"][2]
-        if not (criteria["stem_end_inside"] and criteria["flower_clear_of_table"]):
-            raise RuntimeError(
-                "Flexible flower placement cannot remain supported: " + str(result)
-            )
-        # Hold only the remote stem end horizontally above the bench. Sag must
-        # follow gravity and passive joints, not an animation or pose write.
-        # Keep the fixture diagnostic clear of either robot's prepared pose.
-        # This offset is not used by the actual task or reset.
-        test_height = 0.90
-        for a in scene.design.articles:
-            p = list(a.initial)
-            p[2] += test_height
-            _pose(scene, a.name, p)
-        anchor = scene.design.articles[0].initial[:3]
-        scene.create_joint(Joint("probe_fixed_tip", "", "stem_0", anchor, {}))
-        # World joint was authored relative to the original pose; move its
-        # world anchor up with the diagnostic assembly.
-        from pxr import Gf, UsdPhysics
-
-        joint = UsdPhysics.Joint.Get(
-            scene.stage, scene.root + "/Joints/probe_fixed_tip"
-        )
-        joint.CreateLocalPos0Attr(
-            Gf.Vec3f(anchor[0], anchor[1], anchor[2] + test_height)
-        )
-        _advance(scene, 3)
-        row = scene.measure()["flower_head"]
-        sag = anchor[2] + test_height - row["pose"][2]
-        result.update(head_sag_m=float(sag))
-        if sag < 0.04:
-            raise RuntimeError(
-                "Stem proxy is not sufficiently flexible: " + str(result)
-            )
     elif task in {"L2-03", "L2-04", "L2-05", "L2-07"}:
         from .l2_prop_probe import run as probe_l2
 

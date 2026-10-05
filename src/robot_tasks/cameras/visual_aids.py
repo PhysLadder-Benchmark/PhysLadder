@@ -8,14 +8,15 @@ import numpy as np
 from PIL import ImageDraw
 
 from .geometry import project_world
-from ..backends.scene_geometry import BENCH_TOP
+from ..backends.scene_geometry import bench_geometry
 
 
-def annotate(image, calibration, robot):
+def annotate(image, calibration, robot, *, bench=None):
     if calibration is None:
         raise ValueError("Visual aids require actual camera parameters")
     draw = ImageDraw.Draw(image)
     size = image.size
+    bench = bench or bench_geometry()
 
     def pixel(point):
         uv = project_world([point], calibration["T_world_camera_pose_wxyz"],
@@ -25,9 +26,13 @@ def annotate(image, calibration, robot):
         return None
 
     labels = []
-    for x in np.arange(.0, .81, .1):
-        for y in np.arange(-.6, .61, .1):
-            uv = pixel((x, y, BENCH_TOP + .001))
+    axes = [np.arange(np.ceil((c - s / 2) * 10) / 10, c + s / 2 + 1e-8, .1)
+            for c, s in zip(bench.centre[:2], bench.size[:2])]
+    if bench.prim_path == "/World/Bench":
+        axes = [np.arange(.0, .81, .1), np.arange(-.6, .61, .1)]
+    for x in axes[0]:
+        for y in axes[1]:
+            uv = pixel((x, y, bench.top + .001))
             if uv:
                 u, v = uv
                 draw.ellipse((u - 1, v - 1, u + 1, v + 1), fill="white")

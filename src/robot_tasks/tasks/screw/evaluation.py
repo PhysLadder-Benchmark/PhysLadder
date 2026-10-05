@@ -9,7 +9,7 @@ from ...robots.transforms import pose_transform
 from ...types import Assessment
 from .spec import SPEC
 
-SCORE_VERSION = "net-engagement-v2"
+SCORE_VERSION = "net-engagement-v3-recoverable"
 
 
 @dataclass
@@ -80,7 +80,7 @@ class ScrewEvaluator:
         self.thread_advance = 0.0
         self.guided_depth_seen = False
         self.stable_since = None
-        self.unsupported_since = None
+        self.unsupported_descent_seen = False
 
     def update(self, now, row):
         numbers = [
@@ -146,11 +146,7 @@ class ScrewEvaluator:
             and row["bench_force_n"] < s.contact_threshold
             and row["linear_velocity"][2] < -0.1
         )
-        self.unsupported_since = (
-            (now if self.unsupported_since is None else self.unsupported_since)
-            if unsupported
-            else None
-        )
+        self.unsupported_descent_seen |= unsupported
         metrics = {
             "task_version": s.version,
             "score_version": SCORE_VERSION,
@@ -170,6 +166,13 @@ class ScrewEvaluator:
             if self.stable_since is None
             else now - self.stable_since,
             "damage_model": "none; no stripping or material damage claim",
+            "scoring_protocol": "recoverable_progress_v1",
+            "goal_complete": bool(complete),
+            "process_constraints_satisfied": not (tip[2] < -0.03 and released),
+            "constraint_violations": (["Screw fell below the table"]
+                                      if tip[2] < -0.03 and released else []),
+            "quality_warnings": (["Unsupported descent observed; regrasp remains possible on the table"]
+                                 if self.unsupported_descent_seen else []),
             # Recorder-only task truth, never part of the policy observation.
             # Store independent values so later samples cannot mutate this row.
             "measurement_time_s": float(now),
@@ -187,19 +190,11 @@ class ScrewEvaluator:
                 "bench_force_n": float(row["bench_force_n"]),
             },
         }
-        if (
-            tip[2] < -0.03
-            or (
-                self.unsupported_since is not None
-                and now - self.unsupported_since >= 0.25
-            )
-            or (tilt > math.pi / 3 and released and not physical_goal)
-        ):
+        if tip[2] < -0.03 and released:
             return Assessment(
                 "failed",
-                "Screw dropped or toppled outside the socket",
+                "Screw fell below the table",
                 metrics,
-                retryable=True,
             )
         if (
             self.stable_since is not None
