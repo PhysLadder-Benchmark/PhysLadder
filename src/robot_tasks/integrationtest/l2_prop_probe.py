@@ -1,10 +1,7 @@
 """L2 contact/clearance diagnostics; fixture drives, never GPT task success."""
 
-import math
-
 import numpy as np
 
-from ..robots.transforms import pose_transform
 from ..tasks.bench.evaluation import relative
 from ..tasks.bench.scoring_l2 import ball_contained
 from ..tasks.bench.spec import Joint
@@ -63,43 +60,6 @@ def run(scene):
                       final_contained=final_count, required=p["count"], final_bowl_pose=scene.measure()["bowl"]["pose"])
         if transported != p["count"] or final_count != p["count"]:
             raise RuntimeError("Gentle loaded-bowl transport spilled: " + str(result))
-    elif task == "L2-05":
-        motor = scene.drives["lid_hinge", "rotY"]
-        motor.CreateStiffnessAttr(0.1)
-        motor.CreateDampingAttr(0.01)
-        motor.CreateMaxForceAttr(0.12)
-        slider = scene.drives["latch_spring", "transX"]
-
-        def angle():
-            rotation = np.linalg.inv(pose_transform(scene.initial["lid"])) @ pose_transform(scene.measure()["lid"]["pose"])
-            return float(math.atan2(rotation[2, 0], rotation[0, 0]))
-
-        motor.CreateTargetPositionAttr(110.0)
-        advance(scene, 2)
-        locked = angle()
-        motor.CreateTargetPositionAttr(0.0)
-        advance(scene, 1)
-        slider.CreateTargetPositionAttr(-0.018)
-        advance(scene, 1)
-        motor.CreateTargetPositionAttr(110.0)
-        advance(scene, 4)
-        opened = angle()
-        motor.CreateStiffnessAttr(0.0)
-        motor.CreateDampingAttr(0.005)
-        slider.CreateTargetPositionAttr(0.0)
-        advance(scene, 3)
-        resting_open = angle()
-        slider.CreateTargetPositionAttr(-0.018)
-        advance(scene, 1)
-        motor.CreateStiffnessAttr(0.1)
-        motor.CreateTargetPositionAttr(0.0)
-        advance(scene, 4)
-        slider.CreateTargetPositionAttr(0.0)
-        advance(scene, 2)
-        result.update(locked_angle_rad=locked, opened_angle_rad=opened,
-                      unsupported_open_angle_rad=resting_open, reclosed_angle_rad=angle())
-        if locked > 0.2 or opened < 1.8 or resting_open < 1.75 or abs(angle()) > 0.1:
-            raise RuntimeError("Single-arm latch mechanics probe failed: " + str(result))
     elif task == "L2-07":
         drive = scene.drives["drawer_slide", "transX"]
         drive.CreateStiffnessAttr(80.0)

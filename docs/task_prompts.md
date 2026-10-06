@@ -22,7 +22,7 @@
 
 力控类任务的提示分清“操作目标”和“接口实现”：仅凭 RGB 与位姿可尝试可见的稳定操作，不能据此报告精确控力能力；需要力信号的任务必须先接入真实可用的观测与控制能力。文中的实现条件均不是已完成声明。
 
-当前已接入 17 个 L1—L3 仿真任务和 `run GPT-PICK-PLACE`；用 `python tools/launch.py list` 查看实际清单，唯一手动集成入口仍是 `check gpt-pick-place`。本文保留的其他候选任务不代表已有实现，不能只替换 instruction 就视为已实现。本文中的动作建议不能靠文字新增接口字段，候选稿与实际运行条件必须分开记录。
+当前已接入 16 个 L1—L3 仿真任务和 `run GPT-PICK-PLACE`；用 `python tools/launch.py list` 查看实际清单，唯一手动集成入口仍是 `check gpt-pick-place`。本文保留的其他候选任务不代表已有实现，不能只替换 instruction 就视为已实现。本文中的动作建议不能靠文字新增接口字段，候选稿与实际运行条件必须分开记录。
 
 ## 共用执行约定
 
@@ -264,61 +264,6 @@ available control commands and feedback; do not invent force measurements.
 Request stop only after observing the required final state and stability.
 ```
 
-### L2-05 单臂弹性卡扣翻盖盒开合
-
-当前实现与成功条件以 [任务配置](../configs/tasks/l2_05_latched_box.toml) 为准。
-
-道具：固定蓝色翻盖盒、可同时用于提盖的红色弹簧滑扣、绿色辅助柄、后侧铰链、黄色橡皮。
-布置：正面和红色滑扣朝向左机械臂（世界 -X），柜体不滑动；盒盖初始扣合，后侧铰链允许开至 115 度。
-操作：仅左手抓红色滑扣并拉出约 15 mm，保持同一抓持提盖；开过竖直位置到后侧限位后，盒盖靠重力停靠，不需另一手扶住。左手再取橡皮、放到盒外，最后重新抓扣、关盖并释放扣合。右臂只观察。
-完成：实际解锁和开盖、橡皮被抓取移到盒外并释放、盒盖关闭且滑扣复位，最终稳定 1 秒。
-代理边界：固定盒体与放大弹簧滑扣，不是塑料弯曲卡扣；无自动提盖、自动关盖、自动抓取或材料损坏模型。
-
-```text
-Use the LEFT R5 arm for manipulation. The RIGHT arm may move its wrist camera
-for a clearer view, but must not touch, hold or support task objects. Keep the
-left arm steady while changing the observation view. Use current RGB-D images,
-camera calibration, robot state and execution feedback to select grasp points
-and motion; do not infer successful contact from a command alone.
-Open the latched box, take out the yellow eraser, then close and latch the box.
-The blue box body is fixed to the table and already faces the LEFT arm. No hand
-needs to hold the body. The lid starts closed and the red spring-return latch
-is mechanically engaged under a grey catch. The hinge is at the rear (+X).
-
-The RED latch is also the lifting handle: use the SAME left-hand grasp to unlock
-and raise the lid. Inspect its exposed sides and the catch, approach from the
-front (-X), and grasp across the red handle's width without trapping the catch.
-First retract the latch outward along world -X by about 15 mm (maximum 20 mm).
-Then, while keeping the tooth clear, lift the lid through that same handle in
-small steps following the arc around the rear hinge. Do not just pull upward
-while the tooth remains under the catch. The green auxiliary lid grip is not a
-second-hand requirement.
-Keep the finger closing axis across the latch width. The lid angle does NOT
-prescribe the gripper's pitch: choose reachable wrist orientations while the
-handle pivots between the finger pads, and verify continued contact. Do not
-request an unreachable wrist rotation merely to match the opening lid angle.
-
-Open beyond vertical to the rear stop, about 110-115 degrees, without forcing
-the hinge farther. Gravity supports the lid against this stop. Verify it stays
-open before releasing the latch and withdrawing the hand. Pick up the eraser
-from the open box, place it on clear tabletop more than 130 mm from the box
-centre, and release it only after support. The right arm may inspect but may
-not prop up the lid or participate in manipulation.
-
-Regrasp the red latch on the open lid. Retract it in its CURRENT lid-local
-outward direction, then guide the lid down along the hinge arc while keeping
-the tooth clear of the catch. Near closure the outward direction is world -X.
-Release the latch once the lid is seated so its spring returns the tooth under
-the catch. Inspect the lid/catch relationship, not just the commanded pose.
-Completion requires verified opening, grasped removal of the eraser, released
-eraser placement, and a closed, re-engaged, released lid/latch stable for one
-simulation second. Do not substitute moving the whole box for opening it.
-If a grasp is lost, stop advancing the old plan and inspect the actual object
-state. If the scene resets, rebuild the plan from the new observations. Use only
-available control commands and feedback; do not invent force measurements.
-Request stop only after observing the required final state and stability.
-```
-
 ### L2-06 夹面包
 
 运行前填写：面包、目标区域、公开的形变／损伤限制、保持时间。实现条件：真实面包或经验证的压溃模型；弹性回弹物体不能直接替代真实压坏判据。
@@ -415,20 +360,6 @@ Identify the bottle/cap boundary, rotation axis, and usable grasp regions. Keep 
 Distinguish cap rotation relative to the bottle from whole-bottle rotation or gripper slip on the cap. If no actual loosening occurs, first restore bottle stabilization, check direction, or improve the cap grasp. Near a wrist range limit, regrasp only while the cap has reliable support and its state can be maintained; do not accumulate infeasible large-angle targets.
 
 When loosening evidence is present, make a small test lift to confirm that no threaded constraint remains before moving the cap away. Rotating through an angle or moving the gripper alone does not establish cap detachment.
-```
-
-### L3-04 带卡扣翻盖盒的开启与扣合
-
-运行前填写：盒子、需取出的物体及放置区域、关闭扣合标志。实现条件：卡扣解锁与闭合保持机制，铰链与可取物场景。
-
-```text
-Open {{latching_box_id}}, remove {{contained_object_id}}, and place it in {{object_placement_region}}. Then close the lid and satisfy {{latch_engagement_indicator}}. Preserve the box, hinge, and latch.
-
-Identify the latch, hinge, usable opening edge, and box support locations. Choose how to stabilize the box and release the latch. Do not make a large opening motion while the latch still constrains the lid. Use latch displacement and actual lid motion relative to the box to assess release.
-
-Open along the hinge's permitted motion, leaving clearance for object removal and gripper withdrawal. If the lid cannot remain open stably, support it with the other arm. After removing the object, confirm that it and both grippers are clear of the closing region before closing along the hinge path.
-
-Adjust alignment and pressing location according to lid-edge alignment and latch contact. Do not keep pressing one side while the other is misaligned. Release the applied load and verify latch engagement, edge gaps, and retention. Contact between lid and box alone does not establish successful closure.
 ```
 
 ### L3-05 对准、啮合并旋入螺丝

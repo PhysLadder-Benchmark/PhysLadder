@@ -53,44 +53,25 @@ def check(task):
 
     if task == "L2-03":
         for x in np.linspace(-.094, -.034, 7):
-            samples.append(("approach", placed((x, 0, -.002)), article_yaw, .070, {}))
+            samples.append(("approach", placed((x, 0, -.002)), article_yaw, .070))
         for x in np.linspace(-.034, -.134, 11):
-            samples.append(("extract", placed((x, 0, -.002)), article_yaw, .045, {}))
+            samples.append(("extract", placed((x, 0, -.002)), article_yaw, .045))
     elif task == "L2-07":
         # Grip the exposed front portion, 10 mm ahead of the handle centre,
         # so the rear of the fingers remains clear of the cabinet roof.
         for x in np.linspace(-.195, -.135, 7):
-            samples.append(("approach", placed((x, 0, .053)), article_yaw, .070, {}))
+            samples.append(("approach", placed((x, 0, .053)), article_yaw, .070))
         for x in np.linspace(-.135, -.245, 12):
-            samples.append(("pull", placed((x, 0, .053)), article_yaw, .040, {}))
+            samples.append(("pull", placed((x, 0, .053)), article_yaw, .040))
     else:
-        anchor = np.array(spec.parameters["hinge_anchor"])
-        latch = np.array(spec.design.articles[1].initial[:3]) - [.007, 0, 0]
-        for offset in np.linspace(.06, 0, 7):
-            samples.append(("approach", latch - [offset, 0, 0], 0., .070, {}))
-        for angle in np.linspace(0, math.radians(115), 24):
-            rotation = origin_transform((0, 0, 0), (0, angle, 0))
-            position = anchor + rotation[:3, :3] @ (latch - [.017, 0, 0] - anchor)
-            lid = pose_transform(spec.design.articles[0].initial)
-            lid[:3, 3] = anchor + rotation[:3, :3] @ (lid[:3, 3] - anchor)
-            lid[:3, :3] = rotation[:3, :3] @ lid[:3, :3]
-            # Closing axis remains across the latch width. Lid pitch does not
-            # prescribe tool pitch; side-face contact can pivot during opening.
-            samples.append(("open", position, 0., .040, {"lid": lid}))
+        raise ValueError(f"No clearance diagnostic for {task}")
     fixed = [(p.name, box_vertices(origin_transform(p.position, p.rotation),
                                   -np.array(p.size) / 2, np.array(p.size) / 2))
              for p in spec.design.fixtures if p.collision]
     q = np.array(next(m for m in config.robot.mounts if m.name == "left").home_positions_rad)
     report = []
-    for phase, position, yaw, width, movable in samples:
+    for phase, position, yaw, width in samples:
         obstacles = list(fixed)
-        for name, transform in movable.items():
-            article = next(a for a in spec.design.articles if a.name == name)
-            for part in article.parts:
-                if part.collision:
-                    obstacles.append((name + "/" + part.name,
-                                      box_vertices(transform @ origin_transform(part.position, part.rotation),
-                                                   -np.array(part.size) / 2, np.array(part.size) / 2)))
         last_error = None
         for pitch in (math.pi / 2, math.pi / 3, math.pi / 4, math.pi / 6, 0.):
             try:
@@ -112,7 +93,7 @@ def main():
     output = parser.parse_args().output
     output.parent.mkdir(parents=True, exist_ok=True)
     results = []
-    for task in ("L2-03", "L2-05", "L2-07"):
+    for task in ("L2-03", "L2-07"):
         try:
             result = check(task)
         except Exception as exc:

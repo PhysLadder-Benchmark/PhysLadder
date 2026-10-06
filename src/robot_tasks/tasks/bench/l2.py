@@ -1,11 +1,11 @@
-"""Passive support, natural sliding/latch resistance and a declared elastic proxy."""
+"""Passive support, natural sliding resistance and a declared elastic proxy."""
 
 import itertools
 import math
 from dataclasses import replace
 
 from ..l1.specs import BLUE, GREEN, GREY, RED, Article, Part, box, pose
-from .geometry import cup_parts, design, floor_target, placed_parts, translated
+from .geometry import cup_parts, design, floor_target, placed_parts
 from .spec import BenchSpec, Joint
 
 
@@ -69,51 +69,6 @@ def bowl():
                     "count": count, "ball_radius_m": radius, "ball_friction": 0.03,
                     "bottom_radius_m": bottom, "top_radius_m": top, "height_m": height,
                     "floor_m": 0.004, "wall_segments": 24, "lift_m": 0.025},
-    )
-
-
-def latch():
-    # Front faces -X, hinge is at the rear (+X). The latch itself is a handle:
-    # the same hand retracts it and lifts, then opens beyond vertical to rest.
-    x, y = 0.43, 0.34
-    walls = (
-        box("floor", (0.17, 0.13, 0.006), (0, 0, 0.003), BLUE),
-        box("left_wall", (0.17, 0.006, 0.05), (0, -0.063, 0.025), BLUE),
-        box("right_wall", (0.17, 0.006, 0.05), (0, 0.063, 0.025), BLUE),
-        box("rear_wall", (0.006, 0.126, 0.05), (0.082, 0, 0.025), BLUE),
-        box("front_wall", (0.006, 0.126, 0.05), (-0.082, 0, 0.025), BLUE),
-        box("catch", (0.012, 0.050, 0.006), (-0.088, 0, 0.047), GREY),
-    )
-    lid_parts = (
-        box("panel", (0.17, 0.13, 0.006), color=BLUE),
-        box("grip", (0.028, 0.030, 0.022), (0.048, 0, 0.014), GREEN),
-    )
-    latch_parts = (
-        box("button", (0.028, 0.040, 0.032), color=RED),
-        box("latch_stem", (0.024, 0.014, 0.008), (-0.020, 0, -0.004), RED),
-        box("tooth", (0.012, 0.032, 0.006), (-0.033, 0, -0.012), RED),
-    )
-    articles = [
-        Article("lid", lid_parts, pose(x, y, 0.058, yaw=math.pi), pose(x, y, 0.058, yaw=math.pi), 0.06),
-        Article("latch", latch_parts, pose(x - 0.120, y, 0.051, yaw=math.pi),
-                pose(x - 0.120, y, 0.051, yaw=math.pi), 0.008),
-        Article("eraser", (box("body", (0.028, 0.040, 0.018), color=(0.95, 0.75, 0.18)),),
-                pose(x, y, 0.015), pose(0.28, 0.48, 0.009), 0.025),
-    ]
-    joints = (
-        Joint("lid_hinge", "", "lid", (x + 0.085, y, 0.055), {"rotY": (0, 115, 0, 0.005)}),
-        Joint("latch_spring", "lid", "latch", (x - 0.120, y, 0.051),
-              {"transX": (-0.020, 0, 60, 0.1)}),
-    )
-    return BenchSpec(
-        replace(design("L2-05", "单臂弹性卡扣翻盖盒开合", articles, translated(walls, (x, y, 0))),
-                version="l2-05-single-arm-front-v2"),
-        joints=joints,
-        mechanism="hinge_and_passive_spring_latch",
-        limitations="Fixed box; enlarged spring-slider latch used as a lifting handle. Lid opens past vertical to its gravity-supported 115 degree stop. Not a calibrated moulded flexure; no fracture model.",
-        facts="The fixed box already faces the LEFT arm; do not rotate or hold its body. Use the left hand to grasp the red latch handle, retract it toward world -X about 15 mm, then lift the lid through the SAME grasp while keeping the tooth clear. Open past vertical to the 115 degree rear stop; gravity can support the lid there so the hand can release and remove the yellow eraser. Put the eraser outside the box. Regrasp the red latch, keep it retracted as you lower the lid, then release to let the spring re-engage. The right arm may inspect but must not support the box or lid.",
-        parameters={"box_xy": (x, y), "latch_closed_x_local": 0.120,
-                    "hinge_anchor": (x + 0.085, y, 0.055), "open_stop_deg": 115.0},
     )
 
 
@@ -196,7 +151,6 @@ def drawer():
 BUILDERS = {
     "L2-03": books,
     "L2-04": bowl,
-    "L2-05": latch,
     "L2-06": jelly,
     "L2-07": drawer,
 }

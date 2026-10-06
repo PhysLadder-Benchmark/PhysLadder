@@ -50,7 +50,7 @@ python -m robot_tasks.integrationtest.scene_smoke --all --no-preparation
 `prop_physics.py` 会明确设置诊断初态或施加测试驱动，不能作为机器人任务成功视频或 GPT 成功率。
 结果位于 `runs/`，与正式测评分别保存。
 
-修改后的 L2 布置可运行 `python -m robot_tasks.integrationtest.scene_smoke L2-03 --prop-probe`，将任务 ID 分别替换为 L2-04、L2-05、L2-07。
+修改后的 L2 布置可运行 `python -m robot_tasks.integrationtest.scene_smoke L2-03 --prop-probe`，将任务 ID 分别替换为 L2-04、L2-07。
 `l2_prop_probe.py` 检查固定夹层抽取、预装小球碗的缓慢搬运、卡扣解锁与盒盖后限位停靠、带顶板抽屉的开启支撑；施加的是诊断夹具驱动，不是模型操作。
 `python -m robot_tasks.integrationtest.l2_clearance` 在规划器环境检查三个单臂任务的采样抓取／操作姿态，默认写入 `runs/l2_layout_clearance.json`，可用 `--output` 改变位置。
 范围包含诊断 IK、机械臂各连杆及末端／相机／支架包围盒与桌面、夹具的采样间隙；不代表连续路径、自碰撞、双臂互碰或抓持稳定性认证。

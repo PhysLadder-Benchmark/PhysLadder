@@ -88,7 +88,7 @@ def run(scene):
         result["horizontal_drift_limit_m"] = drift_limit
         if support < scene.spec.parameters.get("min_support_n", 0.05) or drift > drift_limit:
             raise RuntimeError("Open-cavity/hook support probe failed: " + str(result))
-    elif task in {"L2-03", "L2-04", "L2-05", "L2-07"}:
+    elif task in {"L2-03", "L2-04", "L2-07"}:
         from .l2_prop_probe import run as probe_l2
 
         return probe_l2(scene)

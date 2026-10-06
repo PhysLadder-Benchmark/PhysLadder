@@ -5,7 +5,6 @@ import math
 
 import numpy as np
 
-from ...robots.transforms import pose_transform
 from .evaluation import held, quiet, relative, released, sustained, table_placed, upright
 
 
@@ -68,40 +67,6 @@ def bowl(e, rows):
                       "loaded_bowl_lifted": "loaded_bowl_lifted" in e.flags, "spilled": spilled,
                       "transport_complete": bool(transported), "no_spill": not bool(spilled),
                       "constraint_violations": ["Load spilled"] if spilled else []}, ""
-
-
-def latch(e, rows):
-    lid, button, eraser = (rows[n] for n in ("lid", "latch", "eraser"))
-    rotation = (np.linalg.inv(pose_transform(e.initial["lid"])) @ pose_transform(lid["pose"]))[:3, :3]
-    angle = math.atan2(rotation[2, 0], rotation[0, 0])
-    extension = float(relative(button, lid)[0, 3] - e.spec.parameters["latch_closed_x_local"])
-    if extension > 0.01 and held(button, "left"):
-        e.flags.add("latch_retracted")
-    if angle > 0.65 and "latch_retracted" in e.flags:
-        e.flags.add("box_opened")
-    outside = np.linalg.norm(np.array(eraser["pose"][:2]) - e.spec.parameters["box_xy"]) > 0.13
-    if outside and "box_opened" in e.flags and "eraser" in e.grasped:
-        e.flags.add("item_removed")
-    closed = abs(angle) < 0.06 and abs(extension) < 0.004
-    complete = (
-        "item_removed" in e.flags
-        and outside
-        and table_placed(eraser)
-        and closed
-        and released(lid)
-        and released(button)
-        and quiet(lid)
-        and quiet(button)
-    )
-    return (
-        complete,
-        {
-            "lid_open_angle_rad": angle,
-            "latch_extension_m": extension,
-            "closed_and_latched_geometry": closed,
-        },
-        "",
-    )
 
 
 def jelly(e, rows):
@@ -176,4 +141,4 @@ def drawer(e, rows):
                                            if "drawer_speed_reference_exceeded" in e.flags else [])}, failure
 
 
-RULES = {"L2-03": books, "L2-04": bowl, "L2-05": latch, "L2-06": jelly, "L2-07": drawer}
+RULES = {"L2-03": books, "L2-04": bowl, "L2-06": jelly, "L2-07": drawer}

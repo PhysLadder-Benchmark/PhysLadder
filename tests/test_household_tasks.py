@@ -49,7 +49,7 @@ class HouseholdTests(unittest.TestCase):
         tasks = [
             s for s in TASKS.values() if s.task_id.startswith("L") and s.implemented
         ]
-        self.assertEqual(len(tasks), 17)
+        self.assertEqual(len(tasks), 16)
         for spec in tasks:
             with self.subTest(task=spec.task_id):
                 _, cfg = resolve_task(spec.task_id)

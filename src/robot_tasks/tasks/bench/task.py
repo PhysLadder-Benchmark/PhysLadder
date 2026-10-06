@@ -18,7 +18,6 @@ class BenchTask:
         constrained = config.task_id in {
             "L2-03",
             "L2-04",
-            "L2-05",
             "L2-06",
             "L2-07",
             "L3-03",
