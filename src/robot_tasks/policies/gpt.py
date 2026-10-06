@@ -164,6 +164,9 @@ class GPTPolicy:
                 "observation_format": "RGB PNG + aligned depth preview + metric pixel queries; full text history, bounded image history"}
 
     def reset(self, seed: int) -> None:
+        reset = getattr(self.client, "reset_cancellation", None)
+        if reset is not None:
+            reset()
         # Seed belongs to the environment. Do not claim deterministic API output.
         self.history.clear()
         self.calls = 0
@@ -231,6 +234,11 @@ class GPTPolicy:
         for index, (user, assistant) in enumerate(self.history):
             if index < cutoff:
                 user["content"] = [item for item in user["content"] if item["type"] != "input_image"]
+
+    def cancel_pending(self):
+        cancel = getattr(self.client, "cancel_pending", None)
+        if cancel is not None:
+            cancel()
 
     def act(self, context: PolicyInput) -> Action:
         self.last_exchange = {}  # Input validation errors must not re-log an earlier API call.

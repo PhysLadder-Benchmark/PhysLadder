@@ -151,6 +151,24 @@ class HouseholdTests(unittest.TestCase):
         row["pose"][2] -= .005
         self.assertFalse(marker(evaluator, rows)[1]["inside_holder"])
 
+    def test_marker_axial_spin_is_allowed_but_held_or_tumbling_is_not(self):
+        spec = build_spec("L1-01")
+        article = spec.design.articles[0]
+        evaluator = BenchEvaluator(spec, {"marker": article.initial})
+        rows = measurement(spec); row = rows["marker"]
+        row["pose"] = list(article.goal)
+        row["bench_force_n"] = 0.
+        row["fixture_force_n"] = article.mass * 9.81
+        row["angular_velocity"] = [10.,0.,0.]
+        for now in (.1,1.2):
+            self.assertEqual(evaluator.update(now,rows).status,"running")
+        row["angular_velocity"] = [0.,0.,10.]
+        row["fingers"]["left"] = [1.,1.]
+        self.assertEqual(evaluator.update(1.3,rows).status,"running")
+        row["fingers"]["left"] = [0.,0.]
+        self.assertEqual(evaluator.update(1.4,rows).status,"running")
+        self.assertEqual(evaluator.update(2.5,rows).status,"succeeded")
+
     def test_lab_floor_failure_uses_raised_table_not_world_zero(self):
         spec = build_spec("L1-01")
         evaluator = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
@@ -388,7 +406,7 @@ class HouseholdTests(unittest.TestCase):
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
         self.assertEqual(e.update(.1, rows).status, "running")
         row = rows["marker"]
-        row["pose"][2] = spec.parameters["table_z"] + spec.parameters["marker_radius"]
+        row["pose"][2] = spec.parameters["table_z"] + spec.parameters["marker_visual_radius"]
         row["pose"][3:] = [2**-.5, 0, 2**-.5, 0]
         result = e.update(.2, rows)
         self.assertEqual(result.status, "failed")
@@ -406,7 +424,7 @@ class HouseholdTests(unittest.TestCase):
                 row["pose"][3:] = [np.cos(half_angle), 0, np.sin(half_angle), 0]
                 if angle == 20:
                     row["pose"][0] -= .012
-                    row["pose"][2] += p["marker_radius"] * np.sin(np.deg2rad(angle)) + .001
+                    row["pose"][2] += p["marker_visual_radius"] * np.sin(np.deg2rad(angle)) + .001
                 else:
                     row["pose"][2] += p["marker_height"]
                 row["bench_force_n"] = 0
@@ -416,50 +434,25 @@ class HouseholdTests(unittest.TestCase):
                     result = e.update(now, rows)
                 self.assertEqual(result.status, "succeeded", result.metrics["criteria"])
 
-    def test_mug_handle_tangency_is_valid_support_not_a_miss(self):
-        from robot_tasks.tasks.bench.scoring_l1 import mug
-
-        spec = build_spec("L1-07")
-        rows = measurement(spec)
-        r = rows["mug"]
-        # Lowest peg is tangent to the right inner handle wall.
-        r["pose"] = list(spec.design.articles[0].goal)
-        r["pose"][:3] = (np.array(r["pose"][:3]) - np.array([1, -1, 0]) * 0.005 / np.sqrt(2)).tolist()
-        r["fixture_force_n"] = 0.6
-        r["bench_force_n"] = 0
-        r["corners"] = [list(r["pose"][:3])]
-        e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
-        _, criteria, _ = mug(e, rows)
-        self.assertTrue(criteria["hook_through_handle"])
-        self.assertTrue(criteria["hanging_support"])
-        r["pose"][:3] = (np.array(r["pose"][:3]) - np.array([1, -1, 0]) * 0.006 / np.sqrt(2)).tolist()
-        self.assertFalse(mug(e, rows)[1]["hook_through_handle"])
-
-    def test_hanging_mug_succeeds_on_release_without_waiting_for_sway(self):
-        spec = build_spec("L1-07")
-        rows = measurement(spec)
-        e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
-        # Zero waiting time must not make the initial, unfinished scene pass.
-        self.assertEqual(e.update(.1, rows).status, "running")
-        r = rows["mug"]
-        r["pose"] = list(spec.design.articles[0].goal)
-        r["corners"] = [list(r["pose"][:3])]
-        r["fixture_force_n"], r["bench_force_n"] = .6, 0.
-        r["linear_velocity"], r["angular_velocity"] = [.03, 0, 0], [0, 0, 1.]
-        r["fingers"]["left"] = [1, 1]
-        self.assertEqual(e.update(.2, rows).status, "running")
-        self.assertEqual(e.update(.4, rows).status, "running")
-        self.assertIn("mug", e.grasped)
-        r["fingers"]["left"] = [0, 0]
-        result = e.update(.5, rows)
-        self.assertEqual(result.status, "succeeded")
-        self.assertEqual(result.metrics["stable_duration_s"], 0.)
-        # A released cup with neither rack support nor grasp history cannot pass.
-        r["fixture_force_n"] = 0.
-        self.assertEqual(e.update(.6, rows).status, "running")
-        r["fixture_force_n"] = .6
-        fresh = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
-        self.assertEqual(fresh.update(.1, rows).status, "running")
+    def test_native_hat_succeeds_on_selected_peg_release_without_sway_wait(self):
+        spec=build_spec("L1-07"); article=spec.design.articles[0]
+        rows=measurement(spec); e=BenchEvaluator(spec,{article.name:article.initial})
+        self.assertEqual(e.update(.1,rows).status,"running")
+        r=rows["hat"]; r["pose"]=list(article.goal)
+        t=pose_transform(r["pose"])
+        r["corners"]=(local_corners(article) @ t[:3,:3].T+t[:3,3]).tolist()
+        r["fixture_force_n"],r["bench_force_n"]=.63765,0.
+        r["target_hook_vertical_force_n"] = .63765
+        r["linear_velocity"],r["angular_velocity"]=[.03,0,0],[0,0,1.]
+        r["fingers"]["left"]=[1,1]
+        self.assertEqual(e.update(.2,rows).status,"running")
+        r["fingers"]["left"]=[0,0]
+        result=e.update(.3,rows)
+        self.assertEqual(result.status,"succeeded",result.metrics["criteria"])
+        self.assertEqual(result.metrics["stable_duration_s"],0.)
+        # Aggregate rack contact, source-pad contact or another peg cannot pass.
+        r["target_hook_vertical_force_n"]=0.
+        self.assertEqual(e.update(.4,rows).status,"running")
 
     def test_spinning_cap_in_air_cannot_count_as_unscrewing(self):
         import math

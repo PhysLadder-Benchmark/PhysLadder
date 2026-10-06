@@ -16,6 +16,9 @@ class MockBackend:
     def step(self, duration_s: float) -> None:
         self.t += duration_s
 
+    def pump_events(self) -> None:
+        pass
+
     def capture_rgb(self) -> tuple[RGBFrame, ...]:
         # Tiny black placeholders deliberately carry no task visuals.
         return tuple(RGBFrame(name, self.t, 2, 2, bytes(12)) for name in self.config.cameras)

@@ -388,6 +388,7 @@ def create_batch(root, args, model, runtime):
     inputs = list((PROJECT_ROOT / "src/robot_tasks").rglob("*.py"))
     inputs += list((PROJECT_ROOT / "configs/robots").glob("*.toml")) + list((PROJECT_ROOT / "configs/cameras").glob("*.toml"))
     inputs += [model, PROJECT_ROOT / "configs/workflows/gpt_default.toml"]
+    inputs.append(PROJECT_ROOT / "assets/tuojing/l1_scoring_geometry.json")
     tasks = []
     for key in ids:
         spec = TASKS[key]

@@ -24,6 +24,34 @@ class BenchScene(L1Scene):
         self.spec = spec
         settings = L1Settings(position_jitter_m=0, yaw_jitter_rad=0)
         super().__init__(backend, config, settings, design=spec.design)
+        if spec.design.task_id == "L1-01":
+            self.configure_marker_contacts()
+        if spec.design.task_id in {"L1-01", "L1-03", "L1-07", "L1-08", "L1-09"}:
+            from .native_geometry import catalog, verify_stage
+
+            roots = [(a.asset.split(":", 1)[1], self.root + "/" + a.name)
+                     for a in self.design.articles if a.asset.startswith("tuojing:")]
+            if self.design.fixture_asset in {"tuojing:ripple_paper_cup", "tuojing:wooden_rack"}:
+                roots.append((self.design.fixture_asset.split(":", 1)[1], self.root + "/Fixture"))
+            source_hashes = {record.get("prop"): record.get("sha256")
+                             for record in backend.scene_report[self.report_key]["assets"]}
+            for name, _ in roots:
+                if source_hashes.get(name) != catalog()[name]["sha256"]:
+                    raise ValueError("Scoring geometry is from a different locked delivery: " + name)
+            verify_stage(self.stage, roots)
+            backend.scene_report[self.report_key]["native_scoring_geometry"] = {
+                "source_sha256": {name: catalog()[name]["sha256"] for name, _ in roots},
+                "verified_against_imported_stage": True,
+                "primitive_surface_error_budget_m": 0.00005,
+                "geometry_does_not_enter_policy_input": True,
+            }
+        if spec.design.task_id == "L1-03":
+            from pxr import PhysxSchema
+
+            # A 1-mm contact margin exceeds the native 0.55-mm side clearance.
+            # Restore the delivered 0.2-mm margin without enlarging the slots.
+            for path in self.colliders:
+                PhysxSchema.PhysxCollisionAPI.Apply(self.stage.GetPrimAtPath(path)).CreateContactOffsetAttr(0.0002)
         if spec.mechanism == "free_bottle_and_explicit_helical_contact":
             self.configure_thread_contacts()
         if spec.mechanism == "preloaded_low_friction_spheres_transport":
@@ -90,6 +118,34 @@ class BenchScene(L1Scene):
                 "quality_references": "uncalibrated force/speed excursions are advisory, not damage or automatic failure",
             },
         )
+
+    def configure_marker_contacts(self):
+        """Keep the delivered cup friction and contact margin for passive settling."""
+        from pxr import PhysxSchema, UsdPhysics
+
+        native = UsdPhysics.MaterialAPI(
+            self.stage.GetPrimAtPath(self.root + "/Fixture/Looks/Contact")
+        )
+        static, dynamic = native.GetStaticFrictionAttr().Get(), native.GetDynamicFrictionAttr().Get()
+        if not all(value is not None and np.isfinite(value) and value > 0
+                   for value in (static, dynamic)):
+            raise ValueError("L1-01 requires positive delivered cup contact friction")
+        self.fixture_material.set_static_friction(static)
+        self.fixture_material.set_dynamic_friction(dynamic)
+        for path in self.colliders:
+            PhysxSchema.PhysxCollisionAPI.Apply(
+                self.stage.GetPrimAtPath(path)
+            ).CreateContactOffsetAttr(0.0002)
+        report = self.backend.scene_report[self.report_key]
+        report["contact_materials"]["fixture"] = {"static": static, "dynamic": dynamic}
+        report["marker_contact_stability"] = {
+            "cup_friction_source": "delivered Fixture/Looks/Contact; restitution remains zero",
+            "contact_offset_m": 0.0002,
+            "solver_velocity_iterations": self.backend.settings.solver_velocity_iterations,
+            "angular_damping": "delivered value retained",
+            "sleep_disabled": "required by contact-force sampling; do not lose support reports",
+            "source_usd_modified": False,
+        }
 
     def configure_ball_contacts(self):
         """Slippery contents only; external bowl/handle grasp friction is retained."""
@@ -246,6 +302,14 @@ class BenchScene(L1Scene):
                 )
         if self.push_drawer is not None:
             rows["upper_drawer"]["push_latch"] = self.push_drawer.measurement()
+        if self.spec.design.task_id == "L1-07":
+            suffix = self.spec.parameters["target_hook_suffix"]
+            indices = [i for i, path in enumerate(self.support_filters) if path.endswith(suffix)]
+            if len(indices) != 1:
+                raise RuntimeError("L1-07 requires exactly one native Hook0 contact filter")
+            force = np.asarray(self.supports["hat"].get_contact_force_matrix(dt=dt))[0, indices[0]]
+            rows["hat"]["target_hook_force_n"] = float(np.linalg.norm(force))
+            rows["hat"]["target_hook_vertical_force_n"] = float(max(0., force[2]))
         return rows
 
     def planning_payloads(self):

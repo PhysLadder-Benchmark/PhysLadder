@@ -177,6 +177,19 @@ def box_surface(size, resolution=5):
 def article_surface(article):
     from ..robots.transforms import origin_transform
 
+    if article.asset == "tuojing:yellow_visor":
+        from ..tasks.bench.native_geometry import shapes, transformed_poly
+
+        # An enclosing box seals the head opening and makes a peg-through-band
+        # trajectory impossible. Preserve every native band/brim collider.
+        samples = []
+        for i, shape in enumerate(shapes("yellow_visor")):
+            vertices, _, _ = transformed_poly("yellow_visor", i, np.eye(4))
+            triangles = vertices[np.asarray(shape["faces"])]
+            weights = np.array([(i / 4, j / 4, 1 - (i + j) / 4)
+                                for i in range(5) for j in range(5 - i)])
+            samples.append(np.einsum("wk,fkd->fwd", weights, triangles).reshape(-1, 3))
+        return np.concatenate(samples)
     if article.asset and not article.parts:
         # Conservative box for imported objects, disclosed as such in planner logs.
         if article.asset_bounds:

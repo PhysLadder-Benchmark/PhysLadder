@@ -61,6 +61,33 @@ class CodexProcessTests(unittest.TestCase):
         expected = f"{len(payload)}:{hashlib.sha256(payload).hexdigest()}".encode()
         return payload, script, expected
 
+    def test_off_thread_cancellation_reaps_native_codex_child(self):
+        import threading
+        from robot_tasks.policy_worker import request_action
+
+        with patch.object(codex_process, "_local_settings", return_value={"host": "native"}):
+            host = codex_process.CodexProcess(sys.executable)
+        ready = threading.Event()
+        process_ids = []
+        def output(line):
+            process_ids.append(int(line.strip()))
+            ready.set()
+        def act(context):
+            return host.run(["-c", "import os,time; print(os.getpid(),flush=True); time.sleep(30)"],
+                            directory=self.root, timeout_s=35, on_stdout_line=output)
+        def idle():
+            if ready.is_set():
+                raise KeyboardInterrupt
+        policy = type("Fixture", (), {})()
+        policy.act, policy.cancel_pending = act, host.cancel_pending
+        with self.assertRaises(KeyboardInterrupt):
+            request_action(policy, None, idle=idle, poll_s=.01)
+        self.assertEqual(len(process_ids), 1)
+        # The owned direct child has been waited/reaped, not merely signalled.
+        if os.name != "nt":
+            with self.assertRaises(ProcessLookupError):
+                os.kill(process_ids[0], 0)
+
     def test_native_large_prompt_reaches_eof_without_truncation_or_duplication(self):
         payload, script, expected = self.delayed_input_fixture()
         with patch.object(codex_process, "_local_settings", return_value={"host": "native"}):
