@@ -17,14 +17,14 @@ def marker():
         asset="tuojing:whiteboard_marker",
         asset_bounds=((-0.00898, -0.00898, 0.0), (0.00898, 0.00898, 0.1512)),
     )
-    d = replace(design("L1-01", "白板笔入固定纸杯笔筒", [a], (), friction=0),
+    d = replace(design("L1-01", "白板笔入固定纸杯笔筒", [a], (), friction=0.52),
                 fixture_asset="tuojing:ripple_paper_cup", fixture_pose=pose(*holder_xy, table_z),
-                version="l1-01-tuojing-marker-cup-v2-single-episode",
+                version="l1-01-tuojing-marker-cup-v4-native-score",
                 provenance="Tuojing L20 2026-10-05 locked props; native size, flat marker barrel collider and fixed low-friction cup")
     return BenchSpec(
         d,
         facts="The capped black whiteboard marker is 0.151 m tall; barrel diameter is 0.0162 m and maximum visible width about 0.018 m. The fixed red-brown ripple paper cup serves as the pen holder: height 0.1075 m, inside mouth diameter about 0.0786 m, floor 0.004 m above its bottom. Both are rigid. Keep the cap on. Get the marker into the cup and release it; either end may enter and leaning is allowed. There is no prescribed angle, 40 mm insertion depth or release height. A drop into the cup is allowed if it settles inside and is supported by the cup, without finger or tabletop support, for one simulation second. The initial tabletop placement is valid, but dropping the marker back onto the table or knocking it down onto its side ends the episode as a failure. There is no automatic reset/retry. No absolute prop coordinates are provided.",
-        limitations="Photo-estimated native dimensions/mass; rigid paper cup fixed in place with zero insertion friction. Flat marker barrel collider replaces a rounded-bottom capsule for upright reset; no material deformation or hardware calibration.",
+        limitations="Photo-estimated native dimensions/mass; rigid fixed paper cup retains delivered static/dynamic contact friction. Flat marker barrel collider replaces a rounded-bottom capsule for upright reset; 0.2 mm contact margin and configured velocity solver iterations. No material deformation or hardware calibration.",
         parameters={
             "table_z": table_z,
             "holder_xy": holder_xy,
@@ -32,7 +32,7 @@ def marker():
             "floor": table_z + 0.004,
             "radius": 0.025,
             "mouth_radius": 0.0393,
-            "marker_radius": 0.00898,
+            "marker_visual_radius": 0.00898,  # Visual label/ridges only; never a scoring envelope.
             "marker_height": 0.1512,
             "min_support_n": 0.022 * 9.81 * 0.5,
         },
@@ -56,7 +56,7 @@ def plug():
     )
     d = replace(design("L1-03", "USB 充电器插入固定插线板", [a], (), friction=0),
                 fixture_asset="tuojing:power_strip", fixture_pose=pose(*socket_xy, table_z),
-                version="l1-03-tuojing-charger-strip-v1",
+                version="l1-03-tuojing-charger-strip-v2-native-score",
                 provenance="Tuojing locked USB charger and power strip; native middle two-slot socket, fixed zero-friction fixture")
     return BenchSpec(
         d,
@@ -66,7 +66,7 @@ def plug():
                     "slot_centres": ((-0.00685, 0), (0.00685, 0)),
                     "opening": (0.0026, 0.0082), "tongue": (0.0015, 0.0063),
                     "floor": table_z + 0.01315, "rim": table_z + 0.03015,
-                    "depth": 0.015},
+                    "depth": 0.015, "seat_gap_m": 0.001, "contact_tolerance_m": 0.00015},
     )
 
 
@@ -103,44 +103,45 @@ def key():
     )
 
 
-def mug():
-    # Handle lies in cup-local XZ; hole width 30 mm, height 32 mm.
-    parts = cup_parts(
-        bottom_radius=0.020, top_radius=0.024, height=0.065, color=RED
-    ) + (
-        box("handle_top", (0.045, 0.016, 0.016), (0.044, 0, 0.061), RED),
-        box("handle_bottom", (0.045, 0.016, 0.016), (0.044, 0, 0.013), RED),
-        box("handle_side", (0.016, 0.016, 0.048), (0.065, 0, 0.037), RED),
-    )
-    # Native 82 cm rack: use the lowest sloping peg, rotated toward the arms.
-    from ...robots.transforms import pose_transform
+def hat():
+    from ...robots.transforms import pose_transform, transform_pose
+    from .native_geometry import hook_geometry
     import numpy as np
 
-    # A diagonal peg remains approachable from the left arm and is visible
-    # beside the trunk in the fixed overview, instead of hiding behind it.
     rack_pose = pose(0.09, 1.00, 0.78, yaw=5 * math.pi / 12)
-    t = pose_transform(rack_pose)
-    centre = np.array((0.05932374016062806, -0.03425, 0.3825))
-    direction = np.array((0.721558830, -0.416591606, 0.552997706))
-    half_length = 0.115624481620995 / 2
-    start, end = [t[:3, :3] @ (centre + sign * direction * half_length) + t[:3, 3]
-                  for sign in (-1, 1)]
-    contact = start + 0.70 * (end - start)
-    # Cup-local Y faces along the peg; its handle remains in local XZ.
-    cup_yaw = -math.pi / 4
-    centre_offset = np.array((0.042 * math.cos(cup_yaw), 0.042 * math.sin(cup_yaw), 0.04))
-    a = Article("mug", parts, pose(-0.12, 1.27, 0.781),
-                pose(*(contact - centre_offset), yaw=cup_yaw), 0.060)
+    start, end, radius = hook_geometry(rack_pose)
+    direction = (end-start) / np.linalg.norm(end-start)
+    up = np.array((0.,0.,1.))
+    band_y = up - direction * direction[2]
+    band_y /= np.linalg.norm(band_y)
+    rotation = np.column_stack((np.cross(band_y,direction),band_y,direction))
+    goal = np.eye(4); goal[:3,:3] = rotation
+    # The upper rear inner band bears on the shaft, with its round tip beyond
+    # the opening. This reference pose is evaluator/planner data, never a policy target.
+    goal[:3,3] = start + .70*(end-start) - rotation @ np.array((0.,.098-radius,.035))
+    article = Article('hat', (), pose(-.12,1.25,.806), transform_pose(goal), .065,
+                      asset='tuojing:yellow_visor',
+                      asset_bounds=((-0.115833,-0.195,0.0025),(0.115833,0.100,0.087)))
+    # A 45-mm passive cradle exposes the underside of the brim for a grasp
+    # spanning brim-to-band. The 2-mm band alone cannot be pinched by this gripper.
+    rack_transform = pose_transform(rack_pose)
+    supports = tuple(replace(
+        box('hat_source_pad_'+str(i),(.025,.035,.045),
+            tuple((np.array((-.12+sx*.050,1.25+sy*.083,.8025))-rack_transform[:3,3])
+                  @ rack_transform[:3,:3]), GREY),
+        rotation=(0.,0.,-5*math.pi/12))
+        for i,(sx,sy) in enumerate(((-1,-1),(1,-1),(-1,1),(1,1))))
     return BenchSpec(
-        replace(design("L1-07", "塑料杯挂上木质挂架", [a], ()),
-                fixture_asset="tuojing:wooden_rack", fixture_pose=rack_pose,
-                version="l1-07-tuojing-rack-proxy-mug-v1",
-                provenance="Native Tuojing wooden rack, lowest peg; retained project hollow handled cup"),
-        facts="The red rigid cup has a rectangular loop handle (opening 30 x 32 mm). Its body is about 54 mm wide. Hang through the HANDLE, not the cup mouth, on the LOWEST sloping peg of the fixed wooden rack. That peg is 20 mm thick and points upward and toward the robots; the higher pegs are not targets. Lift the handle clear of the rounded tip, pass it over the tip and lower gently onto the peg. Leave the handle hole unobstructed by the grasp. Success requires release and actual rack support above the table; passive sway is allowed, with no stability waiting period.",
-        limitations="Native photo-estimated 82 cm wooden rack fixed to bench; no delivered handled cup, so the original rigid hollow cup is retained. No material damage model.",
-        parameters={"table_z": 0.78, "hold_s": 0.0,
-                    "hook_start": tuple(start), "hook_end": tuple(end), "hook_radius": 0.01,
-                    "handle_centre": (0.042, 0, 0.037), "handle_half": (0.015, 0.016)},
+        replace(design('L1-07','黄色空顶帽挂上木质挂架',[article],supports),
+                fixture_asset='tuojing:wooden_rack', fixture_pose=rack_pose,
+                version='l1-07-tuojing-native-visor-v2',
+                provenance='Locked native yellow visor and wooden rack; no scaling, cloth approximation remains rigid'),
+        facts="The yellow open-top visor is ONE rigid native prop, about 232 x 295 x 85 mm and 65 g. Its oval head opening is about 176 x 196 mm. The thin band/brim cannot be pinched alone with the 12 mm minimum gripper opening. Four 45-mm passive source pads expose the underside: grasp opposing surfaces across the brim underside and front-side band top (within the 70-mm maximum), without obstructing the head opening. Lift the whole visor. Hang its HEAD OPENING on the LOWEST sloping 20-mm peg of the fixed 82-cm wooden rack, letting the rear inner band bear on that peg. Keep the wide brim and both fingers clear of the trunk and other pegs. The round tip must pass beyond the loop, not merely support a rim-balanced hat. Release and inspect actual support on the selected peg. Passive sway is allowed; no stability waiting period.",
+        limitations="Photo-estimated native stiff visor represented as one rigid body with 208 separate convex band/brim pieces; no cloth deformation. Native 82-cm rack fixed to bench; 45-mm passive pickup pads only, no hidden attachment or enlarged aperture.",
+        parameters={'table_z':.78,'hold_s':0.,'hook_start':tuple(start),'hook_end':tuple(end),
+                    'hook_radius':radius,'band_plane_z':.035,
+                    'target_hook_suffix':'/Colliders/Hook0',
+                    'min_hook_support_n':.065*9.81*.5},
     )
 
 
@@ -156,7 +157,7 @@ def cups():
                     0.014, asset="tuojing:ripple_paper_cup", asset_bounds=bounds)
     return BenchSpec(
         replace(design("L1-08", "两个波纹纸杯套叠", [lower, upper]),
-                version="l1-08-tuojing-identical-cups-v1",
+                version="l1-08-tuojing-identical-cups-v2-native-score",
                 provenance="Two copies of the locked native hollow ripple paper cup; no resizing"),
         facts="Two identical empty red-brown ripple cups start upright. Move the cup initially nearer the LEFT robot into the farther cup. Both are movable. Each is 107.5 mm tall, outer mouth about 85 mm wide, lower-body diameter about 56-67 mm within the bottom 40 mm. Gripper opening is 12-70 mm: do not grasp across the wide mouth or assume it can pinch a 3 mm wall. Grip opposite outer sides of the narrower lower body, with both finger tips clear of the table. Lift and verify support, carry upright, and centre its bottom over the other cup's mouth. A recommended release point is with the cup bottom 5-8 mm INSIDE the mouth and before any finger reaches the rim. Open separately and withdraw; gravity may finish settling the entered cup onto the taper. A 20-35 mm rim separation is typical, not a hard scoring band. Completion uses geometric cavity fit and stable support, without a 3 mm centre cutoff or fixed small-angle gate. No yaw target is required. Temporary tilt or a missed placement can be recovered in the same scene without reset.",
         limitations="Native photo-estimated rigid paper cups, identical taper and size; no paper crushing. Lower-body grasp followed by shallow entry and passive settling; thin-wall pinch is incompatible with the current 12 mm minimum opening.",
@@ -186,7 +187,7 @@ def flower():
     d = replace(
         design("L1-09", "刚体玫瑰插花", [rose], ()),
         fixture_asset="tuojing:ripple_paper_cup", fixture_pose=pose(*holder_xy, table_z),
-        version="l1-09-tuojing-rigid-rose-v1",
+        version="l1-09-tuojing-rigid-rose-v2-native-score",
         provenance="Native locked Tuojing rigid artificial rose and fixed ripple paper cup; no scaling or bending joints",
     )
     return BenchSpec(
@@ -197,8 +198,7 @@ def flower():
         parameters={"table_z": table_z, "vase_xy": holder_xy,
                     "floor": table_z + 0.004, "rim": table_z + 0.1075,
                     "radius": 0.025, "mouth_radius": 0.0393,
-                    "stem_radius": 0.00105, "stem_length": 0.237,
-                    "head_start": 0.247, "head_radius": 0.018,
+                    "stem_radius": 0.00105,
                     "min_support_n": 0.008 * 9.81 * 0.5},
     )
 
@@ -207,7 +207,7 @@ BUILDERS = {
     "L1-01": marker,
     "L1-03": plug,
     "L1-05": key,
-    "L1-07": mug,
+    "L1-07": hat,
     "L1-08": cups,
     "L1-09": flower,
 }

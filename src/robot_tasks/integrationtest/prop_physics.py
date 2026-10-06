@@ -64,7 +64,7 @@ def run(scene):
             "L1-01": "inside_holder",
             "L1-03": "inside_socket",
             "L1-05": "inside_socket",
-            "L1-07": "hook_through_handle",
+            "L1-07": "hook_through_head_opening",
             "L1-08": "nested",
             "L1-09": "stem_end_inside",
         }[task]
@@ -72,14 +72,16 @@ def run(scene):
             raise RuntimeError(
                 "Physical resting pose rejected by geometry scorer: " + str(result)
             )
+        if task == "L1-07" and not criteria["target_hook_supported"]:
+            raise RuntimeError("Hat is not carried by the selected lowest peg: " + str(result))
         drift_limit = 0.02
         if task == "L1-09":
             # A rigid rose can lean until its tip rests at the cup's inner wall.
             drift_limit = scene.spec.parameters["radius"] + scene.spec.parameters["stem_radius"]
         if task == "L1-07":
-            # A hanging cup naturally slides inward along a sloping peg and
-            # pivots around its handle. Bound that excursion by the actual peg
-            # and cup span, not the old miniature J-hook's 8-cm heuristic.
+            # A hanging visor naturally slides inward along a sloping peg and
+            # pivots around its rear band. Bound that excursion by the actual peg
+            # and visor span, not the old miniature J-hook's 8-cm heuristic.
             from ..tasks.l1.specs import local_corners
 
             peg_span = np.linalg.norm(np.array(scene.spec.parameters["hook_end"])

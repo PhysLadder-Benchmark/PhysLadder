@@ -259,6 +259,19 @@ class IsaacSimBackend:
                 self.before_physics_step(self._physics_dt)
             self.world.step(render=False)
 
+    def pump_events(self) -> None:
+        """Service the GUI on its owning thread without ticking or capturing."""
+        if self.app is None or not self.app.is_running():
+            raise KeyboardInterrupt("Simulation window was closed")
+        if self.settings.headless:
+            return
+        timestamp = self.time_s()
+        # SimulationContext.render disables playSimulations during app.update;
+        # plain app.update would risk advancing physics on the frozen observation.
+        self.world.render()
+        if not math.isclose(self.time_s(), timestamp, abs_tol=1e-9):
+            raise RuntimeError("GUI refresh unexpectedly advanced the simulation clock")
+
     def capture_rgb(self) -> tuple[RGBFrame, ...]:
         import numpy as np
         if self._rgb is None and self.camera_rig is None:

@@ -8,6 +8,8 @@ Partial output can never become a robot action.
 from dataclasses import dataclass
 import json
 import re
+import socket
+import threading
 import time
 from urllib.error import HTTPError, URLError
 from urllib.request import HTTPRedirectHandler, Request, build_opener
@@ -211,10 +213,31 @@ def read_response(stream, *, expected_model: str, start: float, timeout_s: float
 class ResponsesClient:
     def __init__(self, settings: GPTSettings):
         self.settings = settings
+        self._cancel = threading.Event()
+        self._stream_lock = threading.Lock()
+        self._active_stream = None
+
+    def reset_cancellation(self):
+        self._cancel.clear()
+
+    def cancel_pending(self):
+        self._cancel.set()
+        with self._stream_lock:
+            stream = self._active_stream
+        # Shutdown unblocks HTTPResponse.readline without taking its buffered
+        # reader lock on the GUI thread. The request thread closes the response.
+        sock = getattr(getattr(getattr(stream, "fp", None), "raw", None), "_sock", None)
+        if sock is not None:
+            try:
+                sock.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
 
     def generate(self, *, instructions: str, messages: list[dict], schema: dict,
                  on_reasoning=None) -> ModelReply:
         settings = self.settings
+        if self._cancel.is_set():
+            raise KeyboardInterrupt("Responses request cancelled")
         secret = read_api_key(settings.api_key_env)
         # Codex-compatible relays may replace top-level instructions. Preserve
         # the action contract in an explicit developer message as well as schema.
@@ -237,8 +260,18 @@ class ResponsesClient:
         start = time.monotonic()
         try:
             with build_opener(_NoRedirect()).open(request, timeout=settings.timeout_s) as stream:
-                reply = read_response(stream, expected_model=settings.model, start=start,
-                                      timeout_s=settings.timeout_s, secret=secret, on_reasoning=on_reasoning)
+                with self._stream_lock:
+                    self._active_stream = stream
+                try:
+                    if self._cancel.is_set():
+                        raise KeyboardInterrupt("Responses request cancelled")
+                    reply = read_response(stream, expected_model=settings.model, start=start,
+                                          timeout_s=settings.timeout_s, secret=secret, on_reasoning=on_reasoning)
+                finally:
+                    with self._stream_lock:
+                        self._active_stream = None
+            if self._cancel.is_set():
+                raise KeyboardInterrupt("Responses request cancelled")
             if time.monotonic() - start > settings.timeout_s:
                 raise RetryableModelError("Model request exceeded time budget; output discarded")
             if secret in reply.text or secret in reply.response_id:

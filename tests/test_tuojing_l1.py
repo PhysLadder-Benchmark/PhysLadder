@@ -20,7 +20,7 @@ except ImportError:
 
 
 class NativeTaskScoringTests(unittest.TestCase):
-    def test_rigid_rose_requires_grasp_release_and_stem_inside_cup(self):
+    def test_rigid_rose_requires_release_support_and_native_stem_inside_cup(self):
         spec = build_spec("L1-09")
         article, = spec.design.articles
         self.assertEqual(article.asset, "tuojing:artificial_rose")
@@ -31,7 +31,7 @@ class NativeTaskScoringTests(unittest.TestCase):
         r = rows["rose"]
         r["pose"] = list(article.goal)
         r["fixture_force_n"], r["bench_force_n"] = .07848, 0.
-        self.assertFalse(flower(e, rows)[0])
+        self.assertTrue(flower(e, rows)[0])
         e.grasped.add("rose")
         self.assertTrue(flower(e, rows)[0])
         for delta in ([.05, 0, 0], [0, 0, spec.parameters["rim"] - article.goal[2] + .005]):
@@ -62,7 +62,7 @@ class NativeTaskScoringTests(unittest.TestCase):
         e.grasped.add("rose")
         self.assertTrue(flower(e, rows)[0])
 
-    def test_two_blades_need_both_slots_and_a_real_grasp(self):
+    def test_two_native_blades_need_both_slots_and_housing_seating(self):
         spec = build_spec("L1-03")
         article = spec.design.articles[0]
         e = BenchEvaluator(spec, {"plug": article.initial})
@@ -70,7 +70,7 @@ class NativeTaskScoringTests(unittest.TestCase):
         r = rows["plug"]
         r["pose"] = list(article.goal)
         r["fixture_force_n"], r["bench_force_n"] = .54, 0
-        self.assertFalse(insertion(e, rows)[0])
+        self.assertTrue(insertion(e, rows)[0])
         e.grasped.add("plug")
         self.assertTrue(insertion(e, rows)[0])
         # The pair is symmetric at 180 degrees, but not 90 degrees.

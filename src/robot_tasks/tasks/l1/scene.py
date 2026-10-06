@@ -74,8 +74,8 @@ class L1Scene:
             UsdPhysics.RigidBodyAPI.Apply(prim).CreateKinematicEnabledAttr(False)
             UsdPhysics.MassAPI.Apply(prim).CreateMassAttr(article.mass)
             body = PhysxSchema.PhysxRigidBodyAPI.Apply(prim)
-            body.CreateSolverPositionIterationCountAttr(32)
-            body.CreateSolverVelocityIterationCountAttr(0)
+            body.CreateSolverPositionIterationCountAttr(backend.settings.solver_position_iterations)
+            body.CreateSolverVelocityIterationCountAttr(backend.settings.solver_velocity_iterations)
             self.bodies[article.name] = backend.world.scene.add(
                 SingleRigidPrim(
                     path,

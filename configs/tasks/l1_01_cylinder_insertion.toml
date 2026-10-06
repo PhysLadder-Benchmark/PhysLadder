@@ -22,7 +22,7 @@ finger_stiffness = 2000.0
 finger_damping = 40.0
 self_collision = false
 solver_position_iterations = 32
-solver_velocity_iterations = 0
+solver_velocity_iterations = 4
 camera_position = [0.21354960845762927, 0.48765041712220114, 1.32]
 camera_target = [0.1643434123515941, 1.0254038459952994, 0.78]
 
@@ -36,7 +36,7 @@ execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
 implementation = "household"
-simulation_limitations = "Native photo-estimated marker and rigid ripple cup; flat barrel collider, fixed zero-friction cup. Not hardware calibrated."
+simulation_limitations = "Native photo-estimated marker and rigid ripple cup; flat barrel collider, fixed cup with delivered contact friction, 0.2 mm contact margin and four velocity solver iterations. Not hardware calibrated."
 launch_command = "python tools/launch.py run L1-01 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L1-01 --gui"
 instruction = """
@@ -141,7 +141,7 @@ description = """
 道具：交付包中的黑色白板笔（高约 151 mm，笔身直径 16.2 mm，最大宽约 18 mm，质量估计 22 g）及波纹纸杯（高约 107.5 mm，内口径约 78.6 mm）。纸杯固定，用作收笔容器；不是实物笔筒标定模型。
 布置：使用拓境实验室、原生 R5 双臂和三路相机。桌面世界高度 0.78 m。笔竖直放在左臂前方，空纸杯在旁边；左臂操作，右臂只可换视角，不能接触道具。
 操作：自主选抓点并结合观测将笔送入杯内；允许倾斜、任一端入杯，也允许从杯口上方松手后落入。抓取与短抬核验是操作建议，不指定唯一入杯轨迹。
-完成：笔的一端真正进入杯腔，由杯体承重、无夹指或桌面支撑，释放后稳定 1 秒。不设置竖直角度或 40 mm 深度门槛，也不强制某种夹持过程。
+完成：笔的一端真正进入杯腔，由杯体承重、无夹指或桌面支撑，释放后位置、倾斜和承托持续稳定 1 秒；单纯绕笔轴自转不拒绝完成。笔身与笔帽分别按实际碰撞形状检查，沿用 1 mm 接触容差。不设置竖直角度或 40 mm 深度门槛，也不强制某种夹持过程。
 失败：初始竖立在桌上不算失败；操作中离桌后掉回桌面、被碰倒躺到桌面或掉下桌面即失败结束。全程不自动复位重试。
-适配：保留交付尺寸、材质和独立杯壁碰撞体；将笔身圆底胶囊碰撞体替换为与可见平底相符的圆柱，防止初始竖立失稳。杯壁摩擦为零，抓持保持基础摩擦；源 USD 不修改。尺寸、质量与摩擦均未真机标定。
+适配：保留交付尺寸、材质和独立杯壁碰撞体；将笔身圆底胶囊碰撞体替换为与可见平底相符的圆柱，防止初始竖立失稳。杯体静/动摩擦沿用交付值，抓持保持基础摩擦；接触距离为 0.2 mm，速度求解迭代为 4，源 USD 不修改。尺寸、质量与摩擦均未真机标定。
 """

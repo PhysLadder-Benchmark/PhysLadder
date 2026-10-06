@@ -10,6 +10,7 @@ from pathlib import Path, PurePosixPath
 import shutil
 import signal
 import subprocess
+import threading
 import sys
 import tempfile
 import time
@@ -76,6 +77,7 @@ def _local_settings():
 
 class CodexProcess:
     def __init__(self, codex_bin):
+        self._cancel = threading.Event()
         config = _local_settings()
         self.codex_bin = codex_bin
         self.executable = shutil.which(codex_bin)
@@ -121,7 +123,15 @@ class CodexProcess:
                 "--timeout", str(timeout_s),
                 *(["--proxy", self.proxy] if self.proxy else []), "--", *arguments]
 
+    def cancel_pending(self):
+        self._cancel.set()
+
+    def reset_cancellation(self):
+        self._cancel.clear()
+
     def run(self, arguments, *, directory, data=b"", timeout_s, on_stdout_line=None):
+        if self._cancel.is_set():
+            raise KeyboardInterrupt("Codex request cancelled")
         command = self.command(arguments, directory, timeout_s)
         # A finite input file gives the child reliable EOF, even if it starts
         # reading late. Repeated communicate(None) after a short timeout can
@@ -143,6 +153,8 @@ class CodexProcess:
                 # Linux descendants before terminating the Windows launcher.
                 deadline = time.monotonic() + timeout_s + (3 if self.mode == "wsl" else 0)
                 while True:
+                    if self._cancel.is_set():
+                        raise KeyboardInterrupt("Codex request cancelled")
                     remaining = deadline - time.monotonic()
                     if remaining <= 0:
                         raise subprocess.TimeoutExpired(command, timeout_s)

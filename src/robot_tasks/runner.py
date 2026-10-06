@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .config import ExecutionSettings, TaskConfig
 from .interfaces import Backend, Policy, Robot, Task
+from .policy_worker import PolicyRequestCleanupError, request_action
 from .recording import EpisodeRecorder
 from .robot_roles import FixedArmMonitor, validate_role_command
 from .types import Action, Assessment, EvaluationState, Feedback, InvalidPolicyAction, Observation, PolicyInput, RetryablePolicyError
@@ -95,6 +96,7 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
     initial = final = {}
     stopped = ready = False
     final_time = 0.0
+    model_thread_cleanup_complete = True
 
     def budget():
         if config.max_wall_time_s > 0 and time.monotonic() - start >= config.max_wall_time_s:
@@ -224,9 +226,20 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                 print(f"R5_POLICY_REQUEST {step}", flush=True)
             try:
                 try:
-                    action = policy.act(PolicyInput(config.instruction, observation, step))
+                    context = PolicyInput(config.instruction, observation, step)
+                    if dry_run:
+                        action = policy.act(context)
+                    else:
+                        try:
+                            action = request_action(policy, context,
+                                idle=getattr(backend, "pump_events", None), check_budget=budget)
+                        except PolicyRequestCleanupError:
+                            model_thread_cleanup_complete = False
+                            raise
                 finally:
-                    exchange = getattr(policy, "last_exchange", None)
+                    # Read mutable policy history only after its worker has joined.
+                    exchange = (getattr(policy, "last_exchange", None)
+                                if model_thread_cleanup_complete else None)
                     if exchange:
                         recorder.event({"event": "model_exchange", "step": step, "exchange": exchange})
             except RetryablePolicyError as exc:
@@ -249,7 +262,15 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                 delay = GENERATION_RETRY_DELAYS_S[consecutive_generation_failures - 1]
                 print(f"R5_MODEL_RETRY {consecutive_generation_failures}/3 in {delay:g}s: {exc}", flush=True)
                 budget()
-                time.sleep(delay)  # Interruptible; no physics, reset, history mutation or action.
+                deadline = time.monotonic() + delay
+                pump = getattr(backend, "pump_events", None)
+                if pump is None or config.raw.get("simulation", {}).get("headless", True):
+                    time.sleep(delay)
+                else:
+                    while time.monotonic() < deadline:
+                        budget()
+                        pump()
+                        time.sleep(min(.05, max(0., deadline - time.monotonic())))
                 budget()
                 continue
             except InvalidPolicyAction as exc:
@@ -391,6 +412,8 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
         status, reason, error = "implementation_missing", "stub_reached", str(exc)
     except KeyboardInterrupt:
         status, reason, error = "cancelled", "user_interrupt", None
+    except PolicyRequestCleanupError as exc:
+        status, reason, error = "error", "model_thread_cleanup_error", str(exc)
     except Exception as exc:
         status, reason, error = "error", "exception", f"{type(exc).__name__}: {exc}"
     finally:
@@ -413,6 +436,7 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
             "task_id": config.task_id, "mode": mode, "status": status,
             "termination_reason": reason, "completed_steps": ticks, "decisions": decisions,
             "model_calls": getattr(policy, "calls", 0), "executed_actions": executed,
+            "model_thread_cleanup_complete": model_thread_cleanup_complete,
             "action_timeouts": timeouts, "rejected_actions": rejected, "policy_requested_stop": stopped,
             "invalid_model_actions": invalid_model_actions,
             "generation_failures": generation_failures,

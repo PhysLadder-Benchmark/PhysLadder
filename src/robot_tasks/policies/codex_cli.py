@@ -209,6 +209,12 @@ class CodexCLIClient:
             raise ModelError(str(exc)) from None
         self.provider_metadata = {**self.provider_metadata, "codex_host": self.host.mode}
 
+    def cancel_pending(self):
+        self.host.cancel_pending()
+
+    def reset_cancellation(self):
+        self.host.reset_cancellation()
+
     def require_chatgpt_login(self):
         try:
             with _temporary_directory() as temporary:
