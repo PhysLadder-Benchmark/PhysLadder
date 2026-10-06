@@ -7,6 +7,18 @@ import numpy as np
 from ...types import Assessment, InvalidSimulationState
 
 
+def motion_metrics(current, previous, dt):
+    """Separate translation from broad shape motion; keep peak jitter diagnostic."""
+    velocity = (np.asarray(current) - np.asarray(previous)) / dt
+    translation = velocity.mean(axis=0)
+    return {
+        "speed_m_s": float(np.linalg.norm(velocity, axis=1).max()),
+        "centroid_speed_m_s": float(np.linalg.norm(translation)),
+        "shape_speed_p95_m_s": float(np.quantile(
+            np.linalg.norm(velocity - translation, axis=1), 0.95)),
+    }
+
+
 def deformation_metrics(rest_inverse, current, tetrahedra):
     """Principal stretch is invariant to rigid translation/rotation."""
     p = current[tetrahedra]
@@ -27,6 +39,7 @@ class OrangeEvaluator:
         self.last_time = self.stable_since = self.overstrain_since = None
         self.lifted = self.excessive_deformation = False
         self.peak_strain = 0.0
+        self.stable_centroid = None
 
     def update(self, now, rows):
         if not math.isfinite(now) or (
@@ -40,6 +53,11 @@ class OrangeEvaluator:
             *low,
             *high,
             row["speed_m_s"],
+            row["centroid_speed_m_s"],
+            row["shape_speed_p95_m_s"],
+            *row["centroid"],
+            *row["collision_bounds_min"],
+            *row["collision_bounds_max"],
             row["strain_p95"],
             row["strain_max"],
             row["minimum_volume_ratio"],
@@ -64,15 +82,19 @@ class OrangeEvaluator:
             np.all(low[:2] >= np.asarray(p["target_xy"]) - p["target_half"])
             and np.all(high[:2] <= np.asarray(p["target_xy"]) + p["target_half"])
         )
-        supported = bool(abs(low[2] - p["table_z"]) <= p["support_height_tolerance_m"])
+        supported = bool(abs(row["collision_bounds_min"][2] - p["table_z"])
+                         <= p["support_height_tolerance_m"])
         released = all(d > p["finger_clearance_m"] for d in near)
-        quiet = row["speed_m_s"] < 0.02
+        quiet = (row["centroid_speed_m_s"] < p["centroid_speed_limit_m_s"]
+                 and row["shape_speed_p95_m_s"] < p["shape_speed_p95_limit_m_s"])
         complete = self.lifted and within and supported and released and quiet
-        self.stable_since = (
-            (now if self.stable_since is None else self.stable_since)
-            if complete
-            else None
-        )
+        centroid = np.asarray(row["centroid"])
+        drift = (0.0 if self.stable_centroid is None else
+                 float(np.linalg.norm(centroid - self.stable_centroid)))
+        if not complete:
+            self.stable_since = self.stable_centroid = None
+        elif self.stable_since is None or drift > p["stable_centroid_drift_m"]:
+            self.stable_since, self.stable_centroid = now, centroid.copy()
         duration = 0.0 if self.stable_since is None else now - self.stable_since
         failure = ""
         if high[2] < p["table_z"] - 0.08:
@@ -80,7 +102,7 @@ class OrangeEvaluator:
         invalid = row["minimum_volume_ratio"] <= 0
         metrics = {
             "task_version": self.spec.design.version,
-            "scoring_protocol": "native_l2_validity_v2",
+            "scoring_protocol": p["scoring_protocol"],
             "mechanism": self.spec.mechanism,
             "limitations": self.spec.limitations,
             "objects": rows,
@@ -90,6 +112,10 @@ class OrangeEvaluator:
                 "table_supported_geometry": supported,
                 "released_geometry": released,
                 "quiet": quiet,
+                "centroid_speed_m_s": row["centroid_speed_m_s"],
+                "shape_speed_p95_m_s": row["shape_speed_p95_m_s"],
+                "peak_vertex_speed_m_s": row["speed_m_s"],
+                "centroid_drift_m": drift,
                 "strain_p95": strain,
                 "peak_strain_p95": self.peak_strain,
                 "strain_limit": p["strain_limit"],

@@ -76,6 +76,7 @@ class BenchEvaluator:
                 row["bench_force_n"],
                 *[f for fs in row["fingers"].values() for f in fs],
                 *row["pair_forces"].values(),
+                *row.get("net_contact_force_world_n", ()),
             ]
             if not np.isfinite(values).all():
                 raise InvalidSimulationState("Nonfinite household measurement")
@@ -114,7 +115,7 @@ class BenchEvaluator:
         duration = 0 if self.stable_since is None else now - self.stable_since
         metrics = {
             "task_version": self.spec.design.version,
-            "scoring_protocol": "native_l2_validity_v2" if self.spec.design.task_id.startswith("L2-") else SCORING_PROTOCOL,
+            "scoring_protocol": self.spec.parameters.get("scoring_protocol", "native_l2_validity_v2" if self.spec.design.task_id.startswith("L2-") else SCORING_PROTOCOL),
             "mechanism": self.spec.mechanism,
             "limitations": self.spec.limitations,
             "criteria": details,

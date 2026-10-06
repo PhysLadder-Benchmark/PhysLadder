@@ -30,10 +30,11 @@ class LabSettingsTests(unittest.TestCase):
         bench = bench_geometry(config)
         rig = load_camera_rig(config.source.parent / config.raw["simulation"]["camera_profile"])
         overview = rig.cameras[0]
-        self.assertAlmostEqual(overview.optical_pose_wxyz[2], 1.32)
+        self.assertAlmostEqual(overview.optical_pose_wxyz[2], 1.58)
         self.assertAlmostEqual(bench.centre[1] - bench.size[1] / 2 - overview.optical_pose_wxyz[1], .25)
         forward = -pose_transform(overview.optical_pose_wxyz)[:3, 2]
-        self.assertAlmostEqual(forward[2], -np.sqrt(.5))
+        direction = np.array([.19565, 1.20, .86]) - overview.optical_pose_wxyz[:3]
+        np.testing.assert_allclose(forward, direction / np.linalg.norm(direction), atol=1e-9)
         self.assertGreater(forward[1], 0)  # Preserve the delivered heading toward the desk.
         for spec in rig.cameras[1:]:
             t = pose_transform(spec.optical_pose_wxyz)
@@ -44,10 +45,10 @@ class LabSettingsTests(unittest.TestCase):
         legacy_bench = bench_geometry(legacy)
         legacy_rig = load_camera_rig(legacy.source.parent / legacy.raw["simulation"]["camera_profile"])
         overview = legacy_rig.cameras[0]
-        self.assertAlmostEqual(overview.optical_pose_wxyz[2] - legacy_bench.top, 1.32 - .78)
+        self.assertAlmostEqual(overview.optical_pose_wxyz[2] - legacy_bench.top, 1.58 - .78)
         self.assertAlmostEqual(overview.optical_pose_wxyz[0] - (legacy_bench.centre[0] + legacy_bench.size[0] / 2), .25)
         np.testing.assert_allclose(-pose_transform(overview.optical_pose_wxyz)[:3, 2],
-                                   [-np.sqrt(.5), 0, -np.sqrt(.5)], atol=1e-9)
+                                   np.array([-.87, 0, -.72]) / np.linalg.norm([-.87, 0, -.72]), atol=1e-9)
         for spec in legacy_rig.cameras[1:]:
             np.testing.assert_allclose(-pose_transform(spec.optical_pose_wxyz)[:3, 2],
                                        [np.sqrt(.5), 0, -np.sqrt(.5)], atol=1e-9)

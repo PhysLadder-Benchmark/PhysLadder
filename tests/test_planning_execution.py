@@ -19,6 +19,13 @@ from robot_tasks.types import ArmState, Action, ArmCommand, Feedback
 
 
 class PlanningExecutionTests(unittest.TestCase):
+    def test_constrained_contact_feedback_does_not_recommend_test_lift(self):
+        robot, _ = self.robot()
+        robot.config = replace(self.config, grasp_check_mode="contact_inspection")
+        message = robot.feedback().metrics["arms"]["left"]["grasp_evidence"]
+        self.assertIn("allowed axis", message)
+        self.assertNotIn("short lift", message)
+
     def setUp(self):
         self.config = robot_config()
         self.bounds = [
@@ -26,6 +33,45 @@ class PlanningExecutionTests(unittest.TestCase):
             for x in self.config.robot.operating_limits
             if x.joint in self.config.robot.joint_names
         ]
+
+    def test_gripper_reference_is_rate_limited_and_timeout_cancels_ramp(self):
+        import sys
+        robot, states = self.robot()
+        robot.instances = {name: Mock() for name in robot.targets}
+        robot.indices = {name: tuple(range(8)) for name in robot.targets}
+        robot.targets["left"] = robot.targets["left"][:6] + (.035, .035)
+        robot.drive_targets = dict(robot.targets)
+        start = robot.targets["left"]
+        goal = start[:6] + (0.006, 0.006)
+        modules = {"isaacsim.core.utils.types": SimpleNamespace(
+            ArticulationAction=lambda **kwargs: SimpleNamespace(**kwargs))}
+        with patch.dict(sys.modules, modules):
+            robot._send_targets({**robot.targets, "left": goal})
+            self.assertEqual(robot.drive_targets["left"], start)
+            robot.instances["left"].apply_action.assert_not_called()
+            dt = 1 / 1920
+            previous = start
+            for _ in range(100):
+                robot._advance_drive_targets(dt)
+                current = robot.drive_targets["left"]
+                self.assertLessEqual(max(abs(a-b) for a,b in zip(current[6:], previous[6:])),
+                                     .03 * dt + 1e-12)
+                previous = current
+            self.assertNotEqual(current[6:], goal[6:])
+            self.assertEqual(robot.targets["left"], goal)
+            robot.on_action_timeout()
+            self.assertEqual(robot.targets["left"][6:], current[6:])
+            robot._advance_drive_targets(1.)
+            self.assertEqual(robot.drive_targets["left"][6:], current[6:])
+            # Reversal/opening uses the same bound and converges without overshoot.
+            opened = start[:6] + (.035, .035)
+            robot._send_targets({**robot.targets, "left": opened})
+            previous = robot.drive_targets["left"]
+            robot._advance_drive_targets(.01)
+            self.assertLessEqual(max(abs(a-b) for a,b in zip(
+                robot.drive_targets["left"][6:], previous[6:])), .0003 + 1e-12)
+            robot._advance_drive_targets(2.)
+            self.assertEqual(robot.drive_targets["left"], opened)
 
     def test_normalized_gripper_endpoints_and_invalid_values(self):
         for x, w in ((0, 0.012), (0.5, 0.041), (1, 0.07)):

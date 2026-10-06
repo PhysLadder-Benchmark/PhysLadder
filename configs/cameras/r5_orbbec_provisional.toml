@@ -1,7 +1,7 @@
 # 临时工程参数：用户允许先估算。未经过现场标定，不可作为真机内外参。
 schema_version = 1
 calibration_status = "provisional_uncalibrated"
-notes = "Supplier camera and R5 bracket CAD with user-requested 45 degree wrist tilt. Legacy world uses tabletop Z=0: overview Z=0.54 corresponds to 1.32 m floor height for the 0.78 m laboratory table. Overview is 0.25 m outside the front edge, facing the original direction with 45 degree depression. Bracket registration, optical centres, nominal-FOV intrinsics and zero distortion remain uncalibrated estimates."
+notes = "Raised overview for task visibility: floor-equivalent height 1.58 m, aimed at the shared manipulation workspace. Wrist optics and intrinsics unchanged; provisional simulation extrinsics, not hardware calibration."
 
 [cameras.overview]
 model = "Wheeltec Gemini Pro / Orbbec Gemini module"
@@ -13,10 +13,10 @@ distortion = [0.0, 0.0, 0.0, 0.0, 0.0]
 intrinsics_source = "Nominal RGB FOV H71.5 V56.7: https://orbbec.com.cn/index/Product/info.html?cate=38&id=16 ; 640x480 engineering mode, no per-device calibration."
 # xyz metres + scalar-first quaternion; optical axes are USD: -Z forward, +Y up.
 # 正对双臂：世界 +X 为机械臂前方，Y=0 为两底座中线；从高处朝下看。
-# 旧场景桌面 Z=0；1.32 m 离地高度减去实验室桌高 0.78 m，得到相对桌面高度 0.54 m。
-# 桌前沿 X=1.0，相机在外侧 0.25 m；保留朝 -X 的方向，俯视 45°。
-optical_pose_wxyz = [1.25, 0.0, 0.54, 0.6532814824381883, 0.2705980500730985, 0.2705980500730985, 0.6532814824381883]
-pose_source = "User installation interpreted in tabletop coordinates: eye [1.25,0,0.54], floor-equivalent height 1.32 m for a 0.78 m table, 0.25 m horizontal front-edge clearance, downward 45 degrees, existing -X heading preserved. Not hardware calibrated."
+# 旧场景桌面 Z=0；离地 1.58 m 对应桌面上方 0.80 m。
+# 桌前沿 X=1.0，相机在外侧 0.25 m；瞄准操作区 [0.38, 0, 0.08]。
+optical_pose_wxyz = [1.25, 0, 0.8, 0.6398374234979981, 0.3010117464343269, 0.3010117464343269, 0.6398374234979981]
+pose_source = "Simulation overview framing: eye [1.25, 0, 0.8]; look-at [0.38, 0, 0.08] in this scene world frame. Horizontal front-edge clearance 0.25 m. Not hardware calibrated."
 asset = "../../assets/cameras/gemini_pro.usdc"
 asset_pose_wxyz = [0.0, 0.0, 0.035, 0.707106781, 0.707106781, 0.0, 0.0]
 asset_pose_source = "Assumed optical centre at housing front; centred CAD +Y mapped to camera +Z. Optical offset/sign not surveyed."

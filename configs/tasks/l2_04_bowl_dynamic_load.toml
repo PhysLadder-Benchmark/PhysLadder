@@ -35,7 +35,7 @@ physics_dt_s = 0.004166666666666667 # 240 Hz; native CCD retained for rigid cont
 [task]
 # Guided RGB-D execution; common information boundaries are appended by BenchTask.
 prompt_protocol = "guided_rgbd_l2_v2"
-scoring_protocol = "native_l2_validity_v2"
+scoring_protocol = "bowl_retained_load_v3"
 id = "L2-04"
 name = "满载小珍珠的碗搬运"
 execution_target = "simulation_and_real"
@@ -73,8 +73,10 @@ two commanded TCP positions imply a supported, level bowl.
 Lower the bowl onto the green patch, then open and withdraw both hands without
 knocking the rim. The bowl centre should be within 35 mm of the patch centre.
 Completion requires an actual lifted transport, released upright tabletop
-support and all pearls contained below the rim, nearly stationary for about
-half a simulation second. A confirmed spill lasting 0.25 simulation seconds terminates the episode;
+support and all pearls retained. The bowl must be nearly stationary for about
+half a simulation second; pearls may still roll inside its cavity. A pearl resting on the pile may protrude above the rim if it remains
+inside the mouth footprint, contacts support it, and it is nearly stationary.
+Do not rearrange the contents merely to make every pearl lower than the rim. A confirmed spill lasting 0.25 simulation seconds terminates the episode;
 it is not recovered by continuing transport or returning a pearl.
 Do not request stop while still holding the bowl or before it reaches the patch.
 No automatic reset, hidden attachment, or scripted transport is provided.

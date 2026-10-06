@@ -19,10 +19,10 @@ BOWL_INNER = (
 )
 
 
-def bowl_clearance(point, radius=0.004, tolerance=0.0003):
+def bowl_clearance(point, radius=0.004, tolerance=0.0003, *, open_top=False):
     """Sphere containment against the delivered 32-sided, piecewise inner wall."""
     x, y, z = point
-    if z - radius < 0.006 - tolerance or z + radius > 0.054 + tolerance:
+    if z - radius < 0.006 - tolerance or (not open_top and z + radius > 0.054 + tolerance):
         return False
     cosine = math.cos(math.pi / 32)
     for (z0, r0), (z1, r1) in itertools.pairwise(BOWL_INNER):
@@ -108,7 +108,7 @@ def bowl():
     return BenchSpec(
         replace(
             design("L2-04", "满载小珍珠的碗搬运", articles, [patch]),
-            version="l2-04-native-bowl-pearls-v1",
+            version="l2-04-native-bowl-pearls-v2",
             provenance="Native open bowl and 8 mm drilled plastic pearls; two explicit R5 grasp tabs",
         ),
         arms=("left", "right"),
@@ -117,6 +117,7 @@ def bowl():
         facts=f"A cream-coloured open bowl is preloaded with {count} separate 8 mm pearls. They move freely under gravity and contact; their contact friction is explicitly 0.03 in this task. The bowl is 140 mm across and 54 mm high, and has TWO blue R5 grasp tabs attached outside its sides. These are declared adapters, not native bowl handles. Use the left hand on the -X tab and right on the +X tab; pinch the 45 mm dimension along world Y and leave the opening clear. Lift together, move to the green patch, lower, release both hands and leave all pearls in the upright bowl. No feeder or second loading phase is used.",
         parameters={
             "table_z": TABLE_Z,
+            "scoring_protocol": "bowl_retained_load_v3",
             "hold_s": 0.5,
             "native_instances": instances,
             "grasp_adapters": [
@@ -282,15 +283,19 @@ def orange():
     return BenchSpec(
         replace(
             design("L2-06", "软橘子瓣轻夹搬运", [a], [target]),
-            version="l2-06-native-fem-orange-v1",
+            version="l2-06-native-fem-orange-v2",
             provenance="Pinned L20 native volume FEM orange; replaces the former eight-cell jelly proxy",
         ),
         mechanism="native_fem_orange_transfer",
-        limitations="R5 soft-grip qualification pending: tested grasps slipped or inverted FEM elements; full transfer not certified. Native GPU FEM, estimated mass/material. Deformation limit is an engineering proxy, not a calibrated fracture law. Rupture/juice demo is not run: it rebuilds the scene and cannot be used as a robot controller. Grip/release/support use measured geometry, not invented soft contact forces.",
+        limitations="R5 soft-grip qualification pending even with rate-limited closure: tested grasps slipped or inverted FEM elements; full transfer not certified. Native GPU FEM, estimated mass/material. Deformation limit is an engineering proxy, not a calibrated fracture law. Rupture/juice demo is not run: it rebuilds the scene and cannot be used as a robot controller. Grip/release/support use measured geometry, not invented soft contact forces.",
         facts="Move the exposed orange segment gently onto the green patch and release it. It is about 50 mm long, 26 mm across and 17 mm thick, mass about 9 g, with native elastic deformation. Pinch the fuller middle section across its roughly 26 mm width, avoiding its pointed ends and the tabletop. Close gradually; the R5 minimum 12 mm gap can severely compress this soft object, so do not begin with a fully closed command. Choose the actual opening from images and observed deformation. No rigid container or grasp attachment exists. This task checks a declared 35% deformation reference, not real tissue fracture or juice volume. The right arm may observe only.",
         parameters={
             "table_z": TABLE_Z,
             "hold_s": 0.5,
+            "scoring_protocol": "soft_placement_motion_v3",
+            "centroid_speed_limit_m_s": 0.01,
+            "shape_speed_p95_limit_m_s": 0.02,
+            "stable_centroid_drift_m": 0.002,
             "target_xy": goal[:2],
             "target_half": 0.06,
             "soft_asset": "orange_segment",
@@ -324,7 +329,7 @@ def drawer():
     return BenchSpec(
         replace(
             design("L2-07", "单臂拉开固定化妆抽屉", [article]),
-            version="l2-07-native-organizer-v1",
+            version="l2-07-native-organizer-v2",
             provenance="Pinned L20 desk organizer; native passive 90 mm rail, explicit R5 grip adapter",
         ),
         mechanism="native_prismatic_drawer",
@@ -334,6 +339,8 @@ def drawer():
             "table_z": TABLE_Z,
             "outward_axis_world": (0.0, 1.0, 0.0),
             "required_open_m": 0.075,
+            "minimum_grasped_pull_m": 0.005,
+            "scoring_protocol": "drawer_grasped_pull_v3",
             "max_travel_m": 0.09,
             "max_speed_m_s": 0.25,
             "hold_s": 0.5,

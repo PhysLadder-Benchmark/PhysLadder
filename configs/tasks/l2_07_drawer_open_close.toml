@@ -32,7 +32,7 @@ model_config = "../models/gpt.toml"
 [task]
 # Guided RGB-D execution; common information boundaries are appended by BenchTask.
 prompt_protocol = "guided_rgbd_l2_v2"
-scoring_protocol = "native_l2_validity_v2"
+scoring_protocol = "drawer_grasped_pull_v3"
 id = "L2-07"
 name = "单臂拉开固定化妆抽屉"
 execution_target = "simulation_and_real"
@@ -61,6 +61,9 @@ Approach with an open gripper and inspect from complementary views. Close in
 a separate decision. A blocked close is not proof of capture: verify the tab
 lies between the pads and check actual drawer movement during a short pull.
 Do not test-lift a rail-constrained drawer. Preserve handle height and alignment.
+Keep the established grasp height and orientation as your pull reference;
+do not accumulate sag or tracking error by copying each imperfect reached pose
+into the next target. Reobserve and regrasp if the alignment is no longer valid.
 
 Pull toward the robots along world +Y, using short movements and checking that
 the drawer follows. The native rail has 90 mm total travel; aim for 75-85 mm.
@@ -70,7 +73,10 @@ If the grip slips, reobserve and regrasp rather than continuing an empty pull.
 
 Once open at least 75 mm, release, withdraw without pushing it closed, and
 observe approximately half a simulation second of released, nearly stationary
-opening. No item retrieval or closing is required. Request stop only after
+opening. No item retrieval or closing is required. Completion requires
+an actual grasped pull and the final released opening; a small amount
+of passive rail travel after release is allowed, but merely touching an already
+open drawer is not a grasped pull. Request stop only after
 observing this physical result. Use available control feedback; do not invent
 force sensors or a force-control API. No automatic scene reset is performed.
 """
@@ -80,5 +86,6 @@ description = """
 道具：L20 双抽屉收纳盒原生资产；柜体和下层抽屉固定，上层保留原生 90 mm 滑轨。原把手仅约 8 mm 高，另加蓝色 40 mm 宽抓持适配片，明确不是原照片把手。
 布置：使用拓境实验室 R5 双臂与三路相机，桌高 0.78 m；抽屉正面朝机械臂（世界 +Y），左臂操作，右臂只观察。
 操作与完成：夹住适配片，沿 +Y 拉开至少 75 mm，最大行程 90 mm；释放并保持开启约 0.5 秒。不取物、不关闭、不要求扶柜或抬升。
+评分：先记录连续双指抓持期间至少 5 mm 的净拉动，再独立判断最终开度和释放稳定；不要求越过 75 mm 时仍有双指接触，不把仅触碰已打开抽屉算作拉开。
 物理：保留原生尺寸、质量、材质及被动滑轨；适配片属于抽屉刚体，不与机器人吸附或绑定。源资产不修改。
 """

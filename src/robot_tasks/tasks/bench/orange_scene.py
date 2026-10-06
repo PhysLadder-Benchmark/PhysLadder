@@ -5,7 +5,7 @@ import numpy as np
 from ...asset_delivery import verified_prop
 from ...types import InvalidSimulationState
 from ..l1.scene import L1Scene
-from .orange_evaluation import deformation_metrics
+from .orange_evaluation import deformation_metrics, motion_metrics
 
 
 class OrangeScene:
@@ -123,14 +123,8 @@ class OrangeScene:
             or not np.isfinite(physical).all()
         ):
             raise InvalidSimulationState("Missing/nonfinite native FEM readback")
-        speed = (
-            0.0
-            if self.previous is None
-            else float(
-                np.linalg.norm(world - self.previous[1], axis=1).max()
-                / (now - self.previous[0])
-            )
-        )
+        motion = motion_metrics(world, world if self.previous is None else self.previous[1],
+                                1.0 if self.previous is None else now - self.previous[0])
         distances = []
         from .surface_distance import surface_clearance
         for path, triangles in zip(self.finger_paths, self.finger_surfaces):
@@ -146,7 +140,7 @@ class OrangeScene:
             "collision_bounds_max": physical.max(axis=0).tolist(),
             "visual_world_transform": t.tolist(),
             "centroid": world.mean(axis=0).tolist(),
-            "speed_m_s": speed,
+            **motion,
             "finger_distances_m": distances,
             **deformation_metrics(self.rest_inverse, simulation, self.tets),
         }

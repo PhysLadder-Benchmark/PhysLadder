@@ -225,7 +225,8 @@ class HouseholdTests(unittest.TestCase):
         e.update(.5, rows)
         result = e.update(1.4, rows)
         self.assertEqual(result.status, "failed")
-        self.assertTrue(result.metrics["goal_complete"])
+        self.assertTrue(result.metrics["criteria"]["transport_complete"])
+        self.assertFalse(result.metrics["goal_complete"])
         self.assertFalse(result.metrics["process_constraints_satisfied"])
 
     def test_drawer_speed_warning_does_not_replace_rail_and_opening_checks(self):
@@ -237,6 +238,8 @@ class HouseholdTests(unittest.TestCase):
         result = e.update(.1, rows)
         self.assertEqual(result.status, "running")
         self.assertTrue(result.metrics["quality_warnings"])
+        row["fingers"]["left"] = [1, 1]
+        e.update(.15, rows)
         row["pose"][:3] = (np.asarray(row["pose"][:3])
                               + .08 * np.asarray(spec.parameters["outward_axis_world"])).tolist()
         row["linear_velocity"] = [0, 0, 0]
@@ -310,6 +313,8 @@ class HouseholdTests(unittest.TestCase):
         e = BenchEvaluator(spec, initial)
         for i in range(1, 20):
             self.assertEqual(e.update(i * 0.1, rows).status, "running")
+        rows["drawer"]["fingers"]["left"] = [1, 1]
+        e.update(1.95, rows)
         rows["drawer"]["pose"][1] += 0.08
         rows["drawer"]["fingers"]["left"] = [1, 1]
         self.assertEqual(e.update(2, rows).status, "running")

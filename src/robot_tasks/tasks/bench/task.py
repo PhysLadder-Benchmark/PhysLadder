@@ -60,7 +60,9 @@ class BenchTask:
         if config.task_id.startswith("L2-"):
             from .l2_protocol import PROTOCOL
 
-            backend.scene_report["household"]["test_protocol"] = dict(PROTOCOL)
+            backend.scene_report["household"]["test_protocol"] = {
+                **PROTOCOL, "scoring_version": self.spec.parameters.get(
+                    "scoring_protocol", PROTOCOL["scoring_version"])}
 
     def reset(self, backend, seed):
         from .evaluation import BenchEvaluator
