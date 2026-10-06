@@ -15,19 +15,30 @@ from pathlib import Path
 import numpy as np
 
 
-def check(task_id, poses, output, width=None, velocity_iterations=None, travel=0.020):
+def check(task_id, poses, output, width=None, velocity_iterations=None, travel=0.020, marker_pair=False, step_close=False, finish=False, physics_hz=None):
     from ..backends.isaacsim import IsaacSimBackend
     from ..registry import resolve_task
     from ..robots.adapters import R5Adapter
     from ..robots.control import width_to_joints
     from ..types import Action, ArmCommand, EvaluationState
 
-    if not np.isfinite(travel) or not 0 < travel <= 0.05:
-        raise ValueError("A local probe must travel between 0 and 50 mm")
+    if step_close and not marker_pair:
+        raise ValueError("Old step-close control requires the paired marker diagnostic")
+    if marker_pair and task_id != "L2-01":
+        raise ValueError("Paired marker diagnostic only supports L2-01")
+    if finish and task_id not in {"L2-06", "L2-07"}:
+        raise ValueError("Placement/release qualification supports only orange and drawer")
+    maximum = .085 if finish and task_id == "L2-07" else .05
+    if not np.isfinite(travel) or not 0 < travel <= maximum:
+        raise ValueError(f"Probe travel must be between 0 and {maximum} m")
     os.environ.setdefault("OMNI_KIT_ACCEPT_EULA", "YES")
     output.mkdir(parents=True, exist_ok=True)
     spec, config = resolve_task(task_id)
     config = spec.factory.prepare_config(config)
+    if physics_hz is not None:
+        if physics_hz not in (240, 480, 960):
+            raise ValueError("Diagnostic physics rate must be 240, 480 or 960 Hz")
+        config = replace(config, physics_dt_s=1.0 / physics_hz)
     if velocity_iterations is not None:
         config = replace(
             config,
@@ -62,8 +73,10 @@ def check(task_id, poses, output, width=None, velocity_iterations=None, travel=0
         "task": task_id,
         "passed": False,
         "gpt_called": False,
+        "diagnostic_step_close": step_close,
         "scope": "open-finger fixture, actual R5 grip and short motion; not full task or GPT success",
         "fixture": initial,
+        "finish_requested": finish,
         "checkpoints": [],
     }
 
@@ -115,8 +128,22 @@ def check(task_id, poses, output, width=None, velocity_iterations=None, travel=0
             raise RuntimeError(assessment.reason)
         return rows
 
-    def execute(action):
-        robot.apply(action)
+    def execute(action, diagnostic_joint_goal=None):
+        if diagnostic_joint_goal is None:
+            robot.apply(action)
+            if step_close and any(c.arm == "right" and c.kind == "gripper" and c.values[0] == .012 for c in action.commands):
+                robot._advance_drive_targets(10.)  # Diagnostic old reference jump.
+        else:
+            # Contact isolation only: a predeclared joint-space fixture lift
+            # bypasses planner clearance gates, never physical collision.
+            from ..planning.trajectory import JointPath
+            limits = [next(x for x in config.robot.operating_limits if x.joint == n)
+                      for n in config.robot.joint_names]
+            start = robot.state()["left"].joint_positions_rad
+            robot.paths = {"left": JointPath.from_waypoints([start, diagnostic_joint_goal], start, limits)}
+            robot.path_time_s = 0.
+            robot.cartesian_targets.clear()
+            robot.motion_arms = {"left"}
         completed = 0
         for tick in range(120):
             backend.step(config.control_dt_s)
@@ -157,10 +184,12 @@ def check(task_id, poses, output, width=None, velocity_iterations=None, travel=0
                 np.asarray(q), joint_indices=robot.indices[arm]
             )
             fixture_targets[arm] = q
+        robot.drive_targets = dict(fixture_targets)
         robot._send_targets(fixture_targets)
         for _ in range(12):
             backend.step(config.control_dt_s)
         before = capture("open")
+        initial_tcp = robot.state()["left"].tcp_pose_world_wxyz
         close = (
             width
             if width is not None
@@ -187,24 +216,52 @@ def check(task_id, poses, output, width=None, velocity_iterations=None, travel=0
                 )
             )
         capture("close_command_finished")
+        motion_start = {a: robot.state()[a].tcp_pose_world_wxyz for a in active}
         # Deliberately local, not a task-solving trajectory or goal-position helper.
         delta = (
             np.array([0.0, travel, 0.0])
             if task_id in {"L2-03", "L2-07"}
             else np.array([0.0, 0.0, travel])
         )
-        result["requested_displacement_m"] = delta.tolist()
-        for i in range(2):
+        result["requested_displacement_m"] = None if marker_pair else delta.tolist()
+        motion_steps = 2 if marker_pair else max(2, int(np.ceil(travel / .02)))
+        for i in range(motion_steps):
             commands = []
             for arm in active:
-                state = robot.state()[arm]
-                pose = list(state.tcp_pose_world_wxyz)
-                pose[:3] = (np.asarray(pose[:3]) + delta / 2).tolist()
+                pose = list(motion_start[arm])
+                pose[:3] = (np.asarray(pose[:3]) + delta * ((i + 1) / motion_steps)).tolist()
                 commands.append(
                     ArmCommand(arm, "cartesian_pose", tuple(pose), frame="world")
                 )
-            execute(Action(tuple(commands), config.control_dt_s))
+            goal = None
+            if marker_pair:
+                lifted = [s for s in fixture["samples"] if s["arm"] == "left"][1]["joints"]
+                start = np.array(initial["left"]["joints"])
+                goal = start + (np.array(lifted) - start) * ((i + 1) / 2)
+            execute(Action(tuple(commands), config.control_dt_s), diagnostic_joint_goal=goal)
             after = capture(f"move_{i + 1}")
+        if marker_pair:
+            if task_id != "L2-01":
+                raise ValueError("Paired cap check requires L2-01")
+            from ..robots.transforms import pose_transform, origin_transform, transform_pose
+            # The prop has been lifted physically by the fixture joint path.
+            result["paired_lift_mode"] = "diagnostic joint path; planning clearance bypassed, physical collision retained"
+            result["paired_lift_target_joints"] = list(lifted)
+            capture("paired_raised")
+            side = next(s for s in fixture["samples"] if s["arm"] == "right")
+            cap = pose_transform(task.scene.measure()["cap"]["pose"])
+            centre = (cap @ np.array([0., 0., .137, 1.]))[:3]
+            for offset in (.08, .02, 0.):
+                target = centre + np.array([offset, 0., 0.])
+                pose = transform_pose(origin_transform(target, side["rpy"]))
+                execute(Action((ArmCommand("right", "cartesian_pose", pose, frame="world"),
+                                ArmCommand("right", "gripper", (.07,))), config.control_dt_s))
+            capture("paired_open")
+            execute(Action((ArmCommand("right", "gripper", (.012,)),), config.control_dt_s))
+            pair = capture("paired_closed")
+            result["paired_contact"] = {n: pair[n]["fingers"] for n in ("body", "cap")}
+            result["paired_close_passed"] = bool(min(pair["body"]["fingers"]["left"]) > .05
+                                                    and min(pair["cap"]["fingers"]["right"]) > .05)
         name = {
             "L2-01": "body",
             "L2-03": "middle_book",
@@ -216,14 +273,49 @@ def check(task_id, poses, output, width=None, velocity_iterations=None, travel=0
         actual = np.asarray(after[name][key][:3]) - before[name][key][:3]
         result["measured_object_displacement_m"] = actual.tolist()
         result["passed"] = bool(np.linalg.norm(actual - delta) < 0.01)
+        if marker_pair:
+            result["passed"] = result.get("paired_close_passed", False)
+        if finish and result["passed"]:
+            result["scope"] = "Prepositioned open R5 grip, physical motion and final scoring qualification; no visual selection or GPT success"
+            if task_id == "L2-06":
+                if not assess().metrics["criteria"]["lifted_near_left_fingers"]:
+                    raise RuntimeError("No verified soft lift; refuse an empty transfer")
+                a = task.spec.design.articles[0]
+                offset = np.asarray(a.goal[:3]) - np.asarray(a.initial[:3])
+                offset[2] = 0.
+                for i in range(5):
+                    pose = list(robot.state()["left"].tcp_pose_world_wxyz)
+                    pose[:3] = (np.asarray(pose[:3]) + offset / 5).tolist()
+                    execute(Action((ArmCommand("left", "cartesian_pose", tuple(pose), frame="world"),), config.control_dt_s))
+                capture("transported")
+                pose = list(robot.state()["left"].tcp_pose_world_wxyz)
+                pose[2] = initial_tcp[2]
+                execute(Action((ArmCommand("left", "cartesian_pose", tuple(pose), frame="world"),), config.control_dt_s))
+            execute(Action((ArmCommand("left", "gripper", (.07,)),), config.control_dt_s))
+            capture("released")
+            # Production also stops at the first terminal assessment. An extra
+            # optional retreat after success must not invalidate a completed task.
+            if assess().status != "succeeded":
+                pose = list(robot.state()["left"].tcp_pose_world_wxyz)
+                pose[1 if task_id == "L2-07" else 2] += .03
+                execute(Action((ArmCommand("left", "cartesian_pose", tuple(pose), frame="world"),), config.control_dt_s))
+                for _ in range(12):
+                    backend.step(config.control_dt_s)
+                    assess()
+            capture("final")
+            result["passed"] = assess().status == "succeeded"
         if any(
             c["assessment_status"] in {"invalid", "failed"}
             for c in result["checkpoints"]
         ):
             result["passed"] = False
     except Exception as exc:  # noqa: BLE001 - diagnostics must retain simulator/planner failures
+        result["passed"] = False
         result["error"] = f"{type(exc).__name__}: {exc}"
     finally:
+        if hasattr(task, "evaluator"):
+            result["peak_object_speeds_m_s"] = getattr(task.evaluator, "peak_speeds", {})
+            result["peak_finger_force_n"] = getattr(task.evaluator, "peak_force", None)
         (output / "result.json").write_text(
             json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8"
         )
@@ -245,6 +337,10 @@ def main():
     p.add_argument("--poses", required=True, type=Path)
     p.add_argument("--output", required=True, type=Path)
     p.add_argument("--width", type=float)
+    p.add_argument("--marker-pair", action="store_true")
+    p.add_argument("--step-close", action="store_true", help="Diagnostic only: reproduce old direct right closure")
+    p.add_argument("--finish", action="store_true", help="Qualify orange transfer or full drawer pull/release from the explicit grip fixture, without GPT")
+    p.add_argument("--physics-hz", type=int, choices=[240, 480, 960], help="Explicit local step-size diagnostic override")
     p.add_argument("--velocity-iterations", type=int)
     p.add_argument(
         "--travel",
@@ -262,6 +358,10 @@ def main():
             args.width,
             args.velocity_iterations,
             args.travel,
+            args.marker_pair,
+            args.step_close,
+            args.finish,
+            args.physics_hz,
         )
         else 2
     )

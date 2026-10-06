@@ -36,14 +36,14 @@ physics_dt_s = 0.004166666666666667 # 240 Hz, checked in the complete metre-scal
 [task]
 # Guided RGB-D execution; common information boundaries are appended by BenchTask.
 prompt_protocol = "guided_rgbd_l2_v2"
-scoring_protocol = "native_l2_validity_v2"
+scoring_protocol = "soft_placement_motion_v3"
 id = "L2-06"
 name = "软橘子瓣轻夹搬运"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented_proxy"
 implementation = "household"
-simulation_limitations = "R5 soft-grip qualification pending: tested grasps slipped or produced FEM inversion; full transfer is not certified. Native GPU FEM orange, estimated material, 240 Hz physics, task contact/rest margins 3/1.5 mm. Deformation reference is a proxy, not fracture/juice simulation. Geometry-based support/release, no fabricated contact force."
+simulation_limitations = "R5 soft-grip qualification pending even with rate-limited closure: tested grasps slipped or produced FEM inversion; full transfer is not certified. Native GPU FEM orange, estimated material, 240 Hz physics, task contact/rest margins 3/1.5 mm. Deformation reference is a proxy, not fracture/juice simulation. Geometry-based support/release, no fabricated contact force."
 launch_command = "python tools/launch.py run L2-06 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-06 --gui"
 instruction = """
@@ -74,6 +74,8 @@ Carry smoothly with table clearance, lower onto the green patch, then open
 and withdraw without dragging or poking the soft object. Completion requires
 the whole segment within the 120 x 120 mm patch, released and resting on the
 table for about half a simulation second after a verified lift and transport.
+Small local elastic rebound is allowed; the whole segment must stay in place,
+without continued sliding, rolling, or large shape motion.
 Do not mistake a deformed part still touching the fingers for a released object.
 
 A 35% principal-strain reference, sustained for 0.25 simulation seconds, is
@@ -90,7 +92,9 @@ description = """
 道具：L20 原生橘子瓣软体，约 50×26×17 mm、质量约 8.855 g；绿色 120×120 mm 目标区。替换原 L2-06 的果冻弹性格点代理。
 布置：拓境实验室桌面高 0.78 m，左臂夹取较饱满的中部，右臂只观察；保留原生尺寸、GPU 体积 FEM、碰撞网格和材料参数。
 操作与完成：轻夹抬起，搬到目标区，整个橘子瓣落桌后松手并保持约 0.5 秒。支撑和释放根据实际软体表面与夹指几何校验，不捏造力读数。
+稳定性：整体中心速度低于 10 mm/s，去除平移后的网格点速度 95 分位低于 20 mm/s，稳定窗口内中心漂移不超过 2 mm；允许少量局部回弹，不以单个最快网格点否定放置。
 形变：用去除刚体运动后的单元主应变 95 分位数评估；超过 35% 持续 0.25 秒结束本回合，保留已完成阶段；FEM 数值反转单列为无效仿真，不视为橘子损伤或模型失败。这是工程形变代理，不代表真实破裂或损伤阈值。
 限制：不执行挤破流汁演示，因为该脚本会重建场景和切换碎块；正式任务始终由 GPT 控制 R5，物体运动由 FEM 接触产生。采用 GPU 物理和 240 Hz 步长；接触余量 3 mm、静止余量 1.5 mm 是完整场景适配，不改变原生质量和弹性材料。
 验收状态：保留试验入口，但 R5 软体稳定抓持尚未验收通过。已检查的开口／高度组合出现滑脱或 FEM 单元反转，不能据此认定任务物理可行性已确认，也不能把数值失稳算作 GPT 能力不足。
+复核：渐进限速闭合后，17 mm 开口与降低 2 mm 抓持高度的检查仍滑脱，15 mm 开口的 240 Hz 检查发生网格反转；960 Hz 对照未反转但仍未抬起，不作为更改正式步长的依据。放置评分修复不等于完整搬运已验收。
 """

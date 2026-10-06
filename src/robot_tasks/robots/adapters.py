@@ -43,6 +43,7 @@ class R5Adapter(RobotAdapter):
         self.indices = {}
         self.targets = {}
         self.initial_targets = {}
+        self.drive_targets = {}
         self.kinematics = None
         self.cartesian_targets = {}
         self.rejection = None
@@ -94,6 +95,7 @@ class R5Adapter(RobotAdapter):
         self.settling = SettlingWindow()
         self.tracking_time_s = 0.0
         self.paths.clear()
+        self.drive_targets.clear()
         self.grip_elapsed.clear()
         self.grip_durations.clear()
         self.grip_closing.clear()
@@ -109,6 +111,12 @@ class R5Adapter(RobotAdapter):
         ordered = profile.joint_names + profile.gripper.joint_names
         limits = {limit.joint: limit for limit in profile.operating_limits}
         width = sum(profile.gripper.width_limits_m) / 2
+        self.backend.scene_report["gripper_execution"] = {
+            "protocol": "rate_limited_drive_reference_v1",
+            "joint_reference_speed_m_s": {n: limits[n].velocity for n in profile.gripper.joint_names},
+            "timeout": "hold_last_applied_reference",
+            "scope": "Limits commanded reference speed; contact impulses can cause measured velocity transients.",
+        }
         for mount in profile.mounts:
             arm = self.instances[mount.name]
             actual = tuple(arm.dof_names)
@@ -120,6 +128,7 @@ class R5Adapter(RobotAdapter):
             self.indices[mount.name] = indices
             target = tuple(mount.home_positions_rad) + width_to_joints(profile, width)
             self.targets[mount.name] = self.initial_targets[mount.name] = target
+            self.drive_targets[mount.name] = target
             settings = self.backend.settings
             controller = arm.get_articulation_controller()
             stiffness, damping = np.empty(8), np.empty(8)
@@ -276,25 +285,30 @@ class R5Adapter(RobotAdapter):
             self.planner = None
 
     def _send_targets(self, planned):
-        changed = {
-            name: target
-            for name, target in planned.items()
-            if target != self.targets[name]
-        }
-        if changed:
-            import numpy as np
-            from isaacsim.core.utils.types import ArticulationAction
-
-            # PhysX retains drive targets. Re-sending unchanged targets needlessly
-            # wakes sleeping articulations, including the inactive/holding arm.
-            for name, target in changed.items():
-                self.instances[name].apply_action(
-                    ArticulationAction(
-                        joint_positions=np.array(target),
-                        joint_indices=self.indices[name],
-                    )
-                )
+        # Keep requested goals separate from the rate-limited drive reference.
         self.targets = planned
+        self._advance_drive_targets(0.0)
+
+    def _advance_drive_targets(self, dt_s):
+        if not self.instances:
+            return
+        import numpy as np
+        from isaacsim.core.utils.types import ArticulationAction
+
+        limits = {limit.joint: limit.velocity
+                  for limit in self.config.robot.operating_limits}
+        speeds = tuple(limits[name] for name in self.config.robot.gripper.joint_names)
+        for name, goal in self.targets.items():
+            previous = self.drive_targets[name]
+            fingers = tuple(
+                old + max(-speed * dt_s, min(speed * dt_s, desired - old))
+                for old, desired, speed in zip(previous[6:], goal[6:], speeds)
+            )
+            reference = goal[:6] + fingers
+            if reference != previous:
+                self.instances[name].apply_action(ArticulationAction(
+                    joint_positions=np.array(reference), joint_indices=self.indices[name]))
+                self.drive_targets[name] = reference
 
     def before_physics_step(self, dt_s: float) -> None:
         self.tracking_time_s += dt_s
@@ -344,6 +358,8 @@ class R5Adapter(RobotAdapter):
                 self.pending_grippers.clear()
                 self._send_targets(targets)
 
+        self._advance_drive_targets(dt_s)
+
     def on_action_timeout(self) -> None:
         """Cancel queued motion/closing; preserve the current bounded grip drive."""
         self.pending_grippers.clear()
@@ -357,7 +373,8 @@ class R5Adapter(RobotAdapter):
         limits = [limits_by_name[n] for n in self.config.robot.joint_names]
         self._send_targets(
             {
-                name: bounded_measured_joints(states[name].joint_positions_rad, limits) + target[6:]
+                name: bounded_measured_joints(states[name].joint_positions_rad, limits)
+                + self.drive_targets.get(name, target)[6:]
                 for name, target in self.targets.items()
             }
         )
@@ -452,6 +469,7 @@ class R5Adapter(RobotAdapter):
             )
             gripper_reached = (
                 finger_error < 0.0015 and name not in self.pending_grippers
+                and self.drive_targets.get(name, target)[6:] == target[6:]
             )
             fingers_still = all(abs(v) < 0.003 for v in state.finger_velocities_m_s) or window_fingers
             closing_obstructed = (
@@ -500,7 +518,12 @@ class R5Adapter(RobotAdapter):
                     and gripper_complete and state.gripper_width_m is not None
                     and state.gripper_width_m <= self.config.robot.gripper.width_limits_m[0] + .0015
                 ),
-                "grasp_evidence": "Not determined by controller; verify object following a short lift in images",
+                "grasp_evidence": (
+                    "Not determined by controller; verify contact and object response using images "
+                    "and a small task-appropriate movement along its allowed axis; do not lift a constrained part"
+                    if self.config.grasp_check_mode == "contact_inspection"
+                    else "Not determined by controller; verify object following a short lift in images"
+                ),
                 "gripper_pending": name in self.pending_grippers,
             }
             settled = settled and motion_reached and gripper_complete

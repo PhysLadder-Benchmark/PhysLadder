@@ -1,7 +1,7 @@
 # Native USD intrinsics; user-requested mounting overrides are applied in the session layer.
 schema_version = 1
 calibration_status = "provisional_uncalibrated"
-notes = "L20 laboratory v4; native 1280x720 optics. Overview optical centre: 1.32 m above floor, 0.25 m horizontally outside the front table edge. Preserve existing heading, look downward 45 degrees (user installation angle approximately 135 degrees). Wrist optical axes: 45 degrees downward from link6 +X toward -Z, retaining local image-right -Y. Mounts/housings are overridden together in the session layer; ideal depth, no hardware calibration."
+notes = "Raised overview for task visibility: floor-equivalent height 1.58 m, aimed at the shared manipulation workspace. Wrist optics and intrinsics unchanged; provisional simulation extrinsics, not hardware calibration."
 
 [cameras.overview]
 model = "Delivered Orbbec Gemini Pro overview shell with estimated pinhole optics"
@@ -9,9 +9,9 @@ parent = "world"
 resolution = [1280, 720]
 intrinsics = [914.0147354173844, 914.0147261735299, 640.0, 360.0]
 distortion = [0.0, 0.0, 0.0, 0.0, 0.0]
-optical_pose_wxyz = [0.21354960845762927, 0.48765041712220114, 1.32, 0.9229181243721419, 0.38228520407488015, 0.01745371456606066, 0.042136994419172485]
+optical_pose_wxyz = [0.21354960845762927, 0.48765041712220114, 1.58, 0.9247952521438744, 0.3802577648460944, 0.004776721440838124, 0.01161709166172814]
 intrinsics_source = "USD focalLength / horizontalAperture / verticalAperture, centred pinhole; not hardware calibration"
-pose_source = "User setup: floor height 1.32 m; horizontal front-table clearance 0.25 m; retain original azimuth 95.23 degrees, downward elevation 45 degrees. Installation interpretation of 135 degrees; not a world yaw of 135 degrees."
+pose_source = "Simulation overview framing: eye [0.21354960845762927, 0.48765041712220114, 1.58]; look-at [0.19565, 1.2, 0.86] in this scene world frame. Horizontal front-edge clearance 0.25 m. Not hardware calibrated."
 asset = "../../assets/tuojing/source/tuojing_lab_20261005_v4/tuojing_lab.usda"
 asset_pose_wxyz = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
 asset_pose_source = "Delivered camera and tripod head moved together by session-layer overrides; source USD unchanged"

@@ -410,8 +410,13 @@ class NativeL2Scene:
             contacts = np.asarray(
                 self.load_view.get_contact_force_matrix(dt=self.config.physics_dt_s)
             )
+            net_contacts = np.asarray(
+                self.load_view.get_net_contact_forces(dt=self.config.physics_dt_s)
+            )
             if (
-                contacts.shape != (len(self.load_names), 2, 3)
+                net_contacts.shape != (len(self.load_names), 3)
+                or not np.isfinite(net_contacts).all()
+                or contacts.shape != (len(self.load_names), 2, 3)
                 or not np.isfinite(contacts).all()
             ):
                 raise InvalidSimulationState("Invalid bulk pearl contact measurement")
@@ -426,6 +431,7 @@ class NativeL2Scene:
                     "fixture_force_n": 0.0,
                     "bench_force_n": float(np.linalg.norm(contacts[i, 0])),
                     "pair_forces": {"bowl": float(np.linalg.norm(contacts[i, 1]))},
+                    "net_contact_force_world_n": net_contacts[i].tolist(),
                     "corners": (self.bounds[name] @ t[:3, :3].T + xyz).tolist(),
                 }
         self.cached_time, self.cached_rows = now, rows

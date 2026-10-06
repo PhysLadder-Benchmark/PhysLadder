@@ -16,6 +16,7 @@ from robot_tasks.tasks.bench.native_l2 import composite_inertia
 from robot_tasks.tasks.bench.orange_evaluation import (
     OrangeEvaluator,
     deformation_metrics,
+    motion_metrics,
 )
 from robot_tasks.tasks.bench.spec import build_spec
 from robot_tasks.tasks.l1.specs import box
@@ -35,6 +36,9 @@ def soft_row(spec, *, at_goal=False, lifted=False, strain=0.0, touching=False):
             "collision_bounds_max": [p[0] + 0.025, p[1] + 0.013, z + 0.017],
             "finger_distances_m": [0.001, 0.001, 0.10, 0.10] if touching else [0.1] * 4,
             "speed_m_s": 0.0,
+            "centroid_speed_m_s": 0.0,
+            "shape_speed_p95_m_s": 0.0,
+            "centroid": [p[0], p[1], z + 0.0085],
             "strain_p95": strain,
             "strain_max": strain,
             "minimum_volume_ratio": 1.0,
@@ -43,6 +47,135 @@ def soft_row(spec, *, at_goal=False, lifted=False, strain=0.0, touching=False):
 
 
 class NativeL2ScoringTests(unittest.TestCase):
+    def test_soft_local_jitter_can_settle_but_bulk_motion_cannot(self):
+        spec = build_spec("L2-06")
+        previous = np.zeros((100, 3))
+        for kind in ("local", "translation", "shape"):
+            with self.subTest(kind=kind):
+                current = previous.copy()
+                if kind == "local":
+                    current[0, 0] = .005
+                elif kind == "translation":
+                    current[:, 0] = .005
+                else:
+                    current[:50, 0], current[50:, 0] = .005, -.005
+                metrics = motion_metrics(current, previous, .1)
+                e = OrangeEvaluator(spec)
+                e.update(.1, soft_row(spec, lifted=True, touching=True))
+                rows = soft_row(spec, at_goal=True)
+                rows["orange"].update(metrics)
+                e.update(.2, rows)
+                result = e.update(.8, rows)
+                self.assertEqual(result.status, "succeeded" if kind == "local" else "running")
+                self.assertGreater(result.metrics["criteria"]["peak_vertex_speed_m_s"], .02)
+
+    def test_soft_slow_creep_cannot_accumulate_stable_duration(self):
+        spec = build_spec("L2-06")
+        e = OrangeEvaluator(spec)
+        e.update(.1, soft_row(spec, lifted=True, touching=True))
+        for i in range(1, 11):
+            rows = soft_row(spec, at_goal=True)
+            rows["orange"]["centroid"][0] += .0008 * i
+            rows["orange"]["centroid_speed_m_s"] = .008
+            self.assertEqual(e.update(.1 + i * .1, rows).status, "running")
+
+    def test_soft_support_uses_collision_surface_and_rejects_nonfinite_motion(self):
+        spec = build_spec("L2-06")
+        for key in ("centroid_speed_m_s", "shape_speed_p95_m_s"):
+            rows = soft_row(spec)
+            rows["orange"][key] = float("nan")
+            with self.assertRaises(InvalidSimulationState):
+                OrangeEvaluator(spec).update(.1, rows)
+        e = OrangeEvaluator(spec)
+        e.update(.1, soft_row(spec, lifted=True, touching=True))
+        rows = soft_row(spec, at_goal=True)
+        rows["orange"]["collision_bounds_min"][2] += .01
+        self.assertFalse(e.update(.2, rows).metrics["criteria"]["table_supported_geometry"])
+
+    def test_drawer_release_near_threshold_can_finish_after_passive_travel(self):
+        spec = build_spec("L2-07")
+        rows = measurement(spec)
+        e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
+        row = rows["drawer"]
+        row["fingers"]["left"] = [1, 1]
+        e.update(.1, rows)
+        row["pose"][1] += .074
+        e.update(.2, rows)
+        row["fingers"]["left"] = [0, 0]
+        row["pose"][1] += .006
+        e.update(.3, rows)
+        self.assertEqual(e.update(.9, rows).status, "succeeded")
+
+    def test_drawer_touch_or_small_oscillations_do_not_fake_a_grasped_pull(self):
+        spec = build_spec("L2-07")
+        for oscillate in (False, True):
+            rows = measurement(spec)
+            row = rows["drawer"]
+            row["pose"][1] += .08
+            start = row["pose"][1]
+            e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
+            row["fingers"]["left"] = [1, 1]
+            for i in range(1, 15):
+                row["pose"][1] = start + (.001 * (i % 2) if oscillate else 0)
+                e.update(i * .1, rows)
+            row["fingers"]["left"] = [0, 0]
+            e.update(1.5, rows)
+            self.assertEqual(e.update(2.2, rows).status, "running")
+
+    def test_bowl_retains_supported_heap_but_not_airborne_or_spilled_pearl(self):
+        spec = build_spec("L2-04")
+        initial = {a.name: a.initial for a in spec.design.articles}
+        rows = measurement(spec)
+        for a in spec.design.articles:
+            rows[a.name]["pose"] = list(a.goal)
+        row = rows["load_602"]
+        bowl = np.array(rows["bowl"]["pose"][:3])
+        row["pose"][:3] = (bowl + [.006179, .014521, .054260]).tolist()
+        weight = spec.parameters["ball_mass_kg"] * 9.81
+        row["net_contact_force_world_n"] = [0, 0, weight]
+        e = BenchEvaluator(spec, initial)
+        e.flags.add("loaded_bowl_lifted")
+        self.assertEqual(e.update(.1, rows).status, "running")
+        result = e.update(.7, rows)
+        self.assertEqual(result.status, "succeeded")
+        self.assertEqual(result.metrics["criteria"]["contained_balls"], 707)
+        self.assertEqual(result.metrics["criteria"]["retained_balls"], 708)
+        self.assertEqual(result.metrics["scoring_protocol"], "bowl_retained_load_v3")
+        row["net_contact_force_world_n"] = [0, 0, 0]
+        self.assertEqual(e.update(.8, rows).status, "running")
+        row["net_contact_force_world_n"] = [0, 0, weight]
+        row["linear_velocity"] = [0, 0, .2]
+        self.assertEqual(e.update(.9, rows).status, "running")
+        row["linear_velocity"] = [0, 0, 0]
+        # A sphere well above the pile cannot pass just because it is slow.
+        row["pose"][2] = bowl[2] + .09
+        self.assertEqual(e.update(1., rows).status, "running")
+        row["pose"][:3] = (bowl + [.09, 0, .01]).tolist()
+        row["bench_force_n"] = weight
+        e.update(1.1, rows)
+        self.assertEqual(e.update(1.4, rows).status, "failed")
+        # Returning a spilled pearl does not erase the recorded violation.
+        row["pose"] = list(next(a for a in spec.design.articles if a.name == "load_602").goal)
+        row["bench_force_n"] = 0
+        self.assertEqual(e.update(2., rows).status, "failed")
+
+    def test_bowl_internal_rolling_does_not_block_released_transport(self):
+        spec = build_spec("L2-04")
+        rows = measurement(spec)
+        for article in spec.design.articles:
+            rows[article.name]["pose"] = list(article.goal)
+        rows["load_0"]["linear_velocity"] = [.04, 0., 0.]
+        e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
+        e.flags.add("loaded_bowl_lifted")
+        e.update(.1, rows)
+        result = e.update(.7, rows)
+        self.assertEqual(result.status, "succeeded")
+        self.assertEqual(result.metrics["criteria"]["unsettled_indices"], [0])
+        # Low speed plus a NaN support measurement must never certify retention.
+        rows["load_0"]["net_contact_force_world_n"] = [0., 0., float("nan")]
+        with self.assertRaises(InvalidSimulationState):
+            e.update(.8, rows)
+
     def test_initial_resting_objects_do_not_count_as_completed_placement_stages(self):
         spec = build_spec("L2-01")
         evaluator = BenchEvaluator(
