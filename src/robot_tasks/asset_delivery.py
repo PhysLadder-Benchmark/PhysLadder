@@ -30,6 +30,6 @@ def verified_prop(name):
     directory, package = verified_package(entry["package"])
     if entry["path"] not in package["files"]:
         raise ValueError(f"Prop is not in the locked delivery: {name}")
-    return directory / entry["path"], {"delivery": "2026-10-05", "prop": name,
+    return directory / entry["path"], {"delivery": package.get("delivery", "2026-10-05"), "prop": name,
                                        "package": entry["package"], "path": entry["path"],
                                        "sha256": package["files"][entry["path"]]["sha256"]}

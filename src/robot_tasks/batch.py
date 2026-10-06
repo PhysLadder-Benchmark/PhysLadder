@@ -287,6 +287,9 @@ def collect_result(directory, process, dry_run, cameras):
         outcome = "interrupted"
     elif process.get("timed_out"):
         outcome = "timeout"
+    elif (result.get("status") == "invalid" and process.get("returncode") in (0, 2)
+          and process.get("cleanup_complete", True)):
+        outcome = "invalid_episode"
     elif not process.get("cleanup_complete", True) or process.get("returncode") != 0:
         outcome = "infrastructure_error"
     elif dry_run and result.get("status") == "dry_run_complete":
@@ -344,7 +347,7 @@ def summarize(root, manifest, state):
             row.update(outcome="skipped", termination_reason=task["skip_reason"])
         rows.append(row)
     counts = {key: sum(r["outcome"] == key for r in rows)
-              for key in ("succeeded", "failed", "infrastructure_error", "timeout", "interrupted", "dry_run", "skipped", "pending")}
+              for key in ("succeeded", "failed", "invalid_episode", "infrastructure_error", "timeout", "interrupted", "dry_run", "skipped", "pending")}
     counts["video_incomplete"] = sum(r["outcome"] not in {"pending", "skipped", "dry_run"}
                                      and r.get("video_complete") is not True for r in rows)
     write_json(root / "summary.json", {"counts": counts, "results": rows})

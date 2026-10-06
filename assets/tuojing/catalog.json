@@ -125,6 +125,42 @@
       "package": "orange_soft",
       "path": "rupture_scene.usda",
       "role": "vendor_demo"
+    },
+    {
+      "id": "pullable_marker",
+      "package": "tabletop_interactions",
+      "path": "assets/pullable_marker/asset.usda",
+      "role": "prop"
+    },
+    {
+      "id": "open_bowl",
+      "package": "tabletop_interactions",
+      "path": "assets/open_bowl/open_bowl.usda",
+      "role": "prop"
+    },
+    {
+      "id": "closed_book",
+      "package": "book",
+      "path": "assets/closed_book/closed_book.usda",
+      "role": "prop"
+    },
+    {
+      "id": "pearl_4mm",
+      "package": "tabletop_interactions",
+      "path": "assets/pearl_4mm/pearl_4mm.usda",
+      "role": "prop"
+    },
+    {
+      "id": "pearl_6mm",
+      "package": "tabletop_interactions",
+      "path": "assets/pearl_6mm/pearl_6mm.usda",
+      "role": "prop"
+    },
+    {
+      "id": "pearl_8mm",
+      "package": "tabletop_interactions",
+      "path": "assets/pearl_8mm/pearl_8mm.usda",
+      "role": "prop"
     }
   ]
 }

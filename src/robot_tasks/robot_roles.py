@@ -31,6 +31,6 @@ class FixedArmMonitor:
             self.max_drift = max(self.max_drift, max(
                 (abs(q - q0) for q, q0 in zip(state[arm].joint_positions_rad, original)), default=0.0))
         metrics = {**assessment.metrics, "fixed_arm_max_drift_rad": self.max_drift}
-        if self.max_drift > self.tolerance:
+        if self.max_drift > self.tolerance and assessment.status != "invalid":
             return Assessment("failed", "Fixed arm moved beyond the configured tolerance", metrics)
         return replace(assessment, metrics=metrics)

@@ -1,20 +1,20 @@
-# Run from the repository root in the Isaac Sim environment; authentication follows the shared model config.
+# Run from the repository root in the Isaac Sim environment; uses the selected model provider.
 # launch_command / launch_command_conda below are documentation, not auto-executed shell code.
 schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_bimanual_sim.toml"
+profile = "../robots/r5_tuojing_lab.toml"
 active_arms = ["left", "right"]
+observation_arms = []
 
 [simulation]
-environment = "lab_room_v1"
-robot_appearance = "r5_black_silver_v1"
-camera_profile = "../cameras/r5_orbbec_provisional.toml"
-asset_directory = "../../build/r5"
+environment = "tuojing_lab_v4"
+camera_profile = "../cameras/r5_tuojing_lab.toml"
+asset_directory = "../../build/tuojing_lab"
 headless = true
-width = 640
-height = 480
+width = 1280
+height = 720
 fps = 12
 arm_stiffness = 1500.0
 arm_damping = 80.0
@@ -23,66 +23,67 @@ finger_damping = 40.0
 self_collision = false
 solver_position_iterations = 32
 solver_velocity_iterations = 0
-camera_position = [1.25, 0.0, 0.54]
-camera_target = [0.71, 0.0, 0.0]
+camera_position = [0.21354960845762927, 0.48765041712220114, 1.32]
+camera_target = [0.1643434123515941, 1.0254038459952994, 0.78]
 
 [policy]
 model_config = "../models/gpt.toml"
 
+[runtime]
+physics_dt_s = 0.004166666666666667 # 240 Hz; native CCD retained for rigid contents.
+
 [task]
+# Guided RGB-D execution; common information boundaries are appended by BenchTask.
+prompt_protocol = "guided_rgbd_l2_v2"
+scoring_protocol = "native_l2_validity_v2"
 id = "L2-04"
-name = "满载低摩擦小球的碗搬运"
+name = "满载小珍珠的碗搬运"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
 implementation = "household"
-simulation_limitations = "Rigid low-friction spheres in a rigid bowl; no liquid or material damage. Ball contact friction is 0.03; bowl/handle grip friction remains unchanged."
+simulation_limitations = "Native bowl and 8 mm pearls; explicit blue R5 grasp tabs add 16 g. Pearl outer-sphere collision and friction 0.03 are declared transport overrides; native visual bore remains. No fluids."
 launch_command = "python tools/launch.py run L2-04 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-04 --gui"
 instruction = """
-Both R5 arms may manipulate. Use the overview and both wrist cameras; neither
-arm is observation-only. The blue bowl starts on the table already densely
-loaded with separate red balls. All balls are dynamic spheres with low contact
-friction: they can roll and slide against each other and the bowl. There is NO
-feeder, pouring step or subsequent loading trigger.
+Use BOTH R5 arms to transport the preloaded cream-coloured bowl to the green
+patch. The small white contents are separate 8 mm pearls, already in the bowl;
+there is no feeder or extra loading phase. The bowl is 140 mm across and 54 mm
+high. The pearls can roll and slide, with low contact friction in this task.
 
-Move this loaded bowl from its current location onto the green tabletop patch,
-keeping every ball inside. Identify the two external handles and leave the
-opening and contents unobstructed. Use the left hand on the +Y-side handle and
-the right hand on the -Y-side handle. Choose reachable grasps on the handles,
-close each hand deliberately, then make a short coordinated lift to verify that
-the bowl follows without appreciable tilt or handle slip. Both hands must hold
-the bowl during a lift of at least 25 mm clear of its initial height.
+The native bowl has thin walls that cannot be pinched by the configured R5
+minimum opening. TWO BLUE grasp tabs are explicitly attached to its exterior
+for this test. Use the LEFT hand on the -X-side tab and RIGHT on the +X-side tab.
+Each tab is 40 x 45 x 20 mm; pinch across its 45 mm extent along world Y.
+Do not grip across the entire bowl diameter or insert fingers into the contents.
+Inspect both grasps and keep the two wrists/cameras clear of each other.
 
-Carry the bowl while keeping it approximately level. Use short translations
-with similar vertical height for the two handles. When updating one arm at a
-time, keep the height/position difference small instead of pulling one handle
-far ahead. Avoid abrupt acceleration, stop-start jerks and swinging rotations.
-Watch the balls rolling toward the rim; pause to let them settle and correct
-bowl tilt before continuing. Do not pick up individual balls or pour them out.
-If a ball spills, do not hide it by returning it to the bowl or claim a spill-free
-success. If the bowl remains controllable, complete the transport and placement.
-Transport completion and spilled-ball count are recorded separately; any spill
-violates the full task requirement even if the bowl reaches its destination.
+Establish both grips before lifting. Close in separate controlled steps and
+verify the actual tabs lie between opposing pads. Raise the two sides in small,
+matched increments and confirm the bowl follows without sliding. Keep the rim
+approximately level; moving only one side substantially may spill the contents.
 
-Lower the bowl onto the green patch with its centre within 35 mm of the patch
-centre. Confirm support from the table before opening either gripper. Release
-both handles, observe the upright bowl and all balls contained below the rim,
-and allow the bowl to remain nearly still for one simulation second. Completion
-requires actual lifted transport and released placement at the NEW location;
-simply holding it at the start or placing an empty bowl does not complete it.
-This task simulates dry solid balls, not water or a fluid dynamics model.
-If a grasp is lost, stop advancing the old plan and inspect the actual object
-state. Reobserve and update the plan without expecting an automatic scene reset. Use only
-available control commands and feedback; do not invent force measurements.
-Request stop only after observing the required final state and stability.
+Carry toward the green patch with short, smooth movements, checking the bowl
+and pearls after each. Correct tilt before continuing. Maintain enough clearance
+above the table, and avoid abrupt starts, stops, or one-hand release in the air.
+Both arms participate in manipulation; neither is assigned as an observation-only
+arm. Use current images and measured robot feedback rather than assuming that
+two commanded TCP positions imply a supported, level bowl.
+
+Lower the bowl onto the green patch, then open and withdraw both hands without
+knocking the rim. The bowl centre should be within 35 mm of the patch centre.
+Completion requires an actual lifted transport, released upright tabletop
+support and all pearls contained below the rim, nearly stationary for about
+half a simulation second. A confirmed spill lasting 0.25 simulation seconds terminates the episode;
+it is not recovered by continuing transport or returning a pearl.
+Do not request stop while still holding the bowl or before it reaches the patch.
+No automatic reset, hidden attachment, or scripted transport is provided.
 """
 
-# Chinese setup/props description; keep this the final task attribute.
+# 中文布置和道具说明。
 description = """
-道具：蓝色双把手碗、独立动态红色小球（直径 20 mm，每球 4 g）、绿色目标区域和桌面。
-布置：启动时小球已密集装在碗内，低摩擦接触系数 0.03，可相互滚动、滑动；没有加料器。碗从桌面起点搬至相距 240 mm 的目标区。
-操作：双臂分别抓持两个外侧把手，抬起至少 25 mm，尽量保持水平并小步协调搬运；观察小球滚动、滑落趋势和碗倾斜，再放下并松开双手。
-完成：碗中心距目标中心不超过 35 mm，所有小球仍在碗内，碗已释放、落桌、正立且稳定 1 秒。洒出后允许继续完成搬运，但搬运达成与洒出约束分别记录，有洒出不能算完整成功，也不复位抹掉记录。
-边界：低摩擦仅设置在小球接触材料上，碗外部和把手仍保留正常夹持摩擦；没有液体、软材料或人为动画驱动。
+道具：L20 开口碗（口径 140 mm、高 54 mm、原质量 120 g）与原生 8 mm 带孔小珍珠；实际粒数随任务布局自动记录。碗外加两块蓝色 R5 抓持片，共增加 16 g，明确属于抓持适配。
+布置：拓境实验室桌上预先装填多层珍珠，碗口保留少量余量；目标绿区距离初始中心 120 mm。双臂分别夹左右外侧抓持片，不能夹薄碗壁或跨整个碗口。
+操作与完成：双臂平稳抬起、搬运、落桌后释放，目标中心误差不超过 35 mm；所有珍珠保留在碗内，释放后约 0.5 秒。洒出证据持续 0.25 秒即结束本回合，并保留抬碗等阶段进展。
+物理：保留碗原生碰撞体及珍珠外观、尺寸、质量；珍珠仅将珠孔碰撞简化为外球面，适用于搬运，不适用于穿珠任务；珍珠摩擦明确覆盖为 0.03，满足低摩擦负载任务。采用 240 Hz 物理步长；评分按原生分段碗腔，不能套旧圆锥碗。无流体模型。
 """

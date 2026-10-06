@@ -1,5 +1,6 @@
 """Thread ownership, immutable waiting state and bounded request cancellation."""
 
+import _socket
 import socket
 import threading
 from types import SimpleNamespace
@@ -122,6 +123,10 @@ class PolicyWorkerTests(unittest.TestCase):
         client.reset_cancellation()
         self.assertFalse(client._cancel.is_set())
 
+    @unittest.skipUnless(
+        hasattr(_socket, "socketpair"),
+        "Native socketpair required; TCP fallback is forbidden in offline unit tests",
+    )
     def test_http_cancellation_releases_a_real_blocked_reader(self):
         client = ResponsesClient(GPTSettings(base_url="https://fixture.invalid/v1", model="fixture"))
         left, right = socket.socketpair()

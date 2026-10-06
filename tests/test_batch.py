@@ -174,6 +174,16 @@ class BatchTests(unittest.TestCase):
             self.assertIsNone(batch.inspect_video(video)["valid"])
         self.assertFalse(batch.inspect_video(self.root / "absent.mp4")["valid"])
 
+    def test_invalid_simulation_is_separate_from_model_failure(self):
+        directory, _ = self.evidence('invalid', {'status': 'invalid', 'success': None,
+            'task_evaluated': False, 'termination_reason': 'simulation_invalid'})
+        for returncode in (0, 2):
+            row = batch.collect_result(directory, {'returncode': returncode}, False, [])
+            self.assertEqual(row['outcome'], 'invalid_episode')
+            self.assertIsNone(row['success'])
+        row = batch.collect_result(directory, {'returncode': 137}, False, [])
+        self.assertEqual(row['outcome'], 'infrastructure_error')
+
     def test_provider_quota_error_stops_before_next_job(self):
         root = self.dry_batch(tasks=("L1-01", "L1-03"))
         manifest = json.loads((root / "batch.json").read_text(encoding="utf-8"))

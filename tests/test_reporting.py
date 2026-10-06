@@ -141,6 +141,18 @@ class ReportingTests(unittest.TestCase):
         self.assertIn("Speed reference exceeded", text)
         self.assertIn("不代表已测得材料损坏", text)
 
+    def test_invalid_l2_report_keeps_stage_progress_without_scoring_model_failure(self):
+        self.events([])
+        assessment = {'status': 'invalid', 'reason': 'Inverted FEM elements', 'metrics': {
+            'scoring_protocol': 'native_l2_validity_v2', 'stages': {'lifted': True},
+            'invalid_reason': 'simulation_invalid'}}
+        finish_run(self.run, self.result(status='invalid', task_evaluated=False, success=None,
+                                        evaluation_validity='invalid', assessment=assessment))
+        text = (self.run / 'report.md').read_text(encoding='utf-8')
+        self.assertIn('不计入模型成功／失败分母', text)
+        self.assertIn('| lifted | 是 |', text)
+        self.assertIn('Inverted FEM elements', text)
+
 
 if __name__ == "__main__":
     unittest.main()

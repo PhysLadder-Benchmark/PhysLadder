@@ -5,7 +5,7 @@ import math
 import numpy as np
 
 from ...robots.transforms import pose_transform
-from ...types import Assessment
+from ...types import Assessment, InvalidSimulationState
 
 SCORING_PROTOCOL = "recoverable_progress_v1"
 
@@ -65,7 +65,7 @@ class BenchEvaluator:
         if not math.isfinite(now) or (
             self.last_time is not None and now <= self.last_time
         ):
-            raise ValueError("Household scoring requires finite increasing time")
+            raise InvalidSimulationState("Household scoring requires finite increasing time")
         self.last_time = now
         for name, row in rows.items():
             values = [
@@ -78,7 +78,7 @@ class BenchEvaluator:
                 *row["pair_forces"].values(),
             ]
             if not np.isfinite(values).all():
-                raise ValueError("Nonfinite household measurement")
+                raise InvalidSimulationState("Nonfinite household measurement")
             self.peak_force = max(
                 self.peak_force, *[f for fs in row["fingers"].values() for f in fs]
             )
@@ -114,11 +114,12 @@ class BenchEvaluator:
         duration = 0 if self.stable_since is None else now - self.stable_since
         metrics = {
             "task_version": self.spec.design.version,
-            "scoring_protocol": SCORING_PROTOCOL,
+            "scoring_protocol": "native_l2_validity_v2" if self.spec.design.task_id.startswith("L2-") else SCORING_PROTOCOL,
             "mechanism": self.spec.mechanism,
             "limitations": self.spec.limitations,
             "criteria": details,
-            "objects": rows,
+            "stages": details.get("stages", {}),
+            "objects": ({"bowl": rows["bowl"]} if self.spec.mechanism == "native_loaded_bowl_transport" else rows),
             "grasp_lift_confirmed": sorted(self.grasped),
             "process_flags": sorted(self.flags),
             "peak_finger_force_n": self.peak_force,
@@ -129,6 +130,18 @@ class BenchEvaluator:
             "quality_warnings": details.get("quality_warnings", []),
             "stage": "stabilize" if complete else "manipulate",
         }
+        if self.spec.mechanism == "native_loaded_bowl_transport":
+            # Hundreds of small pearls share geometry. Record their measured
+            # poses compactly instead of repeating corners/zero finger forces
+            # in every frame (which previously inflated memory and JSON logs).
+            metrics["load_poses"] = [np.round(rows[f"load_{i}"]["pose"], 6).tolist()
+                                     for i in range(self.spec.parameters["count"])]
+        if self.spec.design.task_id == "L2-07" and failure.startswith("Drawer"):
+            metrics["invalid_reason"] = "simulation_invalid"
+            return Assessment("invalid", failure + "; this fixture has no modeled breakage", metrics)
+        if self.spec.design.task_id.startswith("L2-") and (failure or violations):
+            metrics["failure_category"] = "process_constraint" if violations else "task_failure"
+            return Assessment("failed", failure or "; ".join(violations), metrics)
         if failure:
             return Assessment("failed", failure, metrics)
         stability = self.spec.parameters.get("hold_s", 1.0)

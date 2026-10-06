@@ -256,6 +256,15 @@ class CuroboWorker:
                     abs(q - r) for q, r in zip(state["joint_positions_rad"], reference)
                 ),
             }
+        # Check and execute the same time law. A common finish time avoids one
+        # hand arriving early during a paired move; it is NOT a rigid attachment
+        # or a guarantee of relative TCP pose along independently planned paths.
+        duration = max(JointPath(**p).duration_s for p in paths.values())
+        for arm, data in paths.items():
+            path = JointPath(**data).stretched(duration)
+            paths[arm] = {"positions": path.positions, "times_s": path.times_s}
+            diagnostics[arm]["duration_s"] = path.duration_s
+            diagnostics[arm]["timing_protocol"] = "shared_finish_preserved_time_law_v1"
             self.check_payload(arm, path, request, diagnostics[arm])
         if len(paths) > 1:
             self.check_bimanual(paths, states)

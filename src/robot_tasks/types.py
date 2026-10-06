@@ -12,6 +12,10 @@ class RetryablePolicyError(RuntimeError):
     """No action was produced; the runner may retry the unchanged observation."""
 
 
+class InvalidSimulationState(RuntimeError):
+    """A numerical/readback failure invalidates measurement, not model ability."""
+
+
 @dataclass(frozen=True)
 class DepthFrame:
     """RGB-aligned optical-axis depth, metres, packed little-endian float32.
@@ -120,7 +124,7 @@ class EvaluationState:
 
 @dataclass(frozen=True)
 class Assessment:
-    status: Literal["not_evaluated", "running", "succeeded", "failed"]
+    status: Literal["not_evaluated", "running", "succeeded", "failed", "invalid"]
     reason: str
     metrics: dict = field(default_factory=dict)
     retryable: bool = False  # Legacy metadata; the runner never retries terminal task failures.

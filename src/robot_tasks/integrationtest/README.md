@@ -50,10 +50,17 @@ python -m robot_tasks.integrationtest.scene_smoke --all --no-preparation
 `prop_physics.py` 会明确设置诊断初态或施加测试驱动，不能作为机器人任务成功视频或 GPT 成功率。
 结果位于 `runs/`，与正式测评分别保存。
 
-修改后的 L2 布置可运行 `python -m robot_tasks.integrationtest.scene_smoke L2-03 --prop-probe`，将任务 ID 分别替换为 L2-04、L2-05、L2-07。
-`l2_prop_probe.py` 检查固定夹层抽取、预装小球碗的缓慢搬运、卡扣解锁与盒盖后限位停靠、带顶板抽屉的开启支撑；施加的是诊断夹具驱动，不是模型操作。
-`python -m robot_tasks.integrationtest.l2_clearance` 在规划器环境检查三个单臂任务的采样抓取／操作姿态，默认写入 `runs/l2_layout_clearance.json`，可用 `--output` 改变位置。
-范围包含诊断 IK、机械臂各连杆及末端／相机／支架包围盒与桌面、夹具的采样间隙；不代表连续路径、自碰撞、双臂互碰或抓持稳定性认证。
+L2 原生资产诊断：`python -m robot_tasks.integrationtest.scene_smoke L2-03 --no-preparation --prop-probe`。ID 可换为 L2-01、L2-04、L2-06、L2-07。`native_l2_probe.py` 检查拔帽、抽书、满载碗搬运和原生滑轨；`orange_probe.py` 检查软体接触、压缩及释放。施加的是诊断夹具驱动，不是 GPT 或机器人任务成功。
+
+`python -m robot_tasks.integrationtest.l2_clearance` 在规划器环境检查五个任务的采样抓取／操作姿态，默认输出 `reports/l2_asset_validation/clearance.json`。范围包括关节限位、机械臂／相机／支架对桌面和固定道具的包围盒间隙；不证明连续路径、全身自碰撞或真实抓持稳定性。
+
+局部 R5 接触与执行检查（Isaac Python，不调用模型）：
+
+```bash
+python -m robot_tasks.integrationtest.l2_execution_probe L2-07 --poses reports/l2_asset_validation/clearance.json --output reports/l2_protocol_validation/L2-07-motion
+```
+
+它使用上一项的显式采样位姿布置张开的夹指，再通过生产控制器闭合、沿目标方向移动 20 mm，持续检查物理状态并保存三视角图片。ID 可换成五个 L2 任务。`--width` 检查不同夹爪开口，`--travel` 调整局部位移（不超过 50 mm），`--velocity-iterations` 隔离求解器参数实验。这些参数只影响工程检查。它不经过视觉选抓点，不是脚本任务参照，不构成完整机器人任务或 GPT 成功证据。正式任务的初态、指令和评分不被该检查修改。
 
 `L3-03` 的加高方瓶还提供独立空间诊断。在包含 NumPy、SciPy、trimesh 的规划器环境运行：
 

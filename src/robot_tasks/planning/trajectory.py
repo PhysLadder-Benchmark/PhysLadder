@@ -1,6 +1,7 @@
 """Validate and retime planned joint paths before applying any drive target."""
 
 from dataclasses import dataclass
+
 import numpy as np
 
 from ..robots.control import bounded_measured_joints
@@ -10,6 +11,46 @@ from ..robots.control import bounded_measured_joints
 class JointPath:
     positions: tuple[tuple[float, ...], ...]
     times_s: tuple[float, ...]
+
+    @classmethod
+    def from_timed(cls, positions, times_s, start, limits):
+        """Validate the worker's checked time law without silently retiming it."""
+        # Reuse bounds/start validation, but keep the submitted samples/times.
+        cls.from_waypoints(positions, start, limits)
+        q, times = np.asarray(positions, float), np.asarray(times_s, float)
+        if (
+            times.shape != (len(q),)
+            or not np.isfinite(times).all()
+            or times[0] != 0
+            or np.any(np.diff(times) <= 0)
+        ):
+            raise ValueError("Invalid planner trajectory timestamps")
+        if len(q) > 1:
+            speed = np.abs(np.diff(q, axis=0)) / np.diff(times)[:, None]
+            if np.any(speed > np.array([x.velocity for x in limits]) + 1e-7):
+                raise ValueError("Timed planner trajectory exceeds joint speed limits")
+            if np.max(np.abs(np.diff(q, axis=0))) > 0.01000001:
+                raise ValueError("Timed planner trajectory exceeds joint step limit")
+        if np.max(np.abs(q[0] - bounded_measured_joints(start, limits))) > 1e-7:
+            raise ValueError(
+                "Timed path must start at the bounded measured configuration"
+            )
+        return cls(tuple(tuple(float(x) for x in row) for row in q), tuple(times))
+
+    def stretched(self, duration_s):
+        """Slow a trajectory to a common duration; never speed it up."""
+        if not np.isfinite(duration_s) or duration_s < self.duration_s:
+            raise ValueError("Synchronized duration cannot shorten a path")
+        if self.duration_s == 0:
+            if duration_s == 0:
+                return self
+            return JointPath(
+                (self.positions[0], self.positions[0]), (0.0, float(duration_s))
+            )
+        return JointPath(
+            self.positions,
+            tuple(t * duration_s / self.duration_s for t in self.times_s),
+        )
 
     @classmethod
     def from_waypoints(cls, positions, start, limits, *, max_step_rad=0.01):
