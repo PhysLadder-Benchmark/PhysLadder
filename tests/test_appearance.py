@@ -40,7 +40,7 @@ class AppearanceAssetsTests(unittest.TestCase):
                     self.assertLess(distances.min(axis=1).max(), 1e-6)
 
     def test_profiles_are_explicit_and_legacy_default_is_preserved(self):
-        config = load_config(ROOT / "configs/tasks/l2_01_marker_uncap.toml")
+        config = load_config(ROOT / "configs/tasks/l3_16_upper_push_drawer.toml")
         self.assertEqual(SimulationSettings.from_config(config).environment, "lab_room_v1")
         raw = dict(config.raw)
         raw["simulation"] = dict(raw["simulation"])

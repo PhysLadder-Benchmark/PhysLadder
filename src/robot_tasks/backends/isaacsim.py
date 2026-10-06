@@ -76,6 +76,9 @@ class IsaacSimBackend:
                     raise RuntimeError(f"Could not open laboratory: {self.lab_asset}")
                 stage = omni.usd.get_context().get_stage()
                 self.environment_report = configure_stage(stage, self.camera_profile)
+                if config.task_id.startswith("L2-"):
+                    from .tuojing_lab import apply_l2_finger_collisions
+                    self.environment_report["finger_collision_overrides"] = apply_l2_finger_collisions(stage, config.robot)
                 validate_robot_binding(stage, config.robot)
                 if not self.camera_profile or any(not s.existing_prim_path for s in self.camera_profile.select(config.cameras)):
                     raise ValueError("Laboratory cameras must bind to the supplied USD cameras")
@@ -90,7 +93,14 @@ class IsaacSimBackend:
                 **world_options,
             )
             physics = self.world.get_physics_context()
-            physics.enable_gpu_dynamics(False)
+            physics.enable_gpu_dynamics(self.settings.gpu_dynamics)
+            if self.settings.gpu_dynamics:
+                import carb
+
+                physics.set_broadphase_type("GPU")
+                carb.settings.get_settings().set_bool("/physics/updateToUsd", True)
+                carb.settings.get_settings().set_bool("/physics/updateVelocitiesToUsd", True)
+                carb.settings.get_settings().set_bool("/physics/suppressReadback", False)
             physics.set_solver_type("TGS")
             # Permit zero TGS velocity iterations; record actual per-arm values below.
             scene_api = PhysxSchema.PhysxSceneAPI.Apply(physics.get_current_physics_scene_prim())
@@ -138,7 +148,7 @@ class IsaacSimBackend:
             usd_path = self.lab_asset
             self.import_report = {"source": str(usd_path), "binding": "existing_articulations",
                                   "source_lock": "assets/tuojing/source.lock.json"}
-        self.scene_report = {"asset": str(usd_path), "physics_device": "cpu", "arms": {},
+        self.scene_report = {"asset": str(usd_path), "physics_device": "cuda" if self.settings.gpu_dynamics else "cpu", "arms": {},
                              "environment": self.environment_report,
                              "robot_appearance": "delivered_tuojing_lab_v4" if self.lab_asset else self.settings.robot_appearance,
                              "storage": storage_report(self.runtime_storage, kit_started=True),

@@ -6,6 +6,7 @@ import unittest
 from unittest.mock import Mock, patch
 import numpy as np
 from fixtures import robot_config
+from robot_tasks.config import ExecutionSettings
 from robot_tasks.planning.trajectory import JointPath
 from robot_tasks.robots.control import (
     bounded_measured_joints,
@@ -47,6 +48,39 @@ class PlanningExecutionTests(unittest.TestCase):
         for invalid in ([[3] * 6], [[float("nan")] * 6], [[1] * 5], [[0.1] * 6]):
             with self.assertRaises(ValueError):
                 JointPath.from_waypoints(invalid, a, self.bounds)
+
+    def test_checked_timing_survives_controller_validation(self):
+        start = (0.,) * 6
+        path = JointPath.from_waypoints([start, (.1, 0, 0, 0, 0, 0)], start, self.bounds)
+        slow = path.stretched(2.)
+        loaded = JointPath.from_timed(slow.positions, slow.times_s, start, self.bounds)
+        self.assertEqual(loaded, slow)
+        self.assertAlmostEqual(loaded.sample(1.)[0], .05)
+        with self.assertRaises(ValueError):
+            JointPath.from_timed(path.positions, [t / 10 for t in path.times_s], start, self.bounds)
+        with self.assertRaises(ValueError):
+            JointPath.from_timed(path.positions, list(reversed(path.times_s)), start, self.bounds)
+        with self.assertRaises(ValueError):
+            path.stretched(.001)
+
+    def test_stationary_hand_can_share_the_other_hand_duration(self):
+        q = (0.,) * 6
+        hold = JointPath((q,), (0.,)).stretched(2.)
+        self.assertEqual(JointPath.from_timed(hold.positions, hold.times_s, q, self.bounds), hold)
+        self.assertEqual(hold.sample(1.5), q)
+
+    def test_adapter_keeps_worker_timing_instead_of_regenerating_it(self):
+        robot, states = self.robot()
+        robot.execution = replace(ExecutionSettings.from_config(self.config), max_action_steps=120)
+        start = states['left'].joint_positions_rad
+        end = (start[0] + .03, *start[1:])
+        path = JointPath.from_waypoints([start, end], start, self.bounds).stretched(2.)
+        robot.backend, robot.planner = Mock(), Mock()
+        robot.planner.plan.return_value = {'paths': {'left': {
+            'positions': path.positions, 'times_s': path.times_s}}, 'diagnostics': {}}
+        with patch('robot_tasks.planning.scene.snapshot', return_value={}), patch.object(robot, '_send_targets'):
+            robot.apply(Action((ArmCommand('left', 'joint_position', end),), self.config.control_dt_s))
+        self.assertEqual(robot.paths['left'], path)
 
     def robot(self):
         robot = R5Adapter()
@@ -216,6 +250,22 @@ class PlanningExecutionTests(unittest.TestCase):
         self.assertEqual(request["states"]["right"]["joint_positions_rad"], raw)
         self.assertGreater(reply["diagnostics"]["right"]["start_joint_limit_correction_max_rad"], 0.)
         self.assertEqual(reply["paths"]["right"]["positions"][0], start)
+        # The same production worker must align arrival times before checking
+        # inter-arm collisions, including different travel distances.
+        long_trajectory = Mock(joint_names=list(self.config.robot.joint_names))
+        long_end = (0., 2.3, 1.2, 0., 0., 0.)
+        long_trajectory.position.detach().cpu().numpy.return_value = np.array([start, long_end])
+        long_result = Mock(success=np.array([True]))
+        long_result.get_interpolated_plan.return_value = long_trajectory
+        worker.planner.plan_cspace.side_effect = [long_result, result]
+        worker.check_bimanual = Mock()
+        request['states']['left'] = {'joint_positions_rad': raw}
+        request['commands'].insert(0, {'arm': 'left', 'kind': 'joint_position', 'values': long_end})
+        with patch.dict('sys.modules', {'curobo.types': types}):
+            paired = worker.plan(request)
+        self.assertAlmostEqual(paired['paths']['left']['times_s'][-1], paired['paths']['right']['times_s'][-1])
+        self.assertGreater(paired['paths']['right']['times_s'][-1], reply['paths']['right']['times_s'][-1])
+        worker.check_bimanual.assert_called_once_with(paired['paths'], request['states'])
 
 
 class PayloadClearanceTests(unittest.TestCase):

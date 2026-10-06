@@ -45,6 +45,44 @@ def configure_stage(stage, camera_profile=None):
             "limitations": "Estimated laboratory layout and camera calibration; not hardware calibration."}
 
 
+def apply_l2_finger_collisions(stage, profile):
+    """Keep the tapered R5 finger's concavity; a single hull closes its throat.
+
+    Only the session layer is changed. Visual meshes, link mass and kinematics
+    remain the delivered R5. This is disclosed and restricted to migrated L2.
+    """
+    from pxr import PhysxSchema, Usd, UsdPhysics
+
+    stage.SetEditTarget(stage.GetSessionLayer())
+    overrides = []
+    for mount in profile.mounts:
+        for link in ("link7", "link8"):
+            root = stage.GetPrimAtPath(f"{mount.prim_path}/{link}/collisions")
+            if not root:
+                raise ValueError(f"Missing delivered R5 finger colliders: {mount.name}/{link}")
+            root.SetInstanceable(False)
+            for prim in Usd.PrimRange(root):
+                if not prim.HasAPI(UsdPhysics.CollisionAPI):
+                    continue
+                api = UsdPhysics.MeshCollisionAPI.Apply(prim)
+                previous = api.GetApproximationAttr().Get()
+                api.CreateApproximationAttr("convexDecomposition")
+                decomposition = PhysxSchema.PhysxConvexDecompositionCollisionAPI.Apply(prim)
+                decomposition.CreateShrinkWrapAttr(True)
+                decomposition.CreateMinThicknessAttr(.0002)
+                decomposition.CreateMaxConvexHullsAttr(32)
+                contact = PhysxSchema.PhysxCollisionAPI.Apply(prim)
+                contact.CreateContactOffsetAttr(.001)
+                contact.CreateRestOffsetAttr(0.)
+                overrides.append({"path": str(prim.GetPath()), "previous": previous,
+                                  "approximation": "convexDecomposition", "shrink_wrap": True,
+                                  "min_thickness_m": .0002, "contact_offset_m": .001,
+                                  "rest_offset_m": 0., "source_asset_modified": False})
+    if len(overrides) != 4:
+        raise ValueError(f"Expected four R5 finger collider overrides, got {len(overrides)}")
+    return overrides
+
+
 def apply_camera_mounts(stage, profile):
     """Apply requested extrinsics to optics AND housings, only in the session layer.
 

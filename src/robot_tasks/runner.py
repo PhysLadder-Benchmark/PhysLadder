@@ -11,7 +11,7 @@ from .config import ExecutionSettings, TaskConfig
 from .interfaces import Backend, Policy, Robot, Task
 from .recording import EpisodeRecorder
 from .robot_roles import FixedArmMonitor, validate_role_command
-from .types import Action, Assessment, EvaluationState, Feedback, InvalidPolicyAction, Observation, PolicyInput, RetryablePolicyError
+from .types import Action, Assessment, EvaluationState, Feedback, InvalidPolicyAction, InvalidSimulationState, Observation, PolicyInput, RetryablePolicyError
 
 
 GENERATION_RETRY_DELAYS_S = (2., 4., 8.)  # Fixed: three retries after the initial request.
@@ -212,7 +212,7 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
         policy_limit = getattr(getattr(policy, "settings", None), "max_calls", config.max_steps or 100)
         decision_limit = min(options.max_decisions or policy_limit, policy_limit)
         for step in range(1, decision_limit + 1):
-            if assessment.status in {"succeeded", "failed"}:
+            if assessment.status in {"succeeded", "failed", "invalid"}:
                 reason = "task_terminal"
                 break
             budget()
@@ -291,12 +291,12 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                 stopped = True
                 for _ in range(options.stop_steps):
                     tick(phase="final_observation")
-                    if assessment.status in {"succeeded", "failed"}:
+                    if assessment.status in {"succeeded", "failed", "invalid"}:
                         break
                 if dry_run or assessment.status == "succeeded":
                     reason = "policy_requested_stop"
                     break
-                if assessment.status == "failed":
+                if assessment.status in {"failed", "invalid"}:
                     recorder.event({"event": "transition", "step": step,
                                     "action": asdict(action), "policy_time_s": policy_time_s,
                                     "observation": recorder.observation(observe(), step),
@@ -354,14 +354,14 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
             action_ticks = options.max_action_steps if action.commands else options.wait_steps
             for _ in range(action_ticks):
                 tick()
-                if assessment.status in {"succeeded", "failed"}:
+                if assessment.status in {"succeeded", "failed", "invalid"}:
                     break
                 stable = stable + 1 if feedback.status == "completed" else 0
                 if action.commands and stable >= options.completion_samples:
                     completed = True
                     break
             if (action.commands and not completed and feedback.status == "executing"
-                    and assessment.status not in {"succeeded", "failed"}):
+                    and assessment.status not in {"succeeded", "failed", "invalid"}):
                 timeouts += 1
                 cancel_pending = getattr(robot, "on_action_timeout", None)
                 if cancel_pending is not None:
@@ -374,7 +374,7 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                             "action": asdict(action), "policy_time_s": policy_time_s,
                             "observation": recorder.observation(observation, step),
                             "evaluation": asdict(assessment)})
-            if assessment.status in {"succeeded", "failed"}:
+            if assessment.status in {"succeeded", "failed", "invalid"}:
                 reason = "task_terminal"
                 break
             if limit and ticks >= limit:
@@ -391,6 +391,14 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
         status, reason, error = "implementation_missing", "stub_reached", str(exc)
     except KeyboardInterrupt:
         status, reason, error = "cancelled", "user_interrupt", None
+    except InvalidSimulationState as exc:
+        status, reason, error = "invalid", "simulation_invalid", str(exc)
+        assessment = Assessment("invalid", str(exc), {
+            **assessment.metrics, "invalid_reason": "simulation_invalid",
+            "metrics_snapshot": "last valid evaluation, before numerical/readback failure",
+        })
+        recorder.event({"event": "simulation_invalid", "error": str(exc),
+                        "last_assessment": asdict(assessment)})
     except Exception as exc:
         status, reason, error = "error", "exception", f"{type(exc).__name__}: {exc}"
     finally:
@@ -405,6 +413,9 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                 video.close()
             except Exception as exc:
                 status, reason, error = "error", "recording_error", f"{type(exc).__name__}: {exc}"
+        if assessment.status == "invalid" and status == "finished":
+            status = "invalid"
+            reason = assessment.metrics.get("invalid_reason", "simulation_invalid")
         evaluated = (not dry_run and ready and status == "finished"
                      and assessment.status in {"running", "succeeded", "failed"})
         if evaluated and assessment.status == "running":
@@ -428,6 +439,8 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
             "simulation_time_s": final_time,
             "evaluation_protocol": "single_episode",
             "task_evaluated": evaluated,
+            "evaluation_validity": ("invalid" if status == "invalid" else "valid" if evaluated else "not_evaluated"),
+            "failure_category": assessment.metrics.get("failure_category"),
             "success": (assessment.status == "succeeded") if evaluated else None,
             "assessment": asdict(assessment), "error": error,
             "initial_robot": initial, "final_robot": final,
@@ -450,6 +463,7 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                 backend.close()
         except Exception as exc:
             result.update(status="error", termination_reason="cleanup_error", success=None, task_evaluated=False,
+                          evaluation_validity="not_evaluated",
                           error=f"{error or ''} close: {type(exc).__name__}: {exc}")
             if "passed" in result:
                 result.update(passed=False, task_success=None)

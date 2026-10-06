@@ -27,6 +27,14 @@ def run(scene):
     from ..tasks.bench.spec import Joint
 
     task = scene.config.task_id
+    if task == "L2-06":
+        from .orange_probe import run as probe_orange
+
+        return probe_orange(scene)
+    if hasattr(scene, "spec") and "native_instances" in scene.spec.parameters:
+        from .native_l2_probe import run as probe_native
+
+        return probe_native(scene)
     if task == "L3-16":
         from .push_drawer_probe import run as probe_push_drawer
 

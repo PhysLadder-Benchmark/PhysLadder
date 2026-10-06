@@ -126,6 +126,8 @@ def write_run_report(directory: Path) -> Path:
         ("任务", result.get("task_id", manifest.get("task_id", directory.name))),
         ("运行模式", result.get("mode", manifest.get("kind", manifest.get("mode")))),
         ("运行状态", result.get("status")), ("任务评价", outcome),
+        ("评价有效性", result.get("evaluation_validity")),
+        ("失败分类", result.get("failure_category")),
         ("工程检查通过", result.get("passed")), ("终止原因", result.get("termination_reason")),
         ("模型", data["provider"].get("model")), ("推理强度", data["provider"].get("reasoning_effort")),
         ("随机种子", manifest.get("seed")),
@@ -154,7 +156,7 @@ def write_run_report(directory: Path) -> Path:
     if data["warnings"]:
         lines += ["记录缺项：", "", *(f"- {_cell(w)}" for w in data["warnings"]), ""]
     metrics = result.get("assessment", {}).get("metrics", {})
-    if metrics.get("scoring_protocol") == "recoverable_progress_v1":
+    if metrics.get("scoring_protocol") in {"recoverable_progress_v1", "native_l2_validity_v2"}:
         lines += ["## 任务目标与过程约束", "",
                   "目标状态、必要过程约束和工程参考值分别记录；完整任务结果以上方任务评价为准。"
                   "过程约束栏表示截至当前是否记录违规，不代表尚未执行的步骤已经完成。"
@@ -166,6 +168,19 @@ def write_run_report(directory: Path) -> Path:
             ("违反的必要约束", metrics.get("constraint_violations", [])),
             ("过程记录（不直接判失败）", metrics.get("quality_warnings", [])),
         ])
+    if metrics.get("stages"):
+        lines += ["## 分阶段结果", "", "阶段状态与整体成功分开记录；后续失败不会抹去此前已记录的关键进展。", ""]
+        lines += _table(("阶段", "达到要求"), metrics["stages"].items())
+    if result.get("evaluation_validity") == "invalid":
+        lines += [("本回合测量无效或需要人工复核，不计入模型成功／失败分母。"
+                   f"原因：{_cell(result.get('assessment', {}).get('reason'))}"), ""]
+    protocol = data["scene"].get("household", {}).get("test_protocol")
+    if protocol:
+        lines += ["## 测试信息边界", ""]
+        lines += _table(("项目", "设定"), protocol.items())
+        limitations = metrics.get("limitations") or data["scene"].get("household", {}).get("limitations")
+        if limitations:
+            lines += [f"资产与适配限制：{_cell(limitations)}", ""]
     if result.get("evaluation_protocol") == "retry_with_history":
         lines += ["## 失败复位与重试", "",
                   "本次采用保留模型历史的复位重试，所有尝试共享调用、物理步和现实时间预算。"

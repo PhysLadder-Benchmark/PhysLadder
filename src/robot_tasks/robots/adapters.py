@@ -1,8 +1,9 @@
 from ..config import ExecutionSettings, TaskConfig
 from ..interfaces import Backend
-from ..types import Action, ArmState, Feedback
+from ..types import Action, ArmState, Feedback, InvalidSimulationState
 from .audit import require_joint_sim_ready
 from .control import bounded_measured_joints, joints_to_width, plan_targets, width_to_joints
+from .settling import SettlingWindow
 
 
 class RobotAdapter:
@@ -58,6 +59,8 @@ class R5Adapter(RobotAdapter):
         self.grip_durations = {}
         self.grip_closing = {}
         self.grip_arms = set()
+        self.settling = SettlingWindow()
+        self.tracking_time_s = 0.0
 
     def initialize(self, backend: Backend, config: TaskConfig) -> None:
         from ..backends.isaacsim import IsaacSimBackend
@@ -88,6 +91,8 @@ class R5Adapter(RobotAdapter):
         from isaacsim.core.utils.types import ArticulationAction
 
         profile = self.config.robot
+        self.settling = SettlingWindow()
+        self.tracking_time_s = 0.0
         self.paths.clear()
         self.grip_elapsed.clear()
         self.grip_durations.clear()
@@ -187,10 +192,10 @@ class R5Adapter(RobotAdapter):
                         )
                         for name in self.config.robot.joint_names
                     ]
-                    paths[arm] = JointPath.from_waypoints(
-                        data["positions"], states[arm].joint_positions_rad, limits
+                    paths[arm] = JointPath.from_timed(
+                        data["positions"], data["times_s"], states[arm].joint_positions_rad, limits
                     )
-                    # Retiming in the controller is authoritative; both sides use the same limits.
+                    # Preserve the exact time law already checked for BOTH arms.
                     planned[arm] = paths[arm].positions[-1] + planned[arm][6:]
                 if set(paths) != {c.arm for c in motion}:
                     raise ValueError("Planner did not return every requested arm")
@@ -292,6 +297,10 @@ class R5Adapter(RobotAdapter):
         self.targets = planned
 
     def before_physics_step(self, dt_s: float) -> None:
+        self.tracking_time_s += dt_s
+        for name, arm in self.instances.items():
+            self.settling.add(self.tracking_time_s, name,
+                             arm.get_joint_positions(joint_indices=self.indices[name]))
         for arm in self.grip_elapsed:
             self.grip_elapsed[arm] += dt_s
         if self.paths:
@@ -366,7 +375,7 @@ class R5Adapter(RobotAdapter):
                 float(v) for v in arm.get_joint_velocities(joint_indices=indices)
             )
             if not all(math.isfinite(value) for value in positions + velocities):
-                raise RuntimeError(f"{name}: nonfinite R5 joint state")
+                raise InvalidSimulationState(f"{name}: nonfinite R5 joint state")
             tcp_pose = None
             if self.kinematics is not None:
                 from .transforms import pose_transform, transform_pose
@@ -432,7 +441,9 @@ class R5Adapter(RobotAdapter):
                         )
                     ),
                 }
-            arm_settled = all(abs(v) < 0.02 for v in state.joint_velocities_rad_s)
+            window_arm, window_fingers = self.settling.settled(
+                self.tracking_time_s, name, state.joint_positions_rad + state.finger_positions_m)
+            arm_settled = all(abs(v) < 0.02 for v in state.joint_velocities_rad_s) or window_arm
             cartesian_reached = name not in tcp_errors or (
                 position_error < 0.005 and orientation_error < 0.02
             )
@@ -442,7 +453,7 @@ class R5Adapter(RobotAdapter):
             gripper_reached = (
                 finger_error < 0.0015 and name not in self.pending_grippers
             )
-            fingers_still = all(abs(v) < 0.003 for v in state.finger_velocities_m_s)
+            fingers_still = all(abs(v) < 0.003 for v in state.finger_velocities_m_s) or window_fingers
             closing_obstructed = (
                 self.grip_closing.get(name, False)
                 and not gripper_reached
@@ -461,6 +472,7 @@ class R5Adapter(RobotAdapter):
             )
             gripper_complete = fingers_still and (gripper_reached or closing_obstructed)
             details[name] = {
+                "position_window_settled": {"arm": window_arm, "fingers": window_fingers, "duration_s": .25},
                 "motion_reached": motion_reached,
                 "joint_error_max_rad": arm_error,
                 "finger_error_max_m": finger_error,

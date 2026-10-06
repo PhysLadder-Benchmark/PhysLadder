@@ -1,21 +1,20 @@
-# Run from the repository root in the Isaac Sim environment; authentication follows the shared model config.
+# Run from the repository root in the Isaac Sim environment; uses the selected model provider.
 # launch_command / launch_command_conda below are documentation, not auto-executed shell code.
 schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_sim.toml"
+profile = "../robots/r5_tuojing_lab.toml"
 active_arms = ["left"]
 observation_arms = ["right"]
 
 [simulation]
-environment = "lab_room_v1"
-robot_appearance = "r5_black_silver_v1"
-camera_profile = "../cameras/r5_orbbec_provisional.toml"
-asset_directory = "../../build/r5"
+environment = "tuojing_lab_v4"
+camera_profile = "../cameras/r5_tuojing_lab.toml"
+asset_directory = "../../build/tuojing_lab"
 headless = true
-width = 640
-height = 480
+width = 1280
+height = 720
 fps = 12
 arm_stiffness = 1500.0
 arm_damping = 80.0
@@ -24,66 +23,61 @@ finger_damping = 40.0
 self_collision = false
 solver_position_iterations = 32
 solver_velocity_iterations = 0
-camera_position = [1.25, 0.0, 0.54]
-camera_target = [0.71, 0.0, 0.0]
+camera_position = [0.21354960845762927, 0.48765041712220114, 1.32]
+camera_target = [0.1643434123515941, 1.0254038459952994, 0.78]
 
 [policy]
 model_config = "../models/gpt.toml"
 
 [task]
+# Guided RGB-D execution; common information boundaries are appended by BenchTask.
+prompt_protocol = "guided_rgbd_l2_v2"
+scoring_protocol = "native_l2_validity_v2"
 id = "L2-03"
 name = "固定上下层的单臂抽书"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
 implementation = "household"
-simulation_limitations = "Upper/lower rigid books and supports are fixed. Only middle-book contact friction and extraction are tested; upper-book support/stability is excluded."
+simulation_limitations = "Native 220 x 140 x 20 mm rigid books; measured-photo mass 378.9 g. Fixed neighbours, 5 mm upper clearance, thickness grasp. Friction and thickness estimated."
 launch_command = "python tools/launch.py run L2-03 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-03 --gui"
 instruction = """
-Use the LEFT R5 arm for manipulation. The RIGHT arm may move its wrist camera
-for a clearer view, but must not touch, hold or support task objects. Keep the
-left arm steady while changing the observation view. Use current RGB-D images,
-camera calibration, robot state and execution feedback to select grasp points
-and motion; do not infer successful contact from a command alone.
-Extract ONLY the red middle book from between the fixed blue lower book and
-fixed green upper book. The adjacent books and their supports are fixed by the
-environment; do not hold, move or evaluate their stability. The exposed end of
-the red book points toward the LEFT arm, world -X. The books remain stacked flat
-one above another, with their long axes along X. Do not stand them upright or
-turn the stack. The exposed end and full extraction stroke are in front of the arm.
+Use the LEFT R5 arm to extract ONLY the middle book. The RIGHT arm may
+move its wrist camera for a clearer view, but must not touch the books.
+The three books are stacked horizontally. Upper and lower books are fixed;
+there is no need to support them. The middle book protrudes about 90 mm
+toward the robots, along world +Y. Do not rotate or stand up the stack.
 
-Inspect the protruding section, finger clearance and horizontal exit direction.
-Approach from the exposed -X side with fingers closing across the book's 45 mm
-width (approximately world Y), not through the upper or lower book. A downward
-or downward-tilted approach gives the wrist and arm clearance; do not insist on
-a low horizontal wrist pose. Choose a
-grasp within the exposed front section that keeps both fingers clear of the
-fixed stack. Close in a separate decision and verify two-sided contact.
+Inspect the exposed front end and the space above and below it. Each book
+is 220 mm long, 140 mm wide and 20 mm thick. The R5 opens at most 70 mm:
+it CANNOT grasp across the 140 mm width. Orient the gripper so its pads close
+across the 20 mm thickness, one above and one below the projecting middle
+book. Place both pads entirely ahead of the upper/lower books, with enough
+pad overlap to carry the 378.9 g book. Avoid the edges and the fixed neighbours.
 
-Pull gradually toward world -X while retaining the book's approximately level
-attitude and height. Do not perform a vertical test lift while the book is still
-between the fixed books. Observe whether the BOOK follows the hand; stop and
-regrasp if the fingers slide off or the book stays in place. Avoid upward or
-sideways targets that wedge it against the fixed neighbors. Do not pull along
-world Y; follow the book's visible exit axis toward the left arm.
+Approach the exposed end with an open gripper; inspect complementary views
+before closing in a separate decision. Verify actual pad contact and book
+motion using a small outward pull, not a vertical lift against the upper book.
+Move toward the robots along +Y, maintaining the book height and orientation
+while it remains between the fixed neighbours. Reobserve if blocked or slipping;
+do not continue an empty grasp or increase off-axis motion.
 
-Extraction is complete only when the entire rear edge of the middle book has
-cleared the front edges of BOTH fixed books by at least 4 mm, with at least
-65 mm outward travel. Keep the extracted book securely held and nearly still
-for one simulation second. Extracting it is the whole task: no table placement,
-release, upper-book support or movement of other books is required.
-If a grasp is lost, stop advancing the old plan and inspect the actual object
-state. Reobserve and update the plan without expecting an automatic scene reset. Use only
-available control commands and feedback; do not invent force measurements.
-Request stop only after observing the required final state and stability.
+Continue until the entire rear edge has cleared the fixed stack, approximately
+140 mm of travel from the initial pose. Seeing just the front end move is not
+completion. After full extraction, keep holding the book nearly still for
+about half a simulation second. No release or target placement is required.
+Request stop only after verifying complete extraction and continued grasp.
+Use available feedback; do not invent object poses or force measurements.
+The fixed upper book leaves about 5 mm clearance above the settled middle
+book; its weight is not applied to the middle book. This tests guided extraction and retention,
+not supporting or balancing the upper stack. There is no automatic scene reset.
 """
 
-# Chinese setup/props description; keep this the final task attribute.
+# 中文布置和道具说明。
 description = """
-道具：一册 120×45×24 mm 红色刚性中层书、固定蓝色下层书、固定绿色上层书及两块支撑物。
-布置：书本在桌面纵向摆放（长轴沿世界 X），仍为三本平放上下叠放，不把书立起来；上下书和支撑物固定不动，中层书前端朝左臂（世界 -X）突出约 65 mm，两侧留出夹指空间。抓持起点和完整抽取行程均留在左臂前方。
-操作：仅左臂从突出端上方或斜上方接近，夹指沿书宽（世界 Y）方向闭合，沿 -X 平移抽出；书未离开夹层前不抬升。右臂仅负责按需观察，不扶书。
-完成：整本中层书尾端越过固定书前缘至少 4 mm，向外位移至少 65 mm，仍由左手抓稳并静止 1 秒；不要求放下或释放。
-边界：本版不测上层支撑及剩余书本稳定性；仅测中层刚体的抓持、接触摩擦和抽取。
+道具：三份原生《神雕侠侣》闭合书本资产，220×140×20 mm，单本质量 378.9 g；两块固定支撑物。
+布置：拓境实验室桌面高 0.78 m，上下书本固定，中间书可移动，朝机械臂方向（世界 +Y）伸出 90 mm；140 mm 高的支撑将书堆抬高，给下侧夹指和腕部留空间；横向位置避开机械臂零位时的夹爪。
+抓法：不能夹 140 mm 宽度，需一指在上、一指在下，夹住伸出部分的 20 mm 厚度；不能夹到上下固定书。中层落稳后与固定上层留 5 mm 净空，避免微小控制偏差造成楔紧；上层重量不压在中层上。
+完成：沿 +Y 抽取约 140 mm，直至整个后缘离开书堆；保持夹持约 0.5 秒即可，不要求放下。保留原生尺寸、质量和材质；不模拟翻页或书本弯曲。
 """

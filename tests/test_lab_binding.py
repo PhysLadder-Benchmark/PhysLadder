@@ -40,7 +40,7 @@ class LabSettingsTests(unittest.TestCase):
             np.testing.assert_allclose(-t[:3, 2], [np.sqrt(.5), 0, -np.sqrt(.5)], atol=1e-9)
             np.testing.assert_allclose(t[:3, 0], [0, -1, 0], atol=1e-9)
         # Legacy scenes use tabletop Z=0; apply the same floor-equivalent height.
-        _, legacy = resolve_task("L2-07")
+        _, legacy = resolve_task("L3-16")
         legacy_bench = bench_geometry(legacy)
         legacy_rig = load_camera_rig(legacy.source.parent / legacy.raw["simulation"]["camera_profile"])
         overview = legacy_rig.cameras[0]

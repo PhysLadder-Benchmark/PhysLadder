@@ -1,21 +1,20 @@
-# Run from the repository root in the Isaac Sim environment; authentication follows the shared model config.
+# Run from the repository root in the Isaac Sim environment; uses the selected model provider.
 # launch_command / launch_command_conda below are documentation, not auto-executed shell code.
 schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_sim.toml"
+profile = "../robots/r5_tuojing_lab.toml"
 active_arms = ["left"]
 observation_arms = ["right"]
 
 [simulation]
-environment = "lab_room_v1"
-robot_appearance = "r5_black_silver_v1"
-camera_profile = "../cameras/r5_orbbec_provisional.toml"
-asset_directory = "../../build/r5"
+environment = "tuojing_lab_v4"
+camera_profile = "../cameras/r5_tuojing_lab.toml"
+asset_directory = "../../build/tuojing_lab"
 headless = true
-width = 640
-height = 480
+width = 1280
+height = 720
 fps = 12
 arm_stiffness = 1500.0
 arm_damping = 80.0
@@ -24,73 +23,62 @@ finger_damping = 40.0
 self_collision = false
 solver_position_iterations = 32
 solver_velocity_iterations = 0
-camera_position = [1.25, 0.0, 0.54]
-camera_target = [0.71, 0.0, 0.0]
+camera_position = [0.21354960845762927, 0.48765041712220114, 1.32]
+camera_target = [0.1643434123515941, 1.0254038459952994, 0.78]
 
 [policy]
 model_config = "../models/gpt.toml"
 
 [task]
+# Guided RGB-D execution; common information boundaries are appended by BenchTask.
+prompt_protocol = "guided_rgbd_l2_v2"
+scoring_protocol = "native_l2_validity_v2"
 id = "L2-07"
 name = "单臂拉开固定化妆抽屉"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
 implementation = "household"
-simulation_limitations = "Engineering dimensions and friction; not calibrated to physical props."
+simulation_limitations = "Native organizer, 90 mm passive rail; explicit R5 grip tab, not original thin lip. Estimated physical properties."
 launch_command = "python tools/launch.py run L2-07 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-07 --gui"
 instruction = """
-Use the LEFT R5 arm for manipulation. The RIGHT arm may move its wrist camera
-for a clearer view, but must not touch, hold or support task objects. Keep the
-left arm steady while changing the observation view. Use current RGB-D images,
-camera calibration, robot state and execution feedback to select grasp points
-and motion; do not infer successful contact from a command alone.
-Pull open the drawer of the fixed cosmetics organizer using its green handle.
-The cabinet has a bottom, roof, side walls and rear wall. It is secured to the
-table, with its front pointing toward the LEFT arm (world -X). The exposed
-handle and full pull stroke remain in front of that arm. Do not rotate the
-cabinet or hold it with the other arm.
-The drawer starts fully closed and unlocked. There is no push-to-open
-latch, button, or obstruction to release.
+Approach the external grip from its exposed front, with a slightly downward
+finger approach (about 15-35 degrees below horizontal), rather than placing
+the wrist and camera directly above the cabinet roof. Close across the grip
+width, then preserve this orientation while pulling. Choose the actual pose
+from current images; check roof and camera clearance throughout.
 
-Inspect the protruding green handle, front panel and rail direction. Grasp the
-exposed front portion of the handle, away from the cabinet roof. Approach
-from the front (-X), with the fingers closing across the handle's 40 mm width
-(approximately world Y),
-leaving the finger bodies and wrist clear of the panel and roof. Use a downward
-or downward-tilted approach to the exposed handle if needed; do not insist on
-a low horizontal wrist pose. Close the
-left gripper separately and verify that it surrounds the handle, rather than
-just touching the panel. Keep the handle's height and orientation during pull;
-do not apply a free-object vertical test lift to this rail-constrained drawer.
+Use the LEFT R5 arm to open only the UPPER drawer. The RIGHT arm is free to
+move its wrist camera for observation but must not touch the organizer.
+Identify the upper drawer, its blue external grip tab, and the rail direction
+from current RGB-D observations. The cabinet and lower drawer are fixed.
+The blue tab is an R5 grasp adapter; the original narrow lip is not a suitable
+pinch target. Pinch across the tab's 40 mm width, keeping both finger pads
+on opposite sides and avoiding the drawer panel and cabinet roof.
 
-Pull toward the LEFT arm along world -X in small steps, not along world Y.
-Check that the drawer
-front actually moves with the handle and that the fingers have not slipped.
-Correct sideways misalignment instead of applying larger off-axis motion.
-Open by 100-120 mm from the initial closed position; maximum travel is 130 mm.
-Slow near the rail stop and avoid impact speeds above 0.25 m/s. Do not pull it
-out of the rails, lift the cabinet or force motion past its limit. The speed
-value is an engineering reference: excursions are recorded for review, not
-an automatic failure or a measurement of damage.
+Approach with an open gripper and inspect from complementary views. Close in
+a separate decision. A blocked close is not proof of capture: verify the tab
+lies between the pads and check actual drawer movement during a short pull.
+Do not test-lift a rail-constrained drawer. Preserve handle height and alignment.
 
-Once sufficiently open, stop, release the handle and let the drawer remain open
-and nearly still for one simulation second. This version ends OPEN: do not push
-it shut again. No item retrieval, second-hand support or extra operation is
-required. A drawer at the target position while still held is not the final
-released state.
-If a grasp is lost, stop advancing the old plan and inspect the actual object
-state. Reobserve and update the plan without expecting an automatic scene reset. Use only
-available control commands and feedback; do not invent force measurements.
-Request stop only after observing the required final state and stability.
+Pull toward the robots along world +Y, using short movements and checking that
+the drawer follows. The native rail has 90 mm total travel; aim for 75-85 mm.
+There is no push latch or button. Do not force beyond the mechanical stop,
+rotate the cabinet, lift the drawer, or move along the wrong axis.
+If the grip slips, reobserve and regrasp rather than continuing an empty pull.
+
+Once open at least 75 mm, release, withdraw without pushing it closed, and
+observe approximately half a simulation second of released, nearly stationary
+opening. No item retrieval or closing is required. Request stop only after
+observing this physical result. Use available control feedback; do not invent
+force sensors or a force-control API. No automatic scene reset is performed.
 """
 
-# Chinese setup/props description; keep this the final task attribute.
+# 中文布置和道具说明。
 description = """
-道具：固定化妆抽屉式柜体（底板、顶板、侧板、后板）、抽屉托盘、向外突出的绿色可夹把手、滑轨。
-布置：柜体固定不滑动；抽屉关闭，正面和把手朝左臂（世界 -X）；把手沿世界 Y 方向宽 40 mm，留出夹指接近空间。初始把手及完整拉出行程均位于左臂前方，右臂只观察。
-操作：左臂抓把手，沿 -X 拉开 100—120 mm，再松手；最大滑轨行程 130 mm。无需扶柜、提起抽屉、取物或重新关闭。
-完成：实际夹持拉开至少 100 mm，松手后保持开启并静止 1 秒。速度与冲击另行记录，不因单次速度峰值直接判失败；持续脱轨或越过机械限位仍判失败。
-边界：柜体含上下封闭面，抽屉内腔保持敞开；接触摩擦及被动滑轨约束真实参与仿真，没有脚本自动拉出。
+道具：L20 双抽屉收纳盒原生资产；柜体和下层抽屉固定，上层保留原生 90 mm 滑轨。原把手仅约 8 mm 高，另加蓝色 40 mm 宽抓持适配片，明确不是原照片把手。
+布置：使用拓境实验室 R5 双臂与三路相机，桌高 0.78 m；抽屉正面朝机械臂（世界 +Y），左臂操作，右臂只观察。
+操作与完成：夹住适配片，沿 +Y 拉开至少 75 mm，最大行程 90 mm；释放并保持开启约 0.5 秒。不取物、不关闭、不要求扶柜或抬升。
+物理：保留原生尺寸、质量、材质及被动滑轨；适配片属于抽屉刚体，不与机器人吸附或绑定。源资产不修改。
 """

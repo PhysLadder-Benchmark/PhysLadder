@@ -21,6 +21,7 @@ class SimulationSettings:
     finger_stiffness: float = 2000.0
     finger_damping: float = 40.0
     self_collision: bool = False
+    gpu_dynamics: bool = False  # Required for native volume FEM; rendering alone is not GPU physics.
     solver_position_iterations: int = 32
     solver_velocity_iterations: int = 0
     camera_position: tuple[float, ...] = (1.6, 0.0, 1.4)
@@ -52,7 +53,7 @@ class SimulationSettings:
             raise ValueError("capture_render_passes must be in [1, 8]")
         if result.graphics_backend not in {"vulkan", "d3d12"}:
             raise ValueError("graphics_backend must be vulkan or d3d12")
-        for name in ("headless", "self_collision"):
+        for name in ("headless", "self_collision", "gpu_dynamics"):
             if type(getattr(result, name)) is not bool:
                 raise ValueError(f"simulation.{name} must be boolean")
         for name in ("width", "height", "fps"):

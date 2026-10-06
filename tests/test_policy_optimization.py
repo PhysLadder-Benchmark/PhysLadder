@@ -222,7 +222,7 @@ class OptimizationTests(unittest.TestCase):
         robot.state = Mock(return_value={"left": ArmState(joint_positions_rad=home, finger_positions_m=fingers)})
         robot.backend = Mock()
         robot.planner = Mock()
-        robot.planner.plan.return_value = {"paths": {"left": {"positions": [home,home]}}, "diagnostics": {}}
+        robot.planner.plan.return_value = {"paths": {"left": {"positions": [home,home], "times_s": [0., .001]}}, "diagnostics": {}}
         ready = Feedback("executing", metrics={"arms": {"left": {"motion_reached": False}}})
         with patch("robot_tasks.planning.scene.snapshot", return_value={}), patch.object(robot, "_send_targets", side_effect=send), patch.object(robot, "_tracking_feedback", return_value=ready):
             robot.apply(action)

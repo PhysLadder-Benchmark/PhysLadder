@@ -1,0 +1,96 @@
+# Run from the repository root in the Isaac Sim environment; uses the selected model provider.
+# launch_command / launch_command_conda below are documentation, not auto-executed shell code.
+schema_version = 2
+workflow_profile = "../workflows/gpt_default.toml"
+
+[robot]
+profile = "../robots/r5_tuojing_lab.toml"
+active_arms = ["left"]
+observation_arms = ["right"]
+
+[simulation]
+environment = "tuojing_lab_v4"
+camera_profile = "../cameras/r5_tuojing_lab.toml"
+asset_directory = "../../build/tuojing_lab"
+headless = true
+gpu_dynamics = true # Native volume FEM requires GPU physics, not just GPU rendering.
+width = 1280
+height = 720
+fps = 12
+arm_stiffness = 1500.0
+arm_damping = 80.0
+finger_stiffness = 2000.0
+finger_damping = 40.0
+self_collision = false
+solver_position_iterations = 32
+solver_velocity_iterations = 0
+camera_position = [0.21354960845762927, 0.48765041712220114, 1.32]
+camera_target = [0.1643434123515941, 1.0254038459952994, 0.78]
+
+[policy]
+model_config = "../models/gpt.toml"
+
+[runtime]
+physics_dt_s = 0.004166666666666667 # 240 Hz, checked in the complete metre-scale laboratory.
+
+[task]
+# Guided RGB-D execution; common information boundaries are appended by BenchTask.
+prompt_protocol = "guided_rgbd_l2_v2"
+scoring_protocol = "native_l2_validity_v2"
+id = "L2-06"
+name = "软橘子瓣轻夹搬运"
+execution_target = "simulation_and_real"
+simulation_enabled = true
+status = "implemented_proxy"
+implementation = "household"
+simulation_limitations = "R5 soft-grip qualification pending: tested grasps slipped or produced FEM inversion; full transfer is not certified. Native GPU FEM orange, estimated material, 240 Hz physics, task contact/rest margins 3/1.5 mm. Deformation reference is a proxy, not fracture/juice simulation. Geometry-based support/release, no fabricated contact force."
+launch_command = "python tools/launch.py run L2-06 --gui"
+launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-06 --gui"
+instruction = """
+Use the LEFT R5 arm to gently transfer the exposed orange segment onto the
+green patch, then release it. The RIGHT arm may move its wrist camera to inspect
+the grasp and deformation, but must not touch or support the orange.
+The segment is about 50 mm long, 26 mm across and 17 mm thick, with mass about
+9 g. It is genuinely deformable in this simulation, not a rigid cell cluster.
+
+Identify the fuller middle region and its curved sides from current RGB-D
+images. Prefer a broad, balanced grasp across the roughly 26 mm width, away
+from the pointed ends. Leave enough pad overlap while keeping both fingertips
+clear of the table; the TCP is not the lowest point of the fingers.
+Choose orientation from the actual shape, and check two complementary views
+before closing. A projected overlap in one view does not prove the orange
+lies between the pads.
+
+Close gradually using intermediate openings. The minimum 12 mm opening can
+compress this object severely: do not begin with a fully closed command.
+Inspect actual shape, opening and slip after each small adjustment. Use only
+available robot feedback; no soft contact-force sensor or force-control API
+is provided. After plausible capture, perform a short gentle lift and verify
+that the whole segment follows, with no large local squash or unsupported slip.
+If it does not follow, reopen and correct the grasp rather than transporting
+an empty hand. Stop squeezing further once a stable gentle hold is established.
+
+Carry smoothly with table clearance, lower onto the green patch, then open
+and withdraw without dragging or poking the soft object. Completion requires
+the whole segment within the 120 x 120 mm patch, released and resting on the
+table for about half a simulation second after a verified lift and transport.
+Do not mistake a deformed part still touching the fingers for a released object.
+
+A 35% principal-strain reference, sustained for 0.25 simulation seconds, is
+used as a declared engineering deformation limit. Exceeding it ends the episode,
+without requiring you to finish transport after that irreversible violation. It does not represent a
+measured orange rupture force, and this task does not trigger a juice or scene
+replacement demonstration. Use visible shape changes to avoid strong squeezing.
+Temporary soft deformation is expected. No automatic reset or grasp attachment
+is used. Request stop only after observing the released final state.
+"""
+
+# 中文布置和道具说明。
+description = """
+道具：L20 原生橘子瓣软体，约 50×26×17 mm、质量约 8.855 g；绿色 120×120 mm 目标区。替换原 L2-06 的果冻弹性格点代理。
+布置：拓境实验室桌面高 0.78 m，左臂夹取较饱满的中部，右臂只观察；保留原生尺寸、GPU 体积 FEM、碰撞网格和材料参数。
+操作与完成：轻夹抬起，搬到目标区，整个橘子瓣落桌后松手并保持约 0.5 秒。支撑和释放根据实际软体表面与夹指几何校验，不捏造力读数。
+形变：用去除刚体运动后的单元主应变 95 分位数评估；超过 35% 持续 0.25 秒结束本回合，保留已完成阶段；FEM 数值反转单列为无效仿真，不视为橘子损伤或模型失败。这是工程形变代理，不代表真实破裂或损伤阈值。
+限制：不执行挤破流汁演示，因为该脚本会重建场景和切换碎块；正式任务始终由 GPT 控制 R5，物体运动由 FEM 接触产生。采用 GPU 物理和 240 Hz 步长；接触余量 3 mm、静止余量 1.5 mm 是完整场景适配，不改变原生质量和弹性材料。
+验收状态：保留试验入口，但 R5 软体稳定抓持尚未验收通过。已检查的开口／高度组合出现滑脱或 FEM 单元反转，不能据此认定任务物理可行性已确认，也不能把数值失稳算作 GPT 能力不足。
+"""
