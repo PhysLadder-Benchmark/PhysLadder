@@ -151,6 +151,17 @@ python -m robot_tasks.integrationtest.scene_smoke L1-03 --prop-probe --output bu
 
 ## 安装与校验
 
+本仓库还提供固定版本的私有 GitHub Release 下载入口：
+
+```bash
+python3 tools/fetch_tuojing_release.py
+```
+
+首次下载需要 GitHub CLI 登录和本仓库读取权限。本次发布包含 `lab_v4`、
+`photo_props`、`orange_soft` 三个包，**不包含** `tabletop_interactions` 和 `book`。
+发布规则、授权步骤及部分/完整校验区别见 [PUBLISHING.md](PUBLISHING.md)。
+以下 L20 流程适用于取得全部五个包的情况。
+
 从获授权的 L20 连接下载下列文件，并放到项目的 `.cache/tuojing_assets/`：
 
 - `tuojing_lab_20261005_v4.zip`
