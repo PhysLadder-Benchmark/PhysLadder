@@ -20,6 +20,10 @@ class SimulationSettings:
     arm_damping: float = 80.0
     finger_stiffness: float = 2000.0
     finger_damping: float = 40.0
+    stable_gripper_drive: bool = False
+    finger_max_acceleration: float = 0.15
+    finger_closing_lead: float = 0.0015
+    finger_effort_limit: float = 4.0
     self_collision: bool = False
     gpu_dynamics: bool = False  # Required for native volume FEM; rendering alone is not GPU physics.
     solver_position_iterations: int = 32
@@ -64,7 +68,7 @@ class SimulationSettings:
             value = getattr(result, name)
             if type(value) is not int or not minimum <= value <= 255:
                 raise ValueError(f"simulation.{name} must be an integer in [{minimum}, 255]")
-        for name in ("arm_stiffness", "arm_damping", "finger_stiffness", "finger_damping"):
+        for name in ("arm_stiffness", "arm_damping", "finger_stiffness", "finger_damping", "finger_max_acceleration", "finger_closing_lead", "finger_effort_limit"):
             value = getattr(result, name)
             if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0:
                 raise ValueError(f"simulation.{name} must be finite and positive")

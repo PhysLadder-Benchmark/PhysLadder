@@ -169,6 +169,10 @@ class IsaacSimBackend:
                     Gf.Quatd(quaternion[0], Gf.Vec3d(*quaternion[1:])))
             else:
                 root = self.world.stage.GetPrimAtPath(mount.prim_path)
+            finger_collision = None
+            if self.lab_asset is not None:
+                from ..robots.finger_collision import configure_finger_collisions
+                finger_collision = configure_finger_collisions(self.world.stage, mount.prim_path)
             descendants = list(Usd.PrimRange(root, Usd.TraverseInstanceProxies()))
             roots = [prim for prim in descendants if prim.HasAPI(UsdPhysics.ArticulationRootAPI)]
             if len(roots) != 1:
@@ -179,6 +183,12 @@ class IsaacSimBackend:
                     # Physical PD effort gains must not inherit an acceleration-drive default.
                     drive_kind = "angular" if prim.IsA(UsdPhysics.RevoluteJoint) else "linear"
                     UsdPhysics.DriveAPI.Apply(prim, drive_kind).CreateTypeAttr("force")
+                    if self.settings.stable_gripper_drive and prim.GetName() in profile.gripper.joint_names:
+                        limit = next(v for v in profile.operating_limits if v.joint == prim.GetName())
+                        joint = UsdPhysics.PrismaticJoint(prim)
+                        joint.CreateLowerLimitAttr(limit.lower)
+                        joint.CreateUpperLimitAttr(limit.upper)
+                        PhysxSchema.PhysxJointAPI.Apply(prim).CreateMaxJointVelocityAttr(limit.velocity)
                 if prim.IsA(UsdPhysics.FixedJoint):
                     joint = UsdPhysics.FixedJoint(prim)
                     if not joint.GetBody0Rel().GetTargets() and joint.GetBody1Rel().GetTargets():
@@ -222,6 +232,7 @@ class IsaacSimBackend:
                 }),
                 "configured_base_pose_wxyz": mount.base_pose_wxyz,
                 "ee_link_path": tip_path, "tcp_pose_in_ee_wxyz": profile.tcp_pose_wxyz,
+                "finger_collision": finger_collision,
             }
             if self.lab_asset is None and self.settings.robot_appearance == "r5_black_silver_v1":
                 from .appearance import apply_r5_appearance

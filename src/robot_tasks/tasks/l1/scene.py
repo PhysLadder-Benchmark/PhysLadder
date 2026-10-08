@@ -101,7 +101,8 @@ class L1Scene:
                 ancestor.SetInstanceable(False)
                 prim = stage.GetPrimAtPath(path)
             api = PhysxSchema.PhysxCollisionAPI.Apply(prim)
-            api.CreateContactOffsetAttr(0.001)
+            # Native thin walls and finger recesses need a sub-millimetre skin.
+            api.CreateContactOffsetAttr(0.0002 if getattr(backend, "lab_asset", None) is not None else 0.001)
             api.CreateRestOffsetAttr(0.0)
             UsdShade.MaterialBindingAPI.Apply(prim).Bind(
                 (self.fixture_material if path.startswith(self.root + "/Fixture/") else self.material).material,

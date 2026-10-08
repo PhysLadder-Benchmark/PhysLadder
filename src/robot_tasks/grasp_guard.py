@@ -17,13 +17,13 @@ from .cameras.grasp_evidence import (
     visible_surfaces,
 )
 from .robots.transforms import pose_errors, pose_transform, transform_pose
+from .robots.control import empty_close_tolerance
 from .types import Action, Feedback, GraspReference, Observation
 
 MIN_LIFT_M = 0.015
 MAX_TEST_LIFT_M = 0.040
 MAX_TEST_XY_M = 0.005
 MAX_TEST_ROTATION_RAD = 0.10
-EMPTY_TOLERANCE_M = 0.0015
 
 
 @dataclass
@@ -137,7 +137,9 @@ class GraspGuard:
                 arm, observation.time_s, observation.rgb, observation.robot
             )
             surfaces = visible_surfaces(
-                observation.rgb, state.tcp_pose_world_wxyz, width, self.table_z_m
+                observation.rgb, state.tcp_pose_world_wxyz, width, self.table_z_m,
+                narrow_grasp=command.values[0] < 0.006,
+                robot_profile=self.config.robot,
             )
             self.attempts[arm] = Attempt(reference, surfaces)
             references.append(reference)
@@ -200,7 +202,7 @@ class GraspGuard:
                 "matching_points": 0,
                 "supporting_cameras": [],
             }
-            if width <= minimum + EMPTY_TOLERANCE_M:
+            if width <= minimum + empty_close_tolerance(minimum):
                 attempt.verified_once = False
                 attempt.status = "empty_suspected"
                 attempt.reason = (
@@ -208,7 +210,8 @@ class GraspGuard:
                     "For an object wider than this measured gap, inspect its location and regrasp."
                 )
                 continue
-            current = visible_surfaces(observation.rgb, pose, width, self.table_z_m)
+            current = visible_surfaces(observation.rgb, pose, width, self.table_z_m,
+                                       robot_profile=self.config.robot)
             evidence = match_surfaces(attempt.surfaces, current, width)
             if rise >= MIN_LIFT_M and not attempt.verified_once:
                 evidence.update(

@@ -1,11 +1,12 @@
 """Conservative grasp evidence from visible RGB-D surfaces and measured TCPs.
 
 No segmentation IDs, contacts, object poses or task scores are consumed. This
-checks co-moving visible surfaces inside an approximate R5 finger cavity; it
+checks co-moving visible surfaces around the R5 fingers; it
 does not certify object identity, mechanical stability or benchmark success.
 """
 
 from dataclasses import dataclass
+from functools import lru_cache
 
 import numpy as np
 
@@ -20,6 +21,64 @@ CAVITY_Z_M = 0.025
 FINGER_MARGIN_M = 0.003
 MATCH_DISTANCE_M = 0.006
 MIN_MATCHES = 6
+NARROW_GRASP_M = 0.006
+
+
+def surface_region(width_m, narrow=False):
+    if narrow or width_m < NARROW_GRASP_M:
+        # Thin walls have no visible interior after the finger safety margin.
+        # Observe the exposed adjoining surface, then explicitly subtract the
+        # robot meshes; co-motion and newly occupied/vacated pixels still apply.
+        return np.array([.0125,0,0]), np.array([.0475,.035,CAVITY_Z_M])
+    return np.zeros(3), np.array([CAVITY_X_M,width_m/2-FINGER_MARGIN_M,CAVITY_Z_M])
+
+
+@lru_cache(maxsize=8)
+def _gripper_meshes(asset_path, package_roots, tcp_pose, ee_link):
+    import xml.etree.ElementTree as ET
+    import trimesh
+    from pathlib import Path
+    from ..robots.transforms import origin_transform
+
+    tree=ET.parse(asset_path).getroot()
+    inverse=np.linalg.inv(pose_transform(tcp_pose))
+    def origin(node):
+        return origin_transform(tuple(map(float,node.get('xyz','0 0 0').split())),
+                                tuple(map(float,node.get('rpy','0 0 0').split()))) if node is not None else np.eye(4)
+    rows=[]
+    fingers=[j for j in tree.findall('joint') if j.find('parent').get('link')==ee_link and j.get('type')=='prismatic']
+    for link,joint in [(ee_link,None)]+[(j.find('child').get('link'),j) for j in fingers]:
+        parent=origin(joint.find('origin')) if joint is not None else np.eye(4)
+        axis=np.array(list(map(float,joint.find('axis').get('xyz').split()))) if joint is not None else np.zeros(3)
+        for visual in tree.find(f"link[@name='{link}']").findall('visual'):
+            node=visual.find('geometry/mesh')
+            if node is None:continue
+            filename=node.get('filename')
+            if filename.startswith('package://'):
+                package,leaf=filename[len('package://'):].split('/',1)
+                path=Path(dict(package_roots)[package])/leaf
+            else:path=Path(asset_path).parent/filename
+            mesh=trimesh.load(path,force='mesh')
+            mesh.apply_scale(list(map(float,node.get('scale','1 1 1').split())))
+            mesh.apply_transform(inverse@parent@origin(visual.find('origin')))
+            rows.append((mesh,inverse[:3,:3]@parent[:3,:3]@axis))
+    return rows
+
+
+def exclude_gripper(points, width_m, profile):
+    """Remove rendered hand surfaces using known robot geometry, never prop truth."""
+    if profile is None or not len(points):
+        return np.zeros(len(points),dtype=bool)
+    import trimesh
+    keep=np.ones(len(points),dtype=bool)
+    meshes=_gripper_meshes(profile.asset_path,profile.package_roots,profile.tcp_pose_wxyz,profile.ee_link)
+    for mesh,axis in meshes:
+        local=points-axis*(width_m/2)
+        ids=np.flatnonzero(keep & np.all((local>=mesh.bounds[0]-.003)&(local<=mesh.bounds[1]+.003),axis=1))
+        if len(ids):
+            _,distance,_=trimesh.proximity.closest_point(mesh,local[ids])
+            keep[ids[distance<.003]]=False
+    return keep
 
 
 @dataclass(frozen=True)
@@ -48,22 +107,24 @@ def _rays(u, v, calibration):
 
 
 def visible_surfaces(
-    frames: tuple[RGBFrame, ...], tcp_pose, width_m: float, table_z_m: float
+    frames: tuple[RGBFrame, ...], tcp_pose, width_m: float, table_z_m: float,
+    *, narrow_grasp=False, robot_profile=None,
 ) -> tuple[Surface, ...]:
-    """Only points strictly inside the jaw gap, above the known bench surface.
+    """Visible grasp-region points above the known bench surface.
 
-    The bench height is already disclosed in robot operating notes. The cavity
-    is robot geometry, not a task-specific object box. Invalid/occluded depth
-    yields no evidence, never a positive grasp verdict.
+    Wide grasps use the jaw interior. Thin grasps include adjoining exposed
+    surfaces, with the known robot meshes subtracted. Bench and hand geometry
+    are already disclosed; no task-specific object box is used. Invalid or
+    occluded depth yields no evidence, never a positive grasp verdict.
     """
-    half_width = width_m / 2 - FINGER_MARGIN_M
-    if half_width <= 0:
+    narrow_grasp = narrow_grasp or width_m < NARROW_GRASP_M
+    centre,bounds=surface_region(width_m,narrow_grasp)
+    if np.any(bounds <= 0):
         return ()
     tcp = pose_transform(tcp_pose)
-    bounds = np.array([CAVITY_X_M, half_width, CAVITY_Z_M])
     corners = (
         np.array([[x, y, z] for x in (-1, 1) for y in (-1, 1) for z in (-1, 1)])
-        * bounds
+        * bounds + centre
     )
     world_corners = corners @ tcp[:3, :3].T + tcp[:3, 3]
     output = []
@@ -94,12 +155,15 @@ def visible_surfaces(
             :3, 3
         ]
         local = (world - tcp[:3, 3]) @ tcp[:3, :3]
-        inside = (np.abs(local) < bounds).all(axis=1) & (
+        inside = (np.abs(local-centre) < bounds).all(axis=1) & (
             world[:, 2] > table_z_m + 0.006
         )
         # The rendered cyan TCP sphere moves with the robot even during an
         # empty lift. Exclude its known geometry, never count it as an object.
         inside &= np.linalg.norm(local, axis=1) > TCP_MARKER_RADIUS_M + 0.002
+        if narrow_grasp:
+            ids=np.flatnonzero(inside)
+            inside[ids] &= exclude_gripper(local[ids],width_m,robot_profile)
         points = local[inside]
         rgb = np.frombuffer(frame.data, dtype=np.uint8).reshape(
             frame.height, frame.width, 3
@@ -125,7 +189,8 @@ def match_surfaces(
         return {"supported": False, "matching_points": 0, "supporting_cameras": []}
     ref_points = np.concatenate([s.points for s in reference])
     ref_colours = np.concatenate([s.colours for s in reference])
-    mask = np.abs(ref_points[:, 1]) < width_m / 2 - FINGER_MARGIN_M
+    centre,bounds=surface_region(width_m)
+    mask = (np.abs(ref_points-centre)<bounds).all(axis=1)
     ref_points, ref_colours = ref_points[mask], ref_colours[mask]
     count, cameras = 0, []
     if not len(ref_points):

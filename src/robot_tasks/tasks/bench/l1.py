@@ -19,7 +19,7 @@ def marker():
     )
     d = replace(design("L1-01", "白板笔入固定纸杯笔筒", [a], (), friction=0.52),
                 fixture_asset="tuojing:ripple_paper_cup", fixture_pose=pose(*holder_xy, table_z),
-                version="l1-01-tuojing-marker-cup-v4-native-score",
+                version="l1-01-tuojing-marker-cup-v5-finger-contact",
                 provenance="Tuojing L20 2026-10-05 locked props; native size, flat marker barrel collider and fixed low-friction cup")
     return BenchSpec(
         d,

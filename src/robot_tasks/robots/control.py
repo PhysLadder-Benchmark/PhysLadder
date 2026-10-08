@@ -11,6 +11,12 @@ from .profile import RobotProfile
 MEASURED_JOINT_LIMIT_TOLERANCE_RAD = 1e-5
 
 
+def empty_close_tolerance(minimum_width):
+    # A 1.5-mm allowance swallowed legitimate 2-mm wall pinches after enabling
+    # the URDF's zero-gap range. Keep the old allowance for legacy wide stops.
+    return 0.0002 if minimum_width < 0.001 else 0.0015
+
+
 def bounded_measured_joints(positions, limits) -> tuple[float, ...]:
     """Bound a measured reference, allowing only tiny solver/float32 limit noise.
 

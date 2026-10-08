@@ -1,12 +1,13 @@
 """Offline control contracts; real execution is covered by the GPT pick/place integration case."""
 
-from dataclasses import replace
+from dataclasses import asdict, replace
 import hashlib
 import json
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
 import unittest
+import numpy as np
 from unittest.mock import Mock, patch
 import xml.etree.ElementTree as ET
 
@@ -154,6 +155,27 @@ class R5ControlTests(unittest.TestCase):
             self.assertEqual(robot.feedback().status, "completed")
             states["left"] = replace(states["left"], joint_velocities_rad_s=(0.3, 0, 0, 0, 0, 0))
             self.assertEqual(robot.feedback().status, "executing")
+
+    def test_timeout_then_finger_error_feedback_is_json_serializable(self):
+        robot = R5Adapter()
+        robot.config = self.config
+        robot.targets = self.targets.copy()
+        # Reproduce the real timeout path reusing a bounded NumPy drive reference.
+        robot.drive_targets = {name: tuple(np.float64(v) for v in target)
+                               for name, target in self.targets.items()}
+        states = {name: ArmState(joint_positions_rad=target[:6],
+                                 finger_positions_m=tuple(v+.002 for v in target[6:]),
+                                 joint_velocities_rad_s=(0.,)*6,
+                                 finger_velocities_m_s=(0.,0.))
+                  for name,target in self.targets.items()}
+        with patch.object(robot,"state",return_value=states):
+            robot.on_action_timeout()
+            feedback = robot.feedback()
+        # A failed comparison short-circuits to np.bool_ without normalization.
+        for details in feedback.metrics['arms'].values():
+            self.assertIs(details['gripper_reached'],False)
+        json.dumps(asdict(feedback),allow_nan=False)
+        self.assertEqual(robot.paths,{})
 
 
 if __name__ == "__main__":

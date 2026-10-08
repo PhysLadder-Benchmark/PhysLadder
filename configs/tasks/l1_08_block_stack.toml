@@ -20,9 +20,13 @@ arm_stiffness = 1500.0
 arm_damping = 80.0
 finger_stiffness = 2000.0
 finger_damping = 40.0
+stable_gripper_drive = true
+finger_max_acceleration = 0.15
+finger_closing_lead = 0.0015
+finger_effort_limit = 4.0
 self_collision = false
 solver_position_iterations = 32
-solver_velocity_iterations = 0
+solver_velocity_iterations = 4
 camera_position = [0.21354960845762927, 0.48765041712220114, 1.32]
 camera_target = [0.1643434123515941, 1.0254038459952994, 0.78]
 
