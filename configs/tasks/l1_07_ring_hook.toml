@@ -10,7 +10,7 @@ observation_arms = ["right"]
 
 [simulation]
 environment = "tuojing_lab_v4"
-camera_profile = "../cameras/r5_tuojing_lab.toml"
+camera_profile = "../cameras/r5_tuojing_lab_hat.toml"
 asset_directory = "../../build/tuojing_lab"
 headless = true
 width = 1280
@@ -23,8 +23,8 @@ finger_damping = 40.0
 self_collision = false
 solver_position_iterations = 32
 solver_velocity_iterations = 4
-camera_position = [0.21354960845762927, 0.48765041712220114, 1.32]
-camera_target = [0.1643434123515941, 1.0254038459952994, 0.78]
+camera_position = [0.21354960845762927, 0.48765041712220114, 2.25]
+camera_target = [0.19565, 1.2, 0.86]
 
 [policy]
 model_config = "../models/gpt.toml"
@@ -50,9 +50,11 @@ sloping peg of the fixed wooden rack. Higher pegs and the trunk are not targets.
 The native rack is 0.82 m tall; the peg is 20 mm thick with a rounded tip.
 The visor is one rigid prop about 232 x 295 x 85 mm, with an open head band about
 176 x 196 mm. Do not assume a cup or a small ring. The band and brim alone are
-only 2-3 mm thick, too thin for the 12-mm minimum gripper opening. Passive source
-pads leave clearance under the brim: grasp across the brim underside and the
-front band top, within the 70-mm maximum opening. Keep the oval opening free.
+only 2-3 mm thick. The nominal gripper range is now 0-70 mm. Passive source
+pads leave clearance under the brim. You may pinch the upper edge of the band
+from ABOVE, with vertical distal fingers, one just inside and one outside; or
+pinch an exposed brim edge. Avoid driving the bulky finger body sideways through
+the curved band. Keep the peg insertion region of the oval opening free.
 Verify a short lift and use current images to check that the whole hat follows.
 Rotate the opening toward the lowest peg, keeping the wide brim and both fingers
 clear of the trunk and higher pegs. Pass the rounded tip fully through the band,
@@ -72,8 +74,8 @@ or assume a force-control tool that the interface does not expose.
 # Chinese setup/props description; keep this the final task attribute.
 description = """
 道具：交付原生黄色空顶帽（约 232×295×85 mm、65 g，帽圈开口约 176×196 mm）和木质挂架（高 82 cm，最低杆直径 20 mm）。
-布置：挂架固定，最低斜挂杆朝向机械臂；帽子由四个 45 mm 高被动支撑垫托住帽圈，帽檐下方留出约 25 mm 抓取空间。
-操作：左臂跨帽檐下表面与前侧帽圈上沿抓取并验证抬升，留出帽圈开口；转向最低挂杆圆头，套入并放低到后部内圈承重；右臂仅观察。
+布置：挂架向左臂方向移近，最低斜挂杆朝向左臂操作区；帽子放在挂架左侧，帽檐转向远离立柱的空旷侧。四个 45 mm 高被动支撑垫托住帽圈，帽檐下方留出约 25 mm 抓取空间。
+操作：左臂从上方轻夹帽圈上沿（夹指一内一外），或夹住露出的帽檐，并验证抬升，留出帽圈开口；转向最低挂杆圆头，套入并放低到后部内圈承重；右臂仅观察。
 完成：指定最低杆穿过原生帽圈，帽子已释放并由该杆提供向上承托，整帽离开桌面；不要求等待静止。
-边界：不缩放帽子或挂架，不封闭帽圈，不模拟布料形变；薄帽圈不能直接用 12 mm 最小开口夹取。
+边界：不缩放帽子或挂架，不封闭帽圈，不模拟布料形变；夹爪名义开口为 0–70 mm，可轻夹帽檐，须通过短距离提起确认抓持。
 """
