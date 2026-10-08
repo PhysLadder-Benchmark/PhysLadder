@@ -176,15 +176,16 @@ def cups():
 
 
 def flower():
-    # Native rose is one rigid body; the narrow stem and wider bud remain
-    # distinct in the conservative planner proxy as well as in native physics.
+    # Physics, scoring and carried-object planning share the native bent stem
+    # and bud colliders. Do not widen the stem at its tabletop pickup contact.
     table_z, holder_xy = 0.78, (0.105, 1.115)
-    parts = (
-        cylinder("stem_proxy", 0.003, 0.265, (0, 0, 0.1325), GREEN),
-        cylinder("bud_proxy", 0.018, 0.055, (0, 0, 0.2745), RED),
-    )
     rose = Article(
-        "rose", parts, pose(-0.28, 1.22, table_z + 0.020, pitch=math.pi / 2),
+        # Native collider/COM resting pose: both the tip and head start near
+        # support, with 0.01 mm clearance, rather than dropping a horizontal rose.
+        # Long axis remains along +X. Free dynamics still settle this reset pose.
+        "rose", (), (-0.28, 1.22, table_z + 0.0009854593730216,
+                     0.2951003515573617, -0.6265583937983512,
+                     0.27773423465629116, -0.6657357257737007),
         pose(*holder_xy, table_z + 0.0041), 0.008,
         asset="tuojing:artificial_rose",
         asset_bounds=((-0.0178, -0.0178, -0.000014), (0.0179, 0.0179, 0.3018)),
@@ -192,14 +193,14 @@ def flower():
     d = replace(
         design("L1-09", "刚体玫瑰插花", [rose], ()),
         fixture_asset="tuojing:ripple_paper_cup", fixture_pose=pose(*holder_xy, table_z),
-        version="l1-09-tuojing-rigid-rose-v2-native-score",
+        version="l1-09-tuojing-rigid-rose-v4-settled-reset",
         provenance="Native locked Tuojing rigid artificial rose and fixed ripple paper cup; no scaling or bending joints",
     )
     return BenchSpec(
         d,
         mechanism="rigid_rose_in_fixed_cup",
-        facts="The red artificial rose is ONE rigid object about 302 mm long and 8 g, with a thin green stem about 2.1 mm thick and a bud about 34-36 mm wide. It starts lying on the table. The 12 mm minimum gripper opening cannot pinch the thin stem; grasp opposite sides of the wider bud or calyx instead, without blocking the free stem tip. The source asset's stem grasp marker is not suitable for this gripper. The entire rose moves rigidly and does not bend. Place the free stem end into the fixed red-brown ripple paper cup (107.5 mm tall, inside mouth about 78.6 mm). Keep the bud above the rim, place the free stem end genuinely inside the cavity, lower gently and release for cup support. No fixed tilt angle or 25 mm insertion depth is required. Natural leaning against the inner wall is allowed. No soft-stem, petal-deformation or fracture behaviour is evaluated.",
-        limitations="Photo-estimated native rigid artificial rose and rigid fixed paper cup. Stem, calyx and petals move together; no bending or damage model. Narrow stem/wider bud proxy is used only for planner clearance; physical colliders remain native.",
+        facts="The red artificial rose is ONE rigid object about 302 mm long and 8 g, with a thin green stem about 2.1 mm thick and a bud about 34-36 mm wide. It starts lying on the table. The thin stem is difficult to capture reliably; prefer opposite sides of the wider bud or calyx without blocking the free stem tip. The source asset's stem grasp marker is not suitable for this gripper. The entire rose moves rigidly and does not bend. Place the free stem end into the fixed red-brown ripple paper cup (107.5 mm tall, inside mouth about 78.6 mm). Keep the bud above the rim, place the free stem end genuinely inside the cavity, lower gently and release for cup support. No fixed tilt angle or 25 mm insertion depth is required. Natural leaning against the inner wall is allowed. No soft-stem, petal-deformation or fracture behaviour is evaluated.",
+        limitations="Photo-estimated native rigid artificial rose and rigid fixed paper cup. Stem, calyx and petals move together; no bending or damage model. Carried-object planning samples the same four bent stem capsules and bud colliders used by native physics and scoring.",
         parameters={"table_z": table_z, "vase_xy": holder_xy,
                     "floor": table_z + 0.004, "rim": table_z + 0.1075,
                     "radius": 0.025, "mouth_radius": 0.0393,

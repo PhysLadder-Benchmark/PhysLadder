@@ -78,6 +78,12 @@ class BenchTask:
         else:
             self.evaluator = BenchEvaluator(self.spec, self.scene.initial)
 
+    def initialize_episode(self, backend, robot, tick):
+        if self.spec.design.task_id == "L1-09":
+            from .startup_settling import settle_rose
+
+            backend.scene_report["household"]["initial_prop_settling"] = settle_rose(self.scene, tick)
+
     def evaluate(self, state, feedback):
         now = state.values["simulation_time_s"]
         assessment = self.evaluator.update(now, self.scene.measure())

@@ -40,7 +40,7 @@ execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
 implementation = "household"
-simulation_limitations = "Photo-estimated native rigid artificial rose and rigid fixed paper cup. Stem, calyx and petals move together; no bending or damage model. Narrow stem/wider bud proxy is used only for planner clearance; physical colliders remain native."
+simulation_limitations = "Photo-estimated native rigid artificial rose and rigid fixed paper cup. Stem, calyx and petals move together; no bending or damage model. Carried-object planning samples the same native bent stem and bud colliders as physics and scoring."
 launch_command = "python tools/launch.py run L1-09 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L1-09 --gui"
 instruction = """
@@ -54,26 +54,84 @@ end into the fixed red-brown ripple paper cup used as the flower holder.
 The whole rose is a single rigid body: stem, calyx and petals move together.
 Do not expect bending, drooping, petal crushing or a need to support a soft stem.
 
-Identify the free green stem tip, wider flower head and open cup. The stem is
-only about 2.1 mm thick, narrower than this gripper's 12 mm minimum opening.
-Do NOT try to pinch the thin stem, even if an asset marker suggests that point.
-Grasp opposing sides of the wider bud or calyx instead (bud about 34-36 mm wide).
-Choose your wrist orientation and pad height from the current RGB-D views so
-both fingers clear the table and contact the flower head. Leave the stem free.
-Use the right wrist camera to clarify hidden contact while holding the left
-arm still. Close separately, then make a short test lift and verify that the
-whole rigid rose follows. An empty close or blocked fingers are not a grasp.
+Pickup decision rules (v2: head grip, whole-rose lift, then stem-down insertion):
+1. Identify the free stem tip, wider head and table clearance. Do NOT pinch the
+2.1-mm stem. Choose opposing sides of the 34-36-mm bud or wider calyx. The rounded
+bud can pivot in a crosswise pinch; consider contacts along its long axis on
+the wider sides, not just its upper surface. Choose all poses from current
+images. Localize the cup precisely after pickup, when its alignment matters.
+2. Batch the depth samples needed for one concrete grasp candidate in a single
+query decision (up to 8 pixels). State which uncertainty each new query resolves.
+A visible surface sample is not the bud centre. Do not repeatedly remeasure the
+same feature without a specific missing or contradicted fact. After a camera
+move, pixel coordinates change: use fresh images/calibration. Retain a previous
+world-position estimate only when current evidence supports that the rose has
+not moved; apparent image motion alone is not proof of object displacement.
+3. CLOSE-READY means current RGB-D evidence shows the intended wider head
+between the open fingers, opposing pad locations at its sides, and clearance
+from the table, stem and camera housing. One informative view can be sufficient;
+use another view only for a specific hidden contact or clearance. Neither exact
+visual centring nor already touching the bud is required before closing.
+When CLOSE-READY, make the NEXT decision a separate gripper closure. Do not add
+another confirmation-only query or recentering move without new contrary evidence.
+4. Before closing, allow at most TWO seating corrections for the same grasp candidate, each
+addressing a named, observed error. Then either close if CLOSE-READY or abandon
+that candidate: obtain a meaningfully different view, contact pair or approach
+orientation. Do not cycle through raise/recentre/lower at the same candidate.
+If THREE consecutive decisions add no usable evidence or visible progress,
+change the strategy on the next decision. A budget limit never authorizes blind
+closure or collision: if unsafe, retreat to clearance or change the view.
+5. Keep the left arm still during an observation-arm move. Before moving the
+right camera, name the hidden feature and how the new view should reveal it.
+After a rejected view move, choose a different reachable view based on feedback;
+do not repeat an equivalent rejected target. During pickup, briefly carry the stage,
+close-ready or specific blocker, correction count (0/2, 1/2 or 2/2), and no-progress
+count (0/3 to 3/3) in each existing decision note. Reset the correction count only
+for a genuinely new candidate, not after another depth query. Reset no-progress
+only for useful new evidence or observed progress, not merely a completed command.
+These are decision rules for you, not an automatic
+grasp controller or a declaration of task success.
+6. HEAD-GRIP CHECK: after closing, test-lift vertically 0.02-0.03 m with XY and
+orientation held. Check that the head follows and stays seated between the pads
+without visible slip. The free stem tip MAY still touch the table at this stage;
+that alone is NOT a failed grasp and is NOT a reason to open or start over.
+A verified RGB-D grasp check confirms local following near the fingers, not
+whole-rose clearance. Empty closure or blocked fingers alone prove neither.
+Keep the existing grasp-verification movement limits until status=verified;
+do not bypass them when the check is pending or unknown.
+7. WHOLE-ROSE LIFT: once the head grip is verified and visibly stable, KEEP THE
+GRIPPER CLOSED and progressively raise the head, inspecting the entire stem.
+Use small safe pose adjustments as needed to bring the free tip fully off the
+table without dragging or pressing it into the surface. The rose is about
+302 mm long; the initial 20-30 mm test lift is not the total pickup height limit
+after verification. Choose further motion from current clearance and feedback.
+The pre-close seating-correction budget does not limit this lifting stage.
+Do not transport toward the cup until the whole rose is clear and held stably.
+8. STEM-DOWN ALIGNMENT: with the whole rose suspended, actively adjust the wrist
+to point the free stem end downward, approximately vertical, before cup transfer.
+Check clearance along the entire stem throughout rotation; raise further first
+if its swept path would touch the table. The rose is rigid: do not rely on bending
+or uncontrolled rotation within the fingers to obtain this orientation.
+9. RECOVERY: visible slipping, loss of head seating, or persistent inability to
+gain clearance calls for inspection and a revised grasp. A stem tip still touching
+after the initial test lift does not by itself justify abandoning a stable grip.
+If regrasping is necessary while holding the rose, first lower it under control
+and confirm table support, then open in a separate action. Do not release a raised
+head merely to reset the attempt. If evidence or motion limits prevent safe
+lowering, hold and inspect; do not bypass the guard or force an opening.
 
-After a verified lift, reorient the free stem end downward. The rose is about
-302 mm long, so check clearance along the entire stem during rotation and travel.
-Carry the stem tip above the cup rim, align the TIP with the interior opening
+After whole-rose clearance and approximately vertical stem-down alignment,
+carry the stem tip above the cup rim, align the TIP with the interior opening
 rather than simply centring the TCP, and lower in small increments. The cup is
 107.5 mm tall with an inside mouth about 78.6 mm wide. Get the free stem end
 inside the opening, then lower gently toward support, keeping the bud above
 the rim and the fingers clear. Do not balance the stem on the rim or release
 above the opening. If contact blocks entry, lift slightly and correct alignment.
 
-Open in a separate action, withdraw without dragging the rose, and observe it
+Open in a separate action with enough clearance around the entire head (the
+maximum opening is 70 mm). Confirm both fingers have disengaged before a large
+withdrawal; a commanded opening alone is not release evidence.
+Withdraw without dragging the rose, and observe it
 supported by the cup for one simulation second. Natural rigid-body leaning
 against the inner cup wall is allowed; no fixed tilt-angle or 25 mm depth
 threshold is required. Actual cavity fit and cup support determine the result.
@@ -91,8 +149,10 @@ or assume a force-control tool that the interface does not expose.
 description = """
 道具：交付原生红色仿真玫瑰（整株刚体，长约 302 mm、质量约 8 g）及原生波纹纸杯（高约 107.5 mm、内口径约 78.6 mm）。纸杯固定作为插花容器。
 布置：拓境实验室、原生 R5 双臂和三相机，桌面世界高度 0.78 m。玫瑰横放于左臂前方，纸杯在旁边；左臂操作，右臂只可主动观察。
-抓持：花茎约 2.1 mm，比夹爪 12 mm 最小开口细，不能抓紧细茎；选花头或花萼较宽部位相向夹持，花头约宽 34–36 mm。原资产细茎抓点不作为本任务的推荐抓点。
-操作：确认抓起整株后，调整茎端向下，将茎端实际送入杯内，再轻放、松手并退出；允许刚体自然靠在杯内壁，不另设固定倾角或 25 mm 深度门槛。
+初始化：按原生碰撞形状和重心选择低势能落座姿态，花头和茎端近桌面，初始净空约 0.01 mm；保持原生质量、惯量、摩擦和阻尼。启动后自然推进物理，连续 2 秒满足承托、低线速度/角速度及位姿漂移检查，才开始 GPT 决策；120 秒仿真时间内不稳定则报初始化错误。没有锁定、吸附或强制清零速度。
+抓持：花茎约 2.1 mm，很细，稳定抓持困难；选花头或花萼较宽部位相向夹持，花头约宽 34–36 mm。圆花头横向夹持可能转动并使茎端拖桌，可根据图像选择沿花头长轴的相向接触，避免仅夹上表面。原资产细茎抓点不作为本任务的推荐抓点。
+决策：接触位置及桌面间隙证据充分即可单独闭爪试抓，不要求先接触或完美居中；同一方案最多两次就位修正，连续三轮无有效新证据或进展则更换视角或抓法。深度查询需说明待解决的疑点；有安全疑点时不强制闭爪。计数由 GPT 在简短决策记录中维护，控制器不自动选点或闭爪。
+操作：先抓稳花头或花萼，竖直试抬 2–3 cm 验证跟随，此时允许茎端暂时接触桌面，不因此松手。抓持验证通过且无明显滑移后保持闭爪，逐步抬高并小幅调整，让整株和茎端完全离桌；再主动调整腕部，使茎端朝下、近似竖直，检查全长旋转净空后移向杯口。对准茎端将其实际送入杯内，获得杯体承托后单独张爪、验证脱手再退出。需要重抓时先受控放回桌面并确认承托，再松手；禁止以松开悬空花头来重置抓取。近似竖直是入杯前的操作姿态，完成时允许刚体自然靠在杯内壁，不另设固定倾角或 25 mm 深度门槛。
 完成：按四段原生茎胶囊检查，茎端在杯腔内且不穿透杯壁，花头在杯沿上方，整株由杯体承托且无桌面或夹指支撑，位置、倾斜与承托持续稳定 1 秒；单纯绕轴自转且仍满足碰撞体入杯时不拒绝完成。抓持历史独立记录，不作为最终插花结果的门槛。
-实现：直接引用交付 USD，保留原尺寸、材质和碰撞体；没有柔性连接、弯曲弹簧或软茎评分，也不模拟花瓣压伤。规划净空按细茎与较宽花头分别近似，物理仿真仍使用原生碰撞体。
+实现：直接引用交付 USD，保留原尺寸、材质和碰撞体；没有柔性连接、弯曲弹簧或软茎评分，也不模拟花瓣压伤。规划净空按四段原生弯折花茎及花头碰撞体采样，与物理仿真和评分几何一致。
 """
