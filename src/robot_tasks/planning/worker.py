@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import sys
+import time
 
 # Keep CUDA/JIT artifacts with the installed research environment, not the OS disk.
 _cache = Path(sys.prefix) / "cache"
@@ -177,6 +178,8 @@ class CuroboWorker:
         states = request["states"]
         for command in request["commands"]:
             arm = command["arm"]
+            phase_start = time.perf_counter()
+            print(f"PLANNER_STAGE id={request['id']} arm={arm} stage=world", flush=True)
             state = states[arm]
             bounds = [
                 next(x for x in self.profile.operating_limits if x.joint == n)
@@ -195,6 +198,8 @@ class CuroboWorker:
                 self.profile.ee_link, spheres
             )
             self.planner.update_world(self.world(arm, request))
+            print(f"PLANNER_STAGE id={request['id']} arm={arm} stage=solve world_s={time.perf_counter()-phase_start:.3f}", flush=True)
+            solve_start = time.perf_counter()
             q0 = torch.tensor(
                 [reference], device="cuda", dtype=torch.float32
             )
@@ -255,6 +260,7 @@ class CuroboWorker:
                 "start_joint_limit_correction_max_rad": max(
                     abs(q - r) for q, r in zip(state["joint_positions_rad"], reference)
                 ),
+                "solve_s": time.perf_counter() - solve_start,
             }
         # Check and execute the same time law. A common finish time avoids one
         # hand arriving early during a paired move; it is NOT a rigid attachment
@@ -265,7 +271,9 @@ class CuroboWorker:
             paths[arm] = {"positions": path.positions, "times_s": path.times_s}
             diagnostics[arm]["duration_s"] = path.duration_s
             diagnostics[arm]["timing_protocol"] = "shared_finish_preserved_time_law_v1"
+            print(f"PLANNER_STAGE id={request['id']} arm={arm} stage=payload solve_s={diagnostics[arm]['solve_s']:.3f}", flush=True)
             self.check_payload(arm, path, request, diagnostics[arm])
+            print(f"PLANNER_STAGE id={request['id']} arm={arm} stage=done", flush=True)
         if len(paths) > 1:
             self.check_bimanual(paths, states)
         return {"id": request["id"], "paths": paths, "diagnostics": diagnostics}
@@ -299,14 +307,19 @@ class CuroboWorker:
             return
         import trimesh
 
+        started = time.perf_counter()
         obstacles = request["scene"]["obstacles"]
-        meshes = []
-        for data in obstacles.get("mesh", {}).values():
-            mesh = trimesh.Trimesh(
-                vertices=data["vertices"], faces=data["faces"], process=True
-            )
-            mesh.apply_transform(pose_transform(data["pose"]))
-            meshes.append(mesh)
+        # JSON requests own immutable snapshots. Reuse static acceleration
+        # structures, but invalidate if vertices, faces or poses have changed.
+        if getattr(self, "_payload_obstacles", None) != obstacles:
+            meshes = []
+            for name, data in obstacles.get("mesh", {}).items():
+                mesh = trimesh.Trimesh(vertices=data["vertices"], faces=data["faces"], process=True)
+                mesh.apply_transform(pose_transform(data["pose"]))
+                meshes.append((name, mesh))
+            self._payload_obstacles, self._payload_meshes = obstacles, meshes
+        meshes = self._payload_meshes
+        mesh_queries = 0
         start = np.linalg.inv(
             pose_transform(
                 self.kin.forward(request["states"][arm]["joint_positions_rad"], arm)
@@ -314,7 +327,7 @@ class CuroboWorker:
         )
         for payload in payloads:
             # Measured held-body samples, never a fixed joint or object pose write.
-            points = np.asarray(payload["surface_points_world"])
+            points = np.unique(np.asarray(payload["surface_points_world"]), axis=0)
             local = points @ start[:3, :3].T + start[:3, 3]
             for t in np.arange(0, path.duration_s + 0.02, 0.02):
                 pose = pose_transform(self.kin.forward(path.sample(t), arm))
@@ -323,15 +336,30 @@ class CuroboWorker:
                     raise ValueError(
                         f"{arm}: carried-object clearance intersects table; lift before transport"
                     )
-                for mesh in meshes:
+                low, high = world.min(axis=0), world.max(axis=0)
+                for name, mesh in meshes:
+                    # A point outside a closed mesh's AABB cannot be inside it.
+                    # Expand by the existing tolerance; retain the exact narrow
+                    # phase for every potentially penetrating point.
+                    bounds = mesh.bounds
+                    if np.any(high < bounds[0] - .001) or np.any(low > bounds[1] + .001):
+                        continue
+                    nearby = world[np.all((world >= bounds[0] - .001) & (world <= bounds[1] + .001), axis=1)]
+                    if not len(nearby):
+                        continue
+                    mesh_queries += 1
                     # Negative outside; allow up to 1 mm contact tolerance, including final seating.
-                    if np.any(trimesh.proximity.signed_distance(mesh, world) > 0.001):
+                    penetration = float(np.max(trimesh.proximity.signed_distance(mesh, nearby)))
+                    if penetration > 0.001:
                         raise ValueError(
-                            f"{arm}: carried-object path penetrates fixture; choose clearance then approach"
+                            f"{arm}: carried-object path penetrates fixture {name} "
+                            f"at t={t:.3f}s (depth={penetration * 1000:.3f} mm); "
+                            "choose clearance then approach"
                         )
         diagnostic["payload_guard"] = (
             "held surface samples checked against table and fixture (1 mm contact tolerance)"
         )
+        diagnostic.update(payload_check_s=time.perf_counter()-started, payload_mesh_queries=mesh_queries)
 
 
 def main():

@@ -5,6 +5,8 @@ A task may register physically measured held-body surface samples for clearance
 checking; this does not attach the object in physics or establish task success.
 """
 
+from functools import lru_cache
+
 import numpy as np
 
 
@@ -174,9 +176,35 @@ def box_surface(size, resolution=5):
     )
 
 
+@lru_cache(maxsize=1)
+def _rose_surface():
+    """Sample the locked physical colliders, preserving all four stem bends.
+
+    A widened straight stem penetrates the supporting table before a pickup
+    even starts. Use the same local geometry as physics/scoring, without
+    changing contact tolerances or exempting the start of a trajectory.
+    """
+    from ..tasks.bench.native_geometry import shapes, polyhedron
+
+    samples = []
+    for index, shape in enumerate(shapes("artificial_rose")):
+        vertices, _, _ = polyhedron("artificial_rose", index)
+        samples.append(vertices)
+        if shape["kind"] == "mesh":
+            triangles = vertices[np.asarray(shape["faces"])]
+            weights = np.array([(i / 4, j / 4, 1 - (i + j) / 4)
+                                for i in range(5) for j in range(5 - i)])
+            samples.append(np.einsum("wk,fkd->fwd", weights, triangles).reshape(-1, 3))
+    points = np.unique(np.concatenate(samples), axis=0)
+    points.setflags(write=False)
+    return points
+
+
 def article_surface(article):
     from ..robots.transforms import origin_transform
 
+    if article.asset == "tuojing:artificial_rose":
+        return _rose_surface()
     if article.asset == "tuojing:yellow_visor":
         from ..tasks.bench.native_geometry import shapes, transformed_poly
 
