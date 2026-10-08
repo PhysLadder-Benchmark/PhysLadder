@@ -49,10 +49,80 @@ Pick up the white USB charger lying on its side and insert its two metal blades
 into the MIDDLE blue two-slot socket of the fixed, unpowered white power strip.
 Grip plastic, not metal blades; the USB output opening is not the entering end.
 The strip's coiled cable is fixed and is not a manipulation target.
+
+Choose the grasp BACKWARD FROM INSERTION, not merely from pickup or visibility.
+First inspect the final relation: both blades point down into their respective
+middle slots and the plastic housing can seat on the socket face. Choose a
+plastic contact region away from the blades, with enough finger overlap for a
+reliable hold. Check the WHOLE gripper: both fingers and the palm must clear the
+strip throughout alignment, descent and housing seating. Exposed blade tips or
+a clear TCP alone do not prove this clearance. Side-entry grasps are acceptable
+when these conditions hold; no single gripper orientation is prescribed.
+Consider the tabletop grasp, clear-of-table reorientation and above-socket
+pre-insertion poses together before closing. Prefer a grasp that plausibly
+connects these poses without extreme wrist rotation or an obstructed approach.
+This is a visual hypothesis, not an IK/collision certificate: the interface has
+no separate dry-run candidate/path-check tool. Do not invent one, send motions
+as harmless queries, or claim future reachability before planning accepts them.
+
 Locate the housing and both slots from RGB-D views. Query depth on solid visible
 surfaces, not dark holes or silhouettes. The housing's 27 mm thickness fits the
 70 mm gripper opening. Leave both blades exposed. Close, make a short lift and
 verify the whole charger follows before transport. Regrasp after an empty close.
+
+After a VERIFIED short lift, progress to clearance and reorientation. A 25 mm
+test lift is only a grasp checkpoint, not necessarily enough clearance to rotate
+the whole charger. With closure retained, choose a vertical lift that clears the
+housing, blades and fingers from the table and fixtures throughout the intended
+rotation. Use the visible housing and measured hand pose to choose this move;
+do not require a perfect view of both blades before a safe clearance lift.
+Once clear, use small, separately inspected motions toward an insertion-ready
+pose. Seeing the underside is information, not the motion objective. Do not
+keep rotating at the pickup XY just to expose the blades if this worsens the
+approach. When needed and feasible, use the right camera for visibility while
+retaining a useful left-hand pose. Keep the right arm clear of the swept space.
+Recheck that the charger follows and that its pose relative to the hand has not
+slipped. Do not rotate beside the tabletop or infer blade pose from TCP alone.
+
+Observation budget: for the SAME unresolved visibility question, allow at most
+TWO consecutive observation attempts without new useful evidence. A rejected
+right-arm move, an executed view that remains occluded, and repeated depth
+queries that do not resolve that question all count. A rejection or changing
+camera targets does not reset this count. State the question and attempt count
+briefly in the decision note. Then change strategy instead of another camera
+search: if holding remains verified, choose a safe clearance or free-space move
+that advances toward the pre-insertion pose; if the right arm blocks it,
+retract that arm toward a previously reached clear pose as a clearance action.
+Exhausting this observation budget does NOT by itself require placement/regrasp.
+
+A planning rejection is not proof that the object slipped, the grasp is wrong
+or the goal is unreachable. Read the reported constraint. A generic "no valid
+collision-checked trajectory" does not identify IK, joint-limit or collision
+failure. Do not invent a diagnosis. Use images and measured state to choose a
+meaningful change in translation, height or orientation, or a return to a known
+clear pose; do not repeat the same rejected target unchanged.
+If regrasp is necessary, state briefly BEFORE placing down what makes the
+current grasp unsuitable and which contact region or gripper direction the
+next grasp will change. Do not repeat the same pickup-turn-fail-place cycle
+without a concrete revised grasp hypothesis. If no safe alternative is evident,
+retain closure and inspect rather than dropping or repeating the failed cycle.
+For regrasp, use a controlled supported placement and open separately. Judge
+support from multiple views and measured motion together: a sampled visible rim
+need not be the lowest contact point. If further downward commands produce
+little measured motion near the table, stop pushing and inspect; do not chase a
+small depth gap with repeated down commands or invent contact-force readings.
+
+A tracking_uncertain result after a verified lift
+is not proof that the charger fell. Retain closure; prefer returning to the last
+verified pose to recover visibility, or use the bounded vertical recovery descent
+described by the guard, away from socket contact. Inspect after each recovery.
+Never open in midair to reset an uncertain grasp or because the observation budget
+is exhausted. Restore verification and establish visible support before opening.
+If safe recovery is blocked, hold rather than drop. Unknown grasp status must
+still obey the grasp guard; never bypass it with repeated small motions. Do not repeat a rejected
+target without addressing its reported constraint. All poses remain your choices
+from current observations; there is no supplied successful motion sequence.
+
 Reorient both blades downward and carry their tips clear of the strip. Account
 for their offset from the TCP and align BOTH blades with BOTH middle slots.
 Use a clear oblique right-wrist view if alignment is obscured. Native minimum
@@ -77,7 +147,7 @@ or assume a force-control tool that the interface does not expose.
 description = """
 道具：交付 USB 充电器和插线板，原生尺寸、材质及两片插脚/插孔碰撞体；插线板固定且不通电。
 布置：拓境实验室、原生 R5 双臂及三相机。充电器侧躺在左臂前方，目标为插线板中间的蓝色双孔；右臂仅观察。
-操作：自主抓塑料壳，确认抬起后调整为插脚向下，同时对齐两孔，轻插、松手并退出。
+操作：从双脚向下、外壳可落座的最终姿态倒推抓法，检查两指和掌部全过程不干涉插线板；短提验证后建立离桌间隙，朝预插入姿态调整，不能只为看清底部而转动。右臂按需提供视角；连续两次观察无进展时改变策略，不自动放回。重抓前说明抓法问题及下一次的具体改变；落桌受阻时停止下压并观察。确认双脚对齐两孔后轻插、松手并退出。
 完成：逐片原生倒角插脚进入对应孔至少 15 mm，塑料外壳肩部落座（距插座面不超过 1 mm），松手后由插座承托并稳定 1 秒。抓持抬升记录独立报告，不作为最终插接结果的历史门槛。
 边界：插脚 1.5×6.3 mm，孔 2.6×8.2 mm，最小单侧间隙 0.55 mm，比旧代理更精密，不能标成同等难度。插座零摩擦，不模拟电接触或弹簧卡持。
 """

@@ -74,12 +74,31 @@ class GPTPolicy:
         self.instructions += f" Combined motion/gripper timing: {ExecutionSettings.from_config(config).gripper_timing}."
         self.instructions += f" Arm roles: {json.dumps(config.arm_roles)}. Only manipulation arms may manipulate task objects. Fixed arms must remain still."
         if config.observation_arms:
-            self.instructions += (
-                f" Observation arms {config.observation_arms} may move to obtain a clearer wrist-camera view. "
+            observation_advice = (
                 "If the available views do not clearly show the grasp, working end, target opening or "
                 "their relative alignment, actively reposition an observation arm before continuing "
                 "manipulation. This includes uncertainty about whether an object is still held after "
                 "lifting, or why an approach or insertion failed. You choose whether and where to inspect. "
+            )
+            if config.task_id == "L1-03":
+                observation_advice = (
+                    "For L1-03, distinguish uncertain holding from an occluded blade end. If holding "
+                    "is unverified, actively reposition an observation arm or use the permitted grasp "
+                    "recovery; all grasp-check motion bounds still apply. If holding is verified and "
+                    "current images support a safe clearance move, seeing both blades is not a "
+                    "prerequisite for lifting clear or a small free-space move toward an insertion-ready pose. "
+                    "Choose the grasp from final insertion clearance: both fingers and palm must permit "
+                    "blade entry and housing seating. Prefer an observation-arm view when needed and feasible; "
+                    "do not sacrifice a useful manipulation pose merely to show the underside. "
+                    "Follow the task's two-attempt observation limit; exhaustion does not require regrasp. "
+                    "Before a recovery placement, identify the current grasp problem and a concrete change "
+                    "to the next grasp. Generic planner rejection does not prove a bad grasp. "
+                    "Confirm both blades and slots "
+                    "before insertion; visibility uncertainty does not authorize blind contact. "
+                )
+            self.instructions += (
+                f" Observation arms {config.observation_arms} may move to obtain a clearer wrist-camera view. "
+                + observation_advice +
                 "Before changing the view, ensure the manipulation arm is holding a stable pose. "
                 "Use the same motion interface for an observation-only decision, leaving the manipulation "
                 "arm and its gripper unchanged. Then inspect the updated images, measured state and "
