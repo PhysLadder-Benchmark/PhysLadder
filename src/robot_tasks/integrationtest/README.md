@@ -72,6 +72,23 @@ python -m robot_tasks.integrationtest.bottle_clearance --render
 
 检查从瓶身接近、夹持到瓶盖旋转、张爪、退出及回转重抓的 1,420 个采样姿态，使用 URDF 网格包围盒和相机／支架 CAD 尺寸检查双臂互相及相机与道具的间隙；数值 IK 只用于此诊断，不接入生产控制。报告在 `runs/l3_03_square_clearance.json`，截图在同名目录。诊断姿态不替代模型抓持，不构成连续轨迹认证、真实接触稳定性、全身自碰撞或 GPT 成功证据；相机安装参数仍未标定。
 
+笔、纸杯和空顶帽的夹持回归可在 Isaac Python 中串行执行：
+
+```bash
+python -m robot_tasks.integrationtest.native_grasp L1-01 --output build/native_grasp/L1-01
+python -m robot_tasks.integrationtest.native_grasp L1-08 --output build/native_grasp/L1-08
+python -m robot_tasks.integrationtest.native_grasp L1-07 --output build/native_grasp/L1-07
+```
+
+检查各目录 `grasp.json` 的 `passed`。该诊断仅在开始时设置机械臂检查姿态，
+随后靠真实关节驱动闭合、抬升和释放，检查双侧接触、初始无穿透、物体随动，
+以及接触点到原始可见夹指 STL 的距离、生产 RGB-D 抓持验证是否通过；
+不会调用 GPT，也不是自主任务成功结果。加 `--check-planner` 可检查从初始姿态
+到抓持姿态的规划，诊断的实际夹持仍从重置姿态开始，不代表执行过整条接近路径。
+需要 Isaac Python 环境中的 SciPy、trimesh 和 rtree。
+拓境夹指使用贴合表面的凸分解，名义开口为原始 URDF 允许的 0–70 mm；
+帽圈与杯壁可由竖直夹指从上方夹持，物体原生尺寸与空腔保留。
+
 当前六个 L1 已使用拓境场景。逐项验收可用：
 
 ```bash
@@ -81,3 +98,55 @@ python -m robot_tasks.integrationtest.scene_smoke L1-03 --prop-probe --output bu
 将 ID 替换为 L1-01、L1-05、L1-07、L1-08、L1-09。覆盖双臂准备、三路 RGB-D、
 初态评分、插座/杯腔/挂杆与刚体玫瑰承托；无需模型令牌。检查 `result.json` 的
 `passed`，不能只看 Isaac 进程退出码。无任务执行轨迹或模型成功率含义。
+
+L1-08 稳定夹持与脱手观测回归（不调用 GPT）：
+
+```bash
+PYTHONPATH=src python -m robot_tasks.integrationtest.native_grasp L1-08 --hold-s 30 --grasp-style wall --output build/grip_control/wall
+PYTHONPATH=src python -m robot_tasks.integrationtest.native_grasp L1-08 --hold-s 30 --grasp-style body --output build/grip_control/body
+```
+
+使用 Isaac Python 串行运行。该检查复用生产夹爪控制，诊断复位后抬起并保持 30 秒，
+张爪后做 5 mm 竖直诊断试退。它不执行完整套杯任务，也不向 GPT 提供诊断姿态。
+检查 `grasp.json` 的 `control_passed`、`stability`、`actual_finger_limits`、
+`release_physically_complete` 和 `release_after_probe`。杯身抓法在最大开口下可能仍卡住，
+此时整体 `passed=false` 是需要保留的物理释放失败证据，不应通过增大杯口或关闭碰撞掩盖。
+`release_after_probe` 只用 RGB-D 与机器人状态作提示；没有接触力、物体真值或评分输入。
+遮挡、纹理重复和位移过小可返回未知，`stationary_after_probe` 也不认证承托或任务完成。
+
+L1-08 和 L1-09 的 `stable_gripper_drive=true` 启用软件对称驱动、物理关节限速与闭合误差限制。
+`finger_max_acceleration` 单位 m/s²，`finger_closing_lead` 为每指最大闭合领先量，
+`finger_effort_limit` 为每指驱动力上限 N。软件同步不代表已确认真实夹爪机械联动。
+其它任务默认保持其原有控制方式。新结果记录 `release_check_protocol`，避免与旧测评混淆。
+
+加 `--place-nested` 会在保持检查之后调用生产规划器执行升高、搬运与浅入杯诊断。
+规划失败写入 `placement_failure.json` 并使诊断失败；不会关闭碰撞检查或改用直接传送。
+该选项使用明确的诊断几何目标，不属于 GPT 自主任务或成功率统计。
+
+L1-09 原生花茎规划与稳定夹持回归（不调用 GPT）：
+
+```bash
+PYTHONPATH=src python -m robot_tasks.integrationtest.native_grasp L1-09 --plan-lift --hold-s 30 --output build/rose_grasp/full_lift
+```
+
+在 Isaac Python 中执行。沿花头长轴的诊断抓取姿态由复位设定，随后闭爪、规划抬升、保持和释放
+使用物理驱动。`--plan-lift` 经过生产规划器的携带物碰撞检查；失败写入 `lift_failure.json`。
+`--lift-m` 只改变诊断的抬升距离，不会写入任务提示词或向 GPT 提供抓取坐标。
+检查 `grasp.json` 中的 `lift_plan`、`rise_m`、`control_passed` 和 `passed`，不能仅看
+`result.json` 的场景检查或进程退出码。长花茎可能在短距离提花头后仍触桌，不能将花头
+移动或双指有接触等同于整朵花离桌。
+
+L1-09 静置启动回归（不调用 GPT）：
+
+```bash
+PYTHONPATH=src python -m robot_tasks.integrationtest.rose_rest --output build/rose_rest
+```
+
+复用生产初始化后，再自由推进 30 秒，检查 `rest_result.json` 与 `result.json` 均通过。
+复位姿态使用锁定原生碰撞形状与重心的低势能落座方向：长轴在世界 XZ 平面，
+在俯仰和绕长轴转角中最小化承托后的重心高度，最后给最低表面 0.01 mm 初始净空。
+它只是场景的初始布置，不是抓取位姿或动作脚本。原资产质量、惯量、摩擦、阻尼未改。
+生产入口最多等待 120 秒仿真时间，要求连续 2 秒线速度低于 1 mm/s、角速度低于
+0.015 rad/s、位置漂移不超过 0.5 mm、完整姿态角变化不超过 0.01 rad，且由桌面承托、
+没有夹指接触；不满足时在调用模型前报错，不锁定物体或强行清零速度。
+这项启动检查使用仿真测量，只决定场景何时就绪，不将物体真值交给 GPT。
