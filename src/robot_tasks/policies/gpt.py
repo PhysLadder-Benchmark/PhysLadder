@@ -110,16 +110,28 @@ class GPTPolicy:
                 "not a force sensor or task-success label. Approach with the gripper open, then close in a "
                 "SEPARATE decision at the observed grasp pose. Close captures before-lift reference images. "
                 "Test-lift vertically 0.02-0.03 m, holding XY and orientation; do not transport in this lift. "
-                "Until status=verified, motion is bounded to 0.04 m upward and 0.005 m horizontally from "
+                "Before the FIRST verified lift, motion is bounded to 0.04 m upward and 0.005 m horizontally from "
                 "the closing pose. Paired before/current images are supplied while verification is pending. "
-                "Compare the object, not just hand motion. If empty_suspected or unknown, hold and reposition "
-                "an observation arm to see the finger gap/object/table, or OPEN in a separate action and "
-                "regrasp at a corrected position and orientation, including XY when needed. Repeated small moves cannot bypass the bound. "
+                "Compare the object, not just hand motion. If empty_suspected, inspect and open separately "
+                "before a corrected regrasp. If unknown, inspect the finger gap/object/table; never release "
+                "an elevated object merely to reset the check. Repeated small moves cannot bypass the initial bound. "
+                "After a verified lift, tracking_uncertain means temporary missing evidence, not proven loss. "
+                "Keep closure. Use an observation view, a collision-checked return to last_verified_pose_world_wxyz "
+                "(within 5 cm / 35 degrees), or a vertical recovery descent of at most 2 cm per decision with "
+                "unchanged orientation and cumulative XY drift <= 5 mm from uncertainty_pose_world_wxyz. "
+                "Do not descend into a fixture as insertion under this recovery exception. Reinspect each step. "
+                "Opening is blocked while tracking is uncertain. Restore visual verification, then place "
+                "the object on visible support before releasing. If no safe recovery is feasible, hold and "
+                "report the blockage instead of dropping. A two-attempt observation budget never authorizes release. "
                 "Closing to the minimum opening is evidence of possible empty closure, especially if the "
                 "object is visibly wider. Do not claim 'followed the lift' from your previous note. "
                 "The check is conservative: occlusion, small/reflective/textureless objects and approximate "
                 "finger geometry can leave it unknown even for a real grasp. A verified check still does "
                 "not certify object identity, long-term stability or task completion. "
+                " Release feedback: release_check retains RGB-D evidence after opening. Opening is not proof "
+                "of detachment. Inspect settling, choose a small clear probe and compare whether the prop "
+                "stays behind or follows. This feedback is advisory and does not select or execute recovery. "
+                "Unknown or occluded evidence must not be treated as successful release. "
             )
         else:
             self.instructions += (
@@ -154,8 +166,9 @@ class GPTPolicy:
                              **client_metadata}, "instructions": self.instructions,
                 "action_schema": self.schema, "workflow": {
                     **workflow_metadata(),
-                    "grasp_check": ("rgbd_surface_comotion_v1" if self.config.grasp_check_mode == "lift"
+                    "grasp_check": ("rgbd_surface_comotion_v3_tracking_recovery" if self.config.grasp_check_mode == "lift"
                                     else "contact_inspection_no_lift_gate"),
+                    "release_check": (workflow_metadata()["release_check"] if self.config.grasp_check_mode == "lift" else None),
                 },
                 "arm_roles": self.config.arm_roles,
                 "task_initial_state": self.config.initial_state_description,
