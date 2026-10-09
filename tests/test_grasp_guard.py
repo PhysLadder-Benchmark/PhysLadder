@@ -7,7 +7,7 @@ from contextlib import redirect_stdout
 from dataclasses import replace
 from io import StringIO
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import numpy as np
 from fixtures import decision_document, rgbd, robot_config
@@ -112,6 +112,15 @@ def observation(*, rise=0.0, object_rise=0.0, width=0.07, time_s=0.0, eye_shift=
     return Observation(
         time_s, frames, {"left": state, "right": state}, Feedback("completed")
     )
+
+
+def keep_fixture_surfaces(points, width_m, profile):
+    """The analytic RGB-D fixture contains no rendered gripper to exclude.
+
+    Isolate mesh filtering, not surface extraction or evidence decisions.
+    Real R5 mesh exclusion is covered in test_thin_grasp_evidence.
+    """
+    return np.ones(len(points), dtype=bool)
 
 
 def close():
@@ -224,6 +233,10 @@ class GraspEvidenceTests(unittest.TestCase):
             after.feedback.metrics["grasp_check"]["left"]["status"], "unknown"
         )
 
+    @patch(
+        "robot_tasks.cameras.grasp_evidence.exclude_gripper",
+        new=keep_fixture_surfaces,
+    )
     def test_lost_tracking_blocks_air_release_but_allows_bounded_recovery(self):
         verified = self.guard.enrich(
             observation(rise=0.025, object_rise=0.025, width=0.035, time_s=1.0)
@@ -252,6 +265,7 @@ class GraspEvidenceTests(unittest.TestCase):
         self.assertEqual(regained.feedback.metrics["grasp_check"]["left"]["status"], "verified")
         self.assertIsNone(self.guard.reject_reason(opening, regained))
         self.guard.accepted(opening, regained)
+        self.assertGreater(len(self.guard.releases["left"][0].points), 0)
         opened = self.guard.enrich(observation(rise=0.15, width=0.07, time_s=4.0))
         self.assertFalse(self.guard.attempts)
         self.assertIsNone(self.guard.reject_reason(move(y=0.25), opened))
