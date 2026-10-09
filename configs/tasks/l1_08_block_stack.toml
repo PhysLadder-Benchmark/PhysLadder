@@ -4,7 +4,7 @@ schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_tuojing_lab.toml"
+profile = "../robots/r5_tuojing_lab_l1.toml"
 active_arms = ["left"]
 observation_arms = ["right"]
 
@@ -20,9 +20,13 @@ arm_stiffness = 1500.0
 arm_damping = 80.0
 finger_stiffness = 2000.0
 finger_damping = 40.0
+stable_gripper_drive = true
+finger_max_acceleration = 0.15
+finger_closing_lead = 0.0015
+finger_effort_limit = 4.0
 self_collision = false
 solver_position_iterations = 32
-solver_velocity_iterations = 0
+solver_velocity_iterations = 4
 
 [policy]
 model_config = "../models/gpt.toml"
@@ -34,7 +38,7 @@ execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
 implementation = "household"
-simulation_limitations = "Native photo-estimated rigid paper cups, identical taper and size; no paper crushing. Lower-body grasp followed by shallow entry and passive settling; thin-wall pinch is incompatible with the current 12 mm minimum opening."
+simulation_limitations = "Native photo-estimated rigid paper cups, identical taper and size; no paper crushing. Native hollow cups retain their dimensions; corrected 0-70 mm nominal finger gap permits thin-wall or lower-body grasp."
 launch_command = "python tools/launch.py run L1-08 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L1-08 --gui"
 instruction = """
@@ -46,10 +50,11 @@ robot feedback; no object coordinates or successful action sequence is supplied.
 Nest the cup initially nearer the LEFT robot inside the farther cup. Both are
 identical empty red-brown ripple cups; remember their initial roles before moving.
 Both start upright and both are movable. Each mouth is about 85 mm wide, exceeding
-your 70 mm maximum opening. Your minimum opening is 12 mm, so pinching a 3 mm
-single wall is also unsuitable. Instead grasp opposite OUTER sides of the narrower
-lower body, about 56-67 mm wide within the bottom 40 mm. Select pad height and wrist
-orientation from current images so both tips clear the table and oppose the body.
+your 70 mm maximum opening. The nominal minimum gap is 0 mm: a shallow pinch
+across ONE rigid wall near the rim is possible from ABOVE with vertical fingers,
+one distal pad inside and the other outside. Avoid inserting the bulky finger
+body sideways through the curved wall. Alternatively grasp the narrower lower body (56-67 mm wide in
+the bottom 40 mm). Select the grasp and wrist orientation from current images.
 Close gently, inspect actual contact and verify a short lift. If capture is empty
 or slipping, put it down safely and revise the grasp. Do not carry on with an empty
 hand or keep squeezing at the same missed pose.
@@ -58,7 +63,11 @@ axis with the visible opening, accounting for its offset from the TCP. Inspect i
 a second view if needed. Lower only until the bottom is 5-8 mm INSIDE the mouth,
 while keeping both fingers above and clear of the lower rim. Do not try to push
 the lower-body grasp all the way down into the destination cup. Open separately
-once the bottom has entered, then withdraw without hitting either rim. Gravity
+once the bottom has entered. Opening alone does not prove release. Hold position
+and inspect settling and finger clearance; use another view if occluded. Choose a
+small clear withdrawal probe before a full retreat, and check whether the cup
+stays behind or follows the hand. release_check is advisory RGB-D evidence, not
+contact truth or a success verdict; you choose the recovery and exit motion. Gravity
 may finish settling the already-entered cup onto the tapered walls. Prefer this
 controlled entry before release to avoid missing the opening. If fingers would strike the rim before any entry,
 withdraw and adjust the supported grasp first.
@@ -82,7 +91,7 @@ or assume a force-control tool that the interface does not expose.
 description = """
 道具：两只交付波纹纸杯，原生相同尺寸，杯高约 107.5 mm、外口径约 85 mm、各重约 14 g；保留空心碰撞体，不再使用一大一小的彩色代理杯。
 布置：拓境实验室、原生 R5 双臂及三相机。两杯竖直且未固定，移动初始靠近左臂的一杯套入较远的一杯；右臂仅观察。
-操作：夹爪范围 12–70 mm，既夹不住 85 mm 宽杯口，也不能直接夹紧约 3 mm 薄壁。选择底部 40 mm 范围内约 56–67 mm 宽的外壁相向夹持；建议将杯底送入目标杯口 5–8 mm、夹指仍在杯沿上方时松手，允许杯子自然落稳。
+操作：夹爪名义范围 0–70 mm，不能从两侧包住 85 mm 宽杯口。可让夹指竖直从上方夹住单侧杯壁，一指在杯内、一指在杯外；也可选择下部可夹持的外壁。避免夹指粗大部分横穿弯曲杯壁。将杯底送入目标杯口且夹指仍有退出空间时松手，允许杯子自然落稳。
 完成：按原生分段杯壁与杯底检查，上杯底部实际进入下杯、杯壁不穿透且由下杯承重，杯口朝上，松手后两杯相对位置、倾斜与下杯支撑持续稳定 1 秒，不因单纯绕轴自转失败。20–35 mm 杯底高差仅为典型姿态，不设单独的中心误差或小倾角门槛；临时倾斜和放偏允许原地调整，不复位。
 边界：纸杯按刚体处理，不模拟压皱损坏；抓法和评分随原生尺寸调整。
 """

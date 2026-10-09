@@ -92,7 +92,7 @@ python -m robot_tasks.integrationtest.marker_settling --output build/marker_sett
 | L1-03 | 侧躺 USB 充电器＋固定插线板，中间双孔 | 原生插脚 1.5×6.3 mm、孔 2.6×8.2 mm；零插接摩擦，较旧版需更高几何精度 |
 | L1-05 | 钥匙/锁孔代理移至新桌面 | 未交付钥匙与锁，不假称替换成真机资产 |
 | L1-07 | 原尺寸木质挂架＋原有空心带把手杯 | 最低 20 mm 斜挂杆斜朝操作区，避免正对第三视角时被主干遮住；无对应原生带把手杯 |
-| L1-08 | 两只原尺寸波纹纸杯 | 各 14 g，高 107.5 mm；夹爪范围 12–70 mm，抓较窄下部；杯底入杯口后释放，自然落稳 |
+| L1-08 | 两只原尺寸波纹纸杯 | 各 14 g，高 107.5 mm；L1 夹爪范围 0–70 mm，可夹单侧杯壁或较窄下部；杯底入杯口后释放，自然落稳 |
 | L1-09 | 原生刚体仿真玫瑰＋固定波纹纸杯 | 移除柔性连接，任务改为刚体插花，允许靠杯壁承托 |
 
 插接评分逐一检查两片插脚相对两孔的位置、姿态、深度及释放承托，保留 180° 对称，
@@ -122,8 +122,8 @@ python -m robot_tasks.integrationtest.scene_smoke L1-03 --prop-probe --output bu
 容器使用原生波纹纸杯并固定在桌上。玫瑰初始横放，左臂操作、右臂观察，
 模型需自行抓起、调整方向、将茎端放入杯内并松手。
 
-花茎约 2.1 mm，低于当前夹爪 12 mm 最小开口；提示词要求选择较宽的花头或花萼，
-不采用交付资产中不适合当前夹爪的细茎抓点。保留原始材质、尺寸和物理碰撞体；
+花茎约 2.1 mm；L1 独立夹爪配置允许名义 0–70 mm 开口，但仍需验证实际双指接触。提示词优先选择较宽的花头或花萼，
+不把小开口或接触本身当作整朵花已被抬起。保留原始材质、尺寸和物理碰撞体；
 规划负载以细茎和较宽花头分开近似。没有弯曲弹簧或柔性段。
 评分要求真实抓持抬升、茎端入杯至少 25 mm、花头高于杯沿、无手和桌面支撑、
 杯体承托且稳定 1 秒；允许自然倾靠杯内壁。
@@ -134,7 +134,7 @@ python -m robot_tasks.integrationtest.scene_smoke L1-03 --prop-probe --output bu
 
 ## 目录
 
-- `source.lock.json`：五个压缩包及包内 512 个文件的 SHA-256、文件长度和目录映射。
+- `source.lock.json`：九个压缩包及包内 544 个文件的 SHA-256、文件长度和目录映射。
 - `catalog.json`：实验室、九种道具、软体及展示场景的 USD 入口与使用边界。
 - `source/tuojing_lab_20261005_v4/`：实验室、R5 双臂、三路任务相机及其他检查视角。
 - `source/photo_assets_20261005/`：九种道具、材质贴图与估计物理参数。
@@ -142,7 +142,7 @@ python -m robot_tasks.integrationtest.scene_smoke L1-03 --prop-probe --output bu
 - `source/tabletop_interactions_20261006/`：可拔帽马克笔、纸杯、小珍珠、开口碗与抹布。
 - `source/book_physx_20261006/`：闭合书本、场景和参数。
 
-五个 `source/` 子目录保留交付包内部结构。实验室 ZIP 顶层原名是
+各 `source/` 子目录保留交付包内部结构。实验室 ZIP 顶层原名是
 `tuojing_lab_isaacsim_v4`，安装时只将这一层映射为 `tuojing_lab_20261005_v4`。
 原始交付文件不做修改，也不执行其中的脚本。服务器额外的缓存、日志和临时诊断文件未导入。
 
@@ -150,6 +150,17 @@ python -m robot_tasks.integrationtest.scene_smoke L1-03 --prop-probe --output bu
 检出本仓库并不自动授予 L20 访问权限，也不会自动下载私有实验室资产。
 
 ## 安装与校验
+
+本仓库还提供固定版本的私有 GitHub Release 下载入口：
+
+```bash
+python3 tools/fetch_tuojing_release.py
+```
+
+首次下载需要 GitHub CLI 登录和本仓库读取权限。本次发布包含 `lab_v4`、
+`photo_props`、`orange_soft` 三个包，**不包含** `tabletop_interactions`、`book` 以及后来新增的四个包；完整遗漏清单见 `release.json`。
+发布规则、授权步骤及部分/完整校验区别见 [PUBLISHING.md](PUBLISHING.md)。
+以下 L20 流程用于恢复早期五个包；后续四包需另外取得，完整范围以当前锁文件为准。
 
 从获授权的 L20 连接下载下列文件，并放到项目的 `.cache/tuojing_assets/`：
 

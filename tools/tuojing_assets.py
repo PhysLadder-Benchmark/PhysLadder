@@ -118,14 +118,28 @@ def verify_usd(path, source_root, require_component=False):
             "notes": [] if default_prim else ["No defaultPrim; select an explicit prim when referencing this scene."]}
 
 
-def verify(root, usd=False):
-    lock = json.loads((root / "source.lock.json").read_text(encoding="utf-8"))
+def select_packages(lock, package_ids=None):
     packages = {item["id"]: item for item in lock["packages"]}
+    if package_ids is None:
+        return packages
+    if not package_ids or len(package_ids) != len(set(package_ids)):
+        raise ValueError("Select at least one package, without duplicate IDs")
+    unknown = set(package_ids) - packages.keys()
+    if unknown:
+        raise ValueError(f"Unknown package IDs: {sorted(unknown)}")
+    return {key: packages[key] for key in package_ids}
+
+
+def verify(root, usd=False, package_ids=None):
+    lock = json.loads((root / "source.lock.json").read_text(encoding="utf-8"))
+    packages = select_packages(lock, package_ids)
     counts = {key: verify_files(root / "source" / relative_path(p["directory"]), p)
               for key, p in packages.items()}
     catalog = json.loads((root / "catalog.json").read_text(encoding="utf-8"))
     entries = {}
     for entry in catalog["entries"]:
+        if entry["package"] not in packages:
+            continue
         package = packages[entry["package"]]
         relative = relative_path(entry["path"])
         if relative.as_posix() not in package["files"]:
@@ -135,21 +149,23 @@ def verify(root, usd=False):
             path, root / "source", require_component=entry["role"] in
             {"prop", "fragment_template", "environment"}) if usd else "file_verified"
     return {"delivery": lock["delivery"], "verified_files": counts, "entries": entries,
+            "omitted_packages": [p["id"] for p in lock["packages"] if p["id"] not in packages],
             "usd_composition_checked": usd, "physics_tested": False,
             "rendering_tested": False, "task_workflow_integrated": False}
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--archives", type=Path, help="Install from a directory containing the three pinned ZIPs")
+    parser.add_argument("--archives", type=Path, help="Install from a directory containing the selected pinned ZIPs")
+    parser.add_argument("--packages", nargs="+", help="Only install/verify these package IDs; default: all locked packages")
     parser.add_argument("--usd", action="store_true", help="Also compose USDs; requires pxr (usd-core or Isaac Python)")
     parser.add_argument("--report", type=Path, help="Optional JSON verification report")
     args = parser.parse_args(argv)
     if args.archives is not None:
         lock = json.loads((ROOT / "source.lock.json").read_text(encoding="utf-8"))
-        for package in lock["packages"]:
+        for package in select_packages(lock, args.packages).values():
             install_package(ROOT, args.archives, package)
-    result = verify(ROOT, usd=args.usd)
+    result = verify(ROOT, usd=args.usd, package_ids=args.packages)
     if args.report:
         args.report.parent.mkdir(parents=True, exist_ok=True)
         args.report.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

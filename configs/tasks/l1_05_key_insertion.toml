@@ -4,7 +4,7 @@ schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_tuojing_lab.toml"
+profile = "../robots/r5_tuojing_lab_l1.toml"
 active_arms = ["left"]
 observation_arms = ["right"]
 

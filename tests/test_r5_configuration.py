@@ -25,6 +25,20 @@ HANDOVER = ROOT / "configs/tasks/l2_01_marker_uncap.toml"
 
 
 class R5ConfigurationTests(unittest.TestCase):
+    def test_l1_thin_grasp_limits_do_not_change_l2_or_l3_profiles(self):
+        for path in (ROOT / "configs/tasks").glob("*.toml"):
+            config = load_config(path)
+            if not config.raw["task"].get("simulation_enabled"):
+                continue
+            with self.subTest(task=config.task_id):
+                lower = (0.0 if config.task_id.startswith("L1-")
+                         else 0.010 if config.task_id == "L3-05" else 0.012)
+                self.assertEqual(config.robot.gripper.width_limits_m, (lower, 0.070))
+                finger_limits = {v.joint: v.lower for v in config.robot.operating_limits}
+                expected_joint_lower = 0.0 if lower == 0.0 else 0.005
+                for joint in config.robot.gripper.joint_names:
+                    self.assertEqual(finger_limits[joint], expected_joint_lower)
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)

@@ -136,6 +136,8 @@ Isaac 启动器保留两个可选环境覆盖：`GPT_BENCHMARK_PYTHON` 指定解
 
 夹爪与轨迹执行语义参考 [RoboProbe EEF Agent 操作说明](https://github.com/RoboProbe/RoboProbe/blob/main/policy/RoboDojo_Agent_L3_Inspect_EEF/docs.py) 和 [执行代码](https://github.com/RoboProbe/RoboProbe/blob/main/policy/RoboDojo_Agent_L3_Inspect_EEF/policy.py)；本项目采用 R5 与 cuRobo V2，不是该基准的完整复现。
 
+L1 使用独立的 `r5_tuojing_lab_l1.toml`，名义夹爪开口 0–70 mm，并采用 master 的薄物体夹指碰撞配置；L2 和常规 L3 保留原来的 12–70 mm，L3-05 仍为 10–70 mm。L2／螺母任务的碰撞参数不被 L1 覆盖。所有任务继续使用公共第三视角；L1-08/09 的稳定夹爪驱动只在这两项启用。
+
 夹爪反馈区分目标到位、闭合受阻或停滞、运动未完成。受阻不会自动证明抓取成功；模型仍需短距离抬升、观察物体跟随，必要时移动观测臂。失败的停止请求会返回“尚未确认完成”，继续使用同一场景、历史和剩余总预算；日志保留每次被拒绝的停止。
 
 模型接口报告可重试的生成失败／未完成，或发生调用超时（Codex 决策超时、API 连接／读取超时或请求时间预算耗尽）时，公共运行流程固定允许首次请求后再重试 3 次，间隔 2、4、8 秒，无需新增配置。每次重试计入同一个 100 次总调用上限，保留原观测、场景和已接受历史，不执行部分响应，也不推进仿真。每次尝试仍使用模型配置的 `timeout_s`，Codex 超时进程先清理再重试。成功后重置连续重试计数；连续四次失败或总调用预算不足时按接口异常结束，不冒充任务失败。明确的鉴权、额度、拒绝及请求参数错误，以及 HTTP 错误状态和其他非超时网络错误不走这项重试。每次请求、重试进度与脱敏后的服务端原因记入运行日志，事件语义参考 [OpenAI Docs](https://developers.openai.com/api/docs/guides/streaming-responses)。

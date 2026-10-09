@@ -83,6 +83,14 @@ class IsaacSimBackend:
                 if config.task_id.startswith("L2-") or config.raw.get("task", {}).get("implementation") == "loose_nut":
                     from .tuojing_lab import apply_l2_finger_collisions
                     self.environment_report["finger_collision_overrides"] = apply_l2_finger_collisions(stage, config.robot)
+                elif config.task_id.startswith("L1-"):
+                    # Thin-object tuning is specific to L1. Keep the existing
+                    # L2/nut overrides and other L3 collision geometry intact.
+                    from ..robots.finger_collision import configure_finger_collisions
+                    self.environment_report["finger_collision_by_arm"] = {
+                        mount.name: configure_finger_collisions(stage, mount.prim_path)
+                        for mount in config.robot.mounts
+                    }
                 validate_robot_binding(stage, config.robot)
                 if not self.camera_profile or any(not s.existing_prim_path for s in self.camera_profile.select(config.cameras)):
                     raise ValueError("Laboratory cameras must bind to the supplied USD cameras")
@@ -173,6 +181,7 @@ class IsaacSimBackend:
                     Gf.Quatd(quaternion[0], Gf.Vec3d(*quaternion[1:])))
             else:
                 root = self.world.stage.GetPrimAtPath(mount.prim_path)
+            finger_collision = self.environment_report.get("finger_collision_by_arm", {}).get(mount.name)
             descendants = list(Usd.PrimRange(root, Usd.TraverseInstanceProxies()))
             roots = [prim for prim in descendants if prim.HasAPI(UsdPhysics.ArticulationRootAPI)]
             if len(roots) != 1:
@@ -183,6 +192,12 @@ class IsaacSimBackend:
                     # Physical PD effort gains must not inherit an acceleration-drive default.
                     drive_kind = "angular" if prim.IsA(UsdPhysics.RevoluteJoint) else "linear"
                     UsdPhysics.DriveAPI.Apply(prim, drive_kind).CreateTypeAttr("force")
+                    if self.settings.stable_gripper_drive and prim.GetName() in profile.gripper.joint_names:
+                        limit = next(v for v in profile.operating_limits if v.joint == prim.GetName())
+                        joint = UsdPhysics.PrismaticJoint(prim)
+                        joint.CreateLowerLimitAttr(limit.lower)
+                        joint.CreateUpperLimitAttr(limit.upper)
+                        PhysxSchema.PhysxJointAPI.Apply(prim).CreateMaxJointVelocityAttr(limit.velocity)
                 if prim.IsA(UsdPhysics.FixedJoint):
                     joint = UsdPhysics.FixedJoint(prim)
                     if not joint.GetBody0Rel().GetTargets() and joint.GetBody1Rel().GetTargets():
@@ -222,6 +237,7 @@ class IsaacSimBackend:
                 }),
                 "configured_base_pose_wxyz": mount.base_pose_wxyz,
                 "ee_link_path": tip_path, "tcp_pose_in_ee_wxyz": profile.tcp_pose_wxyz,
+                "finger_collision": finger_collision,
             }
             if self.lab_asset is None and self.settings.robot_appearance == "r5_black_silver_v1":
                 from .appearance import apply_r5_appearance

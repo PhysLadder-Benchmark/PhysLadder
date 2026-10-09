@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "repository": "TuojingAI/GPT_Benchmark",
+  "tag": "assets-20261008-local-v1",
+  "source_lock_sha256": "2ba1ef68cd87bf7a74476ec0d4c3eac08bd8e48b2a4a615810e9584c3036d298",
+  "packages": [
+    {
+      "id": "lab_v4",
+      "archive": "tuojing_lab_20261005_v4.zip",
+      "bytes": 40557467,
+      "sha256": "82899a7e0fe915a4371cb51dddb9b94905ed0b45b220e93d7688d405e6eb2e89"
+    },
+    {
+      "id": "photo_props",
+      "archive": "photo_assets_20261005.zip",
+      "bytes": 11396630,
+      "sha256": "dacaa2ecac0af6ff41d4e499cd1cec2036ddd8ddea79eb8dc0df3b4972088e6f"
+    },
+    {
+      "id": "orange_soft",
+      "archive": "orange_segment_soft_20261005.zip",
+      "bytes": 40772968,
+      "sha256": "0673a464673ba9b5e88ff478902bd37c8c7b7bdc744c084ba4f1018584492ad2"
+    }
+  ],
+  "omitted_packages": [
+    "tabletop_interactions",
+    "book",
+    "physical_props_20261008",
+    "oriental_leaf_335ml",
+    "anchor_removable_nut_20261008",
+    "desktop_additions_20261009"
+  ],
+  "coverage": "Three unchanged archives from assets-20261008-local-v1, verified against the current source lock. All other locked packages are omitted; this is not a complete L1/L2/L3 asset release."
+}

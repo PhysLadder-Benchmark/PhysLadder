@@ -17,11 +17,11 @@ class SharedOverviewTests(unittest.TestCase):
     def test_all_task_rigs_use_complete_video_framing_and_preserve_wrists(self):
         checked = 0
         for path in (ROOT / "configs/tasks").glob("*.toml"):
-            if not tomllib.loads(path.read_text())["task"].get("simulation_enabled"):
+            if not tomllib.loads(path.read_text(encoding="utf-8"))["task"].get("simulation_enabled"):
                 continue
             cfg = load_config(path)
             with self.subTest(task=cfg.task_id):
-                local = tomllib.loads(path.read_text()).get("simulation", {})
+                local = tomllib.loads(path.read_text(encoding="utf-8")).get("simulation", {})
                 self.assertFalse(set(local) & {"camera_position", "camera_target", "camera_resolution", "camera_intrinsics"})
                 settings = SimulationSettings.from_config(cfg)
                 rig = load_camera_rig(path.parent / settings.camera_profile)

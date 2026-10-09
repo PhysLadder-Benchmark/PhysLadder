@@ -2,7 +2,7 @@ from ..config import ExecutionSettings, TaskConfig
 from ..interfaces import Backend
 from ..types import Action, ArmState, Feedback, InvalidSimulationState
 from .audit import require_joint_sim_ready
-from .control import bounded_measured_joints, joints_to_width, plan_targets, width_to_joints
+from .control import bounded_measured_joints, empty_close_tolerance, joints_to_width, plan_targets, width_to_joints
 from .settling import SettlingWindow
 
 
@@ -60,6 +60,7 @@ class R5Adapter(RobotAdapter):
         self.grip_durations = {}
         self.grip_closing = {}
         self.grip_arms = set()
+        self.stable_grips = {}
         self.settling = SettlingWindow()
         self.tracking_time_s = 0.0
 
@@ -92,6 +93,7 @@ class R5Adapter(RobotAdapter):
         from isaacsim.core.utils.types import ArticulationAction
 
         profile = self.config.robot
+        self.stable_grips.clear()
         self.settling = SettlingWindow()
         self.tracking_time_s = 0.0
         self.paths.clear()
@@ -140,7 +142,9 @@ class R5Adapter(RobotAdapter):
             ] * 2
             controller.set_gains(kps=stiffness, kds=damping)
             controller.set_max_efforts(
-                np.array([limits[name].effort for name in ordered]),
+                np.array([min(limits[name].effort, settings.finger_effort_limit)
+                          if settings.stable_gripper_drive and name in profile.gripper.joint_names
+                          else limits[name].effort for name in ordered]),
                 joint_indices=indices,
             )
             arm.set_joint_positions(np.array(target), joint_indices=indices)
@@ -151,6 +155,33 @@ class R5Adapter(RobotAdapter):
                 )
             )
             self.backend.scene_report["arms"][mount.name]["dof_names"] = actual
+            if settings.stable_gripper_drive:
+                # Read the physics handles, not just the authored TOML/USD values.
+                properties = arm.dof_properties
+                actual_fingers = []
+                for joint_name in profile.gripper.joint_names:
+                    row = properties[actual.index(joint_name)]
+                    limit = limits[joint_name]
+                    actual_fingers.append({"joint": joint_name, "lower": float(row["lower"]),
+                        "upper": float(row["upper"]), "max_velocity_m_s": float(row["maxVelocity"]),
+                        "max_effort_n": float(row["maxEffort"])})
+                    if not (np.isclose(row["maxVelocity"], limit.velocity)
+                            and np.isclose(row["lower"], limit.lower)
+                            and np.isclose(row["upper"], limit.upper)
+                            and np.isclose(row["maxEffort"], min(limit.effort, settings.finger_effort_limit))):
+                        raise RuntimeError("Physical gripper limits did not match configured limits: " + joint_name)
+                self.backend.scene_report["arms"][mount.name]["actual_finger_limits"] = actual_fingers
+                from .gripper_drive import SymmetricGripDrive
+                finger_limits = [limits[n] for n in profile.gripper.joint_names]
+                self.stable_grips[mount.name] = SymmetricGripDrive(
+                    sum(target[6:]) / 2, min(v.velocity for v in finger_limits),
+                    settings.finger_max_acceleration, settings.finger_closing_lead,
+                    max(v.lower for v in finger_limits), min(v.upper for v in finger_limits))
+                self.backend.scene_report["gripper_execution"].update(
+                    protocol="symmetric_bounded_lead_v2", synchronization="software common reference; no mechanical coupling claim",
+                    max_acceleration_m_s2=settings.finger_max_acceleration,
+                    closing_lead_m=settings.finger_closing_lead, effort_limit_n=settings.finger_effort_limit,
+                    timeout="hold current bounded reference; release decisions remain with policy")
 
     def apply(self, action: Action) -> None:
         if not self.targets:
@@ -291,7 +322,10 @@ class R5Adapter(RobotAdapter):
 
     def _send_targets(self, planned):
         # Keep requested goals separate from the rate-limited drive reference.
-        self.targets = planned
+        # Timeout recovery may reuse drive references sourced from NumPy.
+        # Comparisons against those must not leak np.bool_ into logged feedback.
+        self.targets = {name: tuple(float(v) for v in target)
+                        for name, target in planned.items()}
         self._advance_drive_targets(0.0)
 
     def _advance_drive_targets(self, dt_s):
@@ -309,6 +343,9 @@ class R5Adapter(RobotAdapter):
                 old + max(-speed * dt_s, min(speed * dt_s, desired - old))
                 for old, desired, speed in zip(previous[6:], goal[6:], speeds)
             )
+            if name in self.stable_grips:
+                measured = self.instances[name].get_joint_positions(joint_indices=self.indices[name])[6:]
+                fingers = self.stable_grips[name].advance(goal[6:], measured, dt_s)
             reference = goal[:6] + fingers
             if reference != previous:
                 self.instances[name].apply_action(ArticulationAction(
@@ -518,10 +555,14 @@ class R5Adapter(RobotAdapter):
                     else "moving_or_not_reached"
                 ),
                 "grasp_confirmed": None,
+                "drive_reference_fingers_m": self.drive_targets.get(name, target)[6:],
+                "finger_center_error_m": (state.finger_positions_m[0] - state.finger_positions_m[1]) / 2,
+                "gripper_drive_phase": self.stable_grips[name].phase if name in self.stable_grips else "position",
                 "empty_grasp_suspected": bool(
                     self.grip_closing.get(name, False)
                     and gripper_complete and state.gripper_width_m is not None
-                    and state.gripper_width_m <= self.config.robot.gripper.width_limits_m[0] + .0015
+                    and state.gripper_width_m <= self.config.robot.gripper.width_limits_m[0]
+                    + empty_close_tolerance(self.config.robot.gripper.width_limits_m[0])
                 ),
                 "grasp_evidence": (
                     "Not determined by controller; verify contact and object response using images "

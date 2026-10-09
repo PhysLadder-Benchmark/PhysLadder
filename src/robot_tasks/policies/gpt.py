@@ -78,12 +78,31 @@ class GPTPolicy:
         self.instructions += f" Combined motion/gripper timing: {ExecutionSettings.from_config(config).gripper_timing}."
         self.instructions += f" Arm roles: {json.dumps(config.arm_roles)}. Only manipulation arms may manipulate task objects. Fixed arms must remain still."
         if config.observation_arms:
-            self.instructions += (
-                f" Observation arms {config.observation_arms} may move to obtain a clearer wrist-camera view. "
+            observation_advice = (
                 "If the available views do not clearly show the grasp, working end, target opening or "
                 "their relative alignment, actively reposition an observation arm before continuing "
                 "manipulation. This includes uncertainty about whether an object is still held after "
                 "lifting, or why an approach or insertion failed. You choose whether and where to inspect. "
+            )
+            if config.task_id == "L1-03":
+                observation_advice = (
+                    "For L1-03, distinguish uncertain holding from an occluded blade end. If holding "
+                    "is unverified, actively reposition an observation arm or use the permitted grasp "
+                    "recovery; all grasp-check motion bounds still apply. If holding is verified and "
+                    "current images support a safe clearance move, seeing both blades is not a "
+                    "prerequisite for lifting clear or a small free-space move toward an insertion-ready pose. "
+                    "Choose the grasp from final insertion clearance: both fingers and palm must permit "
+                    "blade entry and housing seating. Prefer an observation-arm view when needed and feasible; "
+                    "do not sacrifice a useful manipulation pose merely to show the underside. "
+                    "Follow the task's two-attempt observation limit; exhaustion does not require regrasp. "
+                    "Before a recovery placement, identify the current grasp problem and a concrete change "
+                    "to the next grasp. Generic planner rejection does not prove a bad grasp. "
+                    "Confirm both blades and slots "
+                    "before insertion; visibility uncertainty does not authorize blind contact. "
+                )
+            self.instructions += (
+                f" Observation arms {config.observation_arms} may move to obtain a clearer wrist-camera view. "
+                + observation_advice +
                 "Before changing the view, ensure the manipulation arm is holding a stable pose. "
                 "Use the same motion interface for an observation-only decision, leaving the manipulation "
                 "arm and its gripper unchanged. Then inspect the updated images, measured state and "
@@ -113,16 +132,28 @@ class GPTPolicy:
                 "not a force sensor or task-success label. Approach with the gripper open, then close in a "
                 "SEPARATE decision at the observed grasp pose. Close captures before-lift reference images. "
                 "Test-lift vertically 0.02-0.03 m, holding XY and orientation; do not transport in this lift. "
-                "Until status=verified, motion is bounded to 0.04 m upward and 0.005 m horizontally from "
+                "Before the FIRST verified lift, motion is bounded to 0.04 m upward and 0.005 m horizontally from "
                 "the closing pose. Paired before/current images are supplied while verification is pending. "
-                "Compare the object, not just hand motion. If empty_suspected or unknown, hold and reposition "
-                "an observation arm to see the finger gap/object/table, or OPEN in a separate action and "
-                "regrasp at a corrected position and orientation, including XY when needed. Repeated small moves cannot bypass the bound. "
+                "Compare the object, not just hand motion. If empty_suspected, inspect and open separately "
+                "before a corrected regrasp. If unknown, inspect the finger gap/object/table; never release "
+                "an elevated object merely to reset the check. Repeated small moves cannot bypass the initial bound. "
+                "After a verified lift, tracking_uncertain means temporary missing evidence, not proven loss. "
+                "Keep closure. Use an observation view, a collision-checked return to last_verified_pose_world_wxyz "
+                "(within 5 cm / 35 degrees), or a vertical recovery descent of at most 2 cm per decision with "
+                "unchanged orientation and cumulative XY drift <= 5 mm from uncertainty_pose_world_wxyz. "
+                "Do not descend into a fixture as insertion under this recovery exception. Reinspect each step. "
+                "Opening is blocked while tracking is uncertain. Restore visual verification, then place "
+                "the object on visible support before releasing. If no safe recovery is feasible, hold and "
+                "report the blockage instead of dropping. A two-attempt observation budget never authorizes release. "
                 "Closing to the minimum opening is evidence of possible empty closure, especially if the "
                 "object is visibly wider. Do not claim 'followed the lift' from your previous note. "
                 "The check is conservative: occlusion, small/reflective/textureless objects and approximate "
                 "finger geometry can leave it unknown even for a real grasp. A verified check still does "
                 "not certify object identity, long-term stability or task completion. "
+                " Release feedback: release_check retains RGB-D evidence after opening. Opening is not proof "
+                "of detachment. Inspect settling, choose a small clear probe and compare whether the prop "
+                "stays behind or follows. This feedback is advisory and does not select or execute recovery. "
+                "Unknown or occluded evidence must not be treated as successful release. "
             )
         else:
             self.instructions += (
@@ -157,8 +188,9 @@ class GPTPolicy:
                              **client_metadata}, "instructions": self.instructions,
                 "action_schema": self.schema, "workflow": {
                     **workflow_metadata(),
-                    "grasp_check": ("rgbd_surface_comotion_v1" if self.config.grasp_check_mode == "lift"
+                    "grasp_check": ("rgbd_surface_comotion_v3_tracking_recovery" if self.config.grasp_check_mode == "lift"
                                     else "contact_inspection_no_lift_gate"),
+                    "release_check": (workflow_metadata()["release_check"] if self.config.grasp_check_mode == "lift" else None),
                 },
                 "arm_roles": self.config.arm_roles,
                 "task_initial_state": self.config.initial_state_description,

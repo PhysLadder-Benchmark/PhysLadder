@@ -165,6 +165,18 @@ class GraspEvidenceTests(unittest.TestCase):
             after.feedback.metrics["grasp_check"]["left"]["status"], "verified"
         )
 
+    def test_initial_unknown_lift_cannot_be_reset_by_air_release(self):
+        unknown = self.guard.enrich(observation(rise=0.025, width=0.035, time_s=1.0))
+        opening = Action((ArmCommand("left", "gripper", (0.07,)),), 1/12)
+        self.assertIsNotNone(self.guard.reject_reason(opening, unknown))
+        self.assertIsNone(self.guard.reject_reason(move(z=0.035), unknown))
+
+    def test_width_change_cannot_be_hidden_by_matching_surfaces(self):
+        self.guard.enrich(observation(rise=0.15, object_rise=0.15, width=0.035, time_s=1.0))
+        changed = self.guard.enrich(observation(rise=0.15, object_rise=0.15, width=0.041, time_s=2.0))
+        self.assertEqual(changed.feedback.metrics["grasp_check"]["left"]["status"], "tracking_uncertain")
+        self.assertEqual(self.guard.attempts["left"].last_verified_width, 0.035)
+
     def test_actual_object_motion_with_changed_camera_extrinsics_is_supported(self):
         after = self.guard.enrich(
             observation(
@@ -212,7 +224,7 @@ class GraspEvidenceTests(unittest.TestCase):
             after.feedback.metrics["grasp_check"]["left"]["status"], "unknown"
         )
 
-    def test_lost_evidence_blocks_transport_but_can_hold_and_open(self):
+    def test_lost_tracking_blocks_air_release_but_allows_bounded_recovery(self):
         verified = self.guard.enrich(
             observation(rise=0.025, object_rise=0.025, width=0.035, time_s=1.0)
         )
@@ -221,17 +233,60 @@ class GraspEvidenceTests(unittest.TestCase):
         )
         lost = self.guard.enrich(observation(rise=0.15, width=0.035, time_s=2.0))
         self.assertEqual(
-            lost.feedback.metrics["grasp_check"]["left"]["status"], "unknown"
+            lost.feedback.metrics["grasp_check"]["left"]["status"], "tracking_uncertain"
         )
         self.assertIsNone(self.guard.reject_reason(move(z=0.185), lost))
         opening = Action(
             (*move(z=0.185).commands, ArmCommand("left", "gripper", (0.07,))), 1 / 12
         )
-        self.assertIsNone(self.guard.reject_reason(opening, lost))
-        self.guard.accepted(opening, lost)
-        opened = self.guard.enrich(observation(rise=0.15, width=0.07, time_s=3.0))
+        self.assertIsNotNone(self.guard.reject_reason(opening, lost))
+        self.assertIsNone(self.guard.reject_reason(move(z=0.170), lost))
+        self.assertIsNotNone(self.guard.reject_reason(move(z=0.14), lost))
+        self.assertIsNotNone(self.guard.reject_reason(move(y=0.42, z=0.17), lost))
+        self.assertIsNotNone(self.guard.reject_reason(move(z=0.20), lost))
+        self.assertTrue(self.guard.attempts["left"].verified_once)
+        # A later clear view restores holding; opening must still be deliberate.
+        regained = self.guard.enrich(
+            observation(rise=0.15, object_rise=0.15, width=0.035, time_s=3.0)
+        )
+        self.assertEqual(regained.feedback.metrics["grasp_check"]["left"]["status"], "verified")
+        self.assertIsNone(self.guard.reject_reason(opening, regained))
+        self.guard.accepted(opening, regained)
+        opened = self.guard.enrich(observation(rise=0.15, width=0.07, time_s=4.0))
         self.assertFalse(self.guard.attempts)
         self.assertIsNone(self.guard.reject_reason(move(y=0.25), opened))
+
+    def test_tracking_recovery_returns_to_rotated_high_pose_without_new_pickup_bounds(self):
+        self.guard.enrich(observation(rise=0.15, object_rise=0.15, width=0.035, time_s=1.0))
+        attempt = self.guard.attempts["left"]
+        last_pose = attempt.last_verified_pose
+        missing = observation(rise=0.15, width=0.035, time_s=2.0)
+        rotated = replace(missing.robot["left"], tcp_pose_world_wxyz=(
+            *last_pose[:3], *rotation_quaternion(np.array([
+                [0.5, 0, 3**0.5/2], [0, 1, 0], [-3**0.5/2, 0, 0.5]
+            ]))))
+        missing = self.guard.enrich(replace(missing, robot={**missing.robot, "left": rotated}))
+        self.assertEqual(attempt.status, "tracking_uncertain")
+        self.assertIsNone(self.guard.reject_reason(move(z=last_pose[2]), missing))
+        original = attempt.tracking_surfaces
+        # Repeated missing captures do not replace known-good surfaces or anchor.
+        self.guard.enrich(replace(missing, time_s=3.0))
+        self.assertIs(attempt.tracking_surfaces, original)
+        self.assertEqual(attempt.last_verified_pose, last_pose)
+
+    def test_recovery_xy_bound_cannot_be_bypassed_by_repeated_small_steps(self):
+        self.guard.enrich(observation(rise=0.15, object_rise=0.15, width=0.035, time_s=1.0))
+        lost = self.guard.enrich(observation(rise=0.15, width=0.035, time_s=2.0))
+        self.assertIsNone(self.guard.reject_reason(move(x=0.364, z=0.17), lost))
+        advanced = replace(lost.robot["left"], tcp_pose_world_wxyz=(0.364, 0.4, 0.17, *DOWN))
+        advanced = self.guard.enrich(replace(lost, time_s=3.0, robot={**lost.robot, "left": advanced}))
+        self.assertIsNotNone(self.guard.reject_reason(move(x=0.368, z=0.16), advanced))
+
+    def test_empty_close_after_tracking_loss_allows_open_without_false_verification(self):
+        self.guard.enrich(observation(rise=0.15, object_rise=0.15, width=0.035, time_s=1.0))
+        empty = self.guard.enrich(observation(rise=0.15, width=0.012, time_s=2.0))
+        self.assertEqual(empty.feedback.metrics["grasp_check"]["left"]["status"], "empty_suspected")
+        self.assertIsNone(self.guard.reject_reason(Action((ArmCommand("left", "gripper", (0.07,)),), 1/12), empty))
 
     def test_probe_bound_is_cumulative_and_repeated_close_cannot_reset_it(self):
         at_limit = self.guard.enrich(observation(rise=0.039, width=0.012, time_s=1.0))
