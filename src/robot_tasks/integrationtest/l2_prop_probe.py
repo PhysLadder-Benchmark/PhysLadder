@@ -2,8 +2,6 @@
 
 import numpy as np
 
-from ..tasks.bench.evaluation import relative
-from ..tasks.bench.scoring_l2 import ball_contained
 from ..tasks.bench.spec import Joint
 
 
@@ -29,37 +27,9 @@ def run(scene):
         if clearance < p["clearance_m"]:
             raise RuntimeError("Middle book cannot clear fixed neighbors: " + str(result))
     elif task == "L2-04":
-        p = scene.spec.parameters
+        from .native_l2_probe import run as native_run
 
-        def contents():
-            rows = scene.measure()
-            return [ball_contained(relative(rows[f"load_{i}"], rows["bowl"])[:3, 3], p)
-                    for i in range(p["count"])]
-
-        initial_count = sum(contents())
-        if initial_count != p["count"]:
-            raise RuntimeError(f"Initial bowl packing spilled: {initial_count}/{p['count']}")
-        scene.create_joint(Joint("probe_bowl_transport", "", "bowl", scene.initial["bowl"][:3],
-                                 {"transY": (-0.24, 0, 250, 18), "transZ": (0, 0.06, 500, 25)}))
-        vertical = scene.drives["probe_bowl_transport", "transZ"]
-        horizontal = scene.drives["probe_bowl_transport", "transY"]
-        for i in range(24):
-            vertical.CreateTargetPositionAttr(0.050 * (i + 1) / 24)
-            advance(scene, scene.config.control_dt_s)
-        for i in range(60):
-            horizontal.CreateTargetPositionAttr(-0.24 * (i + 1) / 60)
-            advance(scene, scene.config.control_dt_s)
-        advance(scene, 2)
-        transported = sum(contents())
-        for i in range(24):
-            vertical.CreateTargetPositionAttr(0.050 * (1 - (i + 1) / 24))
-            advance(scene, scene.config.control_dt_s)
-        advance(scene, 2)
-        final_count = sum(contents())
-        result.update(initial_contained=initial_count, transported_contained=transported,
-                      final_contained=final_count, required=p["count"], final_bowl_pose=scene.measure()["bowl"]["pose"])
-        if transported != p["count"] or final_count != p["count"]:
-            raise RuntimeError("Gentle loaded-bowl transport spilled: " + str(result))
+        return native_run(scene)
     elif task == "L2-07":
         drive = scene.drives["drawer_slide", "transX"]
         drive.CreateStiffnessAttr(80.0)

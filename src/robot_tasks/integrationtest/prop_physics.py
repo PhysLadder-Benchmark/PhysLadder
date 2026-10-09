@@ -35,10 +35,6 @@ def run(scene):
         from .native_l2_probe import run as probe_native
 
         return probe_native(scene)
-    if task == "L3-16":
-        from .push_drawer_probe import run as probe_push_drawer
-
-        return probe_push_drawer(scene)
     result = {"task": task, "scope": "fixture-only, no robot policy or success score"}
     if task in {"L1-01", "L1-03", "L1-05", "L1-07", "L1-08", "L1-09"}:
         article = scene.design.articles[-1]

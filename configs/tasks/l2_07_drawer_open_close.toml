@@ -5,8 +5,8 @@ workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
 profile = "../robots/r5_tuojing_lab.toml"
-active_arms = ["left"]
-observation_arms = ["right"]
+active_arms = ["right"]
+observation_arms = ["left"]
 
 [simulation]
 environment = "tuojing_lab_v4"
@@ -23,8 +23,6 @@ finger_damping = 40.0
 self_collision = false
 solver_position_iterations = 32
 solver_velocity_iterations = 0
-camera_position = [0.21354960845762927, 0.48765041712220114, 1.32]
-camera_target = [0.1643434123515941, 1.0254038459952994, 0.78]
 
 [policy]
 model_config = "../models/gpt.toml"
@@ -32,46 +30,48 @@ model_config = "../models/gpt.toml"
 [task]
 # Guided RGB-D execution; common information boundaries are appended by BenchTask.
 prompt_protocol = "guided_rgbd_l2_v2"
-scoring_protocol = "drawer_grasped_pull_v3"
+scoring_protocol = "drawer_absolute_opening_v4"
 id = "L2-07"
 name = "单臂拉开固定化妆抽屉"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
 implementation = "household"
-simulation_limitations = "Native organizer, 90 mm passive rail; explicit R5 grip tab, not original thin lip. Estimated physical properties."
+simulation_limitations = "Original native organizer and handle, 90 mm passive rail, initialized 30 mm open; no added grasp adapter or mass. Native lip is 102 x 6 x 8 mm; R5 grasp feasibility with the configured 12-70 mm opening is not qualified. Estimated physical properties."
 launch_command = "python tools/launch.py run L2-07 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-07 --gui"
 instruction = """
-Approach the external grip from its exposed front, with a slightly downward
-finger approach (about 15-35 degrees below horizontal), rather than placing
-the wrist and camera directly above the cabinet roof. Close across the grip
-width, then preserve this orientation while pulling. Choose the actual pose
-from current images; check roof and camera clearance throughout.
-
-Use the LEFT R5 arm to open only the UPPER drawer. The RIGHT arm is free to
+The organizer is in front of the robot on the RIGHT of the shared overview
+image. Use the RIGHT R5 arm to open only the UPPER drawer. The LEFT arm is free to
 move its wrist camera for observation but must not touch the organizer.
-Identify the upper drawer, its blue external grip tab, and the rail direction
+Identify the upper drawer, its original shallow front lip, and the rail direction
 from current RGB-D observations. The cabinet and lower drawer are fixed.
-The blue tab is an R5 grasp adapter; the original narrow lip is not a suitable
-pinch target. Pinch across the tab's 40 mm width, keeping both finger pads
-on opposite sides and avoiding the drawer panel and cabinet roof.
+The upper drawer starts 30 mm open to give access behind the native front lip.
+This is only the initial layout; you must still pull it farther open.
+There is no added handle or grasp adapter. The native lip is about 102 mm wide,
+6 mm deep and 8 mm high. The configured gripper opening is 12-70 mm: do not
+attempt to span its full width or request closure below that minimum. Select
+an accessible contact arrangement from the actual geometry, keeping fingers,
+wrist and camera clear of the cabinet roof and front panel. A viable native-lip
+grasp is not guaranteed; do not assume an invisible larger handle exists.
 
 Approach with an open gripper and inspect from complementary views. Close in
-a separate decision. A blocked close is not proof of capture: verify the tab
-lies between the pads and check actual drawer movement during a short pull.
+a separate decision. A blocked close is not proof of capture: inspect the
+actual finger-lip contact and drawer movement during a short pull.
 Do not test-lift a rail-constrained drawer. Preserve handle height and alignment.
 Keep the established grasp height and orientation as your pull reference;
 do not accumulate sag or tracking error by copying each imperfect reached pose
 into the next target. Reobserve and regrasp if the alignment is no longer valid.
 
 Pull toward the robots along world +Y, using short movements and checking that
-the drawer follows. The native rail has 90 mm total travel; aim for 75-85 mm.
+the drawer follows. The native rail has 90 mm TOTAL travel from fully closed.
+Aim for 75-85 mm TOTAL opening: another 45-55 mm from the 30 mm initial
+opening, not another 75-85 mm. Estimate current opening from observations.
 There is no push latch or button. Do not force beyond the mechanical stop,
 rotate the cabinet, lift the drawer, or move along the wrong axis.
 If the grip slips, reobserve and regrasp rather than continuing an empty pull.
 
-Once open at least 75 mm, release, withdraw without pushing it closed, and
+Once the total opening from fully closed is at least 75 mm, release, withdraw without pushing it closed, and
 observe approximately half a simulation second of released, nearly stationary
 opening. No item retrieval or closing is required. Completion requires
 an actual grasped pull and the final released opening; a small amount
@@ -83,9 +83,10 @@ force sensors or a force-control API. No automatic scene reset is performed.
 
 # 中文布置和道具说明。
 description = """
-道具：L20 双抽屉收纳盒原生资产；柜体和下层抽屉固定，上层保留原生 90 mm 滑轨。原把手仅约 8 mm 高，另加蓝色 40 mm 宽抓持适配片，明确不是原照片把手。
-布置：使用拓境实验室 R5 双臂与三路相机，桌高 0.78 m；抽屉正面朝机械臂（世界 +Y），左臂操作，右臂只观察。
-操作与完成：夹住适配片，沿 +Y 拉开至少 75 mm，最大行程 90 mm；释放并保持开启约 0.5 秒。不取物、不关闭、不要求扶柜或抬升。
-评分：先记录连续双指抓持期间至少 5 mm 的净拉动，再独立判断最终开度和释放稳定；不要求越过 75 mm 时仍有双指接触，不把仅触碰已打开抽屉算作拉开。
-物理：保留原生尺寸、质量、材质及被动滑轨；适配片属于抽屉刚体，不与机器人吸附或绑定。源资产不修改。
+道具：L20 双抽屉收纳盒原生资产；柜体和下层抽屉固定，上层保留原生 90 mm 滑轨和原把手，不增加抓持片。原把手约宽 102 mm、深 6 mm、高 8 mm。
+布置：使用拓境实验室 R5 双臂与三路相机，桌高 0.78 m；收纳盒放在第三视角画面右侧机械臂前方，抽屉正面朝该机械臂（世界 +Y），上层初始预拉开 30 mm，留出接近原把手的空间；右臂操作，左臂只观察。
+操作与完成：自主选择原把手的接触方式，沿 +Y 继续拉至相对全闭位置的总开度 75—85 mm，即从初态再拉约 45—55 mm，最大总行程 90 mm；释放并保持开启约 0.5 秒。不取物、不关闭、不要求扶柜或抬升。
+评分：先记录连续双指抓持期间至少 5 mm 的净拉动，再独立判断相对全闭位置的最终总开度和释放稳定；预开 30 mm 不计为模型拉动，初态不算成功；不要求越过 75 mm 时仍有双指接触，不把仅触碰已打开抽屉算作拉开。
+物理：保留原生尺寸、80 g 抽屉质量、惯量、材质及被动滑轨，不增加几何或质量，不与机器人吸附或绑定。源资产不修改。
+可行性：原把手的宽度超过夹爪 70 mm 最大开口，厚度又小于 12 mm 最小开口；普通对夹方式受限，原把手抓取尚未通过 R5 验收，不能沿用加装把手时的成功记录。
 """

@@ -112,10 +112,17 @@ def books(e, rows):
         np.min((np.asarray(middle["corners"]) - p["stack_front_world"]) @ outward)
     )
     extracted = rear_clearance >= p["clearance_m"] and travel >= p["minimum_travel_m"]
-    grasped = held(middle, "left")
+    grasped = held(middle, e.spec.arms[0])
     if extracted and grasped:
         e.flags.add("middle_extracted_while_held")
-    complete = extracted and grasped and quiet(middle)
+    extracted_while_held = "middle_extracted_while_held" in e.flags
+    table_supported = (
+        middle["bench_force_n"] > 0.05
+        and abs(float(np.min(np.asarray(middle["corners"])[:, 2])) - p["table_z"]) < 0.005
+    )
+    # Extraction is the goal. Do not force a regrasp of a book already resting
+    # on the table, or add a stationary retention stage after a valid pull.
+    complete = extracted and extracted_while_held and (grasped or table_supported)
     return (
         complete,
         {
@@ -123,135 +130,14 @@ def books(e, rows):
             "outward_travel_m": travel,
             "rear_clearance_m": rear_clearance,
             "outward_axis_world": outward.tolist(),
-            "held_by_left": grasped,
+            "manipulation_arm": e.spec.arms[0],
+            "held_by_manipulation_arm": grasped,
+            "table_supported": bool(table_supported),
+            "extracted_while_held": extracted_while_held,
             "adjacent_books": "fixed fixtures; no support evaluation",
             "release_required": False,
             "stages": {"grasped": "middle_book" in e.touched,
-                       "fully_extracted": bool(extracted), "held_after_extraction": bool(complete)},
-        },
-        "",
-    )
-
-
-def ball_contained(position, p):
-    """Sphere fits within every sloped polygon wall, floor and rim of the bowl."""
-    if "native_inner_profile" in p:
-        from .native_l2_specs import bowl_clearance
-
-        return bowl_clearance(position, p["ball_radius_m"])
-    x, y, z = position
-    r = p["ball_radius_m"]
-    n = p["wall_segments"]
-    cosine = math.cos(math.pi / n)
-    slope = (p["top_radius_m"] - p["bottom_radius_m"]) / (p["height_m"] - p["floor_m"])
-    boundary = (p["bottom_radius_m"] + slope * (z - p["floor_m"])) * cosine
-    margin = r * math.sqrt(1 + (slope * cosine) ** 2)
-    normals = np.arange(n) * (2 * math.pi / n) + math.pi / n
-    return bool(
-        z - r >= p["floor_m"] - 0.0015
-        and z + r <= p["height_m"] + 0.001
-        and np.all(
-            x * np.cos(normals) + y * np.sin(normals) + margin <= boundary + 0.001
-        )
-    )
-
-
-def retained_pearl(point, row, p):
-    """Open bowl: an above-rim pearl may rest on the pile, not hang in space.
-
-    Only spheres intersecting the opening plane can use this exception. Their
-    entire horizontal footprint must remain inside the polygonal mouth, with
-    measured upward contact support and low translational speed. Axial spin of
-    a spherical pearl is immaterial. Ordinary wall/floor penetration is not waived.
-    """
-    if ball_contained(point, p):
-        return True, "inside_cavity"
-    x, y, z = point
-    r, rim, tolerance = p["ball_radius_m"], p["height_m"], 0.0003
-    from .native_l2_specs import bowl_clearance
-
-    above_rim = (rim - r - tolerance <= z <= rim + r + tolerance
-                 and bowl_clearance(point, r, tolerance, open_top=True))
-    cosine = math.cos(math.pi / p["wall_segments"])
-    footprint = all(
-        x * math.cos((i + .5) * 2 * math.pi / p["wall_segments"])
-        + y * math.sin((i + .5) * 2 * math.pi / p["wall_segments"]) + r
-        <= p["top_radius_m"] * cosine + tolerance
-        for i in range(p["wall_segments"])
-    )
-    force = row.get("net_contact_force_world_n", (0., 0., 0.))
-    supported = force[2] >= p["ball_mass_kg"] * 9.81 * .2
-    slow = np.linalg.norm(row["linear_velocity"]) < .025
-    if above_rim and footprint and supported and slow:
-        return True, "supported_above_rim"
-    return False, ("outside_retention_geometry" if not above_rim or not footprint
-                   else "unsupported_or_moving_above_rim")
-
-
-def bowl(e, rows):
-    bowl = rows["bowl"]
-    p = e.spec.parameters
-    inside, retained, unsettled, exceptions = [], [], [], []
-    for i in range(p["count"]):
-        row = rows[f"load_{i}"]
-        point = relative(row, bowl)[:3, 3]
-        inside.append(ball_contained(point, p))
-        keep, reason = (True, "inside_cavity") if inside[-1] else retained_pearl(point, row, p)
-        retained.append(keep)
-        if np.linalg.norm(row["linear_velocity"]) >= .025:
-            unsettled.append(i)
-        if not inside[-1]:
-            exceptions.append({"index": i, "local_position_m": point.tolist(),
-                               "retained": keep, "reason": reason,
-                               "net_contact_force_world_n": row.get("net_contact_force_world_n"),
-                               "speed_m_s": float(np.linalg.norm(row["linear_velocity"]))})
-        # A previously spilled ball remains a spill even if returned to the bowl.
-        spill_evidence = (
-            row["bench_force_n"] > p.get("ball_mass_kg", 0.004) * 9.81 * 0.25
-            or point[2] < -p["ball_radius_m"]
-            or np.linalg.norm(point[:2]) - p["ball_radius_m"]
-            > p["top_radius_m"] + 0.008
-        )
-        if sustained(e, f"spill_evidence_{i}", spill_evidence):
-            e.flags.add(f"spilled_ball_{i}")
-    spilled = [i for i in range(p["count"]) if f"spilled_ball_{i}" in e.flags]
-    holding = held(bowl, "left") and held(bowl, "right")
-    if (
-        holding
-        and bowl["bench_force_n"] < 0.05
-        and bowl["pose"][2] - e.initial["bowl"][2] >= p["lift_m"]
-    ):
-        e.flags.add("loaded_bowl_lifted")
-    target_error = float(np.linalg.norm(np.asarray(bowl["pose"][:2]) - p["target_xy"]))
-    transported = (
-        "loaded_bowl_lifted" in e.flags
-        and table_placed(bowl)
-        and upright(bowl, 0.18)
-        and target_error <= p["target_tolerance_m"]
-    )
-    # Motion wholly inside the cavity is allowed; only airborne/unsupported
-    # protruding pearls block completion. Do not require all 708 beads to freeze.
-    complete = transported and all(retained) and not spilled
-    return (
-        complete,
-        {
-            "contained_balls": sum(inside),
-            "retained_balls": sum(retained),
-            "unretained_indices": [i for i, keep in enumerate(retained) if not keep],
-            "unsettled_indices": unsettled,
-            "above_rim_diagnostics": exceptions,
-            "required_balls": p["count"],
-            "holding_both_handles": holding,
-            "target_error_m": target_error,
-            "loaded_bowl_lifted": "loaded_bowl_lifted" in e.flags,
-            "spilled": spilled,
-            "transport_complete": bool(transported),
-            "no_spill": not bool(spilled),
-            "retained_fraction": (p["count"] - len(spilled)) / p["count"],
-            "stages": {"lifted": "loaded_bowl_lifted" in e.flags,
-                       "at_target": target_error <= p["target_tolerance_m"],
-                       "placed": bool(transported)},
-            "constraint_violations": ["Load spilled"] if spilled else [],
+                       "fully_extracted": bool(extracted), "supported_after_extraction": bool(complete)},
         },
         "",
     )
@@ -260,7 +146,9 @@ def bowl(e, rows):
 def drawer(e, rows):
     row = rows["drawer"]
     p = e.spec.parameters
-    displacement = np.asarray(row["pose"][:3]) - e.initial["drawer"][:3]
+    # Rail limits and success use opening from fully CLOSED, not extra travel
+    # from the pre-opened episode layout.
+    displacement = np.asarray(row["pose"][:3]) - np.asarray(p["closed_pose"][:3])
     outward = np.asarray(p["outward_axis_world"])
     travel = float(displacement @ outward)
     guide_deviation = np.linalg.norm(
@@ -275,7 +163,7 @@ def drawer(e, rows):
     # Establish causal pull evidence during a continuous two-finger grasp,
     # independently of the final opening threshold. A last millimetre of passive
     # travel after release must not erase an otherwise measured grasped pull.
-    grasped = held(row, "left") and not guide_deviation and not beyond_stop
+    grasped = held(row, p["manipulation_arm"]) and not guide_deviation and not beyond_stop
     pull = e.contact_motion.setdefault("drawer_pull", {"start": None, "net_m": 0.0})
     if grasped:
         if pull["start"] is None:
@@ -301,6 +189,9 @@ def drawer(e, rows):
         complete,
         {
             "opening_m": travel,
+            "initial_opening_m": p["initial_open_m"],
+            "travel_since_start_m": float((np.asarray(row["pose"][:3])
+                                            - e.initial["drawer"][:3]) @ outward),
             "pulled_while_held": "pulled_while_held" in e.flags,
             "maximum_grasped_pull_m": pull["net_m"],
             "minimum_grasped_pull_m": p["minimum_grasped_pull_m"],
@@ -324,4 +215,6 @@ def drawer(e, rows):
     )
 
 
-RULES = {"L2-01": marker, "L2-03": books, "L2-04": bowl, "L2-07": drawer}
+from .pearl_pouring import score as pearl_pouring
+
+RULES = {"L2-01": marker, "L2-03": books, "L2-04": pearl_pouring, "L2-07": drawer}

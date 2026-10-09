@@ -11,6 +11,7 @@ import time
 import tomllib
 
 from ..paths import PROJECT_ROOT
+from .failures import PlanningFailure
 
 PREFIX = "R5_PLANNER "
 
@@ -142,6 +143,8 @@ class PlannerClient:
         if result.get("id") != self.sequence:
             raise RuntimeError(result.get("error", "Planner response ID mismatch"))
         if "error" in result:
+            if "planning_failure" in result:
+                raise PlanningFailure(result["planning_failure"])
             raise ValueError("cuRobo rejected: " + result["error"])
         return result
 

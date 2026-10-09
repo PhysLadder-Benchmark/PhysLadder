@@ -1,7 +1,7 @@
 """Native L20 L2 rigid assets, preserving their separate bodies and materials.
 
-Only episode initialization writes poses. Native joints stay passive; grasp
-adapters are explicit scene geometry, never attachments to robot fingers.
+Only episode initialization writes poses. Native joints stay passive; delivered
+handles, mass and inertia are preserved without robot attachments.
 """
 
 from dataclasses import asdict
@@ -11,38 +11,10 @@ import numpy as np
 
 from ...asset_delivery import verified_prop
 from ...backends.scene_geometry import bench_geometry
-from ...robots.transforms import origin_transform, pose_transform, transform_pose
+from ...robots.transforms import pose_transform, transform_pose
 from ...types import InvalidSimulationState
 from ..l1.scene import L1Scene
 
-
-def composite_inertia(mass, centre, diagonal, axes, parts, added_mass):
-    """Analytical native-body + box-adapter inertia; avoid mesh-volume recooking."""
-    q = (axes.GetReal(), *axes.GetImaginary())
-    rotation = pose_transform((0.0, 0.0, 0.0, *q))[:3, :3]
-    centre = np.asarray(centre, dtype=float)
-    pieces = [(mass, centre, rotation @ np.diag(diagonal) @ rotation.T)]
-    volume = sum(np.prod(p.size) for p in parts)
-    for p in parts:
-        m = added_mass * np.prod(p.size) / volume
-        x, y, z = p.size
-        local = m / 12 * np.diag((y * y + z * z, x * x + z * z, x * x + y * y))
-        r = origin_transform((0.0, 0.0, 0.0), p.rotation)[:3, :3]
-        pieces.append((m, np.asarray(p.position), r @ local @ r.T))
-    total = mass + added_mass
-    com = sum(m * p for m, p, _ in pieces) / total
-    inertia = sum(
-        i + m * (np.dot(p - com, p - com) * np.eye(3) - np.outer(p - com, p - com))
-        for m, p, i in pieces
-    )
-    values, vectors = np.linalg.eigh(inertia)
-    if not np.isfinite(values).all() or min(values) <= 0:
-        raise ValueError("Nonpositive inertia in native grasp adapter")
-    if np.linalg.det(vectors) < 0:
-        vectors[:, -1] *= -1
-    t = np.eye(4)
-    t[:3, :3] = vectors
-    return total, com, values, transform_pose(t)[3:]
 
 
 class NativeL2Scene:
@@ -52,7 +24,7 @@ class NativeL2Scene:
     add_part = L1Scene.add_part
 
     def __init__(self, backend, config, spec):
-        from isaacsim.core.prims import RigidPrim, SingleRigidPrim
+        from isaacsim.core.prims import RigidPrim, SingleRigidPrim, SingleXFormPrim
         from pxr import Gf, PhysxSchema, Usd, UsdGeom, UsdPhysics, UsdShade
 
         self.backend, self.config, self.spec = backend, config, spec
@@ -62,6 +34,8 @@ class NativeL2Scene:
         self.colliders, self.evidence, self.deliveries = [], [], {}
         self.cached_time, self.cached_rows = None, None
         self.auxiliary = []
+        self.fixed_names = set()
+        fixed_body_paths = []
         UsdGeom.Xform.Define(self.stage, self.root)
         for item in spec.parameters["native_instances"]:
             parent = self.root + "/" + item["name"]
@@ -71,11 +45,33 @@ class NativeL2Scene:
             prim = self.stage.DefinePrim(parent)
             prim.GetReferences().AddReference(str(path))
             self.set_pose(parent, item["pose"])
+            # Compose a declared initial rigid transform once (e.g. a cap
+            # pre-loosened along its helix). Never couple motion during play.
+            for relative, initial in item.get("initial_body_transforms", {}).items():
+                body = self.stage.GetPrimAtPath(parent + "/" + relative)
+                if not body or not body.HasAPI(UsdPhysics.RigidBodyAPI):
+                    raise ValueError(f"Missing native initial body: {parent}/{relative}")
+                xform = UsdGeom.Xformable(body)
+                local = np.asarray(xform.GetLocalTransformation()).T
+                composed = pose_transform(initial) @ local
+                xform.MakeMatrixXform().Set(Gf.Matrix4d(composed.T.tolist()))
+            # Initial joint displacement only: retain authored closed-position
+            # joint frames/limits and all native geometry, mass and materials.
+            for relative, offset in item.get("initial_body_offsets", {}).items():
+                body = self.stage.GetPrimAtPath(parent + "/" + relative)
+                if not body or not body.HasAPI(UsdPhysics.RigidBodyAPI):
+                    raise ValueError(f"Missing native initial body: {parent}/{relative}")
+                xform = UsdGeom.Xformable(body)
+                transform = xform.GetLocalTransformation()
+                transform.SetTranslateOnly(transform.ExtractTranslation() + Gf.Vec3d(*offset))
+                xform.MakeMatrixXform().Set(transform)
             self.evidence.append(
                 {
                     **evidence,
                     "instance": item["name"],
                     "static_bodies": item.get("static", []),
+                    "initial_body_offsets": item.get("initial_body_offsets", {}),
+                    "initial_body_transforms": item.get("initial_body_transforms", {}),
                     "native_dimensions": True,
                     "native_materials": not item["name"].startswith("load_"),
                 }
@@ -89,39 +85,11 @@ class NativeL2Scene:
                 # Kinematic anchoring preserves native joint frames and bodies.
                 UsdPhysics.RigidBodyAPI(body).CreateKinematicEnabledAttr(True)
                 PhysxSchema.PhysxRigidBodyAPI.Apply(body).CreateEnableCCDAttr(False)
+                fixed_body_paths.append(str(body.GetPath()))
             for relative in item.get("disabled_joints", []):
                 UsdPhysics.Joint(
                     self.stage.GetPrimAtPath(parent + "/" + relative)
                 ).CreateJointEnabledAttr(False)
-            for relative, parts in item.get("adapters", {}).items():
-                for part in parts:
-                    adapter_path = (
-                        parent
-                        + ("/" + relative if relative else "")
-                        + "/R5Adapter/"
-                        + part.name
-                    )
-                    self.add_part(adapter_path, part)
-                    contact = PhysxSchema.PhysxCollisionAPI.Apply(
-                        self.stage.GetPrimAtPath(adapter_path)
-                    )
-                    contact.CreateContactOffsetAttr(0.0002)
-                    contact.CreateRestOffsetAttr(0.0)
-            for relative, addition in item.get("mass_additions", {}).items():
-                body_path = parent + ("/" + relative if relative else "")
-                mass = UsdPhysics.MassAPI(self.stage.GetPrimAtPath(body_path))
-                total, com, diagonal, axes = composite_inertia(
-                    float(mass.GetMassAttr().Get()),
-                    mass.GetCenterOfMassAttr().Get(),
-                    mass.GetDiagonalInertiaAttr().Get(),
-                    mass.GetPrincipalAxesAttr().Get(),
-                    item["adapters"][relative],
-                    addition,
-                )
-                mass.CreateMassAttr(float(total))
-                mass.CreateCenterOfMassAttr(Gf.Vec3f(*map(float, com)))
-                mass.CreateDiagonalInertiaAttr(Gf.Vec3f(*map(float, diagonal)))
-                mass.CreatePrincipalAxesAttr(Gf.Quatf(axes[0], Gf.Vec3f(*axes[1:])))
             if item["name"].startswith("load_") and "ball_friction" in spec.parameters:
                 # The transport protocol does not use the 1 mm bore. Hundreds
                 # of 16-hull pearls made CPU contact stepping impractical.
@@ -170,6 +138,14 @@ class NativeL2Scene:
                 ):
                     self.auxiliary.append(str(body.GetPath()))
 
+        if spec.parameters.get("native_cup_names"):
+            from .native_geometry import catalog, verify_stage
+
+            if self.deliveries["ripple_paper_cup"][1]["sha256"] != catalog()["ripple_paper_cup"]["sha256"]:
+                raise ValueError("Cup scoring geometry is from a different locked asset")
+            verify_stage(self.stage, [("ripple_paper_cup", self.paths[name])
+                                      for name in spec.parameters["native_cup_names"]])
+
         for part in self.design.fixtures:
             self.add_part(self.root + "/Fixture/" + part.name, part)
         transforms = UsdGeom.XformCache()
@@ -178,17 +154,40 @@ class NativeL2Scene:
             prim = self.stage.GetPrimAtPath(path)
             world = np.asarray(transforms.GetLocalToWorldTransform(prim)).T
             self.initial[name] = transform_pose(world)
-            bound = bbox.ComputeUntransformedBound(prim).ComputeAlignedRange()
-            lo, hi = np.asarray(bound.GetMin()), np.asarray(bound.GetMax())
+            # USD's aligned root bound can inflate after a root rotation.
+            # Measure visible vertices in the body's own frame, not a world
+            # AABB transformed back (which rejects correctly placed objects).
+            points = []
+            inverse = np.linalg.inv(world)
+            for shape in Usd.PrimRange(prim):
+                if not shape.IsA(UsdGeom.Mesh):
+                    continue
+                if UsdGeom.Imageable(shape).ComputeVisibility() == "invisible":
+                    continue
+                vertices = np.asarray(UsdGeom.Mesh(shape).GetPointsAttr().Get())
+                if vertices.ndim != 2 or vertices.shape[1] != 3:
+                    continue
+                relative = inverse @ np.asarray(transforms.GetLocalToWorldTransform(shape)).T
+                points.append(vertices @ relative[:3, :3].T + relative[:3, 3])
+            if points:
+                vertices = np.concatenate(points)
+                lo, hi = vertices.min(axis=0), vertices.max(axis=0)
+            else:
+                bound = bbox.ComputeUntransformedBound(prim).ComputeAlignedRange()
+                lo, hi = np.asarray(bound.GetMin()), np.asarray(bound.GetMax())
             if not np.isfinite([lo, hi]).all() or max(hi - lo) <= 0:
                 raise ValueError(f"Native tracked body has no finite geometry: {path}")
             self.bounds[name] = np.array(list(product(*zip(lo, hi))))
             if not name.startswith("load_"):
+                fixed = path in fixed_body_paths
+                if fixed:
+                    self.fixed_names.add(name)
                 self.bodies[name] = backend.world.scene.add(
-                    SingleRigidPrim(path, name="native_l2_" + name)
+                    (SingleXFormPrim if fixed else SingleRigidPrim)(path, name="native_l2_" + name)
                 )
         self.load_names = [n for n in self.paths if n.startswith("load_")]
         self.load_view = None
+        self.load_containers = tuple(spec.parameters.get("load_container_names", ("bowl",)))
         if self.load_names:
             self.load_view = backend.world.scene.add(
                 RigidPrim(
@@ -198,7 +197,7 @@ class NativeL2Scene:
                     track_contact_forces=True,
                     contact_filter_prim_paths_expr=[
                         self.bench.prim_path,
-                        self.paths["bowl"],
+                        *[self.paths[n] for n in self.load_containers],
                     ],
                     max_contact_count=16384,
                     disable_stablization=False,
@@ -283,7 +282,7 @@ class NativeL2Scene:
         # paths. Native assets put most collision meshes beneath Xform roots.
         backend.planning_fixture_paths = tuple(
             str(shape.GetPath())
-            for path in fixture_paths
+            for path in dict.fromkeys(fixture_paths + fixed_body_paths)
             for shape in Usd.PrimRange(self.stage.GetPrimAtPath(path))
             if shape.HasAPI(UsdPhysics.CollisionAPI)
             and UsdPhysics.CollisionAPI(shape).GetCollisionEnabledAttr().Get()
@@ -297,17 +296,13 @@ class NativeL2Scene:
             "public_facts": spec.facts,
             "initial_poses": self.initial,
             "physics_overrides": {
+                "fixed_bodies": fixed_body_paths,
                 "pearl_collision": spec.parameters.get("pearl_collision"),
                 "pearl_friction": spec.parameters.get("ball_friction"),
-                "adapter_mass_added": [
-                    i.get("mass_additions", {})
-                    for i in spec.parameters["native_instances"]
-                    if i.get("mass_additions")
-                ],
             },
             "object_attachment": False,
             "arm_roles": config.arm_roles,
-            "grasp_adapters": spec.parameters.get("grasp_adapters", []),
+            "grasp_adapters": [],
             "ground_truth_use": "scoring and collision geometry only; no object poses supplied to the policy",
         }
 
@@ -315,6 +310,9 @@ class NativeL2Scene:
         self.cached_time, self.cached_rows = None, None
         for name, body in self.bodies.items():
             p = self.initial[name]
+            if name in self.fixed_names:
+                body.set_default_state(position=np.asarray(p[:3]), orientation=np.asarray(p[3:]))
+                continue
             body.set_default_state(
                 position=np.asarray(p[:3]),
                 orientation=np.asarray(p[3:]),
@@ -394,8 +392,8 @@ class NativeL2Scene:
             )
             rows[name] = {
                 "pose": [*map(float, xyz), *map(float, q)],
-                "linear_velocity": body.get_linear_velocity().tolist(),
-                "angular_velocity": body.get_angular_velocity().tolist(),
+                "linear_velocity": [0., 0., 0.] if name in self.fixed_names else body.get_linear_velocity().tolist(),
+                "angular_velocity": [0., 0., 0.] if name in self.fixed_names else body.get_angular_velocity().tolist(),
                 "fingers": fingers,
                 "pair_forces": pairs,
                 "bench_force_n": float(np.linalg.norm(contacts[0])),
@@ -416,7 +414,7 @@ class NativeL2Scene:
             if (
                 net_contacts.shape != (len(self.load_names), 3)
                 or not np.isfinite(net_contacts).all()
-                or contacts.shape != (len(self.load_names), 2, 3)
+                or contacts.shape != (len(self.load_names), 1 + len(self.load_containers), 3)
                 or not np.isfinite(contacts).all()
             ):
                 raise InvalidSimulationState("Invalid bulk pearl contact measurement")
@@ -430,7 +428,10 @@ class NativeL2Scene:
                     "fingers": {a: [0.0, 0.0] for a in forces},
                     "fixture_force_n": 0.0,
                     "bench_force_n": float(np.linalg.norm(contacts[i, 0])),
-                    "pair_forces": {"bowl": float(np.linalg.norm(contacts[i, 1]))},
+                    "pair_forces": {
+                        container: float(np.linalg.norm(contacts[i, j + 1]))
+                        for j, container in enumerate(self.load_containers)
+                    },
                     "net_contact_force_world_n": net_contacts[i].tolist(),
                     "corners": (self.bounds[name] @ t[:3, :3].T + xyz).tolist(),
                 }

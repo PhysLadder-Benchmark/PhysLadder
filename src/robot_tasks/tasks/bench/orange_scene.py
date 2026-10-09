@@ -14,7 +14,7 @@ class OrangeScene:
     add_part = L1Scene.add_part
 
     def __init__(self, backend, config, spec):
-        from pxr import PhysxSchema, UsdGeom
+        from pxr import PhysxSchema, Usd, UsdGeom, UsdPhysics
 
         if not backend.settings.gpu_dynamics:
             raise ValueError(
@@ -34,16 +34,31 @@ class OrangeScene:
         prim.GetReferences().AddReference(str(asset))
         self.placement = self.design.articles[0].initial
         self.set_pose(self.path, self.placement)
+        pedestal_path = self.root + "/Pedestal"
+        pedestal_asset, pedestal_evidence = verified_prop(
+            spec.parameters["pedestal_asset"]
+        )
+        pedestal = self.stage.DefinePrim(pedestal_path)
+        pedestal.GetReferences().AddReference(str(pedestal_asset))
+        self.set_pose(pedestal_path, spec.parameters["pedestal_pose"])
+        # Passive fixed support only; never attach or drive the orange.
+        UsdPhysics.RigidBodyAPI(pedestal).CreateKinematicEnabledAttr(True)
+        PhysxSchema.PhysxRigidBodyAPI.Apply(pedestal).CreateEnableCCDAttr(False)
+        pedestal_colliders = tuple(
+            str(p.GetPath())
+            for p in Usd.PrimRange(pedestal)
+            if p.HasAPI(UsdPhysics.CollisionAPI)
+        )
+        if not pedestal_colliders:
+            raise ValueError("Native orange pedestal has no collision geometry")
         for part in self.design.fixtures:
             self.add_part(self.root + "/Fixture/" + part.name, part)
         self.visual = self.stage.GetPrimAtPath(self.path + "/Visual")
         self.sim = self.stage.GetPrimAtPath(self.path + "/Simulation")
         self.collision = self.stage.GetPrimAtPath(self.path + "/Collision")
-        # Explicit task contact margins for the small FEM asset in the full
-        # metre-scale laboratory. Material, rest mesh and mass are unchanged.
-        contact = PhysxSchema.PhysxCollisionAPI.Apply(self.collision)
-        contact.CreateContactOffsetAttr(0.003)
-        contact.CreateRestOffsetAttr(0.0015)
+        from .orange_physics import apply
+
+        physics = apply(self.stage, self.path, config.raw.get("orange_physics", {}))
         self.rest = np.asarray(
             self.sim.GetAttribute("omniphysics:restShapePoints").Get(), dtype=float
         )
@@ -76,18 +91,36 @@ class OrangeScene:
                 ).ComputeAlignedRange()
                 parts.append((path, np.asarray(b.GetMin()), np.asarray(b.GetMax())))
             self.observer_bounds[arm] = parts
-        backend.planning_fixture_paths = ()
+        backend.planning_fixture_paths = pedestal_colliders
         backend.planning_payloads = self.planning_payloads
         backend.scene_report["household"] = {
             "version": self.design.version,
             "mechanism": spec.mechanism,
-            "assets": [evidence],
+            "assets": [evidence, pedestal_evidence],
+            "pedestal": {
+                "pose": spec.parameters["pedestal_pose"],
+                "fixed": True,
+                "native_geometry": True,
+                "source_asset_modified": False,
+            },
             "limitations": spec.limitations,
             "parameters": spec.parameters,
             "initial_poses": self.initial,
-            "native_materials_preserved": True,
+            "native_materials_preserved": all(
+                physics["native"][key] == physics["effective"][key]
+                for key in (
+                    "dynamic_friction",
+                    "youngs_modulus_pa",
+                    "poissons_ratio",
+                    "elasticity_damping",
+                )
+            ),
+            "orange_physics": physics,
             "object_attachment": False,
-            "contact_overrides_m": {"contact_offset": 0.003, "rest_offset": 0.0015},
+            "contact_overrides_m": {
+                "contact_offset": physics["effective"]["contact_offset_m"],
+                "rest_offset": physics["effective"]["rest_offset_m"],
+            },
             "rupture_demo_executed": False,
             "soft_contact_measurement": "FEM collision vertices to delivered finger triangle surfaces, distances capped at 10 mm; unsigned proximity, not force or grasp proof",
             "deformation": "95th-percentile principal element strain, rigid-motion invariant; engineering reference only",
@@ -123,10 +156,14 @@ class OrangeScene:
             or not np.isfinite(physical).all()
         ):
             raise InvalidSimulationState("Missing/nonfinite native FEM readback")
-        motion = motion_metrics(world, world if self.previous is None else self.previous[1],
-                                1.0 if self.previous is None else now - self.previous[0])
+        motion = motion_metrics(
+            world,
+            world if self.previous is None else self.previous[1],
+            1.0 if self.previous is None else now - self.previous[0],
+        )
         distances = []
         from .surface_distance import surface_clearance
+
         for path, triangles in zip(self.finger_paths, self.finger_surfaces):
             finger = np.asarray(
                 cache.GetLocalToWorldTransform(self.stage.GetPrimAtPath(path))
@@ -170,8 +207,10 @@ class OrangeScene:
     def planning_payloads(self):
         row = self.measure()["orange"]
         payloads = {a: [] for a in self.config.arms}
-        if (all(d < 0.003 for d in row["finger_distances_m"][:2])
-                and row["bounds_min"][2] > self.spec.parameters["table_z"] + .01):
+        if (
+            all(d < 0.003 for d in row["finger_distances_m"][:2])
+            and row["bounds_min"][2] > self.spec.parameters["support_z"] + 0.003
+        ):
             from itertools import product
 
             payloads["left"].append(

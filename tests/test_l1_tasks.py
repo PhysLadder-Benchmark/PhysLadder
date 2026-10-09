@@ -336,7 +336,7 @@ class L1ProtocolTests(unittest.TestCase):
         for name in ("L1-01", "L1-03", "L1-05", "L1-07", "L1-08", "L1-09"):
             spec, config = resolve_task(name)
             self.assertTrue(spec.implemented)
-            self.assertEqual(config.robot.source.name, "r5_tuojing_lab.toml")
+            self.assertEqual(config.robot.source.name, "r5_tuojing_lab_l1.toml")
             self.assertEqual(config.cameras, reference.cameras)
             self.assertEqual(config.arm_roles, reference.arm_roles)
             for section in ("observation", "policy", "recording"):

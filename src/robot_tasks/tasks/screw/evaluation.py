@@ -9,7 +9,7 @@ from ...robots.transforms import pose_transform
 from ...types import Assessment
 from .spec import SPEC
 
-SCORE_VERSION = "net-engagement-v3-recoverable"
+SCORE_VERSION = "net-engagement-v4-released-seat"
 
 
 @dataclass
@@ -28,6 +28,7 @@ class _ThreadProgress:
     held_advance: float = 0.0
     net_turn: float = 0.0
     net_advance: float = 0.0
+    pitch: float = SPEC.pitch
 
     def clear(self):
         self.previous = None
@@ -66,16 +67,17 @@ class _ThreadProgress:
             min(
                 self.held_advance,
                 self.net_advance,
-                SPEC.pitch * self.turn / (2 * math.pi),
+                self.pitch * self.turn / (2 * math.pi),
             ),
         )
 
 
 class ScrewEvaluator:
-    def __init__(self):
+    def __init__(self, spec=SPEC):
+        self.spec = spec
         self.last_time = None
         self.pickup_seen = False
-        self.progress = _ThreadProgress()
+        self.progress = _ThreadProgress(pitch=spec.pitch)
         self.thread_turn = 0.0
         self.thread_advance = 0.0
         self.guided_depth_seen = False
@@ -97,13 +99,13 @@ class ScrewEvaluator:
         if self.last_time is not None and now <= self.last_time:
             raise ValueError("Screw samples require increasing simulation time")
         self.last_time = now
-        s = SPEC
+        s = self.spec
         t = pose_transform(row["pose"])
         tip, axis = t[:3, 3], t[:3, 2]
         tilt = math.acos(float(np.clip(axis[2], -1, 1)))
         radial_error = float(np.linalg.norm(tip[:2] - s.socket_xy))
         yaw = math.atan2(t[1, 0], t[0, 0])
-        depth = s.socket_rim - tip[2]
+        depth = s.table_z + s.socket_rim - tip[2]
         held = all(f > s.contact_threshold for f in row["finger_forces"])
         released = max(row["finger_forces"]) < s.contact_threshold
         support = row["fixture_force_n"] > s.contact_threshold
@@ -116,7 +118,9 @@ class ScrewEvaluator:
         self.thread_turn = self.progress.turn
         self.thread_advance = self.progress.advance
         physical_goal = (
-            engaged and depth >= s.required_depth and tip[2] >= s.socket_floor - 0.0005
+            engaged
+            and depth >= s.required_depth
+            and tip[2] >= s.table_z + s.socket_floor - 0.0005
         )
         progress_sufficient = (
             self.thread_turn >= s.required_turn_rad
@@ -127,13 +131,7 @@ class ScrewEvaluator:
             self.guided_depth_seen = False
         elif valid:
             self.guided_depth_seen = True
-        quiet = (
-            np.linalg.norm(row["linear_velocity"]) < 0.01
-            and np.linalg.norm(row["angular_velocity"]) < 0.2
-        )
-        complete = (
-            self.guided_depth_seen and physical_goal and released and support and quiet
-        )
+        complete = self.guided_depth_seen and physical_goal and released and support
         self.stable_since = (
             (now if self.stable_since is None else self.stable_since)
             if complete
@@ -162,17 +160,25 @@ class ScrewEvaluator:
             "guided_depth_seen": self.guided_depth_seen,
             "released": released,
             "socket_supported": support,
-            "stable_duration_s": 0.0
-            if self.stable_since is None
-            else now - self.stable_since,
+            "stable_duration_s": (
+                0.0 if self.stable_since is None else now - self.stable_since
+            ),
             "damage_model": "none; no stripping or material damage claim",
             "scoring_protocol": "recoverable_progress_v1",
             "goal_complete": bool(complete),
-            "process_constraints_satisfied": not (tip[2] < -0.03 and released),
-            "constraint_violations": (["Screw fell below the table"]
-                                      if tip[2] < -0.03 and released else []),
-            "quality_warnings": (["Unsupported descent observed; regrasp remains possible on the table"]
-                                 if self.unsupported_descent_seen else []),
+            "process_constraints_satisfied": not (
+                tip[2] < s.table_z - 0.03 and released
+            ),
+            "constraint_violations": (
+                ["Screw fell below the table"]
+                if tip[2] < s.table_z - 0.03 and released
+                else []
+            ),
+            "quality_warnings": (
+                ["Unsupported descent observed; regrasp remains possible on the table"]
+                if self.unsupported_descent_seen
+                else []
+            ),
             # Recorder-only task truth, never part of the policy observation.
             # Store independent values so later samples cannot mutate this row.
             "measurement_time_s": float(now),
@@ -190,7 +196,7 @@ class ScrewEvaluator:
                 "bench_force_n": float(row["bench_force_n"]),
             },
         }
-        if tip[2] < -0.03 and released:
+        if tip[2] < s.table_z - 0.03 and released:
             return Assessment(
                 "failed",
                 "Screw fell below the table",

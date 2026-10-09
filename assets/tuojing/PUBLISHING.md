@@ -17,10 +17,16 @@
 | lab_v4 | 实验室场景 | 是 |
 | photo_props | 拍摄道具 | 是 |
 | orange_soft | 橘瓣软体 | 是 |
-| tabletop_interactions | 桌面交互道具 | 否：本机缺少原包和解压文件 |
-| book | 书本 | 否：本机缺少原包和解压文件 |
+| tabletop_interactions | 桌面交互道具 | 否：不在此固定发布内 |
+| book | 书本 | 否：不在此固定发布内 |
+| physical_props_20261008 | 后续七类实物道具 | 否 |
+| oriental_leaf_335ml | 东方树叶瓶 | 否 |
+| anchor_removable_nut_20261008 | 可旋出螺母组件 | 否 |
+| desktop_additions_20261009 | 承台、杯子和插头底座 | 否 |
 
-这不是完整的 L2 资产交付。需要缺失包的任务仍不能仅凭本次发布运行。
+此发布仍只有原来的三个 ZIP；合并后 `release.json` 绑定当前资产锁，并完整列出另外六个未发布包，不修改已有 tag 或 ZIP。
+
+这不是完整的 L1/L2/L3 资产交付。需要缺失包的任务仍不能仅凭本次发布运行。
 补齐时发布新版本，不在旧 tag 下替换或追加包以改变已发布的交付范围。
 
 ## 同事在新机器恢复
@@ -43,7 +49,7 @@ python3 tools/fetch_tuojing_release.py
 python3 tools/tuojing_assets.py --packages lab_v4 photo_props orange_soft
 ```
 
-不带 `--packages` 仍检查锁文件中的全部五个包；本机缺少两个包时会报错，不能把部分校验当成完整交付。
+不带 `--packages` 检查当前锁文件中的全部九个包；任何包缺失都会报错，不能把三个包的部分校验当成完整交付。
 可加 `--usd` 检查 USD 组合依赖（需要 pxr），但文件检查不等于物理仿真或 GPT 任务测试通过。
 
 ## 维护者发布流程

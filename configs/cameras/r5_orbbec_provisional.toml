@@ -1,3 +1,4 @@
+# Runtime overview pose is overridden by simulation.camera_position/target in gpt_default.toml.
 # 临时工程参数：用户允许先估算。未经过现场标定，不可作为真机内外参。
 schema_version = 1
 calibration_status = "provisional_uncalibrated"

@@ -1,6 +1,7 @@
 """Isaac Sim lifecycle; importing this module never starts Kit."""
 
 import math
+import time
 from pathlib import Path
 
 from ..config import TaskConfig
@@ -8,7 +9,7 @@ from ..types import EvaluationState, RGBFrame
 from ..cameras import RGBNotReady
 from ..runtime import configure_windows_storage, storage_report
 from .settings import SimulationSettings
-from .scene_geometry import BENCH_POSITION, BENCH_SIZE, TCP_MARKER_RADIUS_M
+from .scene_geometry import BENCH_POSITION, BENCH_SIZE
 
 
 class IsaacSimBackend:
@@ -46,6 +47,9 @@ class IsaacSimBackend:
         if self.settings.camera_profile:
             from ..cameras.profile import load_camera_rig
             self.camera_profile = load_camera_rig(config.source.parent / self.settings.camera_profile)
+            if "camera_position" in config.raw.get("simulation", {}):
+                from ..cameras.overview import override_overview
+                self.camera_profile = override_overview(self.camera_profile, self.settings)
             self.camera_profile.select(config.cameras)
         elif config.cameras != ("overview",):
             raise ValueError("Multiple cameras require simulation.camera_profile")
@@ -76,9 +80,17 @@ class IsaacSimBackend:
                     raise RuntimeError(f"Could not open laboratory: {self.lab_asset}")
                 stage = omni.usd.get_context().get_stage()
                 self.environment_report = configure_stage(stage, self.camera_profile)
-                if config.task_id.startswith("L2-"):
+                if config.task_id.startswith("L2-") or config.raw.get("task", {}).get("implementation") == "loose_nut":
                     from .tuojing_lab import apply_l2_finger_collisions
                     self.environment_report["finger_collision_overrides"] = apply_l2_finger_collisions(stage, config.robot)
+                elif config.task_id.startswith("L1-"):
+                    # Thin-object tuning is specific to L1. Keep the existing
+                    # L2/nut overrides and other L3 collision geometry intact.
+                    from ..robots.finger_collision import configure_finger_collisions
+                    self.environment_report["finger_collision_by_arm"] = {
+                        mount.name: configure_finger_collisions(stage, mount.prim_path)
+                        for mount in config.robot.mounts
+                    }
                 validate_robot_binding(stage, config.robot)
                 if not self.camera_profile or any(not s.existing_prim_path for s in self.camera_profile.select(config.cameras)):
                     raise ValueError("Laboratory cameras must bind to the supplied USD cameras")
@@ -124,7 +136,7 @@ class IsaacSimBackend:
                 self._rgb.attach(self._render_product)
             rep.orchestrator.set_capture_on_play(False)
             self._rep = rep
-            if not self.settings.headless:
+            if not self.settings.headless and self.camera_profile is None:
                 from isaacsim.core.utils.viewports import set_camera_view
                 set_camera_view(eye=np.array(self.settings.camera_position), target=np.array(self.settings.camera_target))
         except Exception:
@@ -134,7 +146,7 @@ class IsaacSimBackend:
     def add_r5(self, profile) -> dict:
         """Create both platform arms before reset initializes the physics handles."""
         import numpy as np
-        from isaacsim.core.api.objects import FixedCuboid, VisualSphere
+        from isaacsim.core.api.objects import FixedCuboid
         from isaacsim.core.prims import SingleArticulation, SingleRigidPrim
         from isaacsim.core.utils.stage import add_reference_to_stage
         from pxr import Gf, PhysxSchema, Usd, UsdGeom, UsdPhysics
@@ -169,10 +181,7 @@ class IsaacSimBackend:
                     Gf.Quatd(quaternion[0], Gf.Vec3d(*quaternion[1:])))
             else:
                 root = self.world.stage.GetPrimAtPath(mount.prim_path)
-            finger_collision = None
-            if self.lab_asset is not None:
-                from ..robots.finger_collision import configure_finger_collisions
-                finger_collision = configure_finger_collisions(self.world.stage, mount.prim_path)
+            finger_collision = self.environment_report.get("finger_collision_by_arm", {}).get(mount.name)
             descendants = list(Usd.PrimRange(root, Usd.TraverseInstanceProxies()))
             roots = [prim for prim in descendants if prim.HasAPI(UsdPhysics.ArticulationRootAPI)]
             if len(roots) != 1:
@@ -209,10 +218,6 @@ class IsaacSimBackend:
             # Read-only physics views; do not add them to Scene's reset list or set link poses.
             self.ee_views[mount.name] = SingleRigidPrim(
                 tip_path, name=f"r5_{mount.name}_ee", reset_xform_properties=False)
-            if profile.tcp_pose_wxyz is not None:
-                VisualSphere(prim_path=tip_path + "/tcp_marker", name=f"tcp_{mount.name}",
-                             translation=np.array(profile.tcp_pose_wxyz[:3]), radius=TCP_MARKER_RADIUS_M,
-                             color=np.array([0.0, 0.9, 0.9]))
             if self.lab_asset is None:
                 self.world.scene.add(FixedCuboid(
                     prim_path=f"/World/Stand_{mount.name}", name=f"stand_{mount.name}",
@@ -244,6 +249,11 @@ class IsaacSimBackend:
                                              include_depth=self.include_depth)
             self.scene_report["camera_rig"] = self.camera_rig.create(
                 {name: arm["ee_link_path"] for name, arm in self.scene_report["arms"].items()})
+            if not self.settings.headless:
+                from .viewport import initialize_overview_view
+
+                self.scene_report["gui_viewport"] = initialize_overview_view(
+                    self.world.stage, self.camera_rig.paths["overview"])
         return dict(self.articulations)
 
     def reset(self, seed: int) -> None:
@@ -274,11 +284,35 @@ class IsaacSimBackend:
         if count < 1 or not math.isclose(count * self._physics_dt, duration_s, abs_tol=1e-9):
             raise ValueError("Duration must be an integer multiple of physics_dt_s")
         if not self.app.is_running():
-            raise RuntimeError("Simulation window was closed")
+            raise KeyboardInterrupt("Simulation window was closed")
         for _ in range(count):
+            self._wait_until_playing()
+            before = self.time_s()
             if self.before_physics_step is not None:
                 self.before_physics_step(self._physics_dt)
             self.world.step(render=False)
+            after = self.time_s()
+            if not math.isfinite(after) or after <= before:
+                raise RuntimeError(
+                    f"Physics step did not advance the simulation clock: {before} -> {after}; "
+                    "this is a simulation execution error, not a task failure"
+                )
+
+    def _wait_until_playing(self) -> None:
+        """Honor GUI pause without advancing actions, scores or model calls."""
+        notified = False
+        while not self.world.is_playing():
+            if not self.app.is_running() or self.world.is_stopped():
+                raise KeyboardInterrupt("Simulation window was closed or timeline stopped")
+            if self.settings.headless:
+                raise RuntimeError("Headless simulation timeline is unexpectedly paused")
+            if not notified:
+                print("R5_SIMULATION_PAUSED: press Play in Isaac Sim to resume", flush=True)
+                notified = True
+            self.world.render()
+            time.sleep(0.01)
+        if notified:
+            print("R5_SIMULATION_RESUMED", flush=True)
 
     def pump_events(self) -> None:
         """Service the GUI on its owning thread without ticking or capturing."""

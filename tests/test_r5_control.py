@@ -101,6 +101,10 @@ class R5ControlTests(unittest.TestCase):
         backend = IsaacSimBackend()
         backend.world, backend.app = Mock(), Mock()
         backend._physics_dt = 1 / 240
+        backend.world.current_time = 0.0
+        def tick(**kwargs):
+            backend.world.current_time += backend._physics_dt
+        backend.world.step.side_effect = tick
         backend.step(0.1)
         self.assertEqual(backend.world.step.call_count, 24)
         backend.world.step.reset_mock()

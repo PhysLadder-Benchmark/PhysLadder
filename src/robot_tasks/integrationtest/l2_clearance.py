@@ -19,7 +19,9 @@ from ..tasks.bench.spec import build_spec
 from .bottle_clearance import Geometry, box_vertices, separation
 
 
-def solve_clear(geometry, goal, seed, width, obstacles, *, arm="left", table_z=0.0):
+def solve_clear(
+    geometry, goal, seed, width, obstacles, *, arm="left", table_z=0.0, contact_pairs=()
+):
     from scipy.optimize import least_squares
 
     def residual(q):
@@ -48,6 +50,7 @@ def solve_clear(geometry, goal, seed, width, obstacles, *, arm="left", table_z=0
             (link, name, separation(shape, obstacle))
             for link, shape in boxes.items()
             for name, obstacle in obstacles
+            if (link, name) not in contact_pairs
         ]
         worst = min(margins, key=lambda v: v[2]) if margins else ("none", "none", 1.0)
         candidate = (min(margin, worst[2]), margin, worst)
@@ -65,28 +68,20 @@ def samples_and_fixtures(task, spec):
     samples, fixed = [], []
     down_left, down_right = (0.0, math.pi / 2, math.pi), (0.0, math.pi / 2, 0.0)
     if task == "L2-07":
-        x, y, h = spec.design.articles[0].initial[:3]
-        samples = [
-            ("left", (x, y + 0.112 + step, h + 0.026), (0.0, 0.3, -math.pi / 2), 0.040)
-            for step in (0.0, 0.04, 0.08)
-        ]
-        t = pose_transform(p["native_instances"][0]["pose"])
-        fixed.append(
-            (
-                "cabinet_envelope",
-                box_vertices(t, [-0.14, -0.0725, 0.0], [0.14, 0.0725, 0.115]),
-            )
+        raise ValueError(
+            "No qualified R5 pinch fixture for the native 102 x 6 x 8 mm lip; "
+            "the former added-handle clearance result is not applicable."
         )
     elif task == "L2-03":
         a = spec.design.articles[0]
         samples = [
             (
-                "left",
-                (a.initial[0], a.initial[1] + 0.073 + step, a.initial[2]),
-                (math.pi / 2, 0.0, -math.pi / 2),
+                spec.arms[0],
+                (a.initial[0] + 0.050 + step, a.initial[1], a.initial[2]),
+                (-math.pi / 2, 0.0, math.pi),
                 0.020,
             )
-            for step in (0.0, 0.075, 0.15)
+            for step in (0.0, 0.055, 0.11)
         ]
         for item in p["native_instances"][:2]:
             fixed.append(
@@ -125,25 +120,28 @@ def samples_and_fixtures(task, spec):
         ]
     elif task == "L2-04":
         a = spec.design.articles[0]
-        for step in (0.0, a.goal[1] - a.initial[1]):
-            for arm, side, rpy in (
-                ("left", -1.0, down_left),
-                ("right", 1.0, down_right),
-            ):
-                samples.append(
-                    (
-                        arm,
-                        (a.initial[0] + side * 0.084, a.initial[1] + step, z + 0.038),
-                        rpy,
-                        0.045,
-                    )
-                )
+        samples = [
+            (
+                spec.arms[0],
+                (a.initial[0], a.initial[1], a.initial[2] + 0.040 + dz),
+                (0.0, 0.3, -math.pi / 2),
+                0.069,
+            )
+            for dz in (0.0, 0.04)
+        ]
     elif task == "L2-06":
         a = spec.design.articles[0]
+        support_z = spec.parameters["support_z"]
+        orange_pose = pose_transform(a.initial)
+        grip_xy = (orange_pose[:3, 3] + orange_pose[:3, :3] @ [0, -0.007, 0])[:2]
+        yaw = math.atan2(orange_pose[1, 0], orange_pose[0, 0])
         samples = [
-            ("left", (p[0], p[1] - 0.007, z + 0.026), down_left, 0.023)
-            for p in (a.initial, a.goal)
+            ("left", (*grip_xy, support_z + 0.021 + dz), (0, math.pi / 2, math.pi + yaw), 0.023)
+            for dz in (0.0, 0.060)
         ]
+        fixed.append(("pedestal", box_vertices(
+            origin_transform(spec.parameters["pedestal_pose"][:3], (0, 0, 0)),
+            [-0.04, -0.04, 0], [0.04, 0.04, 0.13])))
     else:
         raise ValueError(task)
     return samples, fixed
@@ -158,7 +156,7 @@ def check(task):
     left_boxes = None
     for arm, position, rpy, width in samples:
         obstacles = list(fixtures)
-        if task in {"L2-01", "L2-04"} and arm == "right" and left_boxes is not None:
+        if task == "L2-01" and arm == "right" and left_boxes is not None:
             obstacles += [("left/" + name, shape) for name, shape in left_boxes.items()]
         q, worst, margin = solve_clear(
             geometry,
