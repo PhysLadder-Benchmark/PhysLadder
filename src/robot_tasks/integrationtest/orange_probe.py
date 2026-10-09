@@ -8,7 +8,7 @@ def run(scene):
     from pxr import Gf, PhysxSchema, UsdGeom, UsdPhysics
 
     initial = scene.measure()["orange"]
-    floor = scene.spec.parameters["table_z"]
+    floor = scene.spec.parameters["support_z"]
     ztop = initial["collision_bounds_max"][2]
     if abs(initial["collision_bounds_min"][2] - floor) > 0.0015:
         raise RuntimeError(

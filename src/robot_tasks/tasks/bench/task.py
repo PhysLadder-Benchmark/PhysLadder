@@ -32,9 +32,9 @@ class BenchTask:
             "L2-06",
             "L2-07",
             "L3-03",
+            "L3-11",
             "L3-14",
             "L3-15",
-            "L3-16",
         }
         return replace(
             config,
@@ -47,10 +47,14 @@ class BenchTask:
         from .scene import BenchScene
 
         self.spec = build_spec(config.task_id)
-        if self.spec.mechanism == "native_fem_orange_transfer":
+        if self.spec.mechanism == "native_fem_orange_lift":
             from .orange_scene import OrangeScene
 
             self.scene = OrangeScene(backend, config, self.spec)
+        elif self.spec.mechanism == "native_contact_wiping":
+            from .wiping_scene import WipingScene
+
+            self.scene = WipingScene(backend, config, self.spec)
         elif "native_instances" in self.spec.parameters:
             from .native_l2 import NativeL2Scene
 
@@ -71,7 +75,8 @@ class BenchTask:
         from .observer_contact import ObserverContactMonitor
 
         self.observer_monitor = ObserverContactMonitor()
-        if self.spec.mechanism == "native_fem_orange_transfer":
+        self._last_evaluation_time = self._last_assessment = None
+        if self.spec.mechanism == "native_fem_orange_lift":
             from .orange_evaluation import OrangeEvaluator
 
             self.evaluator = OrangeEvaluator(self.spec)
@@ -80,6 +85,12 @@ class BenchTask:
 
     def evaluate(self, state, feedback):
         now = state.values["simulation_time_s"]
+        # Cache the whole assessment, including observer-role checks. Polling a
+        # paused frame must not re-run either stateful evaluator.
+        if now == self._last_evaluation_time:
+            return self._last_assessment
         assessment = self.evaluator.update(now, self.scene.measure())
         evidence = getattr(self.scene, "observer_evidence", lambda: {})()
-        return self.observer_monitor.update(now, evidence, assessment)
+        self._last_assessment = self.observer_monitor.update(now, evidence, assessment)
+        self._last_evaluation_time = now
+        return self._last_assessment

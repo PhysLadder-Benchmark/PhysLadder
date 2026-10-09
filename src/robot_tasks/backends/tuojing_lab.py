@@ -49,7 +49,7 @@ def apply_l2_finger_collisions(stage, profile):
     """Keep the tapered R5 finger's concavity; a single hull closes its throat.
 
     Only the session layer is changed. Visual meshes, link mass and kinematics
-    remain the delivered R5. This is disclosed and restricted to migrated L2.
+    remain the delivered R5. Applied to migrated L2 and native loose-nut tasks.
     """
     from pxr import PhysxSchema, Usd, UsdPhysics
 
@@ -86,8 +86,9 @@ def apply_l2_finger_collisions(stage, profile):
 def apply_camera_mounts(stage, profile):
     """Apply requested extrinsics to optics AND housings, only in the session layer.
 
-    Wrist sensors remain children of link6. The overview retains its original
-    heading; its configured pose also moves the tripod head and adjusts the riser.
+    Wrist sensors remain children of link6. The overview's configured pose
+    also moves the tripod head and adjusts the riser. Its estimated lens follows
+    the configured video framing; wrist optics remain those of the delivery.
     Lens validation in IsaacCameraRig still checks the resulting camera geometry.
     """
     import numpy as np
@@ -143,9 +144,24 @@ def apply_camera_mounts(stage, profile):
                     set_world(riser_path, riser_pose)
                 set_world(head, delta @ old_head)
             set_world(expected, target)
+            camera = UsdGeom.Camera(stage.GetPrimAtPath(expected))
+            width, height = spec.resolution
+            fx, fy, cx, cy = spec.intrinsics
+            if not np.allclose((cx, cy), (width / 2, height / 2)) or not np.isclose(fx, fy):
+                raise ValueError("Laboratory overview requires a centred square-pixel pinhole lens")
+            focal = camera.GetFocalLengthAttr().Get()
+            camera.GetHorizontalApertureAttr().Set(float(width * focal / fx))
+            camera.GetVerticalApertureAttr().Set(float(height * focal / fy))
+            camera.GetHorizontalApertureOffsetAttr().Set(0.)
+            camera.GetVerticalApertureOffsetAttr().Set(0.)
         changes[spec.name] = {"original_world_pose_wxyz": transform_pose(old_camera),
                               "configured_parent_pose_wxyz": spec.optical_pose_wxyz,
                               "source": spec.pose_source, "layer": "session"}
+        if spec.parent == "world":
+            changes[spec.name]["lens_override"] = {
+                "resolution": spec.resolution, "intrinsics": spec.intrinsics,
+                "source": spec.intrinsics_source,
+            }
     return changes
 
 

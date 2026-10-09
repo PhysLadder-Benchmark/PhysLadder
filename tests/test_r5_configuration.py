@@ -208,14 +208,18 @@ class R5ConfigurationTests(unittest.TestCase):
                 self.assertFalse(report["execution_configuration_ready"])
 
     def test_run_rejects_unimplemented_task_before_creating_simulator_or_policy(self):
-        with patch("robot_tasks.execution.IsaacSimBackend") as backend, \
-                patch("robot_tasks.execution.GPTPolicy") as policy, redirect_stderr(io.StringIO()) as error:
-            with self.assertRaises(SystemExit) as raised:
-                main(["run", "--config", str(ROOT / "configs/tasks/l3_11_whiteboard_wiping_real.toml"), "--policy", "gpt"])
-            self.assertEqual(raised.exception.code, 2)
-            self.assertIn("real-only", error.getvalue())
-            backend.assert_not_called()
-            policy.assert_not_called()
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "real_only.toml"
+            path.write_text('schema_version = 2\n[task]\nid = "L3-11"\n'
+                            'name = "offline real-only fixture"\nsimulation_enabled = false\n', encoding="utf-8")
+            with patch("robot_tasks.execution.IsaacSimBackend") as backend, \
+                    patch("robot_tasks.execution.GPTPolicy") as policy, redirect_stderr(io.StringIO()) as error:
+                with self.assertRaises(SystemExit) as raised:
+                    main(["run", "--config", str(path), "--policy", "gpt"])
+                self.assertEqual(raised.exception.code, 2)
+                self.assertIn("real-only", error.getvalue())
+                backend.assert_not_called()
+                policy.assert_not_called()
 
     def test_urdf_structural_errors_are_detected_without_simulation(self):
         mutations = ("nonfinite_mass", "cyclic_link", "cyclic_mimic", "escaping_mesh")

@@ -5,7 +5,7 @@ from pathlib import Path
 import tomllib
 
 
-SECTIONS = {"runtime", "observation", "recording", "execution", "policy"}
+SECTIONS = {"runtime", "observation", "recording", "execution", "policy", "simulation"}
 
 
 def workflow_metadata() -> dict:
@@ -66,11 +66,13 @@ def load_workflow(source: Path, task: dict) -> tuple[dict, Path | None, dict | N
     with path.open("rb") as stream:
         profile = tomllib.load(stream)
     if not profile or set(profile) - SECTIONS:
-        raise ValueError("Workflow profiles may only define runtime/observation/recording/execution/policy parameters")
+        raise ValueError("Workflow profiles may only define experiment parameters and shared camera settings")
     if any(not isinstance(v, dict) for v in profile.values()):
         raise ValueError("Workflow profile sections must be tables")
     if set(profile.get("policy", {})) - {"reasoning_effort"}:
         raise ValueError("Workflow policy only configures reasoning_effort; model_config belongs to the task")
+    if set(profile.get("simulation", {})) - {"camera_position", "camera_target", "camera_reference_frame", "camera_resolution", "camera_intrinsics"}:
+        raise ValueError("Workflow simulation only configures the overview camera; scene assets belong to the task")
     # Validate both sources so a task cannot mask obsolete profile switches.
     _fixed_inputs(profile)
     _fixed_inputs(task)

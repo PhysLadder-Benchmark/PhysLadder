@@ -88,20 +88,6 @@ class BenchScene(L1Scene):
         self.drives = {}
         for joint in spec.joints:
             self.create_joint(joint)
-        self.push_drawer = None
-        if spec.mechanism == "measured_stroke_push_latch_and_passive_ejector_proxy":
-            from .push_drawer_scene import PushDrawerMechanism
-
-            self.push_drawer = PushDrawerMechanism(self)
-        previous = backend.before_physics_step
-
-        def before_step(dt):
-            if previous is not None:
-                previous(dt)
-            if self.push_drawer is not None:
-                self.push_drawer.step(dt)
-
-        backend.before_physics_step = before_step
         report = backend.scene_report[self.report_key]
         report.update(
             mechanism=spec.mechanism,
@@ -271,8 +257,6 @@ class BenchScene(L1Scene):
         super().reset(seed)
         for view in (*self.arm_contacts.values(), *self.pairs.values()):
             view.initialize()
-        if self.push_drawer is not None:
-            self.push_drawer.reset()
 
     def measure(self):
         rows = super().measure()
@@ -300,8 +284,6 @@ class BenchScene(L1Scene):
                         map(float, np.linalg.norm(matrix[0], axis=1)),
                     )
                 )
-        if self.push_drawer is not None:
-            rows["upper_drawer"]["push_latch"] = self.push_drawer.measurement()
         if self.spec.design.task_id == "L1-07":
             suffix = self.spec.parameters["target_hook_suffix"]
             indices = [i for i, path in enumerate(self.support_filters) if path.endswith(suffix)]

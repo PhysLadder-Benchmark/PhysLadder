@@ -60,7 +60,10 @@ class BatchTests(unittest.TestCase):
         self.assertNotIn("SECRET_VALUE", str(error.exception))
 
     def test_dry_batch_snapshots_overrides_and_skips_real_only(self):
-        root = self.dry_batch()
+        from dataclasses import replace
+        real_only = replace(batch.TASKS["L3-11"], implemented=False, evidence="real_only")
+        with patch.dict(batch.TASKS, {"L3-11": real_only}):
+            root = self.dry_batch()
         config = load_config(root / "configs/L1-01.toml")
         self.assertEqual(config.max_wall_time_s, 30)
         self.assertEqual(config.raw["execution"]["max_decisions"], 7)

@@ -1,21 +1,20 @@
-# Run from the repository root in the Isaac Sim environment, using the configured model transport.
+# Run in the Isaac Sim environment, using the configured shared model transport.
 # launch_command / launch_command_conda below are documentation, not auto-executed shell code.
 schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_sim.toml"
-active_arms = ["left"]
-observation_arms = ["right"]
+profile = "../robots/r5_tuojing_lab_small_grasp.toml"
+active_arms = ["left", "right"]
+observation_arms = []
 
 [simulation]
-environment = "lab_room_v1"
-robot_appearance = "r5_black_silver_v1"
-camera_profile = "../cameras/r5_orbbec_provisional.toml"
-asset_directory = "../../build/r5"
+environment = "tuojing_lab_v4"
+camera_profile = "../cameras/r5_tuojing_lab.toml"
+asset_directory = "../../build/tuojing_lab"
 headless = true
-width = 640
-height = 480
+width = 1280
+height = 720
 fps = 12
 arm_stiffness = 1500.0
 arm_damping = 80.0
@@ -24,125 +23,63 @@ finger_damping = 40.0
 self_collision = false
 solver_position_iterations = 32
 solver_velocity_iterations = 0
-camera_position = [1.25, 0.0, 0.54]
-camera_target = [0.71, 0.0, 0.0]
+
+[runtime]
+# Native SDF thread asset validated at 1920 Hz, only this task overrides the shared step.
+physics_dt_s = 0.0005208333333333333
 
 [policy]
 model_config = "../models/gpt.toml"
 
 [task]
 id = "L3-05"
-name = "短粗螺丝对准与半圈旋入"
+name = "双臂旋下预松螺母"
 execution_target = "simulation_and_real"
 simulation_enabled = true
-status = "implemented"
-implementation = "screw"
+status = "implemented_proxy"
+implementation = "loose_nut"
 launch_command = "python tools/launch.py run L3-05 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L3-05 --gui"
 instruction = """
-Pick up the large upright orange screw, align it with the single opening in the
-fixed blue threaded socket, engage its thread, and screw it down. Leave it seated
-after opening the left gripper. The screw starts separately on the table; it is
-NOT already held, aligned over the socket or engaged. No tool is needed.
+The silver sleeve-anchor assembly lies horizontally in the middle between both
+arms: its sleeve body points LEFT and its hex nut points RIGHT in the overview
+image. Pick up its body from the table with LEFT. Keep holding it while RIGHT
+grasps and unscrews the loose hex nut completely off the exposed threaded end.
+Both arms manipulate; there is no observation-only arm. Both hands start empty.
 
-Use the LEFT arm for all manipulation. The RIGHT arm is an active camera arm:
-move it when needed to inspect the grasp, screw tip, socket mouth, engagement or
-actual screw rotation. It must never touch or support either object. Leave the
-manipulation hand steady when changing the view. Determine actual coordinates,
-grasp regions and poses from current RGB-D and camera calibration. Nominal sizes
-below describe the object, not a supplied grasp pose or an action sequence.
+The assembly is 90 mm long. Grip the straight lower sleeve, about 12 mm across,
+with LEFT; do not hold the nut or the narrow exposed threaded shaft with this
+hand. Use current RGB-D and complementary views to confirm the assembly follows
+the hand when lifted. Lift clear of the table and establish enough room between
+both hands and wrist cameras before bringing RIGHT to the nut. Preserve the horizontal
+arrangement, with the threaded end toward the RIGHT hand: LEFT can
+hold the lower sleeve from above while RIGHT approaches the nut from its free
+end. Do not force both wrist housings into the same space over a vertical bolt.
 
-Geometry: shaft core diameter 0.026 m, thread outer diameter 0.036 m, shaft length
-0.030 m; the orange grasping head is 0.044 m across and 0.018 m tall. Overall
-height is 0.048 m. The thread is a coarse RIGHT-HAND thread, pitch 0.012 m per
-full revolution. The socket rim is 0.035 m above the tabletop. Both parts are
-rigid. There is generous engineering clearance and low thread friction, but
-the thread is a physical obstacle: straight downward pushing is not screwing.
+The nut is about 13 mm across opposite flat faces and 6.5 mm thick. RIGHT must
+pinch these flat faces without clamping the adjacent shaft or washer. It is
+already loose, with roughly two turns of engagement remaining; there is no
+initial tightening preload to overcome. Counterclockwise viewed toward the body
+from the exposed threaded end moves the nut outward. The right-hand thread lead
+is 1.25 mm per full turn. Coordinate outward travel with small rotation steps;
+regrasp when the wrist range requires it while LEFT keeps the body steady.
+Do not pull straight outward while the nut is still engaged. Inspect actual nut
+motion relative to the body, not just wrist rotation. If the grip slips, regain
+it before continuing. Use the available gripper closure and Cartesian tools;
+there is no force/torque command API.
 
-Choose a grip on the upper head which leaves the shaft, entering tip and fingers
-clear of the socket. Approach with an open gripper. Close in a SEPARATE decision;
-zero is the fully closed command and contact can stop the fingers at a wider
-measured opening. A blocked opening alone does not prove a grasp. Before leaving
-the source, make a small vertical lift and visually confirm the whole screw
-follows. If not, stop transport, open and correct the grasp. Use the observation
-arm if the object is occluded. Carry with the entire tip above the socket rim.
-Before engagement, choose a starting wrist orientation that leaves room for the
-clockwise half-turn within joint limits. The round head permits different grasp
-directions; avoid starting near a rotation limit. Regrasp safely if needed.
-
-Keep the screw upright and its tip centred over the bore. Approach in small
-increments. Establish first engagement without forcing the part down. If it
-rests on the rim or does not advance, inspect alignment, lift slightly only if
-unengaged, recenter, or rotate gently backwards to find the thread start. Do not
-repeat large downward commands against a blocked part.
-
-Entering the bore, hand rotation and screw rotation do not by themselves prove
-thread engagement. Before continuing a series of turns, compare the actual head
-height against the fixed socket rim across successive observations and confirm
-repeatable axial advancement with the expected direction, without tilt or slip.
-Use complementary views if the working end is hidden. A rejected motion has not
-advanced the screw. After an execution timeout, use measured TCP and current
-images, and keep outstanding drive targets in mind when observing or waiting.
-
-Once engagement is confirmed, rotate CLOCKWISE as viewed from above and coordinate
-downward motion with the pitch: 15 degrees corresponds to about 0.0005 m, 30 degrees to
-0.001 m, and 90 degrees to 0.003 m. These are geometric expectations, not proof
-of progress; inspect the actual screw and its black head mark after each move.
-Use short rotation increments (e.g. 15-30 degrees) with small axial advances,
-retaining the grasp. Rotate the gripper around the world vertical screw axis while
-keeping the fingers pointed down. If the screw slips in the fingers, adjust the
-grasp and reobserve. If motion is blocked, correct alignment or back off slightly;
-do not claim progress from the requested pose or hand rotation alone.
-
-You may regrasp the head if wrist range requires it. Being inside the socket
-does not establish stable support. First confirm coupled rotation/advance and
-alignment. Reduce clamping in small opening increments while keeping the hand
-pose steady; inspect whether the head shifts or leans as contact releases. Open
-fully and reposition the empty hand only after checking stable support. If the
-part leans, stop the regrasp sequence and recover alignment before further turns.
-
-For a correctly engaged screw, do not perform a free-object vertical test lift;
-check contact and actual motion visually. Visible lean, lateral displacement or
-missing coupled advance means engagement must be re-established, not assumed
-from prior insertion. Use small reverse turns and controlled withdrawal along
-the estimated shaft axis when needed and clear; inspect after each step, restore
-upright alignment and find the thread start again. Do not force an inclined
-screw down, rotate it about a guessed world axis, or repeat rejected targets.
-Estimate the current screw-axis offset from the measured TCP when choosing
-rotation targets, including after every regrasp. The
-interface uses fixed drive parameters, not a direct torque/force controller;
-you can adjust poses, opening and motion increments. No live force sensor or
-simulator object pose is supplied to you.
-
-This is a short, partial-insertion task: do not drive the screw to the socket
-floor or try to make the head flush with the rim. The head remains above the rim,
-with room for the fingers. A half-turn means the ACTUAL screw turns after
-engagement; unsuccessful commands or earlier free-air rotation do not count.
-
-Completion requires genuine held rotation/downward progress of at least half
-a turn (180 degrees, about 0.006 m coupled advance), and the tip at least 0.015 m
-below the socket rim. The final alignment limits are a tip-axis offset of at most 0.0025 m from the
-socket axis and a screw tilt of at most 10 degrees; aim comfortably inside these
-limits. The screw must remain upright and supported by the socket.
-Simply dropping it in, spinning in air, pushing straight down or turning an empty
-gripper does not count. Once seated, OPEN in a separate decision, move the empty
-hand clear without touching the screw, and observe it stable for 1 simulation
-second. There is no extra transport or placement zone. Request stop only after
-checking the released final state. This version does not simulate thread damage.
-
-A temporary tilt or a screw resting on the tabletop can be recovered by
-reobserving and regrasping in the same scene. There is no automatic reset.
-A screw lost below the table ends the episode. Actual net thread rotation and
-advance remain required. Every decision needs a brief English observation/action note.
+The task is complete when the nut has actually rotated off the thread and is
+fully separated, with LEFT holding the body and RIGHT holding the nut. Stop at
+that point: no release, exact final pose, table placement, extra dwell, or fixed
+number of turns is required. Empty-gripper motion or moving the whole assembly
+without relative nut rotation does not complete the task.
 """
 
-# Chinese setup/props description; keep this the final task attribute.
+# Chinese setup and props; final task attribute.
 description = """
-当前实现：已接入本地物理场景、共用 GPT 控制流程、独立评分及记录。参数为仿真工程值，需按实物校准；启动命令见本任务 launch_command。
-范围：短杆半圈版本 l3-05-short-half-turn-v2；同步缩短螺杆、孔座与螺纹，保留共用控制流程和净旋转／推进评分算法。旧版运行不按新阈值重判。
-道具：橙色短粗螺丝、固定蓝色螺纹孔座和操作台；芯径 26 mm、牙外径 36 mm、螺杆长 30 mm、抓持头直径 44 mm 且高 18 mm、总高 48 mm；孔座高 35 mm，右旋螺距 12 mm，内外螺纹均为 1.5 圈。
-布置：螺丝平底直立在桌面，孔座单独固定，二者分开放置、不预先啮合、不预抓持。左臂操作，右臂可按需移动相机观察。
-操作：自主抓住螺丝头、抬起、搬运对准、首次啮合，然后协调顺时针旋转与向下推进，必要时重抓，最后松手让孔座承托。
-完成：实际抓持且接触孔座时净旋转至少半圈、有效推进约 6 mm；端部进入孔口至少 15 mm，保持对准、释放后由孔座稳定承托 1 秒。不要求拧到底或头部贴住孔口，给夹指留出净空。
-边界：这是粗牙简化接触任务，未模拟或验证滑牙、材料损伤和真实紧固扭矩；不能将其解释为标准紧固件验收。
+道具：2026-10-08 可旋出螺母的原生膨胀螺栓资产；主体与螺母两个独立刚体，保留原尺寸、网格、质量和真实 SDF 内外螺纹；不使用原来的蓝色孔座与放大教学螺丝。
+布置：组件横放在双臂中间桌面，整体中心为实验室坐标 (0.19565, 1.30) m；从第三视角看套管主体朝左、螺母端朝右，双手空手开始；左手从桌面拿起并稳住主体，右手夹螺母旋出。螺母初态沿原螺距预松 10 圈、沿轴向退出 12.5 mm，剩约两圈；没有初始拧紧预载。主体不固定，任务中没有同轴导轨、螺旋关节或自动旋转。
+尺寸：总长 90 mm，套管直径 12 mm，螺母对边 13 mm、厚 6.5 mm，右旋螺距 1.25 mm。仅本任务使用最小开口 10 mm 的小件夹持配置（单指 5 mm，处于原有关节下限）；其余机器人设置不变。
+完成：左手拿起并持稳主体、右手实际旋转并把螺母完全分离，仍拿在手里即可结束。不要求放回桌面、指定位置、固定转圈数或额外等待；掉到桌面允许重新拿取，掉桌则失败。
+物理：仅本任务采用 1920 Hz 物理步进，控制周期与公共工作流不变。夹指沿用已用于 L2 的凸分解碰撞，保留内侧凹形，不改变外观与尺寸。精细螺纹几何和摩擦是工程估计，不模拟塑性损伤、滑牙或膨胀锚固。交付包的同轴夹具测试不是 R5 双臂自主成功证据。
 """

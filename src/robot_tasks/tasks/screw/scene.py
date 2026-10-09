@@ -7,7 +7,7 @@ import numpy as np
 from ...robots.transforms import pose_transform
 from .evaluation import SCORE_VERSION
 from .geometry import helix_pieces, screw_surface, socket_shell_mesh
-from .spec import SPEC
+from .spec import task_spec
 
 
 class ScrewScene:
@@ -19,6 +19,7 @@ class ScrewScene:
         from pxr import PhysxSchema, UsdGeom, UsdPhysics
 
         self.backend, self.config = backend, config
+        self.spec = task_spec(config)
         self.stage = backend.world.stage
         self.material = PhysicsMaterial(
             self.root + "/GripMaterial",
@@ -28,8 +29,8 @@ class ScrewScene:
         )
         self.thread_material = PhysicsMaterial(
             self.root + "/ThreadMaterial",
-            static_friction=SPEC.friction,
-            dynamic_friction=SPEC.friction,
+            static_friction=self.spec.friction,
+            dynamic_friction=self.spec.friction,
             restitution=0.0,
         )
         PhysxSchema.PhysxMaterialAPI.Apply(
@@ -38,25 +39,12 @@ class ScrewScene:
         path = self.root + "/Screw"
         prim = UsdGeom.Xform.Define(self.stage, path).GetPrim()
         UsdPhysics.RigidBodyAPI.Apply(prim)
-        UsdPhysics.MassAPI.Apply(prim).CreateMassAttr(0.09)
+        UsdPhysics.MassAPI.Apply(prim).CreateMassAttr(0.0628)
         rigid = PhysxSchema.PhysxRigidBodyAPI.Apply(prim)
         rigid.CreateSolverPositionIterationCountAttr(48)
         rigid.CreateSolverVelocityIterationCountAttr(4)
-        self.cylinder(
-            path + "/Core",
-            SPEC.core_radius,
-            SPEC.shaft_length,
-            (0, 0, SPEC.shaft_length / 2),
-            (0.8, 0.46, 0.12),
-        )
-        self.cylinder(
-            path + "/Head",
-            SPEC.head_radius,
-            SPEC.head_height,
-            (0, 0, SPEC.shaft_length + SPEC.head_height / 2),
-            (0.9, 0.28, 0.05),
-        )
-        for i, (vertices, faces) in enumerate(helix_pieces()):
+        self.asset_source = self.derived_anchor(path)
+        for i, (vertices, faces) in enumerate(helix_pieces(spec=self.spec)):
             self.mesh(
                 path + f"/Thread_{i}",
                 vertices,
@@ -68,16 +56,16 @@ class ScrewScene:
         self.box(
             path + "/RotationMark",
             (0.018, 0.004, 0.0004),
-            (0.011, 0, SPEC.height + 0.0002),
+            (0.011, 0, self.spec.height + 0.0002),
             (0.1, 0.1, 0.1),
             collision=False,
         )
         self.body = backend.world.scene.add(SingleRigidPrim(path, name="coarse_screw"))
         fixture = self.root + "/Socket"
         UsdGeom.Xform.Define(self.stage, fixture).AddTranslateOp().Set(
-            (*SPEC.socket_xy, 0.0)
+            (*self.spec.socket_xy, self.spec.table_z)
         )
-        vertices, faces = socket_shell_mesh()
+        vertices, faces = socket_shell_mesh(self.spec)
         self.mesh(
             fixture + "/OuterShell",
             vertices,
@@ -87,20 +75,28 @@ class ScrewScene:
         )
         self.box(
             fixture + "/Floor",
-            (0.080, 0.080, SPEC.socket_floor),
-            (0, 0, SPEC.socket_floor / 2),
+            (0.080, 0.080, self.spec.socket_floor),
+            (0, 0, self.spec.socket_floor / 2),
             (0.1, 0.25, 0.65),
             thread=True,
         )
         self.fixture_paths = (fixture + "/OuterShell", fixture + "/Floor")
         thread_paths = []
-        for i, (vertices, faces) in enumerate(helix_pieces(female=True)):
+        for i, (vertices, faces) in enumerate(
+            helix_pieces(female=True, spec=self.spec)
+        ):
             part_path = fixture + f"/ContactThread_{i}"
             # Static convex pieces avoid edge artifacts of concave triangle
             # mesh contact with the compound male thread on CPU PhysX.
             self.mesh(part_path, vertices, faces, convex=True, color=(0.15, 0.35, 0.8))
             thread_paths.append(part_path)
-        self.contact_paths = (*self.fixture_paths, *thread_paths, "/World/Bench")
+        from ...backends.scene_geometry import bench_geometry
+
+        self.contact_paths = (
+            *self.fixture_paths,
+            *thread_paths,
+            bench_geometry(config).prim_path,
+        )
         self.fingers = RigidPrim(
             next(m.prim_path for m in config.robot.mounts if m.name == "left")
             + "/link[78]",
@@ -123,9 +119,9 @@ class ScrewScene:
         backend.planning_fixture_paths = self.fixture_paths
         backend.planning_payloads = self.planning_payloads
         backend.scene_report["l3_05"] = {
-            "spec": asdict(SPEC),
-            "initial_pose": SPEC.initial_pose,
-            "source": "project-authored coarse teaching screw; no external asset download",
+            "spec": asdict(self.spec),
+            "initial_pose": self.spec.initial_pose,
+            "source": self.asset_source,
             "reference": "https://github.com/isaac-sim/IsaacGymEnvs/blob/main/docs/factory.md",
             "physics": "CPU PhysX; convex male and static female helix segments, open annular shell",
             "object_attachment": False,
@@ -135,8 +131,56 @@ class ScrewScene:
             "damage_model": "none; stripping, plastic deformation and breakage are not simulated",
             "model_observation": "RGB-D, camera parameters and robot state; no object truth or force/torque sensor",
             "score_version": SCORE_VERSION,
-            "score": "pickup, net held rotation and descent bounded by thread lead, insertion depth and released stable seating",
+            "score": "pickup, net held rotation and descent bounded by thread lead, insertion depth and released socket support; no extra velocity or timed-hold gate",
             "planning_contact_boundary": "outer shell and floor checked; mating thread teeth excluded from planning obstacles to permit intended contact; all teeth collide in physics",
+        }
+
+    def derived_anchor(self, path):
+        """Remesh the delivered stud/head into a short coarse teaching screw.
+
+        No source layer changes. Sleeve/washers are not part of this variant;
+        the hex nut becomes a welded head. The explicit helix does the mating.
+        """
+        from pxr import Gf, Usd, UsdGeom
+        from ...asset_delivery import verified_prop
+
+        source, evidence = verified_prop("expansion_anchor")
+        stage = Usd.Stage.Open(str(source))
+        s = self.spec
+        for name, source_name, scale, offset in (
+            (
+                "Core",
+                "InnerStud",
+                (s.core_radius / 0.004,) * 2 + (s.shaft_length / 0.09,),
+                (0, 0, 0),
+            ),
+            (
+                "Head",
+                "HexNut",
+                (s.head_radius / 0.0075,) * 2 + (s.head_height / 0.008,),
+                (0, 0, s.shaft_length - 0.075 * s.head_height / 0.008),
+            ),
+        ):
+            original = UsdGeom.Mesh(
+                stage.GetPrimAtPath("/Asset/Visuals/" + source_name)
+            )
+            if not original:
+                raise ValueError(f"Delivered expansion anchor is missing {source_name}")
+            points = np.asarray(original.GetPointsAttr().Get()) * scale + offset
+            mesh = UsdGeom.Mesh.Define(self.stage, path + "/" + name)
+            mesh.CreatePointsAttr([Gf.Vec3f(*map(float, v)) for v in points])
+            mesh.CreateFaceVertexCountsAttr(original.GetFaceVertexCountsAttr().Get())
+            mesh.CreateFaceVertexIndicesAttr(original.GetFaceVertexIndicesAttr().Get())
+            mesh.CreateSubdivisionSchemeAttr("none")
+            mesh.CreateDisplayColorAttr([Gf.Vec3f(0.60, 0.62, 0.65)])
+            self.collision(mesh.GetPrim(), convex=True)
+        return {
+            **evidence,
+            "adaptation": "Stud shortened/widened; hex nut rescaled and fused as head; sleeve, cone and washers omitted; project-authored coarse male/female threads added.",
+            "mass_kg": 0.0628,
+            "mass_scope": "Assigned engineering mass for modified geometry, not a measurement of this derived screw",
+            "expansion_mechanism": False,
+            "native_dimensions": False,
         }
 
     def collision(self, prim, *, thread=False, convex=False):
@@ -190,8 +234,8 @@ class ScrewScene:
 
     def reset(self, seed):
         self.body.set_default_state(
-            position=np.array(SPEC.initial_pose[:3]),
-            orientation=np.array(SPEC.initial_pose[3:]),
+            position=np.array(self.spec.initial_pose[:3]),
+            orientation=np.array(self.spec.initial_pose[3:]),
             linear_velocity=np.zeros(3),
             angular_velocity=np.zeros(3),
         )
@@ -222,14 +266,14 @@ class ScrewScene:
 
     def planning_payloads(self):
         row = self.measure()
-        if not all(f > SPEC.contact_threshold for f in row["finger_forces"]):
+        if not all(f > self.spec.contact_threshold for f in row["finger_forces"]):
             return {"left": []}
         t = pose_transform(row["pose"])
         return {
             "left": [
                 {
                     "surface_points_world": (
-                        screw_surface() @ t[:3, :3].T + t[:3, 3]
+                        screw_surface(self.spec) @ t[:3, :3].T + t[:3, 3]
                     ).tolist(),
                     "source": "measured bilateral contact; actual thread surface, collision only",
                 }

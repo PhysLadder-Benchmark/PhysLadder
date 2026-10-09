@@ -120,7 +120,8 @@ class BenchEvaluator:
             "limitations": self.spec.limitations,
             "criteria": details,
             "stages": details.get("stages", {}),
-            "objects": ({"bowl": rows["bowl"]} if self.spec.mechanism == "native_loaded_bowl_transport" else rows),
+            "objects": ({n: row for n, row in rows.items() if not n.startswith("load_")}
+                        if self.spec.design.task_id == "L2-04" else rows),
             "grasp_lift_confirmed": sorted(self.grasped),
             "process_flags": sorted(self.flags),
             "peak_finger_force_n": self.peak_force,
@@ -131,7 +132,7 @@ class BenchEvaluator:
             "quality_warnings": details.get("quality_warnings", []),
             "stage": "stabilize" if complete else "manipulate",
         }
-        if self.spec.mechanism == "native_loaded_bowl_transport":
+        if self.spec.design.task_id == "L2-04":
             # Hundreds of small pearls share geometry. Record their measured
             # poses compactly instead of repeating corners/zero finger forces
             # in every frame (which previously inflated memory and JSON logs).

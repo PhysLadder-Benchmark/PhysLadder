@@ -2101,6 +2101,182 @@
         }
       },
       "delivery": "2026-10-06"
+    },
+    {
+      "id": "physical_props_20261008",
+      "delivery": "2026-10-08",
+      "source": "User-supplied local seven-prop USD directory; archive packed locally without changing source files.",
+      "archive": "physical_props_20261008.zip",
+      "archive_root": "physical_props_20261008",
+      "directory": "physical_props_20261008",
+      "archive_bytes": 238539,
+      "archive_sha256": "46352c01a6ab34187e4218859bede20040fb089e2253c2525d7ca335cc4c44cc",
+      "files": {
+        "assets/blue_square/blue_square.usda": {
+          "bytes": 37355,
+          "sha256": "6baf0c93bd80065925287c11592f147ff8b50e02b2dd7a877e0194f0a807c01b"
+        },
+        "assets/blue_triangle/blue_triangle.usda": {
+          "bytes": 6137,
+          "sha256": "5506f6a66c7743150904947c1db34eb82a5312fd9849ef206dca99d1b6ca6c1d"
+        },
+        "assets/board_eraser/board_eraser.usda": {
+          "bytes": 106314,
+          "sha256": "c3fd7d4b993d735ab738b3d7c62b19d95437989a2f03575419f504dd1ee36215"
+        },
+        "assets/dustpan/dustpan.usda": {
+          "bytes": 654787,
+          "sha256": "d6f8bf67109af6c416c8a40fe6374333964adc3a62b777704d3fad0f30bc4fb7"
+        },
+        "assets/expansion_anchor/expansion_anchor.usda": {
+          "bytes": 854182,
+          "sha256": "20a617d30e9c3007ed9ab4579537399706c5d5dd74cf68769293f97c7467940a"
+        },
+        "assets/green_board/green_board.usda": {
+          "bytes": 315970,
+          "sha256": "63211bced07f83bc16bc0e9824196ce1b34cf474518d2f4b07e2eb14a09f99da"
+        },
+        "assets/hand_brush/hand_brush.usda": {
+          "bytes": 933887,
+          "sha256": "d6c0027f47453b4007a256eb788f67518b51584064b8e9ed1f068938f9b66bd0"
+        }
+      }
+    },
+    {
+      "id": "oriental_leaf_335ml",
+      "delivery": "2026-10-08",
+      "source": "User-supplied Oriental Leaf 335 ml USD and textures; native files copied unchanged.",
+      "archive": "oriental_leaf_335ml.zip",
+      "archive_root": "oriental_leaf_335ml",
+      "directory": "oriental_leaf_335ml",
+      "archive_bytes": 8458785,
+      "archive_sha256": "eb87a84c94301248a831be437e2b5db0c4baae70f58aaceced3ffb9650889953",
+      "files": {
+        "assets/oriental_leaf.usda": {
+          "bytes": 12066371,
+          "sha256": "b5c5f27e726fd307171163a6a185dc2583e89502812fe9ced063c95c77333793"
+        },
+        "textures/back_reference.JPG": {
+          "bytes": 2614775,
+          "sha256": "5a4ae9dadf5c87f5e3bf5d8409c12884adcf9ce594f71cc869ef4141be45a1df"
+        },
+        "textures/front_reference.JPG": {
+          "bytes": 3056565,
+          "sha256": "517732c3dd23172af27e9169f40d704a8f6df525c1418371204c52db43059c6e"
+        }
+      }
+    },
+    {
+      "id": "anchor_removable_nut_20261008",
+      "delivery": "2026-10-08",
+      "source": "User-supplied separate anchor/nut SDF asset and fixture validation; copied unchanged.",
+      "archive": "anchor_removable_nut_20261008.zip",
+      "archive_root": "anchor_removable_nut_20261008",
+      "directory": "anchor_removable_nut_20261008",
+      "archive_bytes": 3845598,
+      "archive_sha256": "cd9153e58449bb97c59ecbcb351d41d68302c929c225a59a2ae6b25dea064dfa",
+      "files": {
+        "assets/expansion_anchor/expansion_anchor.usda": {
+          "bytes": 19681641,
+          "sha256": "efcf02d0d954767369b900bf3cd652f3bb007a929037eb091c7b993e98a20877"
+        },
+        "使用说明.txt": {
+          "bytes": 2012,
+          "sha256": "a8ed090ac905ff7ecc73333703bbea76328cfd4c28c82672f0d8118fae7f9417"
+        },
+        "复现测试/test_thread_contact.py": {
+          "bytes": 4121,
+          "sha256": "92f1acf40d8b8f75402a10ec396977a974446c9b91b5dd76744503b9ae1a5e46"
+        },
+        "预览/assembled.png": {
+          "bytes": 411028,
+          "sha256": "94aae8c048662277f275eb3f395d1798cbc5b4cd13c0177dd66a5e55c483c8a7"
+        },
+        "预览/thread_detail.png": {
+          "bytes": 481711,
+          "sha256": "b8c6a2bcd01a4bcc4c09224ea321ebd4df25431d5aa441c6c0f864d8725af66c"
+        },
+        "验证结果.json": {
+          "bytes": 1424,
+          "sha256": "f0b0ad81eeb52df85ae513a5179d1f62492df82d2e2bb0522b274397a30bd72b"
+        }
+      }
+    },
+    {
+      "id": "desktop_additions_20261009",
+      "delivery": "2026-10-09",
+      "source": "User-supplied three desktop props; original files copied unchanged. Only pedestal used by L2-06.",
+      "archive": "desktop_additions_20261009.zip",
+      "archive_root": "desktop_additions_20261009",
+      "directory": "desktop_additions_20261009",
+      "archive_bytes": 3095815,
+      "archive_sha256": "34052bba4e53616f0cb27bfe5e0f7b7fa94aaf05627621695a9e5d479f3a3f9d",
+      "files": {
+        "assets/black_ceramic_mug/black_ceramic_mug.usda": {
+          "bytes": 1730770,
+          "sha256": "150b757fd0f303a77aab6da45ec2a9e538ba91af885c379e3223f28ca4723c57"
+        },
+        "assets/black_ceramic_mug/properties.json": {
+          "bytes": 1194,
+          "sha256": "180d2651595d05c7e7b5412859b258313401a2efa7273fb39b5896bd82754360"
+        },
+        "assets/cylindrical_pedestal/cylindrical_pedestal.usda": {
+          "bytes": 264547,
+          "sha256": "8a97c2e71dd9a8c58480b1b0132feb2dc20fce39907f2d8d397ef998f0812685"
+        },
+        "assets/cylindrical_pedestal/properties.json": {
+          "bytes": 1029,
+          "sha256": "7dd945f8b4e96c611ce0a178c2d7a15ddd15e3c61452e446e6ea43315f8519fe"
+        },
+        "assets/plug_storage_base/plug_storage_base.usda": {
+          "bytes": 2172823,
+          "sha256": "954845da3d0db2598fbb2d8052de4cebd6cf21606eb04ddeefab6cbe350e9771"
+        },
+        "assets/plug_storage_base/properties.json": {
+          "bytes": 1286,
+          "sha256": "b970d4471fe722f13deb8aabaeab05fbb6d8b166d5e546a9dc5711758e3ab078"
+        },
+        "catalog.json": {
+          "bytes": 3753,
+          "sha256": "a2afaf2f2cde110bbe9bce3ae51c27573388a3b23727d0a240d86ac3ee32ca1d"
+        },
+        "manifest.json": {
+          "bytes": 2340,
+          "sha256": "2ba941e92fa771931e6075d729ae6ce96ea79256ceb073fb7085f2cd1e81ba3b"
+        },
+        "parameters.json": {
+          "bytes": 1155,
+          "sha256": "6aa87310761b207af36c51861d688a9f7ba3d2f1acfc77014f0e9855c8a6c022"
+        },
+        "preview/holder_detail.png": {
+          "bytes": 842539,
+          "sha256": "b9594047f0df2fdc7ea865476df035c916bf4b177d8439c0a6d529fe91ac21ad"
+        },
+        "preview/mug_detail.png": {
+          "bytes": 917971,
+          "sha256": "572442659f5910d78654d704cd8c86420618dbbeb7cfb3c1db897d33ddbc287f"
+        },
+        "preview/overview.png": {
+          "bytes": 915239,
+          "sha256": "77bca03444767aeeaa5da6a36eb3c0d96e5bd13f43ae9517f0b62edd02ecfc32"
+        },
+        "showcase.usda": {
+          "bytes": 847,
+          "sha256": "712db629a655f8a2414921e5f45d3b926205b0a07cef45d018311b90bee624e3"
+        },
+        "validation/asset_audit.json": {
+          "bytes": 1808,
+          "sha256": "a3d90c4d194a225118a7f15c116f1d532fc91ce359f848aa052a69b47355bec5"
+        },
+        "validation/physics_report.json": {
+          "bytes": 2906,
+          "sha256": "f3ced714dd44eab3e04b7036938b241811e3b1c7c5e99f51adeefdec5019b5b9"
+        },
+        "使用说明.txt": {
+          "bytes": 2736,
+          "sha256": "c41adcca31f044a990be52ff6708b2844bfaad439a90b1158d5d10923a42e1f0"
+        }
+      }
     }
   ]
 }

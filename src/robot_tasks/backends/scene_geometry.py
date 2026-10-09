@@ -5,6 +5,8 @@ from dataclasses import dataclass
 BENCH_POSITION = (0.25, 0.0, -0.03)
 BENCH_SIZE = (1.5, 1.65, 0.06)
 BENCH_TOP = BENCH_POSITION[2] + BENCH_SIZE[2] / 2
+# Legacy recordings contain a rendered TCP sphere. Kept only for their grasp
+# evidence exclusion; the current backend no longer renders a marker.
 TCP_MARKER_RADIUS_M = 0.004
 
 

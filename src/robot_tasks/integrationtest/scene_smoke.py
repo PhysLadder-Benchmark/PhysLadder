@@ -17,7 +17,8 @@ from pathlib import Path
 from ..paths import PROJECT_ROOT
 
 
-def check(task_id, output, *, prepare=True, prop_probe=False, capture_hook=None):
+def check(task_id, output, *, prepare=True, prop_probe=False, capture_hook=None,
+          capture_before_observations=False):
     import numpy as np
     from PIL import Image
 
@@ -76,6 +77,10 @@ def check(task_id, output, *, prepare=True, prop_probe=False, capture_hook=None)
                     "Startup preparation failed: " + str(asdict(robot.feedback()))
                 )
         rows = task.scene.measure()
+        # Finish documentation render warm-up before saving the observation views;
+        # otherwise newly loaded robot meshes can be absent in the first capture.
+        if capture_hook is not None and capture_before_observations:
+            result["preview"] = capture_hook(backend, task, output)
         frames = backend.capture_rgb()
         result["cameras"] = []
         result["camera_capture"] = {}
@@ -106,7 +111,7 @@ def check(task_id, output, *, prepare=True, prop_probe=False, capture_hook=None)
                 "calibration": frame.calibration, "preview_calibration": calibration,
                 "preview_resolution": size, "valid_depth_fraction": float(np.mean(np.isfinite(depth) & (depth > 0))),
             }
-        if capture_hook is not None:
+        if capture_hook is not None and not capture_before_observations:
             result["preview"] = capture_hook(backend, task, output)
         # Initial state must be running, never already successful or physically failed.
         assessments = []

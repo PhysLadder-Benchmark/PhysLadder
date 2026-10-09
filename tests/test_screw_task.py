@@ -38,11 +38,11 @@ class ScrewTests(unittest.TestCase):
     def setUp(self):
         self.e = ScrewEvaluator()
 
-    def test_shared_workflow_and_observation_arm(self):
+    def test_current_nut_task_replaces_legacy_single_arm_entry(self):
         spec, config = resolve_task("L3-05")
         config = spec.factory.prepare_config(config)
-        self.assertEqual(config.arms, ("left",))
-        self.assertEqual(config.observation_arms, ("right",))
+        self.assertEqual(config.arms, ("left", "right"))
+        self.assertEqual(config.observation_arms, ())
         self.assertEqual(config.raw["execution"]["max_decisions"], 100)
         self.assertEqual(config.raw["policy"]["reasoning_effort"], "medium")
         self.assertEqual(config.grasp_check_mode, "contact_inspection")
@@ -283,6 +283,8 @@ class ScrewTests(unittest.TestCase):
                 return tuple(rgbd(name, self.t) for name in self.config.cameras)
 
         class Scene:
+            spec = SPEC
+
             def measure(self):
                 return next(self.samples)
 
@@ -312,6 +314,8 @@ class ScrewTests(unittest.TestCase):
                 return Action((), cfg.control_dt_s)
 
         _, cfg = resolve_task("L3-05")
+        # Historical insertion evaluator replay, not the current nut task entry.
+        cfg = replace(cfg, arms=("left",), observation_arms=("right",))
         cfg = ScrewTask.prepare_config(cfg)
         cfg = replace(cfg, raw={**cfg.raw, "execution": {"wait_steps": 100}})
         with (

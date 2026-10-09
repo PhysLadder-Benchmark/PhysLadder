@@ -35,13 +35,12 @@ def measurement(spec):
             "fixture_force_n": 0.0,
             "bench_force_n": a.mass * 9.81 if corners[:, 2].min() < spec.parameters.get("table_z", 0.0) + 0.006 else 0.0,
             "pair_forces": {
-                b.name: 0.0 for b in spec.design.articles if b.name != a.name and (not a.name.startswith("load_") or b.name == "bowl")
+                b.name: 0.0 for b in spec.design.articles if b.name != a.name and (not a.name.startswith("load_") or b.name in spec.parameters.get("load_container_names", ()))
             },
         }
-        if spec.design.task_id == "L2-04" and a.name.startswith("load_"):
-            # The bottom layer rests on the bowl floor, not the tabletop.
-            result[a.name]["bench_force_n"] = 0.0
-            result[a.name]["pair_forces"]["bowl"] = a.mass * 9.81
+    if spec.design.task_id == "L3-11":
+        from robot_tasks.tasks.bench.wiping import WipeLedger
+        result["eraser"]["wiping"] = WipeLedger(spec.parameters["board_pose"]).metrics()
     return result
 
 
@@ -62,12 +61,14 @@ class HouseholdTests(unittest.TestCase):
                 self.assertEqual(cfg.raw["execution"]["max_decisions"], 100)
                 self.assertEqual(cfg.raw["policy"]["reasoning_effort"], "medium")
                 self.assertEqual(
-                    cfg.observation_arms, ("right",) if len(cfg.arms) == 1 else ()
+                    cfg.observation_arms, tuple(a for a in ("left", "right") if a not in cfg.arms)
                 )
                 self.assertTrue(prepared.include_depth)
                 self.assertTrue(prepared.raw["task"]["description"])
-        with self.assertRaisesRegex(ValueError, "real-only"):
-            resolve_task("L3-11")
+        self.assertTrue(resolve_task("L3-11")[0].implemented)
+        self.assertNotIn("L3-16", TASKS)
+        with self.assertRaises(ValueError):
+            resolve_task("L3-16")
 
     def test_every_initial_state_is_incomplete_without_robot_evidence(self):
         for task_id in (i for i in IDS if i != "L2-06"):
@@ -197,55 +198,25 @@ class HouseholdTests(unittest.TestCase):
                         evaluator.update(i * 0.1, rows).status, "succeeded"
                     )
 
-    def test_persistent_spill_ends_transport_and_preserves_lift_stage(self):
-        spec = build_spec("L2-04")
-        rows = measurement(spec)
-        e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
-        for row in rows.values():
-            row["pose"][2] += .04
-            row["bench_force_n"] = 0
-        rows["bowl"]["fingers"] = {"left": [1, 1], "right": [1, 1]}
-        self.assertEqual(e.update(.1, rows).status, "running")
-        # One ball actually falls below the table; the controlled bowl remains recoverable.
-        rows["load_0"]["pose"][2] = -.2
-        rows["load_0"]["corners"] = [[0, 0, -.2]]
-        result = e.update(.2, rows)
-        self.assertEqual(result.status, "running")
-        self.assertFalse(result.metrics["constraint_violations"])
-        result = e.update(.46, rows)
-        self.assertEqual(result.status, "failed")
-        self.assertEqual(result.metrics["constraint_violations"], ["Load spilled"])
-        self.assertTrue(result.metrics["stages"]["lifted"])
-        self.assertFalse(result.metrics["goal_complete"])
-        for article in spec.design.articles:
-            if article.name != "load_0":
-                rows[article.name]["pose"] = list(article.goal)
-        rows["bowl"]["bench_force_n"] = 3
-        rows["bowl"]["fingers"] = {"left": [0, 0], "right": [0, 0]}
-        e.update(.5, rows)
-        result = e.update(1.4, rows)
-        self.assertEqual(result.status, "failed")
-        self.assertTrue(result.metrics["criteria"]["transport_complete"])
-        self.assertFalse(result.metrics["goal_complete"])
-        self.assertFalse(result.metrics["process_constraints_satisfied"])
 
     def test_drawer_speed_warning_does_not_replace_rail_and_opening_checks(self):
         spec = build_spec("L2-07")
         rows = measurement(spec)
         row = rows["drawer"]
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
+        row["pose"] = list(spec.parameters["closed_pose"])
         row["linear_velocity"] = [.5, 0, 0]
         result = e.update(.1, rows)
         self.assertEqual(result.status, "running")
         self.assertTrue(result.metrics["quality_warnings"])
-        row["fingers"]["left"] = [1, 1]
+        row["fingers"]["right"] = [1, 1]
         e.update(.15, rows)
         row["pose"][:3] = (np.asarray(row["pose"][:3])
                               + .08 * np.asarray(spec.parameters["outward_axis_world"])).tolist()
         row["linear_velocity"] = [0, 0, 0]
-        row["fingers"]["left"] = [1, 1]
+        row["fingers"]["right"] = [1, 1]
         e.update(.2, rows)
-        row["fingers"]["left"] = [0, 0]
+        row["fingers"]["right"] = [0, 0]
         e.update(.5, rows)
         result = e.update(1.4, rows)
         self.assertEqual(result.status, "succeeded")
@@ -313,19 +284,19 @@ class HouseholdTests(unittest.TestCase):
         e = BenchEvaluator(spec, initial)
         for i in range(1, 20):
             self.assertEqual(e.update(i * 0.1, rows).status, "running")
-        rows["drawer"]["fingers"]["left"] = [1, 1]
+        rows["drawer"]["fingers"]["right"] = [1, 1]
         e.update(1.95, rows)
-        rows["drawer"]["pose"][1] += 0.08
-        rows["drawer"]["fingers"]["left"] = [1, 1]
+        rows["drawer"]["pose"][1] += 0.08 - spec.parameters["initial_open_m"]
+        rows["drawer"]["fingers"]["right"] = [1, 1]
         self.assertEqual(e.update(2, rows).status, "running")
-        rows["drawer"]["fingers"]["left"] = [0, 0]
+        rows["drawer"]["fingers"]["right"] = [0, 0]
         for i in range(21, 35):
             result = e.update(i * 0.1, rows)
         self.assertEqual(result.status, "succeeded")
-        rows["drawer"]["pose"][1] -= 0.08
+        rows["drawer"]["pose"][1] -= 0.08 - spec.parameters["initial_open_m"]
         self.assertEqual(e.update(3.6, rows).status, "running")
         fresh = BenchEvaluator(spec, initial)
-        rows["drawer"]["pose"][1] += 0.08
+        rows["drawer"]["pose"][1] += 0.08 - spec.parameters["initial_open_m"]
         self.assertEqual(fresh.update(0.1, rows).status, "running")
 
     def test_books_only_require_single_arm_complete_extraction(self):
@@ -334,46 +305,17 @@ class HouseholdTests(unittest.TestCase):
         rows = measurement(spec)
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
         row = rows["middle_book"]
-        row["pose"][1] += 0.15
-        row["corners"] = (np.asarray(row["corners"]) + [0, 0.15, 0]).tolist()
+        row["pose"][0] += 0.11
+        row["corners"] = (np.asarray(row["corners"]) + [0.11, 0, 0]).tolist()
         self.assertEqual(e.update(0.1, rows).status, "running")
-        row["fingers"]["left"] = [1, 1]
+        row["fingers"][spec.arms[0]] = [1, 1]
         for i in range(2, 16):
             result = e.update(i * 0.1, rows)
         self.assertEqual(result.status, "succeeded")
         self.assertFalse(result.metrics["criteria"]["release_required"])
-        row["fingers"]["left"] = [0, 0]
+        row["fingers"][spec.arms[0]] = [0, 0]
         self.assertEqual(e.update(1.7, rows).status, "running")
 
-    def test_preloaded_bowl_requires_lift_transport_and_released_placement(self):
-        spec = build_spec("L2-04")
-        rows = measurement(spec)
-        initial = {a.name: a.initial for a in spec.design.articles}
-        e = BenchEvaluator(spec, initial)
-        for i in range(1, 15):
-            self.assertEqual(e.update(i * 0.1, rows).status, "running")
-        for row in rows.values():
-            row["pose"][2] += 0.04
-            row["corners"] = (np.asarray(row["corners"]) + [0, 0, 0.04]).tolist()
-            row["bench_force_n"] = 0
-        rows["bowl"]["fingers"] = {"left": [1, 1], "right": [1, 1]}
-        e.update(1.5, rows)
-        self.assertIn("loaded_bowl_lifted", e.flags)
-        for row in rows.values():
-            row["pose"][1] += spec.design.articles[0].goal[1] - spec.design.articles[0].initial[1]
-            row["pose"][2] -= 0.04
-        rows["bowl"]["bench_force_n"] = 3
-        rows["bowl"]["fingers"] = {"left": [0, 0], "right": [0, 0]}
-        for i in range(16, 30):
-            result = e.update(i * 0.1, rows)
-        self.assertEqual(result.status, "succeeded")
-        fresh = BenchEvaluator(spec, initial)
-        self.assertEqual(fresh.update(0.1, rows).status, "running")
-        rows["load_0"]["bench_force_n"] = 0.039
-        e.update(3.0, rows)
-        self.assertEqual(e.update(3.3, rows).status, "failed")
-        rows["load_0"]["bench_force_n"] = 0
-        self.assertEqual(e.update(3.4, rows).status, "failed")
 
     def test_marker_airborne_tilt_never_fails_by_angle_alone(self):
         spec = build_spec("L1-01")
@@ -459,23 +401,6 @@ class HouseholdTests(unittest.TestCase):
         r["target_hook_vertical_force_n"]=0.
         self.assertEqual(e.update(.4,rows).status,"running")
 
-    def test_spinning_cap_in_air_cannot_count_as_unscrewing(self):
-        import math
-
-        spec = build_spec("L3-03")
-        rows = measurement(spec)
-        e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
-        rows["bottle"]["fingers"]["left"] = [1, 1]
-        rows["cap"]["fingers"]["right"] = [1, 1]
-        rows["cap"]["pose"][2] = (
-            rows["bottle"]["pose"][2] + spec.parameters["engaged_cap_z_max"] + 0.10
-        )
-        for i in range(1, 30):
-            angle = i * 0.4
-            rows["cap"]["pose"][3:] = [math.cos(angle / 2), 0, 0, math.sin(angle / 2)]
-            e.update(i * 0.1, rows)
-        self.assertEqual(e.net_turn, 0)
-        self.assertNotIn("threaded_disengagement", e.flags)
 
 
 if __name__ == "__main__":

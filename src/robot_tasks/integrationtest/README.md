@@ -60,17 +60,16 @@ L2 原生资产诊断：`python -m robot_tasks.integrationtest.scene_smoke L2-03
 python -m robot_tasks.integrationtest.l2_execution_probe L2-07 --poses reports/l2_asset_validation/clearance.json --output reports/l2_protocol_validation/L2-07-motion
 ```
 
-它使用上一项的显式采样位姿布置张开的夹指，再通过生产控制器闭合、沿目标方向移动 20 mm，持续检查物理状态并保存三视角图片。ID 可换成五个 L2 任务。`--width` 检查不同夹爪开口，`--travel` 调整局部位移（不超过 50 mm），`--velocity-iterations` 隔离求解器参数实验。这些参数只影响工程检查。它不经过视觉选抓点，不是脚本任务参照，不构成完整机器人任务或 GPT 成功证据。正式任务的初态、指令和评分不被该检查修改。
+它使用上一项的显式采样位姿布置张开的夹指，再通过生产控制器闭合、沿目标方向移动 20 mm，持续检查物理状态并保存三视角图片。ID 可换成五个 L2 任务。`--width` 检查不同夹爪开口，`--travel` 调整局部位移（通常不超过 50 mm，橘子提起检查允许到 80 mm），`--velocity-iterations` 隔离求解器参数实验。这些参数只影响工程检查。它不经过视觉选抓点，不是脚本任务参照，不构成完整机器人任务或 GPT 成功证据。正式任务的初态、指令和评分不被该检查修改。
 
-`L3-03` 的加高方瓶还提供独立空间诊断。在包含 NumPy、SciPy、trimesh 的规划器环境运行：
+`L3-03` 的原生东方树叶瓶由左臂扶持、右臂取盖；空间采样诊断检查一组扶瓶与抓盖姿态的可达性及双臂、相机支架间距。在包含 NumPy、SciPy、trimesh 的规划器环境运行：
 
 ```bash
 python -m robot_tasks.integrationtest.bottle_clearance
 # 在 Isaac Python 中渲染上一步报告保存的检查姿态：
-python -m robot_tasks.integrationtest.bottle_clearance --render
 ```
 
-检查从瓶身接近、夹持到瓶盖旋转、张爪、退出及回转重抓的 1,420 个采样姿态，使用 URDF 网格包围盒和相机／支架 CAD 尺寸检查双臂互相及相机与道具的间隙；数值 IK 只用于此诊断，不接入生产控制。报告在 `runs/l3_03_square_clearance.json`，截图在同名目录。诊断姿态不替代模型抓持，不构成连续轨迹认证、真实接触稳定性、全身自碰撞或 GPT 成功证据；相机安装参数仍未标定。
+使用 URDF 网格包围盒和相机／支架 CAD 尺寸检查双臂互相及相机与道具的间距，只排除预期的扶瓶夹指—瓶身接触。数值 IK 只用于此诊断，不接入生产控制；结果保存在 `reports/native_bottle_clearance.json`。这不是完整轨迹、自碰撞认证、实际夹持或 GPT 成功证明。旧方瓶的 1,420 姿态报告不适用于现行东方树叶瓶。
 
 当前六个 L1 已使用拓境场景。逐项验收可用：
 
@@ -81,3 +80,34 @@ python -m robot_tasks.integrationtest.scene_smoke L1-03 --prop-probe --output bu
 将 ID 替换为 L1-01、L1-05、L1-07、L1-08、L1-09。覆盖双臂准备、三路 RGB-D、
 初态评分、插座/杯腔/挂杆与刚体玫瑰承托；无需模型令牌。检查 `result.json` 的
 `passed`，不能只看 Isaac 进程退出码。无任务执行轨迹或模型成功率含义。
+
+L2-06 物性对照沿用 `l2_execution_probe`：`--soft-physics <JSON>` 只覆盖本次诊断的 `[orange_physics]` 参数，`result.json` 保存原生值和实际生效值。固定抓取姿态和评分条件，对比闭合、抬升；当前 `--travel 0.075 --finish` 检查承台上夹起 5 cm，不再搬运释放；源资产和正式任务配置不被诊断改写。工程夹具检查不调用 GPT，也不证明自主选抓点成功。
+
+## L3 新道具接触检查
+
+所有诊断都不调用模型，结果不要并入 GPT 成功率。`initial_gallery` 检查场景、RGB-D 和未完成初态；运行它可查看新摆放。
+
+```bash
+python -m robot_tasks.integrationtest.initial_gallery L3-11 --output reports/l3_assets_20261008/L3-11
+python -m robot_tasks.integrationtest.l3_asset_probe L3-05 --output reports/l3_assets_20261008/L3-05-contact
+python -m robot_tasks.integrationtest.l3_asset_probe L3-11 --output reports/l3_assets_20261008/L3-11-contact
+python -m robot_tasks.integrationtest.l3_asset_probe L3-15 --output reports/l3_assets_20261008/L3-15-contact
+```
+
+`l3_asset_probe` 只做隔离部件诊断：螺丝用额外同轴导向和外力矩验证真实旋转推进；板擦通过测试速度和单独的抓持标志检查接触擦除，生产评分的未抓持状态仍不得擦除；簸箕预置方块验证承托/篮内判定，不代替扫入过程。正式任务中没有这些诊断导向、速度或标志。
+
+规划器 Python 可运行 `screw_clearance` 和 `l3_tool_clearance`，检查若干夹爪/相机包围盒候选姿态与固定物的间隙；它们不生成供 GPT 使用的目标，不证明连续无碰撞轨迹或稳定抓持。
+
+当前 L3-15 接触检查使用固定簸箕，只注入用于检验篮内范围与承托的方块初态；不代表扫入成功。L3-03 的 `l3_asset_probe` 使用临时同轴夹具和有限扭矩/拉力校验盖的物理退出，不会进入生产场景。
+
+### L3-05 原生松螺母（2026-10-09）
+
+当前任务是双臂旋下预松螺母，旧的粗螺丝旋入诊断不再作为任务入口。
+
+```bash
+python -m robot_tasks.integrationtest.nut_clearance --output reports/nut_clearance.json
+python -m robot_tasks.integrationtest.nut_probe --output reports/nut_thread
+python -m robot_tasks.integrationtest.nut_grasp_probe --poses reports/nut_clearance.json --output reports/nut_grasp
+```
+
+依次验证采样净空、受限夹具中的真实螺纹旋出、预置机器人姿态下双指夹持与 10 mm 搬动；均无 GPT，不代表完整任务成功。只在独立诊断中设置夹具和机器人初态，正式任务不调用它们。

@@ -39,77 +39,35 @@ def run(scene):
         final = scene.measure()["drawer"]
         axis = np.asarray(scene.spec.parameters["outward_axis_world"])
         travel = float((np.asarray(final["pose"][:3]) - start) @ axis)
+        opening = float((np.asarray(final["pose"][:3])
+                         - scene.spec.parameters["closed_pose"][:3]) @ axis)
         lateral = np.asarray(final["pose"][:3]) - start - travel * axis
         result.update(
-            opening_m=travel,
+            opening_m=opening,
+            travel_since_start_m=travel,
             lateral_drift_m=float(np.linalg.norm(lateral)),
             released_speed_m_s=float(np.linalg.norm(final["linear_velocity"])),
         )
-        if not 0.075 <= travel <= 0.093 or np.linalg.norm(lateral) > 0.002:
+        if not 0.075 <= opening <= 0.093 or np.linalg.norm(lateral) > 0.002:
             raise RuntimeError(
                 "Native drawer rail failed opening/release diagnostic: " + str(result)
             )
     elif scene.config.task_id == "L2-04":
-        from pxr import Gf, UsdPhysics
-
         from ..tasks.bench.evaluation import relative
-        from ..tasks.bench.scoring_l2 import ball_contained
+        from ..tasks.bench.pearl_pouring import cup_contains
+        from pxr import UsdPhysics
 
-        def count_inside():
-            rows = scene.measure()
-            return sum(
-                ball_contained(
-                    relative(rows[n], rows["bowl"])[:3, 3], scene.spec.parameters
-                )
-                for n in scene.load_names
-            )
-
-        start = scene.measure()["bowl"]["pose"][:3]
-        joint = UsdPhysics.Joint.Define(
-            scene.stage, scene.root + "/DiagnosticTransport"
-        )
-        joint.CreateBody1Rel().SetTargets([scene.paths["bowl"]])
-        joint.CreateLocalPos0Attr(Gf.Vec3f(*start))
-        joint.CreateLocalPos1Attr(Gf.Vec3f(0.0))
-        for axis in ("transX", "transY", "transZ", "rotX", "rotY", "rotZ"):
-            limit = UsdPhysics.LimitAPI.Apply(joint.GetPrim(), axis)
-            low, high = {"transY": (-0.18, 0.01), "transZ": (-0.01, 0.06)}.get(
-                axis, (1.0, -1.0)
-            )
-            limit.CreateLowAttr(low)
-            limit.CreateHighAttr(high)
-        drives = {}
-        for axis in ("transY", "transZ"):
-            d = UsdPhysics.DriveAPI.Apply(joint.GetPrim(), axis)
-            d.CreateStiffnessAttr(700.0)
-            d.CreateDampingAttr(25.0)
-            d.CreateMaxForceAttr(20.0)
-            d.CreateTargetPositionAttr(0.0)
-            drives[axis] = d
-        counts = [count_inside()]
-        travel = scene.design.articles[0].goal[1] - scene.design.articles[0].initial[1]
-        for axis, begin, end, seconds in (
-            ("transZ", 0.0, 0.04, 2.0),
-            ("transY", 0.0, travel, 4.0),
-            ("transZ", 0.04, 0.0, 2.0),
-        ):
-            steps = round(seconds / scene.config.control_dt_s)
-            for i in range(steps):
-                t = (i + 1) / steps
-                drives[axis].CreateTargetPositionAttr(
-                    begin + (end - begin) * t * t * (3 - 2 * t)
-                )
-                scene.backend.step(scene.config.control_dt_s)
-            counts.append(count_inside())
-        joint.CreateJointEnabledAttr(False)
-        advance(scene, 0.5)
-        counts.append(count_inside())
-        result.update(contained_counts=counts, required=scene.spec.parameters["count"])
-        if min(counts) != scene.spec.parameters["count"]:
-            raise RuntimeError(
-                "Native loaded bowl lost contents during gentle diagnostic transport: "
-                + str(result)
-            )
+        advance(scene, 1)
+        rows = scene.measure()
+        count = sum(cup_contains(relative(rows[n], rows["source_cup"])[:3, 3])
+                    for n in scene.load_names)
+        fixed = bool(UsdPhysics.RigidBodyAPI(
+            scene.stage.GetPrimAtPath(scene.paths["receiver_cup"])
+        ).GetKinematicEnabledAttr().Get())
+        result.update(source_contained=count, receiver_fixed=fixed,
+                      scope="Initial cup packing and fixed receiver check; no robot pouring")
+        if count != scene.spec.parameters["count"] or not fixed:
+            raise RuntimeError("Cup pouring initial layout failed: " + str(result))
     elif scene.config.task_id == "L2-01":
         from pxr import Gf, UsdPhysics
 
@@ -157,14 +115,14 @@ def run(scene):
         joint.CreateBody1Rel().SetTargets([scene.paths["middle_book"]])
         joint.CreateLocalPos0Attr(Gf.Vec3f(*start))
         joint.CreateLocalPos1Attr(Gf.Vec3f(0.0))
-        joint.CreateAxisAttr("Y")
+        joint.CreateAxisAttr("X")
         joint.CreateLowerLimitAttr(0.0)
-        joint.CreateUpperLimitAttr(0.18)
+        joint.CreateUpperLimitAttr(0.14)
         drive = UsdPhysics.DriveAPI.Apply(joint.GetPrim(), "linear")
         drive.CreateStiffnessAttr(150.0)
         drive.CreateDampingAttr(8.0)
         drive.CreateMaxForceAttr(8.0)
-        drive.CreateTargetPositionAttr(0.15)
+        drive.CreateTargetPositionAttr(0.11)
         try:
             advance(scene, 4.0)
             row = scene.measure()["middle_book"]
