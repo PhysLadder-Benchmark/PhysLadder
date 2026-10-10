@@ -171,19 +171,22 @@ def hat():
 
 def cups():
     # Both cups retain the same native dimensions, hollow walls and 14 g mass.
+    # Photo-proportional layout, not calibrated: viewed from the table front,
+    # the source is on the left and the receiver is 30 cm right, 2 cm forward.
+    source_xy, receiver_xy, table_z = (0.04, 1.20), (0.34, 1.18), 0.78
     bounds = ((-0.0426, -0.0426, 0), (0.0426, 0.0426, 0.107594535))
     # Hollow payload samples preserve the opening instead of filling it with an AABB.
     parts = cup_parts(bottom_radius=0.025, top_radius=0.0393, height=0.1075,
                       wall=0.003, segments=48)
-    lower = Article("lower_cup", parts, pose(0.07, 1.13, 0.781), pose(0.07, 1.13, 0.78),
+    lower = Article("lower_cup", parts, pose(*receiver_xy, table_z + 0.001), pose(*receiver_xy, table_z),
                     0.014, asset="tuojing:ripple_paper_cup", asset_bounds=bounds)
-    upper = Article("upper_cup", parts, pose(-0.10, 1.22, 0.781), pose(0.07, 1.13, 0.805),
+    upper = Article("upper_cup", parts, pose(*source_xy, table_z + 0.001), pose(*receiver_xy, table_z + 0.025),
                     0.014, asset="tuojing:ripple_paper_cup", asset_bounds=bounds)
     return BenchSpec(
         replace(design("L1-08", "两个波纹纸杯套叠", [lower, upper]),
-                version="l1-08-tuojing-identical-cups-v3-finger-contact",
-                provenance="Two copies of the locked native hollow ripple paper cup; no resizing"),
-        facts="Two identical empty red-brown ripple cups start upright. Move the cup initially nearer the LEFT robot into the farther cup. Both are movable. Each is 107.5 mm tall, outer mouth about 85 mm wide, lower-body diameter about 56-67 mm within the bottom 40 mm. Gripper opening is nominally 0-70 mm: the full mouth is too wide. A shallow pinch across one rigid wall near the rim is possible from above with vertical fingers, one distal pad inside and one outside. Alternatively grip opposite outer sides of the narrower lower body, with both finger tips clear of the table. Lift and verify support, carry upright, and centre its bottom over the other cup's mouth. A recommended release point is with the cup bottom 5-8 mm INSIDE the mouth and before any finger reaches the rim. Open separately and inspect settling. Opening does not prove detachment; choose a small clear withdrawal probe and inspect whether the cup follows before a full retreat. RGB-D release_check is advisory; the model chooses recovery. Gravity may finish settling the entered cup onto the taper. A 20-35 mm rim separation is typical, not a hard scoring band. Completion uses geometric cavity fit and stable support, without a 3 mm centre cutoff or fixed small-angle gate. No yaw target is required. Temporary tilt or a missed placement can be recovered in the same scene without reset.",
+                version="l1-08-tuojing-identical-cups-v4-photo-layout",
+                provenance="Two native hollow ripple paper cups; photo-proportional left-source/right-receiver layout, receiver slightly toward the table front; not calibrated; no resizing"),
+        facts="Two identical empty red-brown ripple cups start upright. Viewed from the table front toward the robots, move the initially LEFT cup into the initially RIGHT cup, which starts slightly toward the table front. Both are movable. Each is 107.5 mm tall, outer mouth about 85 mm wide, lower-body diameter about 56-67 mm within the bottom 40 mm. Gripper opening is nominally 0-70 mm: the full mouth is too wide. A shallow pinch across one rigid wall near the rim is possible from above with vertical fingers, one distal pad inside and one outside. Alternatively grip opposite outer sides of the narrower lower body, with both finger tips clear of the table. Lift and verify support, carry upright, and centre its bottom over the other cup's mouth. A recommended release point is with the cup bottom 5-8 mm INSIDE the mouth and before any finger reaches the rim. Open separately and inspect settling. Opening does not prove detachment; choose a small clear withdrawal probe and inspect whether the cup follows before a full retreat. RGB-D release_check is advisory; the model chooses recovery. Gravity may finish settling the entered cup onto the taper. A 20-35 mm rim separation is typical, not a hard scoring band. Completion uses geometric cavity fit and stable support, without a 3 mm centre cutoff or fixed small-angle gate. No yaw target is required. Temporary tilt or a missed placement can be recovered in the same scene without reset.",
         limitations="Native photo-estimated rigid paper cups, identical taper and size; no paper crushing. Rigid native cup walls; nominal 0-70 mm fingers permit a rim-wall pinch or a lower-body grasp.",
         parameters={"table_z": 0.78, "cup_height": 0.1075, "entry_depth": 0.008,
                     "cup_outer_bottom_radius": 0.028, "cup_outer_top_radius": 0.042,
