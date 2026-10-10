@@ -47,14 +47,14 @@
       "package": "photo_props",
       "path": "assets/ripple_paper_cup/ripple_paper_cup.usda",
       "role": "prop",
-      "notes": "L1-08 two movable nesting cups and L1-09 fixed flower holder; native hollow colliders, no deformation."
+      "notes": "L1-01 pen holder, L1-08 two movable nesting cups, and L1-09 fixed flower holder; native hollow colliders, no deformation."
     },
     {
       "id": "usb_charger",
       "package": "photo_props",
       "path": "assets/usb_charger/usb_charger.usda",
       "role": "prop",
-      "notes": "L1-03: starts upright in native black storage base; two-blade geometry and release scoring; housing/blade payload samples."
+      "notes": "L1-03: starts upright in native black storage base; two-blade geometry and entry-only scoring; housing/blade payload samples."
     },
     {
       "id": "artificial_rose",
@@ -163,22 +163,85 @@
       "role": "prop"
     },
     {
+      "id": "blue_square",
+      "package": "physical_props_20261008",
+      "path": "assets/blue_square/blue_square.usda",
+      "role": "prop",
+      "notes": "2026-10-08 native rigid prop; dimensions/friction partly estimated. Task-specific adaptations are recorded separately."
+    },
+    {
+      "id": "blue_triangle",
+      "package": "physical_props_20261008",
+      "path": "assets/blue_triangle/blue_triangle.usda",
+      "role": "prop",
+      "notes": "2026-10-08 native rigid prop; dimensions/friction partly estimated. Task-specific adaptations are recorded separately."
+    },
+    {
+      "id": "board_eraser",
+      "package": "physical_props_20261008",
+      "path": "assets/board_eraser/board_eraser.usda",
+      "role": "prop",
+      "notes": "2026-10-08 native rigid prop; dimensions/friction partly estimated. Task-specific adaptations are recorded separately."
+    },
+    {
+      "id": "dustpan",
+      "package": "physical_props_20261008",
+      "path": "assets/dustpan/dustpan.usda",
+      "role": "prop",
+      "notes": "2026-10-08 native rigid prop; dimensions/friction partly estimated. Task-specific adaptations are recorded separately."
+    },
+    {
+      "id": "expansion_anchor",
+      "package": "physical_props_20261008",
+      "path": "assets/expansion_anchor/expansion_anchor.usda",
+      "role": "prop",
+      "notes": "2026-10-08 native rigid prop; dimensions/friction partly estimated. Task-specific adaptations are recorded separately."
+    },
+    {
+      "id": "green_board_20261008",
+      "package": "physical_props_20261008",
+      "path": "assets/green_board/green_board.usda",
+      "role": "prop",
+      "notes": "2026-10-08 native rigid prop; dimensions/friction partly estimated. Task-specific adaptations are recorded separately."
+    },
+    {
+      "id": "hand_brush",
+      "package": "physical_props_20261008",
+      "path": "assets/hand_brush/hand_brush.usda",
+      "role": "prop",
+      "notes": "2026-10-08 native rigid prop; dimensions/friction partly estimated. Task-specific adaptations are recorded separately."
+    },
+    {
+      "id": "oriental_leaf_335ml",
+      "package": "oriental_leaf_335ml",
+      "path": "assets/oriental_leaf.usda",
+      "role": "prop",
+      "notes": "Separate native body and cap; estimated photo geometry/threads, uncalibrated seal; task fixes body and pre-loosens cap."
+    },
+    {
+      "id": "anchor_removable_nut",
+      "package": "anchor_removable_nut_20261008",
+      "path": "assets/expansion_anchor/expansion_anchor.usda",
+      "role": "prop",
+      "notes": "Independent native AnchorBody and Nut; actual SDF threads. Task preloosens nut by 10 turns / 12.5 mm. No helical joint; fixture validation at 1920 Hz, not autonomous bimanual evidence."
+    },
+    {
+      "id": "cylindrical_pedestal",
+      "package": "desktop_additions_20261009",
+      "path": "assets/cylindrical_pedestal/cylindrical_pedestal.usda",
+      "role": "prop",
+      "notes": "130 mm tall, 68 mm flat top, 313.9 g. L2-06 fixes the native support in the scene; source remains movable."
+    },
+    {
       "id": "black_ceramic_mug",
-      "package": "desktop_additions",
+      "package": "desktop_additions_20261009",
       "path": "assets/black_ceramic_mug/black_ceramic_mug.usda",
       "role": "prop",
       "notes": "L1-01 fixed black/white pen receptacle; photo-based 2026-10-09 layout, native hollow walls and handle."
     },
     {
-      "id": "cylindrical_pedestal",
-      "package": "desktop_additions",
-      "path": "assets/cylindrical_pedestal/cylindrical_pedestal.usda",
-      "role": "prop",
-      "notes": "Delivered and verified; not assigned to a task."
-    },
-    {
       "id": "plug_storage_base",
-      "package": "desktop_additions",
+      "package": "desktop_additions_20261009",
       "path": "assets/plug_storage_base/plug_storage_base.usda",
       "role": "prop",
       "notes": "L1-03 native free-standing pickup holder; 20.8 g, hollow pocket and central through-hole; not the electrical target socket."

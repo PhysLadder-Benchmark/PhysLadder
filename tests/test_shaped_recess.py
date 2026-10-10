@@ -40,7 +40,8 @@ class ShapedRecessTests(unittest.TestCase):
         # This geometry remains a library regression, outside the active task pool.
         from dataclasses import replace
         _, cfg = resolve_task("L1-01")
-        cfg = replace(cfg, task_id="L1-02", instruction="Fit and release the D block.")
+        cfg = replace(cfg, task_id="L1-02", instruction="Fit and release the D block.",
+                      arms=("left",), observation_arms=("right",))
         width = np.ptp(self.geometry.profile, axis=0).max()
         self.assertLess(width + 0.015, cfg.robot.gripper.width_limits_m[1])
         self.assertAlmostEqual(

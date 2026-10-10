@@ -25,6 +25,22 @@ HANDOVER = ROOT / "configs/tasks/l2_01_marker_uncap.toml"
 
 
 class R5ConfigurationTests(unittest.TestCase):
+    def test_l1_thin_grasp_limits_do_not_change_l2_or_l3_profiles(self):
+        for path in (ROOT / "configs/tasks").glob("*.toml"):
+            if path.name.endswith(".local.toml"):
+                continue  # Private experiments are not part of the maintained task pool.
+            config = load_config(path)
+            if not config.raw["task"].get("simulation_enabled"):
+                continue
+            with self.subTest(task=config.task_id):
+                lower = (0.0 if config.task_id.startswith("L1-")
+                         else 0.010 if config.task_id == "L3-05" else 0.012)
+                self.assertEqual(config.robot.gripper.width_limits_m, (lower, 0.070))
+                finger_limits = {v.joint: v.lower for v in config.robot.operating_limits}
+                expected_joint_lower = 0.0 if lower == 0.0 else 0.005
+                for joint in config.robot.gripper.joint_names:
+                    self.assertEqual(finger_limits[joint], expected_joint_lower)
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
@@ -208,14 +224,18 @@ class R5ConfigurationTests(unittest.TestCase):
                 self.assertFalse(report["execution_configuration_ready"])
 
     def test_run_rejects_unimplemented_task_before_creating_simulator_or_policy(self):
-        with patch("robot_tasks.execution.IsaacSimBackend") as backend, \
-                patch("robot_tasks.execution.GPTPolicy") as policy, redirect_stderr(io.StringIO()) as error:
-            with self.assertRaises(SystemExit) as raised:
-                main(["run", "--config", str(ROOT / "configs/tasks/l3_11_whiteboard_wiping_real.toml"), "--policy", "gpt"])
-            self.assertEqual(raised.exception.code, 2)
-            self.assertIn("real-only", error.getvalue())
-            backend.assert_not_called()
-            policy.assert_not_called()
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "real_only.toml"
+            path.write_text('schema_version = 2\n[task]\nid = "L3-11"\n'
+                            'name = "offline real-only fixture"\nsimulation_enabled = false\n', encoding="utf-8")
+            with patch("robot_tasks.execution.IsaacSimBackend") as backend, \
+                    patch("robot_tasks.execution.GPTPolicy") as policy, redirect_stderr(io.StringIO()) as error:
+                with self.assertRaises(SystemExit) as raised:
+                    main(["run", "--config", str(path), "--policy", "gpt"])
+                self.assertEqual(raised.exception.code, 2)
+                self.assertIn("real-only", error.getvalue())
+                backend.assert_not_called()
+                policy.assert_not_called()
 
     def test_urdf_structural_errors_are_detected_without_simulation(self):
         mutations = ("nonfinite_mass", "cyclic_link", "cyclic_mimic", "escaping_mesh")

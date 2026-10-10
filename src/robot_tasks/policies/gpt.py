@@ -66,7 +66,11 @@ class GPTPolicy:
             "At most one row per commandable arm; omit arms that should remain unchanged. commands=[] waits. request_stop=true requires commands=[] "
             "and only requests termination, never declares measured success. An unsuccessful stop request is rejected, consumes one call, and you must continue using the retained scene/history until measured success or the total call budget. "
             "Plan the task yourself. Reobserve near contact; never infer nonexistent force readings. "
-            "An IK rejection can mean local nonconvergence, not global unreachability. "
+            "For planning rejections, inspect feedback.metrics.planning_failure when present. "
+            "A start_collision means the current state is rejected by the planner's collision model, "
+            "not that the requested goal is unreachable. A reported self-collision cannot be cleared "
+            "just by changing the camera view or repeating a target from the unchanged state. "
+            "goal_ik_not_found and path_not_found describe finite search failures, not proven global unreachability. "
             f"Commandable arms: {config.command_arms}. Physical width limits in metres: {config.robot.gripper.width_limits_m}. "
             f"Schema: {json.dumps(self.schema)}"
         )
@@ -113,7 +117,6 @@ class GPTPolicy:
         self.instructions += " R5 operating notes: " + json.dumps(operating_notes(config))
         self.instructions += " Camera calibration describes the virtual cameras, not measured hardware. A pixel alone does not define 3D depth."
         self.instructions += " Images have projected table XY and TCP overlays. Overlays may be occluded and are not detections of task objects."
-        self.instructions += " The cyan sphere at each TCP is a robot visualization marker; it is never evidence of a grasped object."
         self.instructions += (
             " Every decision, including motion, wait, depth query and stop, requires a note. "
             "Use one or two brief English sentences, at most 512 characters, to describe the visible "

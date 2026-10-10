@@ -12,6 +12,12 @@ from tools.tuojing_assets import select_packages, sha256, verify
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_pinned_release_matches_current_repository_lock(self):
+        root = Path(__file__).resolve().parents[1] / "assets/tuojing"
+        manifest = json.loads((root / "release.json").read_text(encoding="utf-8"))
+        packages = release_packages(root, manifest)
+        self.assertEqual(set(packages), {p["id"] for p in manifest["packages"]})
+
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)

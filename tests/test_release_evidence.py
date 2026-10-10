@@ -1,8 +1,9 @@
 """Release evidence must distinguish following, stationary and occluded props."""
 import unittest
 from dataclasses import replace
+from unittest.mock import patch
 import numpy as np
-from test_grasp_guard import observation
+from test_grasp_guard import keep_fixture_surfaces, observation
 from robot_tasks.cameras.grasp_evidence import visible_surfaces
 from robot_tasks.cameras.release_evidence import ReleaseEvidence
 from robot_tasks.grasp_guard import GraspGuard
@@ -55,10 +56,15 @@ class ReleaseEvidenceTests(unittest.TestCase):
         result=evidence.update(after,'left',0.,None,True)
         self.assertEqual(result['status'],'release_unknown',result)
 
+    @patch(
+        "robot_tasks.cameras.grasp_evidence.exclude_gripper",
+        new=keep_fixture_surfaces,
+    )
     def test_release_is_advisory_and_reclose_starts_new_attempt(self):
         guard=GraspGuard(robot_config())
         before=observation(rise=.025,object_rise=.025,width=.035)
         guard.accepted(Action((ArmCommand('left','gripper',(.07,)),),1/12),before)
+        self.assertGreater(len(guard.releases['left'][0].points), 0)
         after=guard.enrich(observation(rise=.025,object_rise=.025,width=.07,time_s=1.))
         self.assertTrue(after.feedback.metrics['release_check']['left']['advisory'])
         motion=Action((ArmCommand('left','cartesian_pose',(.36,.4,.15,*before.robot['left'].tcp_pose_world_wxyz[3:])),),1/12)

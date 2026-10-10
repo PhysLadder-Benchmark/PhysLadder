@@ -40,12 +40,12 @@ class AppearanceAssetsTests(unittest.TestCase):
                     self.assertLess(distances.min(axis=1).max(), 1e-6)
 
     def test_profiles_are_explicit_and_legacy_default_is_preserved(self):
-        config = load_config(ROOT / "configs/tasks/l3_16_upper_push_drawer.toml")
-        self.assertEqual(SimulationSettings.from_config(config).environment, "lab_room_v1")
+        config = load_config(ROOT / "configs/tasks/l1_01_cylinder_insertion.toml")
+        self.assertEqual(SimulationSettings.from_config(config).environment, "tuojing_lab_v4")
         raw = dict(config.raw)
         raw["simulation"] = dict(raw["simulation"])
         raw["simulation"].pop("environment")
-        raw["simulation"].pop("robot_appearance")
+        raw["simulation"].pop("robot_appearance", None)
         legacy = SimulationSettings.from_config(replace(config, raw=raw))
         self.assertEqual((legacy.environment, legacy.robot_appearance), ("plain", "vendor_white"))
         for field in ("environment", "robot_appearance"):

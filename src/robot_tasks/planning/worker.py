@@ -20,6 +20,7 @@ from ..robots.transforms import (
     axis_rotation,
 )
 from .trajectory import JointPath
+from .failures import PlanningFailure, diagnose_failure
 
 
 def link_transforms(kin, positions):
@@ -232,8 +233,12 @@ class CuroboWorker:
             else:
                 raise ValueError("Unsupported motion channel")
             if result is None or not bool(result.success.any()):
-                raise ValueError(
-                    f"{arm}: no valid collision-checked trajectory; choose a different target or view"
+                raise diagnose_failure(
+                    self.planner, arm, command["kind"], start, goal, result,
+                    goal_distance_m=(float(np.linalg.norm(local[:3]))
+                                     if command["kind"] == "cartesian_pose" else None),
+                    reach_bound_m=(self.kin.reach_bound_m
+                                   if command["kind"] == "cartesian_pose" else None),
                 )
             trajectory = result.get_interpolated_plan()
             q = (
@@ -403,7 +408,10 @@ def main():
             import traceback
 
             traceback.print_exc()
-            emit({"id": request.get("id"), "error": f"{type(exc).__name__}: {exc}"})
+            reply = {"id": request.get("id"), "error": f"{type(exc).__name__}: {exc}"}
+            if isinstance(exc, PlanningFailure):
+                reply["planning_failure"] = exc.diagnostic
+            emit(reply)
     return 0
 
 

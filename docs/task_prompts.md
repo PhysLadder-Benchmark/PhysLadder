@@ -1,6 +1,6 @@
 # GPT-6 物理交互任务 Prompt（早期候选稿）
 
-本文保留早期任务池的候选提示，不是当前执行清单，也不是运行时自动加载的 Prompt。任务名称、道具和分层可能已调整，例如 L1-01 已改为马克笔入笔筒，L2-06 已改为原生软橘子瓣搬运，损伤评价仍为形变代理。当前以 [共享操作说明](../src/robot_tasks/policies/operating_notes.py)、[任务 TOML](../configs/tasks/) 和每次运行保存的实际指令为准。不要把下面的旧候选提示直接覆盖到现有任务。
+本文保留早期任务池的候选提示，不是当前执行清单，也不是运行时自动加载的 Prompt。任务名称、道具和分层可能已调整，例如 L1-01 已改为马克笔入笔筒，L2-06 已改为从承台夹起软橘子瓣 5 厘米，形变只记录，不再作为失败阈值。当前以 [共享操作说明](../src/robot_tasks/policies/operating_notes.py)、[任务 TOML](../configs/tasks/) 和每次运行保存的实际指令为准。不要把下面的旧候选提示直接覆盖到现有任务。
 
 全部可运行任务由 `GPTPolicy` 自动加入公共闭环规则：理解目标与手臂角色，简要拆解阶段，再依据最新观测执行、核实和纠错；未确认抓持或对准就不推进，重置后重新确认，最终按当前任务的释放、握持和稳定要求申请停止。下面的共用约定仅用于说明，维护时以代码中的统一版本为准。
 
@@ -172,209 +172,81 @@ Once the receiver has made contact and can constrain the object, gradually reduc
 Verify that the receiver holds the object independently and the donor is no longer providing hidden support. Use timestamps to confirm the required stable hold before ending.
 ```
 
-### L2-03 固定上下层的单臂抽书
+### L2-03 固定上下层的单臂侧向抽书
 
 当前实现与成功条件以 [任务配置](../configs/tasks/l2_03_middle_book_extraction.toml) 为准。
 
-道具：一册 120×45×24 mm 红色刚性中层书、固定蓝色下层书、固定绿色上层书及两块支撑物。
-布置：上下书和支撑物属于静态夹具，默认完全不动；中层书前端向左机械臂方向（世界 -X）突出约 65 mm，两侧留出夹指空间。
-操作：仅左臂从突出端上方或斜上方接近，夹指沿书宽方向闭合，沿 -X 平移抽出；书未离开夹层前不抬升。右臂仅负责按需观察，不扶书。
-完成：整本中层书尾端越过固定书前缘至少 4 mm，向外位移至少 65 mm，仍由左手抓稳并静止 1 秒；不要求放下或释放。
-边界：本版不测上层支撑及剩余书本稳定性；仅测中层刚体的抓持、接触摩擦和抽取。
+道具：三份原生《神雕侠侣》闭合书本资产，220×140×20 mm，单本质量 378.9 g；一个固定蓝色支撑盒，140×220×70 mm。支撑盒为视频布置的尺寸估计，不是实物扫描。
+布置：蓝色支撑盒与书堆放在双臂中间，中心为实验室坐标 (0.19565, 1.30) m；书本平放在蓝色盒上，上下书本固定，中层向第三视角画面右侧（世界 +X）突出 40 mm；不是向机械臂正面（+Y）突出。书堆居中，朝右突出的一侧由右臂接近和抽取。中层落稳后与固定上层留 5 mm 净空，上层重量不压在中层上。
+抓法：右臂从突出侧接近，一指在上、一指在下，夹住 20 mm 厚度，避开上下固定书；不能夹 140 mm 宽度。左臂按需观察，不扶书。
+完成：夹持后沿 +X 侧向抽取约 110 mm，直到整个后缘离开固定书堆；最终由手或桌面承托均可，不要求持续静止或额外等待，不需为验证重新抓起。悬空掉落中或掉桌不算完成。保留原生尺寸、质量和材质；不模拟翻页或书本弯曲。本次只对齐初态布置，未将目标改成真机视频中的仅抽出 5 cm。
 
 ```text
-Use the LEFT R5 arm for manipulation. The RIGHT arm may move its wrist camera
-for a clearer view, but must not touch, hold or support task objects. Keep the
-left arm steady while changing the observation view. Use current RGB-D images,
-camera calibration, robot state and execution feedback to select grasp points
-and motion; do not infer successful contact from a command alone.
-Extract ONLY the red middle book from between the fixed blue lower book and
-fixed green upper book. The adjacent books and their supports are fixed by the
-environment; do not hold, move or evaluate their stability. The exposed end of
-the red book already faces the left robot, toward world -X. Do not turn the stack.
+Use the RIGHT R5 arm to extract ONLY the middle book. The LEFT arm may
+move its wrist camera for a clearer view, but must not touch the books.
+The stack and its support box are centred between both arms.
+The three books are stacked horizontally. Upper and lower books are fixed;
+there is no need to support them. On a blue support box, the middle book
+protrudes about 40 mm from the RIGHT side in the overview image, along world
++X. This is a sideways extraction, not a pull toward the robots along +Y.
+Do not rotate or stand up the stack.
 
-Inspect the protruding section, finger clearance and horizontal exit direction.
-Approach from the exposed -X side with fingers closing across the book's 45 mm
-width (approximately world Y), not through the upper or lower book. A downward
-or downward-tilted approach gives the wrist and arm clearance; do not insist on
-a low horizontal wrist pose. Choose a
-grasp within the exposed front section that keeps both fingers clear of the
-fixed stack. Close in a separate decision and verify two-sided contact.
+Inspect the exposed right-side edge and the space above and below it. Each book
+is 220 mm long, 140 mm wide and 20 mm thick. The R5 opens at most 70 mm:
+it CANNOT grasp across the 140 mm width. Orient the gripper so its pads close
+across the 20 mm thickness, one above and one below the projecting middle
+book. Place both pads entirely ahead of the upper/lower books, with enough
+pad overlap to carry the 378.9 g book. Avoid the edges and the fixed neighbours.
 
-Pull gradually toward world -X while retaining the book's approximately level
-attitude and height. Do not perform a vertical test lift while the book is still
-between the fixed books. Observe whether the BOOK follows the hand; stop and
-regrasp if the fingers slide off or the book stays in place. Avoid upward or
-sideways targets that wedge it against the fixed neighbors.
+Approach from the +X side toward the exposed edge with an open gripper; inspect complementary views
+before closing in a separate decision. Verify actual pad contact and book
+motion using a small outward pull, not a vertical lift against the upper book.
+Pull sideways along world +X, maintaining the book height and orientation
+while it remains between the fixed neighbours. Reobserve if blocked or slipping;
+do not continue an empty grasp or increase off-axis motion.
 
-Extraction is complete only when the entire rear edge of the middle book has
-cleared the front edges of BOTH fixed books by at least 4 mm, with at least
-65 mm outward travel. Keep the extracted book securely held and nearly still
-for one simulation second. Extracting it is the whole task: no table placement,
-release, upper-book support or movement of other books is required.
-If a grasp is lost, stop advancing the old plan and inspect the actual object
-state. If the scene resets, rebuild the plan from the new observations. Use only
-available control commands and feedback; do not invent force measurements.
-Request stop only after observing the required final state and stability.
+Continue until the entire rear edge has cleared the fixed stack, approximately
+110 mm of travel from the initial pose. Seeing just the front end move is not
+completion. Once the book is fully extracted by grasping and pulling, it may
+remain in the gripper OR rest on the tabletop. Either final state is sufficient;
+no continued grasp, timed hold, release or target placement is required.
+Do not regrasp a fully extracted book already supported by the table merely
+to prove retention. Request stop after verifying complete extraction and
+support by the hand or table; a book still falling unsupported is not complete.
+Use available feedback; do not invent object poses or force measurements.
+The fixed upper book leaves about 5 mm clearance above the settled middle
+book; its weight is not applied to the middle book. This tests guided extraction,
+not supporting or balancing the upper stack. There is no automatic scene reset.
 ```
 
-### L2-04 满载低摩擦小球的碗搬运
+### L2-04 纸杯间倒珍珠
 
-当前实现与成功条件以 [任务配置](../configs/tasks/l2_04_bowl_dynamic_load.toml) 为准。
+本任务已替换原满载碗搬运。当前英文 prompt 与完整布置见[任务配置](../configs/tasks/l2_04_cup_pearl_pouring.toml)。
 
-道具：蓝色双把手碗、独立动态红色小球（直径 20 mm，每球 4 g）、绿色目标区域和桌面。
-布置：启动时小球已密集装在碗内，低摩擦接触系数 0.03，可相互滚动、滑动；没有加料器。碗从桌面起点搬至相距 240 mm 的目标区。
-操作：双臂分别抓持两个外侧把手，抬起至少 25 mm，尽量保持水平并小步协调搬运；观察小球滚动、滑落趋势和碗倾斜，再放下并松开双手。
-完成：碗中心距目标中心不超过 35 mm，所有小球仍在碗内，碗已释放、落桌、正立且稳定 1 秒；任一小球洒出则该次尝试失败。
-边界：低摩擦仅设置在小球接触材料上，碗外部和把手仍保留正常夹持摩擦；没有液体、软材料或人为动画驱动。
+使用两只现有纸杯，源杯装 200 颗 8 mm 珍珠，初始料面接近半杯高，装料杯约 75.8 g，接收杯固定在桌面。第三视角画面右侧为装料源杯，左侧为固定接收杯，中心相距 200 mm。右臂侧向抓取源杯、试提，在接收杯外先抬高，再边倾斜边平移以保持杯口对准和腕部净空；左臂仅在需要时观察，并避开倾倒区。提示仍要求尽量转移 160 颗；独立评分只要求至少 10 颗进入接收杯并停留，源杯放下松手、竖立受桌面支撑约 0.5 秒即完成；允许残留，洒落单独记录。固定接收杯不要求支撑力读数。源杯不绑定夹爪，纸杯按刚体模拟。
 
-```text
-Both R5 arms may manipulate. Use the overview and both wrist cameras; neither
-arm is observation-only. The blue bowl starts on the table already densely
-loaded with separate red balls. All balls are dynamic spheres with low contact
-friction: they can roll and slide against each other and the bowl. There is NO
-feeder, pouring step or subsequent loading trigger.
 
-Move this loaded bowl from its current location onto the green tabletop patch,
-keeping every ball inside. Identify the two external handles and leave the
-opening and contents unobstructed. Use the left hand on the +Y-side handle and
-the right hand on the -Y-side handle. Choose reachable grasps on the handles,
-close each hand deliberately, then make a short coordinated lift to verify that
-the bowl follows without appreciable tilt or handle slip. Both hands must hold
-the bowl during a lift of at least 25 mm clear of its initial height.
+### L2-06 从圆柱承台夹起橘子瓣 5 厘米
 
-Carry the bowl while keeping it approximately level. Use short translations
-with similar vertical height for the two handles. When updating one arm at a
-time, keep the height/position difference small instead of pulling one handle
-far ahead. Avoid abrupt acceleration, stop-start jerks and swinging rotations.
-Watch the balls rolling toward the rim; pause to let them settle and correct
-bowl tilt before continuing. Do not pick up individual balls or pour them out.
-If a ball spills, do not claim success or hide it by returning it to the bowl.
+当前完整英文提示词以 `configs/tasks/l2_06_orange_transfer.toml` 为准，公共规划、观测及反馈信息照常附加。
 
-Lower the bowl onto the green patch with its centre within 35 mm of the patch
-centre. Confirm support from the table before opening either gripper. Release
-both handles, observe the upright bowl and all balls contained below the rim,
-and allow the bowl to remain nearly still for one simulation second. Completion
-requires actual lifted transport and released placement at the NEW location;
-simply holding it at the start or placing an empty bowl does not complete it.
-This task simulates dry solid balls, not water or a fluid dynamics model.
-If a grasp is lost, stop advancing the old plan and inspect the actual object
-state. If the scene resets, rebuild the plan from the new observations. Use only
-available control commands and feedback; do not invent force measurements.
-Request stop only after observing the required final state and stability.
-```
-
-### L2-06 夹面包
-
-运行前填写：面包、目标区域、公开的形变／损伤限制、保持时间。实现条件：真实面包或经验证的压溃模型；弹性回弹物体不能直接替代真实压坏判据。
-
-```text
-Transport {{bread_id}} to {{target_region}}, satisfying {{deformation_and_damage_limits}}. After release, it must remain stable for {{hold_time_s}} seconds. Avoid slipping, crushing, tearing, or substantial crumbling throughout the task. Do not establish a grasp by piercing or flattening the bread.
-
-Choose a forgiving grasp region that distributes the load, using the bread's shape, existing support, and gripper contact area. Do not assume that the narrowest region is the easiest to grasp. Establish contact gradually and use a short lift to assess holding stability while observing indentation and overall deformation.
-
-If the bread slips while deformation remains acceptable, make small evidence-based grasp adjustments. If indentation keeps increasing or a region collapses, first restore table support and reduce compression, then improve the grasp location or support arrangement rather than simply reducing the opening further. Use coherent, incremental transport targets to avoid large swinging motions.
-
-Establish support in the target region before gradually releasing and withdrawing. Inspect the shape, integrity, and position after release. Merely retaining the bread in the gripper does not prove that it was not crushed.
-```
-
-### L2-07 单臂拉开固定化妆抽屉
-
-当前实现与成功条件以 [任务配置](../configs/tasks/l2_07_drawer_open_close.toml) 为准。
-
-道具：固定化妆抽屉式柜体（底板、顶板、侧板、后板）、抽屉托盘、向外突出的绿色可夹把手、滑轨。
-布置：柜体固定不滑动；抽屉关闭，正面和把手朝向左机械臂（世界 -X），把手宽 40 mm，留出夹指接近空间；右臂只观察。
-操作：左臂抓把手，沿 -X 拉开 100—120 mm，再松手；最大滑轨行程 130 mm。无需扶柜、提起抽屉、取物或重新关闭。
-完成：实际夹持拉开至少 100 mm，松手后保持开启并静止 1 秒；终点不发生明显高速冲击。
-边界：柜体含上下封闭面，抽屉内腔保持敞开；接触摩擦及被动滑轨约束真实参与仿真，没有脚本自动拉出。
-
-```text
-Use the LEFT R5 arm for manipulation. The RIGHT arm may move its wrist camera
-for a clearer view, but must not touch, hold or support task objects. Keep the
-left arm steady while changing the observation view. Use current RGB-D images,
-camera calibration, robot state and execution feedback to select grasp points
-and motion; do not infer successful contact from a command alone.
-Pull open the drawer of the fixed cosmetics organizer using its green handle.
-The cabinet has a bottom, roof, side walls and rear wall. It is secured to the
-table and already faces the left robot; do not rotate it or hold it with the
-other arm. The drawer starts fully closed and unlocked. There is no push-to-open
-latch, button, or obstruction to release.
-
-Inspect the protruding green handle, front panel and rail direction. Grasp the
-exposed front portion of the handle, away from the cabinet roof. Approach
-from the front (-X), with the fingers closing across the handle's 40 mm width,
-leaving the finger bodies and wrist clear of the panel and roof. Use a downward
-or downward-tilted approach to the exposed handle if needed; do not insist on
-a low horizontal wrist pose. Close the
-left gripper separately and verify that it surrounds the handle, rather than
-just touching the panel. Keep the handle's height and orientation during pull;
-do not apply a free-object vertical test lift to this rail-constrained drawer.
-
-Pull toward the robots along world -X in small steps. Check that the drawer
-front actually moves with the handle and that the fingers have not slipped.
-Correct sideways misalignment instead of applying larger off-axis motion.
-Open by 100-120 mm from the initial closed position; maximum travel is 130 mm.
-Slow near the rail stop and avoid impact speeds above 0.25 m/s. Do not pull it
-out of the rails, lift the cabinet or force motion past its limit.
-
-Once sufficiently open, stop, release the handle and let the drawer remain open
-and nearly still for one simulation second. This version ends OPEN: do not push
-it shut again. No item retrieval, second-hand support or extra operation is
-required. A drawer at the target position while still held is not the final
-released state.
-If a grasp is lost, stop advancing the old plan and inspect the actual object
-state. If the scene resets, rebuild the plan from the new observations. Use only
-available control commands and feedback; do not invent force measurements.
-Request stop only after observing the required final state and stability.
-```
-
-### L2-09 弹性件定点按压
-
-运行前填写：弹性件、公开按压点／轴线、目标力范围、保持时间、允许过冲。实现条件：**当前接口条件未满足**；定量目标力任务必须接入已标定力信号及可用的调节方式。仅看变形不能证明达到目标力。
-
-```text
-Press {{elastic_component_id}} at {{specified_press_point_and_axis}}. Maintain the measured pressing force within {{target_force_range_n}} for {{hold_time_s}} seconds, with overshoot no greater than {{allowed_overshoot_n}}, then fully unload. Do not cause permanent damage.
-
-Align the pressing tool or gripper contact face with the target region and maintain the specified axis during approach. After contact, adjust using the actual provided force signal rather than treating target displacement or gripper opening as force. Reduce adjustment magnitude near the target range, and continue checking timestamps and measured force throughout the hold.
-
-If force rises faster than expected or approaches the overshoot limit, reduce penetration or use an explicitly available force-target command. If lateral slip occurs, reduce contact loading and restore alignment. After completing the hold, unload incrementally and confirm that force falls, contact is released, and the component recovers as required.
-
-Without actual force feedback, do not claim completion of this quantitative force task. Visible displacement alone is not evidence of the required force.
-```
+橘子放在双臂中间固定的 13 cm 高圆柱承台上，宽面平放，绕竖直轴转 90°，长轴沿世界 Y、第三视角画面纵向。左臂夹住较饱满的中部，允许弹性挤压和继续收紧；右臂只观察。将橘子相对初始静置位置提起至少 5 cm，拿着即可结束；建议提 7 cm，留出夹持沉降余量。没有绿色目标区、搬运、放下、额外等待或形变阈值。抬空爪、弹飞或仅在承台上推移不算抓起。
 
 ## L3：变化接触下的持续联合调整
 
 本组保留自主抓持、几何对准和稳定交互，进一步根据啮合、形变、支撑与阻力变化持续调整。任务正文描述操作目标与可观察的恢复线索；尚未提供的力／力矩信息不能由模型自行假定。
 
-### L3-03 自主抓持与重抓的旋拧瓶盖
+### L3-03 双臂扶东方树叶瓶旋下松盖
 
-当前仿真采用 50×50×180 mm 方瓶身、加高圆瓶颈和约 43 mm 外径、40 mm 高的圆柱盖，总高约 250 mm。双手从空手开始，盖已旋合且未预松；瓶底落桌，左手夹持瓶身中下部，右手旋盖。评分仅累计瓶身直立受桌面支撑、双手持握且螺纹仍啮合时的相对旋转。相机及支架仍是未标定的视觉模型，空间诊断不代表真机或任意轨迹无碰撞。
+现行仿真采用双臂中间的自由瓶身、预松盖；左臂扶持瓶身中下部，右臂旋下盖子。完整执行提示以 [任务 TOML](../configs/tasks/l3_03_bottle_cap_unscrew.toml) 为准，公共规划与核验协议仍统一注入。
 
-运行前填写：瓶子、旋开方向信息、瓶身与瓶盖放置区域。实现条件：真实螺纹／旋松与脱离机制；不能靠旋转达到角度后直接删除约束。准确扭矩控制仍需扩展接口。
+完成条件为左臂扶瓶时右臂取下瓶盖，瓶盖完全脱离、放到桌面并释放；瓶身可保持左臂扶持或释放后直立在桌面。不要求规定圈数或静止等待。不测紧盖开启力矩和防盗环破坏。
 
-```text
-Unscrew the cap of {{bottle_id}} until it is completely detached. Place the bottle and cap in {{respective_placement_regions}}. Keep the bottle stable and preserve the cap and bottle opening. Opening-direction information is {{provided_opening_direction_or_observe}}.
+### L3-05 双臂旋下预松螺母
 
-Identify the bottle/cap boundary, rotation axis, and usable grasp regions. Keep the bottle bottom on the table, stabilize the parallel lower/middle body faces with the left arm, and grasp the cap with the right. Separate the grasp heights and inspect clearance for fingers, wrists, camera housings and brackets through approach, turning and regrasping. Rotate incrementally about the cap axis rather than sweeping it around an incorrect pivot. Adjust axial position as the cap loosens instead of continually pressing it onto the opening.
+当前版本使用原生可拆螺母膨胀螺栓，横放在双臂中间，第三视角看主体朝左、螺母朝右，替代旧的粗螺丝旋入。左臂从桌面拿起并持稳套管主体，右臂夹住六角螺母，逆时针旋出；初始预松至剩约两圈。完整英文提示以 [任务 TOML](../configs/tasks/l3_05_coarse_screw.toml) 为准，公共规划与核验协议统一注入。
 
-Distinguish cap rotation relative to the bottle from whole-bottle rotation or gripper slip on the cap. If no actual loosening occurs, first restore bottle stabilization, check direction, or improve the cap grasp. Near a wrist range limit, regrasp only while the cap has reliable support and its state can be maintained; do not accumulate infeasible large-angle targets.
-
-When loosening evidence is present, make a small test lift to confirm that no threaded constraint remains before moving the cap away. Rotating through an angle or moving the gripper alone does not establish cap detachment.
-```
-
-### L3-05 对准、啮合并旋入螺丝
-
-运行前填写：螺丝、目标螺纹孔、允许工具、旋入方向信息、目标就位标准。实现条件：实际螺纹啮合、旋转推进与卡住状态；未提前啮合，准确轴向力／扭矩限制需扩展。
-
-```text
-Using {{allowed_tools_or_gripper_only}}, insert and thread {{screw_id}} into {{target_threaded_hole_id}} from an initially unengaged state until {{target_seating_criterion}} is satisfied. Threading-direction information is {{provided_threading_direction_or_observe}}. Preserve the threads and parts. Do not force the screw sideways, bypass thread engagement, or merely rest it on the hole.
-
-Identify the screw's working end, hole axis, and a grasp or tool engagement that can transmit rotation. Bring the screw and hole axes into alignment, then use small axial approaches and angular increments to establish normal thread engagement. Check whether rotation produces appropriate axial advancement; gripper rotation alone does not prove engagement.
-
-If the screw tilts, fails to advance, or actual feedback indicates abnormal resistance, first relieve excessive pressing. If needed, reverse slightly and withdraw before restoring alignment and initial engagement. Do not simultaneously increase pressing and rotation by large amounts. Once engaged, coordinate axial targets and rotation with observed progress. Preserve support during any regrasp and avoid pulling against the threads.
-
-Reduce increments near the seating criterion. Stop tightening when it is met, withdraw the tool or gripper, and confirm that the screw remains correctly seated. Without torque measurement, do not claim a precise tightening torque.
-```
+实际旋出分离且双手分别持握即成功，不再要求入孔深度、固定旋转圈数、释放、指定摆放或额外等待。仅本任务采用 1920 Hz 与 10 mm 最小夹爪开口；不测紧固预载、首次啮合、滑牙或损伤。
 
 ### L3-06 剥橘子
 
@@ -446,19 +318,17 @@ Adjust local grasp locations, stretching direction, and pressing points accordin
 Inspect the full circumference for unseated sections, changing the viewing direction when needed. Do not assume an unseen region is seated. Gradually release external support and check that the ring remains in the groove, with complete seating and preserved integrity.
 ```
 
-### 擦桌子（从 L2-08 移入 L3，新编号待确认）
+### L3-11 板擦擦除绿板字迹
 
-运行前填写：桌面、可用抹布／擦拭工具、目标污渍区域、清洁标准、工具放置区域。实现条件：明确污渍去除与接触的关联、工具／布面形变及清洁评分；单纯沿路径移动不算擦干净，也不报告尚未接入的恒力能力。
+现行版本见[任务配置](../configs/tasks/l3_11_board_wiping.toml)：固定绿板在桌面内转 180°，书写面朝上，黑色 GPT6 字迹从公共第三视角看上下颠倒。板擦置于右侧被动支座上，两手初始空置；右臂抓取和擦拭，左臂观察。真实板擦接触和横向移动擦除至少 90% 初始字迹即可，不要求放回、松手或额外等待；属于接触清洁代理。
 
-```text
-Use {{cloth_or_wiping_tool_id}} to clean {{target_dirty_region}} on {{table_surface_id}} until {{public_cleanliness_criterion}} is satisfied. Finally, place the tool in {{tool_placement_region}}. Preserve the tabletop. Do not treat pushing dirt into an unpermitted region or out of camera view as successful cleaning.
+### L3-14 夹爪推三角块入目标区
 
-Observe the dirt distribution, table boundaries, obstacles, and current tool shape. Choose a grasp and contact arrangement that keeps the effective wiping surface against the table. Plan coverage around the dirt distribution with sufficient overlap between covered regions. Do not stop solely because a predetermined path has been traversed.
+现行版本见[任务配置](../configs/tasks/l3_14_gripper_push_triangle.toml)：按参考照片关系，第三视角中块在目标右上方、更靠近机械臂，目标在左下方；两个三角尖端均朝机械臂。右夹爪推动、左臂观察。实际推入后整个块在宽容目标区内并受桌面承托即完成，不要求朝向一致或额外等待。
 
-Wipe in segments and compare new images for actual cleaning progress. If the tool lifts, the cloth bunches, dirt spreads, or the table moves, adjust the grasp, contact location, direction, and actions that affect contact pressure. Without force feedback, do not claim to maintain an exact constant force. Restore effective contact before continuing when the wiping surface loses contact.
+### L3-15 两块扫入固定簸箕
 
-Target remaining dirt with additional passes. If the tool needs arranging or the task permits using another face, do so with stable support while avoiding contamination of cleaned regions. Once the cleanliness criterion is met, lift the tool away, inspect the entire target region again, place the tool, and verify the final state.
-```
+现行版本见[任务配置](../configs/tasks/l3_15_bimanual_sweep_blocks.toml)：第三视角左簸箕、右手刷，两块在中间；簸箕开口朝右并固定。右臂持刷向左扫入，左臂观察。两个方块均在篮内、受到簸箕承托且有实际刷扫过程即可，不要求最后放下刷子或等待。
 
 ## 提示版本与验证
 

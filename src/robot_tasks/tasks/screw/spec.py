@@ -1,7 +1,7 @@
 """Public dimensions for a deliberately large teaching screw (metres)."""
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 
 @dataclass(frozen=True)
@@ -34,6 +34,7 @@ class ScrewSpec:
     contact_threshold: float = 0.05
     source_xy: tuple = (0.36, 0.40)
     socket_xy: tuple = (0.36, 0.23)
+    table_z: float = 0.0
 
     @property
     def height(self):
@@ -42,7 +43,21 @@ class ScrewSpec:
     @property
     def initial_pose(self):
         # The pose origin is the flat shaft tip. The part stands independently.
-        return (*self.source_xy, 0.001, 1, 0, 0, 0)
+        return (*self.source_xy, self.table_z + 0.001, 1, 0, 0, 0)
 
 
 SPEC = ScrewSpec()
+
+
+def task_spec(config):
+    """Keep legacy recordings interpretable; new tasks use the delivered lab."""
+    if config.raw.get("simulation", {}).get("environment") == "tuojing_lab_v4":
+        return replace(
+            SPEC,
+            version="l3-05-derived-anchor-v3",
+            table_z=0.78,
+            source_xy=(-0.08, 1.30),
+            socket_xy=(0.10, 1.30),
+            stability_s=0.0,
+        )
+    return SPEC

@@ -20,7 +20,7 @@ except ImportError:
 
 
 class LabSettingsTests(unittest.TestCase):
-    def test_requested_overview_clearance_and_wrist_tilt(self):
+    def test_video_matched_overview_and_unchanged_wrist_and_legacy_cameras(self):
         from robot_tasks.backends.scene_geometry import bench_geometry
         from robot_tasks.cameras.profile import load_camera_rig
         from robot_tasks.registry import resolve_task
@@ -30,18 +30,20 @@ class LabSettingsTests(unittest.TestCase):
         bench = bench_geometry(config)
         rig = load_camera_rig(config.source.parent / config.raw["simulation"]["camera_profile"])
         overview = rig.cameras[0]
-        self.assertAlmostEqual(overview.optical_pose_wxyz[2], 1.58)
-        self.assertAlmostEqual(bench.centre[1] - bench.size[1] / 2 - overview.optical_pose_wxyz[1], .25)
+        self.assertAlmostEqual(overview.optical_pose_wxyz[2], 1.45)
+        self.assertEqual(overview.resolution, (1280, 960))
+        self.assertAlmostEqual(overview.optical_pose_wxyz[0],
+                               np.mean([m.base_pose_wxyz[0] for m in config.robot.mounts]))
+        self.assertLess(overview.optical_pose_wxyz[1], bench.centre[1] - bench.size[1] / 2)
         forward = -pose_transform(overview.optical_pose_wxyz)[:3, 2]
-        direction = np.array([.19565, 1.20, .86]) - overview.optical_pose_wxyz[:3]
-        np.testing.assert_allclose(forward, direction / np.linalg.norm(direction), atol=1e-9)
+        np.testing.assert_allclose(forward, [0, np.cos(np.deg2rad(36)), -np.sin(np.deg2rad(36))], atol=1e-9)
         self.assertGreater(forward[1], 0)  # Preserve the delivered heading toward the desk.
         for spec in rig.cameras[1:]:
             t = pose_transform(spec.optical_pose_wxyz)
             np.testing.assert_allclose(-t[:3, 2], [np.sqrt(.5), 0, -np.sqrt(.5)], atol=1e-9)
             np.testing.assert_allclose(t[:3, 0], [0, -1, 0], atol=1e-9)
-        # Legacy scenes use tabletop Z=0; apply the same floor-equivalent height.
-        _, legacy = resolve_task("L3-16")
+        # This request only changes the delivered laboratory; legacy scenes retain their framing.
+        _, legacy = resolve_task("GPT-PICK-PLACE")
         legacy_bench = bench_geometry(legacy)
         legacy_rig = load_camera_rig(legacy.source.parent / legacy.raw["simulation"]["camera_profile"])
         overview = legacy_rig.cameras[0]
@@ -188,7 +190,8 @@ class LabBindingTests(unittest.TestCase):
         original = self.stage.GetRootLayer().ExportToString()
         spec = SimpleNamespace(name="overview", parent="world", existing_prim_path=str(camera.GetPath()),
                                optical_pose_wxyz=(.2, .48765, 1.32, .9238795325, .3826834324, 0, 0),
-                               pose_source="test", override_intrinsics=False)
+                               pose_source="test", resolution=(1280, 960),
+                               intrinsics=(1160., 1160., 640., 480.), intrinsics_source="test")
         profile = SimpleNamespace(cameras=(spec,))
         apply_camera_mounts(self.stage, profile)
         self.assertEqual(original, self.stage.GetRootLayer().ExportToString())
@@ -197,6 +200,9 @@ class LabBindingTests(unittest.TestCase):
                                    np.array(cache.GetLocalToWorldTransform(camera.GetPrim())), atol=1e-8)
         self.assertAlmostEqual(cache.GetLocalToWorldTransform(stand.GetPrim()).ExtractTranslation()[2], 0)
         self.assertAlmostEqual(riser.GetHeightAttr().Get(), .045)
+        focal = camera.GetFocalLengthAttr().Get()
+        self.assertAlmostEqual(1280 * focal / camera.GetHorizontalApertureAttr().Get(), 1160., places=3)
+        self.assertAlmostEqual(960 * focal / camera.GetVerticalApertureAttr().Get(), 1160., places=3)
         apply_camera_mounts(self.stage, profile)
         self.assertAlmostEqual(riser.GetHeightAttr().Get(), .045)
 

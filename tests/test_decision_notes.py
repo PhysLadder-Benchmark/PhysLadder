@@ -54,6 +54,20 @@ class DecisionNoteTests(unittest.TestCase):
         self.context = PolicyInput(self.config.instruction, Observation(
             0., tuple(rgbd(c) for c in self.config.cameras), states(), Feedback("completed")), 1)
 
+    def test_planning_failure_is_disclosed_to_model_without_calling_provider(self):
+        from robot_tasks.planning.failures import failure
+
+        error = failure("left", "start_collision", "Start self-collision.",
+                        stage="start", violated_constraints=["self_collision"])
+        feedback = Feedback("rejected", str(error), {"planning_failure": error.diagnostic})
+        context = replace(self.context, observation=replace(self.context.observation, feedback=feedback))
+        policy = GPTPolicy(self.config, SETTINGS, client=self.client)
+        message, *_ = policy.observation_message(context)
+        disclosed = json.loads(message["content"][0]["text"])
+        self.assertEqual(disclosed["feedback"]["metrics"]["planning_failure"], error.diagnostic)
+        self.assertIn("start_collision", policy.instructions)
+        self.client.generate.assert_not_called()
+
     def test_note_accepts_motion_wait_query_and_stop_without_altering_commands(self):
         row = {"arm": "right", **dict.fromkeys(FIELDS)}
         row["z_m"] = .25

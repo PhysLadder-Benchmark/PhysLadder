@@ -2,7 +2,7 @@
   "schema_version": 1,
   "repository": "TuojingAI/GPT_Benchmark",
   "tag": "assets-20261008-local-v1",
-  "source_lock_sha256": "bbb2630b7f30f97ddb78fe8254ed2d6411fbbfeaae55f28e240ddc45019131f7",
+  "source_lock_sha256": "84c236a78597a8b702c4ee2a4aa8633963ac8cb5dbc94ed381ae9167d2438a95",
   "packages": [
     {
       "id": "lab_v4",
@@ -26,7 +26,10 @@
   "omitted_packages": [
     "tabletop_interactions",
     "book",
-    "desktop_additions"
+    "physical_props_20261008",
+    "oriental_leaf_335ml",
+    "anchor_removable_nut_20261008",
+    "desktop_additions_20261009"
   ],
-  "coverage": "Pinned 2026-10-08 release only; tabletop_interactions, book and the locally supplied 2026-10-09 desktop_additions are not included. L1-01 now needs desktop_additions installed from the separately supplied ZIP. This is not a complete L1/L2 asset release."
+  "coverage": "Three unchanged archives from assets-20261008-local-v1, verified against the current source lock. All other locked packages are omitted; this is not a complete L1/L2/L3 asset release."
 }

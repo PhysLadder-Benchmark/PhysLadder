@@ -1,6 +1,6 @@
 """Explicit simulation settings, loadable without importing Isaac Sim."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import math
 import os
 from pathlib import Path
@@ -30,6 +30,9 @@ class SimulationSettings:
     solver_velocity_iterations: int = 0
     camera_position: tuple[float, ...] = (1.6, 0.0, 1.4)
     camera_target: tuple[float, ...] = (0.28, 0.0, 0.2)
+    camera_reference_frame: str = "world"
+    camera_resolution: tuple[int, int] | None = None
+    camera_intrinsics: tuple[float, ...] | None = None
     camera_profile: str = ""  # Relative to episode config; empty keeps legacy overview.
     capture_render_passes: int = 2
     environment: str = "plain"
@@ -38,6 +41,12 @@ class SimulationSettings:
     @classmethod
     def from_config(cls, config: TaskConfig) -> "SimulationSettings":
         data = dict(config.raw.get("simulation", {}))
+        if ("camera_position" in data) != ("camera_target" in data):
+            raise ValueError("Set camera_position and camera_target together")
+        if ("camera_resolution" in data) != ("camera_intrinsics" in data):
+            raise ValueError("Set camera_resolution and camera_intrinsics together")
+        if "camera_resolution" in data and ("camera_position" not in data or not data.get("camera_profile")):
+            raise ValueError("Shared camera optics require camera_position/target and camera_profile")
         unknown = set(data) - set(cls.__dataclass_fields__)
         if unknown:
             raise ValueError(f"Unknown simulation settings: {sorted(unknown)}")
@@ -78,6 +87,25 @@ class SimulationSettings:
                 isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) for v in value
             ):
                 raise ValueError(f"simulation.{name} must contain three finite numbers")
+        if result.camera_reference_frame not in {"world", "tuojing_lab"}:
+            raise ValueError("camera_reference_frame must be world or tuojing_lab")
+        if "camera_resolution" in data:
+            resolution, intrinsics = result.camera_resolution, result.camera_intrinsics
+            if not isinstance(resolution, (tuple, list)) or len(resolution) != 2 or any(
+                type(v) is not int or v <= 0 for v in resolution
+            ):
+                raise ValueError("camera_resolution must contain two positive integers")
+            if not isinstance(intrinsics, (tuple, list)) or len(intrinsics) != 4 or any(
+                isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) for v in intrinsics
+            ):
+                raise ValueError("camera_intrinsics must contain four finite numbers")
+            fx, fy, cx, cy = intrinsics
+            if min(fx, fy) <= 0 or not (0 <= cx < resolution[0] and 0 <= cy < resolution[1]):
+                raise ValueError("camera_intrinsics has invalid focal lengths or principal point")
+            result = replace(result, camera_resolution=tuple(resolution), camera_intrinsics=tuple(intrinsics))
+        from ..cameras.overview import resolve_view
+        position, target = resolve_view(result, config)
+        result = replace(result, camera_position=position, camera_target=target)
         return result
 
     def application_config(self) -> dict:

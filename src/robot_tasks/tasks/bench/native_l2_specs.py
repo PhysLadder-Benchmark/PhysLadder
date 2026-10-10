@@ -1,144 +1,13 @@
 """L20 task layouts and goals in the delivered laboratory's metre/world frame."""
 
-import itertools
 import math
 from dataclasses import replace
 
-from ..l1.specs import BLUE, GREY, Article, box, pose
-from .geometry import design, floor_target
+from ..l1.specs import Article, box, pose
+from .geometry import design
 from .spec import BenchSpec
 
 TABLE_Z = 0.78
-
-BOWL_INNER = (
-    (0.004, 0.032),
-    (0.014, 0.044),
-    (0.030, 0.056),
-    (0.050, 0.066),
-    (0.054, 0.067),
-)
-
-
-def bowl_clearance(point, radius=0.004, tolerance=0.0003, *, open_top=False):
-    """Sphere containment against the delivered 32-sided, piecewise inner wall."""
-    x, y, z = point
-    if z - radius < 0.006 - tolerance or (not open_top and z + radius > 0.054 + tolerance):
-        return False
-    cosine = math.cos(math.pi / 32)
-    for (z0, r0), (z1, r1) in itertools.pairwise(BOWL_INNER):
-        slope = (r1 - r0) / (z1 - z0)
-        boundary = (r0 + slope * (z - z0)) * cosine
-        margin = radius * math.sqrt(1 + (slope * cosine) ** 2)
-        for i in range(32):
-            a = (i + 0.5) * 2 * math.pi / 32
-            if x * math.cos(a) + y * math.sin(a) + margin > boundary + tolerance:
-                return False
-    return True
-
-
-def bowl():
-    source, target = (0.19, 1.25, TABLE_Z + 0.001), (0.19, 1.13, TABLE_Z + 0.001)
-    handles = tuple(
-        box(f"grip_{i}", (0.040, 0.045, 0.020), (sign * 0.084, 0.0, 0.030), BLUE)
-        for i, sign in enumerate((-1, 1))
-    )
-    a = Article(
-        "bowl",
-        (),
-        pose(*source),
-        pose(*target),
-        0.136,
-        asset="tuojing:open_bowl",
-        asset_bounds=((-0.104, -0.070, 0.0), (0.104, 0.070, 0.054)),
-    )
-    articles = [a]
-    instances = [
-        {
-            "name": "bowl",
-            "asset": "open_bowl",
-            "pose": a.initial,
-            "tracked": {"bowl": ""},
-            "adapters": {"": handles},
-            "mass_additions": {"": 0.016},
-        }
-    ]
-    radius, spacing, mass = 0.004, 0.0084, 0.00030895229571687653
-    for layer in range(6):
-        z = 0.0103 + layer * spacing * math.sqrt(2 / 3)
-        offset = (spacing / 2, spacing * math.sqrt(3) / 6) if layer % 2 else (0.0, 0.0)
-        for i, j in itertools.product(range(-8, 9), repeat=2):
-            x, y = (
-                spacing * (i + j / 2) + offset[0],
-                spacing * math.sqrt(3) / 2 * j + offset[1],
-            )
-            if not bowl_clearance((x, y, z), radius, tolerance=-0.0003):
-                continue
-            name = f"load_{len(articles) - 1}"
-            initial, goal = (
-                pose(source[0] + x, source[1] + y, source[2] + z),
-                pose(target[0] + x, target[1] + y, target[2] + z),
-            )
-            articles.append(
-                Article(
-                    name,
-                    (),
-                    initial,
-                    goal,
-                    mass,
-                    asset="tuojing:pearl_8mm",
-                    asset_bounds=(
-                        (-radius, -radius, -0.003968627),
-                        (radius, radius, 0.003968627),
-                    ),
-                )
-            )
-            instances.append(
-                {
-                    "name": name,
-                    "asset": "pearl_8mm",
-                    "pose": initial,
-                    "tracked": {name: ""},
-                }
-            )
-    count = len(articles) - 1
-    patch = replace(
-        floor_target(target[:2], (0.20, 0.20)),
-        position=(target[0], target[1], TABLE_Z + 0.0002),
-    )
-    return BenchSpec(
-        replace(
-            design("L2-04", "满载小珍珠的碗搬运", articles, [patch]),
-            version="l2-04-native-bowl-pearls-v2",
-            provenance="Native open bowl and 8 mm drilled plastic pearls; two explicit R5 grasp tabs",
-        ),
-        arms=("left", "right"),
-        mechanism="native_loaded_bowl_transport",
-        limitations="Native bowl compound colliders and pearl visuals/dimensions/masses. Pearl bore collision is replaced by an outer sphere for transport. Two blue grasp tabs add 16 g; bead friction explicitly 0.03. No fluid or damage model.",
-        facts=f"A cream-coloured open bowl is preloaded with {count} separate 8 mm pearls. They move freely under gravity and contact; their contact friction is explicitly 0.03 in this task. The bowl is 140 mm across and 54 mm high, and has TWO blue R5 grasp tabs attached outside its sides. These are declared adapters, not native bowl handles. Use the left hand on the -X tab and right on the +X tab; pinch the 45 mm dimension along world Y and leave the opening clear. Lift together, move to the green patch, lower, release both hands and leave all pearls in the upright bowl. No feeder or second loading phase is used.",
-        parameters={
-            "table_z": TABLE_Z,
-            "scoring_protocol": "bowl_retained_load_v3",
-            "hold_s": 0.5,
-            "native_instances": instances,
-            "grasp_adapters": [
-                "Two 40 x 45 x 20 mm blue side tabs, 8 g each; no robot attachment"
-            ],
-            "target_xy": target[:2],
-            "target_tolerance_m": 0.035,
-            "count": count,
-            "ball_radius_m": radius,
-            "ball_mass_kg": mass,
-            "ball_friction": 0.03,
-            "pearl_collision": "outer_sphere",
-            "native_inner_profile": BOWL_INNER,
-            "top_radius_m": 0.067,
-            "bottom_radius_m": 0.032,
-            "height_m": 0.054,
-            "floor_m": 0.006,
-            "wall_segments": 32,
-            "lift_m": 0.020,
-        },
-    )
 
 
 def marker():
@@ -194,12 +63,12 @@ def marker():
 def books():
     # The book's 140 mm width cannot fit the R5. Grip the exposed 20 mm
     # thickness, outside both fixed neighbours; preserve full native size/mass.
-    x, y = -0.20, 1.08
+    x, y = 0.19565, 1.30
     # Fixed upper book is a fixture, not a load. A 5 mm gap above the settled
     # middle book avoids turning small controller deflection into a wedge test.
-    lower, middle_z, upper = TABLE_Z + 0.150, TABLE_Z + 0.1705, TABLE_Z + 0.195
-    initial = pose(x, y + 0.09, middle_z)
-    goal = pose(x, y + 0.235, middle_z)
+    lower, middle_z, upper = TABLE_Z + 0.080, TABLE_Z + 0.1005, TABLE_Z + 0.125
+    initial = pose(x + 0.04, y, middle_z)
+    goal = pose(x + 0.15, y, middle_z)
     a = Article(
         "middle_book",
         (),
@@ -209,11 +78,15 @@ def books():
         asset="tuojing:closed_book",
         asset_bounds=((-0.07, -0.11, -0.01), (0.07, 0.11, 0.01)),
     )
-    supports = tuple(
+    # Photo/video-inspired support, not a calibrated reconstruction. Keep its
+    # side flush with the fixed books so the exposed middle edge stays reachable.
+    supports = (
         box(
-            f"support_{i}", (0.16, 0.025, 0.140), (x, y + offset, TABLE_Z + 0.070), GREY
-        )
-        for i, offset in enumerate((-0.085, 0.085))
+            "blue_support_box",
+            (0.14, 0.22, 0.070),
+            (x, y, TABLE_Z + 0.035),
+            (0.02, 0.36, 0.58),
+        ),
     )
     instances = [
         {
@@ -239,34 +112,38 @@ def books():
     ]
     return BenchSpec(
         replace(
-            design("L2-03", "固定上下层的单臂抽书", [a], supports),
-            version="l2-03-native-book-clearance-v2",
+            design("L2-03", "固定上下层的单臂侧向抽书", [a], supports),
+            version="l2-03-centred-side-extraction-v5",
             release=False,
             provenance="Three native 220 x 140 x 20 mm closed books; middle mass 378.9 g",
         ),
+        arms=("right",),
         mechanism="native_book_fixed_neighbours",
         limitations="Closed rigid book, measured-photo mass 378.9 g; 20 mm thickness and friction estimated. Upper/lower books fixed, 5 mm clearance above the settled middle book. No page or cover flex; no support-hand requirement.",
-        facts="Three full-size books are stacked horizontally. Upper and lower books are fixed; only the middle book moves. The middle book protrudes 90 mm toward the robots (world +Y). Each book is 220 mm long, 140 mm wide and 20 mm thick. The R5 cannot span the 140 mm width: pinch the exposed front section across its 20 mm THICKNESS, with one pad above and one below, entirely outside the fixed neighbours. Approach from the exposed end, preserve height and pull along +Y until the entire trailing edge clears the stack. About 140 mm of extraction is needed. Holding the extracted book is sufficient; placement or release is not required. The right arm observes only.",
+        facts="Three full-size books are stacked horizontally at the centre between both arms. Upper and lower books are fixed; only the middle book moves. A blue support box holds the stack; the middle book protrudes 40 mm from its right side in the overview image (world +X). Each book is 220 mm long, 140 mm wide and 20 mm thick. The R5 cannot span the 140 mm width: pinch the exposed right-side section across its 20 mm THICKNESS, with one pad above and one below, entirely outside the fixed neighbours. Approach from the +X side toward the exposed edge, preserve height and pull outward along +X until the entire trailing edge clears the stack. About 110 mm of extraction is needed. After a grasped extraction, support by either the hand or the tabletop is sufficient. No timed hold or continued grasp is required; do not regrasp a fully extracted table-supported book. The RIGHT arm extracts the book from the protruding side; LEFT observes only.",
         parameters={
             "table_z": TABLE_Z,
-            "stack_front_world": (x, y + 0.11, 0.0),
+            "stack_front_world": (x + 0.07, y, 0.0),
             "clearance_m": 0.003,
-            "minimum_travel_m": 0.13,
-            "outward_axis_world": (0.0, 1.0, 0.0),
-            "hold_s": 0.5,
+            "minimum_travel_m": 0.10,
+            "outward_axis_world": (1.0, 0.0, 0.0),
+            "hold_s": 0.0,
             "native_instances": instances,
             "grip_thickness_m": 0.020,
-            "exposed_length_m": 0.090,
+            "exposed_length_m": 0.040,
+            "support_height_m": 0.070,
             "upper_clearance_m": 0.005,
         },
     )
 
 
 def orange():
-    initial, goal = (
-        pose(-0.10, 1.17, TABLE_Z + 0.002),
-        pose(0.08, 1.10, TABLE_Z + 0.002),
-    )
+    pedestal = pose(0.19565, 1.30, TABLE_Z)
+    support_z = TABLE_Z + 0.13
+    # Rotate in the tabletop plane: the segment's long axis runs front/back
+    # in the shared overview, while its original broad underside stays down.
+    initial = pose(pedestal[0], pedestal[1], support_z + 0.002, yaw=math.pi / 2)
+    goal = pose(initial[0], initial[1], initial[2] + 0.05, yaw=math.pi / 2)
     a = Article(
         "orange",
         (),
@@ -276,34 +153,27 @@ def orange():
         asset="tuojing:orange_segment",
         asset_bounds=((-0.025, -0.02, 0.0), (0.025, 0.01, 0.018)),
     )
-    target = replace(
-        floor_target(goal[:2], (0.12, 0.12)),
-        position=(goal[0], goal[1], TABLE_Z + 0.0002),
-    )
     return BenchSpec(
         replace(
-            design("L2-06", "软橘子瓣轻夹搬运", [a], [target]),
-            version="l2-06-native-fem-orange-v2",
-            provenance="Pinned L20 native volume FEM orange; replaces the former eight-cell jelly proxy",
+            design("L2-06", "从圆柱承台夹起橘子瓣 5 厘米", [a]),
+            version="l2-06-centred-lengthwise-lift-v8",
+            release=False,
+            provenance="Pinned native FEM orange and 2026-10-09 cylindrical pedestal",
         ),
-        mechanism="native_fem_orange_transfer",
-        limitations="R5 soft-grip qualification pending even with rate-limited closure: tested grasps slipped or inverted FEM elements; full transfer not certified. Native GPU FEM, estimated mass/material. Deformation limit is an engineering proxy, not a calibrated fracture law. Rupture/juice demo is not run: it rebuilds the scene and cannot be used as a robot controller. Grip/release/support use measured geometry, not invented soft contact forces.",
-        facts="Move the exposed orange segment gently onto the green patch and release it. It is about 50 mm long, 26 mm across and 17 mm thick, mass about 9 g, with native elastic deformation. Pinch the fuller middle section across its roughly 26 mm width, avoiding its pointed ends and the tabletop. Close gradually; the R5 minimum 12 mm gap can severely compress this soft object, so do not begin with a fully closed command. Choose the actual opening from images and observed deformation. No rigid container or grasp attachment exists. This task checks a declared 35% deformation reference, not real tissue fracture or juice volume. The right arm may observe only.",
+        mechanism="native_fem_orange_lift",
+        limitations="Native GPU FEM mesh, dimensions and mass; engineering material overrides (100 kPa, dynamic friction 2.0), not tissue calibration. Native 130 mm pedestal is fixed as a support. Goal measures a 50 mm centroid rise from the settled initial sample while near both left fingers and clear of the support. No placement, release, dwell, speed or deformation limit. No attachments, fracture or juice. Finger proximity is geometry, not measured contact force.",
+        facts="Lift the soft orange segment at least 50 mm above its initial resting position on the fixed round pedestal centred between both arms, using LEFT. Keep holding it and stop once raised; no transfer or release is requested. Pedestal: 130 mm high, approximately 68 mm flat top. Orange: 50 x 26 x 17 mm, about 9 g; it lies flat with its long axis along world Y (front/back in the overview). Pinch the fuller middle across its width, with both pads overlapping the sides and clear of the pedestal. Elastic compression and firm closure are allowed; the full 12-70 mm opening range is available. If it slips, support it and close further or correct the grasp. Do not lift an empty hand. RIGHT may move to observe, but not touch the orange or pedestal. There is no green destination patch.",
         parameters={
             "table_z": TABLE_Z,
-            "hold_s": 0.5,
-            "scoring_protocol": "soft_placement_motion_v3",
-            "centroid_speed_limit_m_s": 0.01,
-            "shape_speed_p95_limit_m_s": 0.02,
-            "stable_centroid_drift_m": 0.002,
-            "target_xy": goal[:2],
-            "target_half": 0.06,
+            "scoring_protocol": "soft_pedestal_lift_v6",
             "soft_asset": "orange_segment",
-            "strain_limit": 0.35,
-            "deformation_persistence_s": 0.25,
-            "lift_m": 0.015,
-            "support_height_tolerance_m": 0.0025,
-            "finger_clearance_m": 0.004,
+            "lift_m": 0.05,
+            "support_z": support_z,
+            "pedestal_asset": "cylindrical_pedestal",
+            "pedestal_pose": pedestal,
+            "pedestal_height_m": 0.13,
+            "pedestal_radius_m": 0.04,
+            "finger_proximity_m": 0.003,
         },
     )
 
@@ -311,42 +181,42 @@ def orange():
 def drawer():
     # Native -Y rail is rotated toward the robots (+world Y). The upper drawer
     # provides more table clearance; the lower one is explicitly fixed.
-    cabinet = pose(-0.1533, 1.13, TABLE_Z, yaw=math.pi)
-    initial = pose(-0.07, 1.13, TABLE_Z + 0.053, yaw=math.pi)
+    drawer_x = 0.46131  # About 45 mm image-right of the RIGHT R5 base centre.
+    cabinet = pose(drawer_x - 0.0833, 1.13, TABLE_Z, yaw=math.pi)
+    initial_open_m = 0.030
+    closed = pose(drawer_x, 1.13, TABLE_Z + 0.053, yaw=math.pi)
+    initial = pose(drawer_x, closed[1] + initial_open_m, closed[2], yaw=math.pi)
     article = Article(
         "drawer",
         (),
         initial,
-        pose(-0.07, 1.21, TABLE_Z + 0.053, yaw=math.pi),
-        mass=0.088,
+        pose(drawer_x, 1.21, TABLE_Z + 0.053, yaw=math.pi),
+        mass=0.080,
         asset="tuojing:desk_organizer",
-        asset_bounds=((-0.0545, -0.124, 0), (0.0545, 0.0695, 0.040)),
-    )
-    adapter = (
-        box("stem", (0.024, 0.042, 0.012), (0, -0.080, 0.026), BLUE),
-        box("grip", (0.040, 0.024, 0.020), (0, -0.112, 0.026), BLUE),
+        asset_bounds=((-0.0545, -0.0735, 0), (0.0545, 0.0695, 0.040)),
     )
     return BenchSpec(
         replace(
             design("L2-07", "单臂拉开固定化妆抽屉", [article]),
-            version="l2-07-native-organizer-v2",
-            provenance="Pinned L20 desk organizer; native passive 90 mm rail, explicit R5 grip adapter",
+            version="l2-07-overview-right-arm-v5",
+            provenance="Pinned L20 desk organizer; original handle and passive 90 mm rail",
         ),
+        arms=("right",),
         mechanism="native_prismatic_drawer",
-        limitations="Native 90 mm rail and materials; fixed cabinet/lower drawer. Added blue 40 mm R5 grasp tab because the native 8 mm lip cannot be pinched by the configured 12 mm minimum opening. Uncalibrated forces; no damage model.",
-        facts="Open only the UPPER drawer of the fixed organizer. The lower drawer and cabinet are fixed. The blue external grip tab is an explicit R5 adapter: pinch across its 40 mm width, keeping fingers clear of the roof and front panel. The drawer opens toward the robots along world +Y. Pull 75-85 mm, never beyond its native 90 mm rail limit; no push latch needs releasing. Release and leave it open. The right arm may observe but not touch. No vertical lift, cabinet rotation, item retrieval or closing is required.",
+        limitations="Original native handle, mass, materials and 90 mm rail; fixed cabinet/lower drawer. No added grasp adapter. Native lip is 102 x 6 x 8 mm; reliable grasp with the configured 12-70 mm R5 opening has not been qualified. Uncalibrated forces; no damage model.",
+        facts="The organizer stands in front of the RIGHT robot arm as seen in the shared overview image. Use RIGHT to open only its UPPER drawer. The lower drawer and cabinet are fixed. Use the original shallow front lip; there is no added grip tab. The lip is about 102 mm wide, 6 mm deep and 8 mm high. Select contact from observed geometry and the actual gripper range; neither full-width pinching nor closing below the 12 mm minimum is available. Verify physical capture and drawer following rather than assuming a commanded close has grasped the lip. The upper drawer starts 30 mm open to expose the original lip. It opens toward the robots along world +Y. Reach 75-85 mm TOTAL opening measured from fully closed, which means pulling another 45-55 mm from the initial layout, never beyond its native 90 mm rail limit; no push latch needs releasing. Release and leave it open. The LEFT arm may observe but not touch. No vertical lift, cabinet rotation, item retrieval or closing is required.",
         parameters={
             "table_z": TABLE_Z,
+            "manipulation_arm": "right",
             "outward_axis_world": (0.0, 1.0, 0.0),
+            "closed_pose": closed,
+            "initial_open_m": initial_open_m,
             "required_open_m": 0.075,
             "minimum_grasped_pull_m": 0.005,
-            "scoring_protocol": "drawer_grasped_pull_v3",
+            "scoring_protocol": "drawer_absolute_opening_v4",
             "max_travel_m": 0.09,
             "max_speed_m_s": 0.25,
             "hold_s": 0.5,
-            "grasp_adapters": [
-                "Blue 40 x 24 x 20 mm grasp tab rigidly belongs to the upper drawer; no robot attachment"
-            ],
             "native_instances": [
                 {
                     "name": "organizer",
@@ -354,9 +224,8 @@ def drawer():
                     "pose": cabinet,
                     "static": ["Body", "Drawer0"],
                     "disabled_joints": ["Joints/Drawer0"],
+                    "initial_body_offsets": {"Drawer1": (0.0, -initial_open_m, 0.0)},
                     "tracked": {"drawer": "Drawer1"},
-                    "adapters": {"Drawer1": adapter},
-                    "mass_additions": {"Drawer1": 0.008},
                 }
             ],
         },

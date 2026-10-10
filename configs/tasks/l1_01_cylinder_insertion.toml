@@ -4,7 +4,7 @@ schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_tuojing_lab.toml"
+profile = "../robots/r5_tuojing_lab_l1.toml"
 # Baseline for this layout; task.arm_selection recomputes roles at each launch.
 active_arms = ["right"]
 observation_arms = ["left"]
@@ -24,8 +24,6 @@ finger_damping = 40.0
 self_collision = false
 solver_position_iterations = 32
 solver_velocity_iterations = 4
-camera_position = [0.21354960845762927, 0.48765041712220114, 1.32]
-camera_target = [0.1643434123515941, 1.0254038459952994, 0.78]
 
 [policy]
 model_config = "../models/gpt.toml"

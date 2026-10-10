@@ -1,0 +1,257 @@
+"""Contact mechanism and final-state regressions; no simulator or paid models."""
+
+import math
+import unittest
+from copy import deepcopy
+from dataclasses import replace
+
+import numpy as np
+
+from robot_tasks.registry import resolve_task
+from robot_tasks.robots.transforms import pose_transform
+from robot_tasks.tasks.bench.evaluation import BenchEvaluator
+from robot_tasks.tasks.bench.spec import build_spec
+from robot_tasks.tasks.bench.wiping import WipeLedger
+from robot_tasks.tasks.l1.specs import pose
+from robot_tasks.tasks.screw.evaluation import ScrewEvaluator
+from robot_tasks.tasks.screw.spec import task_spec
+from test_household_tasks import measurement
+
+
+class CleaningTests(unittest.TestCase):
+    def setUp(self):
+        self.points = np.array([[0, 0, 0.0102], [0.008, 0, 0.0102]])
+        self.ledger = WipeLedger(pose(0, 0, 0), self.points)
+
+    def sweep(self, *, height=0.028, roll=math.pi, contact=0.2, held=True):
+        for i in range(10):
+            self.ledger.update(
+                i / 12,
+                pose(-0.004 + i * 0.001, 0, height, roll=roll),
+                pad_contact_n=contact,
+                held=held,
+            )
+
+    def test_actual_pad_sliding_removes_visible_cells(self):
+        self.sweep()
+        self.assertEqual(self.ledger.metrics()["remaining_cells"], 0)
+
+    def test_hover_wrong_face_unheld_and_stationary_do_not_clean(self):
+        for kwargs in ({"height": 0.030}, {"roll": 0}, {"contact": 0}, {"held": False}):
+            with self.subTest(kwargs=kwargs):
+                self.ledger = WipeLedger(pose(0, 0, 0), self.points)
+                self.sweep(**kwargs)
+                self.assertEqual(self.ledger.metrics()["remaining_cells"], 2)
+        self.ledger = WipeLedger(pose(0, 0, 0), self.points)
+        for i in range(10):
+            self.ledger.update(
+                i, pose(0, 0, 0.028, roll=math.pi), pad_contact_n=0.2, held=True
+            )
+        self.assertEqual(self.ledger.metrics()["remaining_cells"], 2)
+
+    def test_repeated_frame_cannot_manufacture_wiping(self):
+        self.ledger.update(
+            1, pose(0, 0, 0.028, roll=math.pi), pad_contact_n=0.2, held=True
+        )
+        self.ledger.update(
+            1, pose(0.01, 0, 0.028, roll=math.pi), pad_contact_n=0.2, held=True
+        )
+        self.assertEqual(self.ledger.metrics()["remaining_cells"], 2)
+
+    def test_ninety_percent_finishes_without_releasing_or_waiting(self):
+        spec = build_spec("L3-11")
+        rows = measurement(spec)
+        e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
+        rows["eraser"]["fingers"]["right"] = [1, 1]
+        rows["eraser"]["wiping"]["clean_fraction"] = 0.89
+        self.assertEqual(e.update(1, rows).status, "running")
+        rows["eraser"]["wiping"]["clean_fraction"] = 0.9
+        self.assertEqual(e.update(2, rows).status, "succeeded")
+
+
+class SweepingTests(unittest.TestCase):
+    def setUp(self):
+        self.spec = build_spec("L3-15")
+        self.rows = measurement(self.spec)
+        self.e = BenchEvaluator(
+            self.spec, {a.name: a.initial for a in self.spec.design.articles}
+        )
+        self.e.flags.update(("swept_block_0",))
+
+    def collect(self, i, center):
+        pan = pose_transform(self.rows["dustpan"]["pose"])
+        local = np.array(
+            [[x, y, z] for x in (-0.01, 0.01) for y in (-0.01, 0.01) for z in (0, 0.01)]
+        )
+        local += np.asarray(center)
+        row = self.rows[f"block_{i}"]
+        row["corners"] = (local @ pan[:3, :3].T + pan[:3, 3]).tolist()
+        row["pose"][:3] = (np.asarray(center) @ pan[:3, :3].T + pan[:3, 3]).tolist()
+        row["pair_forces"]["dustpan"] = 0.02943
+        row["bench_force_n"] = 0
+
+    def all_inside(self):
+        for i, c in enumerate(((-0.025, 0, 0.0012), (0.025, 0, 0.0012))):
+            self.collect(i, c)
+
+    def test_both_supported_finish_without_tool_holding_or_wait(self):
+        self.all_inside()
+        self.rows["dustpan"]["angular_velocity"] = [0, 0, 1]
+        result = self.e.update(1, self.rows)
+        self.assertEqual(result.status, "succeeded")
+        self.assertEqual(result.metrics["criteria"]["required"], 2)
+        self.assertEqual(result.metrics["criteria"]["blocks_in_pan"], 2)
+
+    def test_handle_air_outer_lip_and_missing_support_do_not_count(self):
+        for c in (
+            (0, -0.107, 0.0012),
+            (0, 0, 0.05),
+            (0.07, 0, 0.0012),
+            (0, 0.041, 0.0012),
+        ):
+            with self.subTest(center=c):
+                self.all_inside()
+                self.collect(1, c)
+                self.assertEqual(
+                    self.e.update(
+                        self.e.last_time + 1 if self.e.last_time else 1, self.rows
+                    ).status,
+                    "running",
+                )
+        self.all_inside()
+        self.rows["block_1"]["pair_forces"]["dustpan"] = 0
+        self.assertEqual(self.e.update(10, self.rows).status, "running")
+
+    def test_prefilled_positions_without_tool_use_do_not_pass(self):
+        self.e.flags.clear()
+        self.all_inside()
+        self.assertEqual(self.e.update(1, self.rows).status, "running")
+
+    def test_right_hand_brush_contact_records_use_and_left_hand_does_not(self):
+        self.e.flags.clear()
+        broom = self.rows["broom"]
+        broom["pair_forces"]["block_0"] = 0.02
+        broom["fingers"]["left"] = [1, 1]
+        self.e.update(1, self.rows)
+        self.assertNotIn("swept_block_0", self.e.flags)
+        broom["fingers"]["left"] = [0, 0]
+        broom["fingers"]["right"] = [1, 1]
+        self.e.update(2, self.rows)
+        self.assertIn("swept_block_0", self.e.flags)
+
+
+class PhotoLayoutTests(unittest.TestCase):
+    def screen(self, cfg, point):
+        from robot_tasks.backends.settings import SimulationSettings
+
+        settings = SimulationSettings.from_config(cfg)
+        eye = np.asarray(settings.camera_position)
+        forward = np.asarray(settings.camera_target) - eye
+        forward /= np.linalg.norm(forward)
+        right = np.cross(forward, [0, 0, 1])
+        right /= np.linalg.norm(right)
+        up = np.cross(right, forward)
+        p = np.asarray(point) - eye
+        return np.array([p @ right, p @ up]) / (p @ forward)
+
+    def test_triangle_starts_above_right_of_generous_target(self):
+        entry, cfg = resolve_task("L3-14")
+        entry.factory.prepare_config(cfg)
+        spec = build_spec(cfg.task_id)
+        a = spec.design.articles[0]
+        self.assertTrue(
+            np.all(self.screen(cfg, a.initial[:3]) > self.screen(cfg, a.goal[:3]))
+        )
+        self.assertEqual(cfg.arms, ("right",))
+        self.assertEqual(cfg.observation_arms, ("left",))
+        self.assertEqual(a.initial[3:], a.goal[3:])
+
+    def test_pan_mouth_faces_two_blocks_and_brush_on_image_right(self):
+        entry, cfg = resolve_task("L3-15")
+        entry.factory.prepare_config(cfg)
+        spec = build_spec(cfg.task_id)
+        articles = {a.name: a for a in spec.design.articles}
+        self.assertEqual(set(articles), {"dustpan", "broom", "block_0", "block_1"})
+        pan, brush = articles["dustpan"], articles["broom"]
+        pan_x, brush_x = (
+            self.screen(cfg, pan.initial[:3])[0],
+            self.screen(cfg, brush.initial[:3])[0],
+        )
+        for i in range(2):
+            x = self.screen(cfg, articles[f"block_{i}"].initial[:3])[0]
+            self.assertLess(pan_x, x)
+            self.assertLess(x, brush_x)
+        self.assertGreater(pose_transform(pan.initial)[0, 1], 0.99)
+        self.assertLess(pose_transform(brush.initial)[0, 1], -0.99)
+        self.assertEqual(cfg.arms, ("right",))
+        self.assertEqual(cfg.observation_arms, ("left",))
+
+    def test_ink_rotation_keeps_face_up_and_contact_map_on_visible_board(self):
+        from robot_tasks.tasks.bench.wiping import INK_TEXT, INK_COLOR, ink_centers
+
+        entry, cfg = resolve_task("L3-11")
+        entry.factory.prepare_config(cfg)
+        spec = build_spec(cfg.task_id)
+        self.assertEqual(cfg.arms, ("right",))
+        self.assertEqual(cfg.observation_arms, ("left",))
+        self.assertEqual(INK_TEXT, "GPT6")
+        self.assertLess(max(INK_COLOR), 0.05)
+        board = spec.parameters["board_pose"]
+        t = pose_transform(board)
+        np.testing.assert_allclose(t[:3, 2], [0, 0, 1], atol=1e-12)
+        self.assertLess(
+            self.screen(cfg, t[:3, 3] + t[:3, 1] * 0.02)[1],
+            self.screen(cfg, board[:3])[1],
+        )
+        self.assertGreater(
+            self.screen(cfg, spec.design.articles[0].initial[:3])[0],
+            self.screen(cfg, board[:3])[0],
+        )
+        # Erase a rotated board-local ink cell using the matching world pose.
+        ledger = WipeLedger(board)
+        target = ledger.world[0]
+        for i in range(2):
+            eraser_pose = pose(
+                target[0] + i * 0.001, target[1], board[2] + 0.028, roll=math.pi
+            )
+            ledger.update(i, eraser_pose, pad_contact_n=0.2, held=True)
+        self.assertFalse(ledger.dirty[0])
+
+
+class DerivedScrewTests(unittest.TestCase):
+    def test_lab_height_and_released_contact_complete_without_extra_dwell(self):
+        _, cfg = resolve_task("L3-05")
+        s = task_spec(cfg)
+        e = ScrewEvaluator(s)
+
+        def row(z, yaw=0, held=True, support=True):
+            return {
+                "pose": list(pose(*s.socket_xy, s.table_z + z, yaw=yaw)),
+                "linear_velocity": [0.011, 0, 0],
+                "angular_velocity": [0, 0, 0.21],
+                "finger_forces": [1, 1] if held else [0, 0],
+                "fixture_force_n": 0.6 if support else 0,
+                "bench_force_n": 0,
+            }
+
+        e.update(0, row(0.08, support=False))
+        for i in range(14):
+            r = row(0.025 - i * 0.0005, -i * math.pi / 12)
+            e.update(i + 1, r)
+        r["finger_forces"] = [0, 0]
+        self.assertEqual(e.update(15, r).status, "succeeded")
+        self.assertEqual(s.stability_s, 0)
+        self.assertEqual(s.table_z, 0.78)
+
+    def test_drop_threshold_uses_lab_table(self):
+        _, cfg = resolve_task("L3-05")
+        s = task_spec(cfg)
+        r = {
+            "pose": list(pose(*s.source_xy, 0.7)),
+            "linear_velocity": [0, 0, 0],
+            "angular_velocity": [0, 0, 0],
+            "finger_forces": [0, 0],
+            "fixture_force_n": 0,
+            "bench_force_n": 0,
+        }
+        self.assertEqual(ScrewEvaluator(s).update(1, r).status, "failed")

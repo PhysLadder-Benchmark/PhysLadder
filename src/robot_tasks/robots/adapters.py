@@ -269,6 +269,11 @@ class R5Adapter(RobotAdapter):
                     for c in getattr(action, "commands", ())
                 ],
             }
+            from ..planning.failures import PlanningFailure
+
+            if isinstance(exc, PlanningFailure):
+                metrics["reason_code"] = exc.diagnostic["code"]
+                metrics["planning_failure"] = exc.diagnostic
             self.rejection = Feedback("rejected", str(exc), metrics)
             raise
         self.pending_grippers = {}

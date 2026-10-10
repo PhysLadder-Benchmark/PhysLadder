@@ -75,7 +75,8 @@ class WorkflowTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "workflow.toml"
             for text in ('[task]\nid="hidden"', '[policy]\nmodel_config="private.toml"',
-                         'workflow_profile="other.toml"', 'execution=1'):
+                         'workflow_profile="other.toml"', 'execution=1',
+                         '[simulation]\ncamera_profile="hidden.toml"'):
                 path.write_text(text)
                 with self.subTest(text=text), self.assertRaises(ValueError):
                     load_workflow(TASK, {"workflow_profile": str(path)})

@@ -8,6 +8,7 @@ import numpy as np
 from fixtures import robot_config
 from robot_tasks.config import ExecutionSettings
 from robot_tasks.planning.trajectory import JointPath
+from robot_tasks.planning.failures import failure
 from robot_tasks.robots.control import (
     bounded_measured_joints,
     normalized_to_width,
@@ -183,7 +184,9 @@ class PlanningExecutionTests(unittest.TestCase):
         before = dict(robot.targets)
         robot.backend = Mock()
         robot.planner = Mock()
-        robot.planner.plan.side_effect = ValueError("no path")
+        error = failure("right", "start_collision", "Start rejected by collision model.",
+                        stage="start", violated_constraints=["self_collision"])
+        robot.planner.plan.side_effect = error
         action = Action(
             (
                 ArmCommand("left", "gripper", (0.07,)),
@@ -202,6 +205,8 @@ class PlanningExecutionTests(unittest.TestCase):
             send.assert_not_called()
         self.assertEqual(robot.targets, before)
         self.assertEqual(robot.feedback().status, "rejected")
+        self.assertEqual(robot.feedback().metrics["reason_code"], "start_collision")
+        self.assertEqual(robot.feedback().metrics["planning_failure"], error.diagnostic)
 
     def test_timeout_cancels_cartesian_goal_and_holds_measured_pose(self):
         robot, states = self.robot()

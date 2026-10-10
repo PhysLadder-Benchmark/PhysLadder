@@ -31,10 +31,9 @@ tcp_source = "Designed R5a simulation control point from URDF finger origins and
 joint_names = ["joint7", "joint8"]
 # At local fingertip x > 0.04 m, opposing inner y surfaces are about +/-0.024898 m.
 # Combined with URDF joint origins +/-0.024898 m, q=0 gives approximately zero gap.
-# URDF permits q=0 for both fingers. The old 12-mm floor prevented thin-wall
-# pinches. This is nominal distal gap; verify contact, never infer a grasp from width.
-calibration_source = "R5a STL distal inner faces and URDF joint7/8 zero lower limits; nominal 0-70 mm simulation gap, verify real contact."
-width_limits_m = [0.0, 0.070]
+# Only the separated 12..70 mm interval is used; no zero-contact calibration claim.
+calibration_source = "R5a STL distal inner-face bounds (local x > 0.04 m) plus joint7/8 origins; approximate simulation mapping only."
+width_limits_m = [0.012, 0.070]
 joint_scale = [0.5, 0.5]
 joint_offset_m = [0.0, 0.0]
 
@@ -55,5 +54,5 @@ joint3 = {lower = -2.5, upper = 2.5, effort = 40.0, velocity = 0.5}
 joint4 = {lower = -2.5, upper = 2.5, effort = 20.0, velocity = 0.5}
 joint5 = {lower = -2.5, upper = 2.5, effort = 20.0, velocity = 0.5}
 joint6 = {lower = -2.5, upper = 2.5, effort = 20.0, velocity = 0.5}
-joint7 = {lower = 0.0, upper = 0.04, effort = 20.0, velocity = 0.03}
-joint8 = {lower = 0.0, upper = 0.04, effort = 20.0, velocity = 0.03}
+joint7 = {lower = 0.005, upper = 0.04, effort = 20.0, velocity = 0.03}
+joint8 = {lower = 0.005, upper = 0.04, effort = 20.0, velocity = 0.03}

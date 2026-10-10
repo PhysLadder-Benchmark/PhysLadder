@@ -4,13 +4,13 @@ schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_tuojing_lab.toml"
+profile = "../robots/r5_tuojing_lab_l1.toml"
 active_arms = ["left"]
 observation_arms = ["right"]
 
 [simulation]
 environment = "tuojing_lab_v4"
-camera_profile = "../cameras/r5_tuojing_lab_hat.toml"
+camera_profile = "../cameras/r5_tuojing_lab.toml"
 asset_directory = "../../build/tuojing_lab"
 headless = true
 width = 1280
@@ -23,8 +23,6 @@ finger_damping = 40.0
 self_collision = false
 solver_position_iterations = 32
 solver_velocity_iterations = 4
-camera_position = [0.21354960845762927, 0.48765041712220114, 2.25]
-camera_target = [0.19565, 1.2, 0.86]
 
 [policy]
 model_config = "../models/gpt.toml"

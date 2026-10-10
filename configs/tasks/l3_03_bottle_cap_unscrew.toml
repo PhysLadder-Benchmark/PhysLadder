@@ -1,20 +1,19 @@
-# Run from the repository root in the Isaac Sim environment with configured model authentication.
+# Run in the Isaac Sim environment, using the configured shared model transport.
 # launch_command / launch_command_conda below are documentation, not auto-executed shell code.
 schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_bimanual_sim.toml"
+profile = "../robots/r5_tuojing_lab.toml"
 active_arms = ["left", "right"]
 
 [simulation]
-environment = "lab_room_v1"
-robot_appearance = "r5_black_silver_v1"
-camera_profile = "../cameras/r5_orbbec_provisional.toml"
-asset_directory = "../../build/r5"
+environment = "tuojing_lab_v4"
+camera_profile = "../cameras/r5_tuojing_lab.toml"
+asset_directory = "../../build/tuojing_lab"
 headless = true
-width = 640
-height = 480
+width = 1280
+height = 720
 fps = 12
 arm_stiffness = 1500.0
 arm_damping = 80.0
@@ -23,93 +22,60 @@ finger_damping = 40.0
 self_collision = false
 solver_position_iterations = 32
 solver_velocity_iterations = 0
-camera_position = [1.25, 0.0, 0.54]
-camera_target = [0.71, 0.0, 0.0]
 
 [policy]
 model_config = "../models/gpt.toml"
 
 [task]
 id = "L3-03"
-name = "双臂抓持方瓶旋盖（工程螺纹代理）"
+name = "双臂扶东方树叶瓶旋下松盖"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented_proxy"
 implementation = "household"
-simulation_limitations = "Tall square-body engineering proxy; not an official Oriental Leaf CAD or measured thread. No tamper band, seal break, liquid or plastic damage model. Cap starts engaged, not pre-loosened. Wrist camera housings/brackets remain visual-only with provisional mounts; rendered clearance is not physical collision enforcement."
 launch_command = "python tools/launch.py run L3-03 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L3-03 --gui"
 instruction = """
-Unscrew the cap from the tall green square-body engineering proxy, then place the
-bottle and cap separately and stably on the tabletop. This simulation is NOT a
-calibrated Oriental Leaf bottle. It has explicit coarse right-hand threads,
-no tamper band and no liquid; the cap starts engaged, not pre-loosened.
-The bottle starts upright on the table; neither hand holds either part.
-The bottle is not glued down, and no mechanism automatically loosens or removes
-the cap. Both R5 arms may manipulate; the right arm is not observation-only.
-Use the overview and both wrist cameras to inspect the bottle body, neck, cap,
-graspable surfaces and rotation axis. Choose the grasp locations from observations.
+Use BOTH R5 arms: LEFT steadies the bottle body, RIGHT removes its loosened cap.
+Left/right arm labels also correspond to the shared overview image. The bottle
+stands freely at the centre of the table workspace between the arms: it is NOT fixed or attached.
+Neither hand is observation-only. Use all camera views while maintaining support.
 
-The square body is 0.050 m wide and 0.180 m tall. Its round neck raises the blue
-cylindrical cap above the body; the cap is about 0.043 m wide and 0.040 m tall.
-Use the left hand on parallel faces in the lower/middle part of the body, keeping
-the bottle bottom supported on the table throughout unscrewing. Use the right
-hand on the cap sidewall without pinching the neck or shoulder. Separate the
-grasp heights and inspect fingers, wrists, camera housings and brackets for
-interference throughout approach, turning, opening and regrasping. Camera mounts
-are provisional visual geometry, so passing through them is not a valid physical
-clearance demonstration. Keep the bottle upright and prevent it from rotating
-with the cap. Verify that both grasps are
-real; a blocked gripper command does not prove a secure grasp. If the nearby
-body fills a wrist view and hides the finger contacts, cross-check the overview
-and other wrist rather than inferring a grasp from the green surface alone.
-Do not crush the bottle to compensate for slipping.
+First identify the body and cap. Grip the lower straight section of the bottle body with LEFT,
+preferably leaving its base supported on the table. The body is about 62 x 46 mm
+wide; the narrower parallel faces are easier to grasp than its shoulder or neck.
+Confirm that this grasp prevents the body from turning with the cap. Keep this
+support while RIGHT operates the cap. Use vertically separated grasp regions;
+check clearance between both fingers, wrists and camera housings. Keep the
+supporting wrist to the side of the bottle; do not drive its TCP all the way
+to the bottle centre if that puts its camera bracket under the cap hand.
 
-Rotate the cap COUNTERCLOCKWISE as viewed from above in small, controlled
-increments about the vertical bottle axis. The coarse right-hand thread rises
-0.006 m per revolution: 30 degrees corresponds to about 0.0005 m axial rise.
-These are geometric expectations, not proof of actual motion. Observe the cap's
-top mark and its motion relative to the bottle,
-not just wrist rotation. As the thread loosens and the cap rises, coordinate
-rotation with axial motion instead of holding the cap at a fixed height or
-pulling it straight off an engaged thread. Inspect visible slip, tilt, resistance
-and separation after each motion, then adjust alignment, grip or the next increment.
+The transparent cap is about 42 mm wide and 16 mm tall. It is already loosened,
+with only the last partial thread engagement; there is no tight seal to break.
+RIGHT should grasp its upper sidewall across its diameter, keeping finger tips
+above the shoulder. Leave room for the tips below TCP; do not centre the entire
+finger length at cap mid-height and pinch the neck. A blocked close is not
+proof of a secure grasp; verify actual cap motion relative to the held body.
 
-Regrasp when wrist travel or slippage requires it. Keep the bottle stable; while
-the cap remains supported by its engaged thread, open and reposition the cap
-hand without applying a forced turn or assuming the cap remains fixed. Reobserve
-and establish a new grasp before continuing. Once the cap is free of the threads,
-keep it securely held rather than opening the hand while it is unsupported.
-If motion is blocked, inspect grip, alignment and the actual closure state;
-do not repeatedly apply larger rotations or infer progress from commands alone.
+Turn counterclockwise as viewed from above and allow axial rise. Use short
+increments and reobserve. If still engaged, continue turning with rise rather
+than pulling through the thread. If free, lift clear instead of rotating more.
+The photo-derived thread lead is about 9 mm per revolution, not a commanded
+trajectory or turn quota. Regrasp the cap as needed while LEFT maintains body
+support. Reposition cameras only when it does not abandon a necessary grasp.
 
-Confirm at least one full turn of actual net relative opening rotation while
-both parts are held, the bottle is upright and table-supported, and the thread is
-still engaged. After disengagement, clear the cap's open mouth more than 0.004 m
-above the neck, with at least 0.028 m rise
-relative to its initial seated position. Do not earn rotation by spinning a
-cap that is already free. Verify a separate part in each hand before placement.
-Keep the open bottle upright on the table and release it. Place the cap
-separately, then release it without dropping.
-Completion requires a fully detached cap, a stable undamaged bottle, and both
-parts independently supported after release, more than 0.05 m apart horizontally,
-and still for 1.0 simulation seconds. A partially loosened cap or two
-parts still held in the air is not completion. Do not pour out the contents or
-retighten the cap as part of this task.
-
-Use only available observations and actual robot feedback. Do not invent torque
-or force measurements, assume an unexposed force-control command, or claim that
-unmodeled thread stripping or material damage was measured. If a grasp slips,
-inspect the current state and re-establish support; there is no automatic reset.
-Request stop only after checking the final released state.
+After full separation, place the cap on any clear tabletop area and release
+RIGHT. LEFT may keep holding the bottle upright, or leave it upright on the
+table and release it. Completion requires actual two-arm supported cap removal,
+a fully detached cap released on the table, and a supported bottle. No minimum
+turn count, exact parking point, additional timed wait or mandatory bottle
+release is required. Observe this result before requesting stop.
 """
 
-# Chinese setup/props description; keep this the final task attribute.
+# Chinese setup/props description; final task attribute.
 description = """
-道具：绿色方瓶身 50×50×180 mm、圆瓶颈直径 24 mm，蓝色圆柱旋盖外径约 43 mm、高 40 mm；总高约 250 mm，显式粗螺纹螺距 6 mm。
-布置：瓶身正立且未固定，盖已旋合；双手空手。保留仿真与真机两个方向，不是仅限真机任务。
-操作：瓶底始终落桌；左臂夹持方瓶中下部的平行面，右臂逆时针旋盖，随螺纹轴向上升配合抬升，必要时重抓；全程检查夹指、腕部及相机支架间隙，脱离螺纹后分别放好并松手。
-完成：记录双手持握下相对转动、轴向退出与完全脱离，最终两部分独立稳定放置，瓶身保持正立。
-代理边界：这是加高方瓶工程螺纹模型，不是东方树叶官方 CAD 或实测原盖；未包含防盗环、密封破坏、液体、塑料滑牙和损坏，不能宣称与实物旋开力矩一致。相机及支架仍为临时安装的视觉模型，无物理碰撞，需另行验证运动间隙。
-待实物对齐：具体瓶型与容量、瓶盖/瓶口尺寸、螺距和旋合圈数、初始拧紧力、质量及防盗环状态。
+道具：东方树叶 335 ml 原生瓶身、透明瓶盖及贴图；保留尺寸、碰撞和质量。
+布置：瓶子中心位于两臂中间的实验室坐标 (0.19565, 1.30) m，瓶身可自由运动，不再固定。盖预松 7.5 mm／300°，保留末段啮合；双手空手。公共第三视角的左臂扶瓶身下部，右臂抓上方瓶盖旋下，两臂都参与操作。
+完成：有左臂扶瓶、右臂取盖的实际双臂过程；瓶盖完全脱离并放到桌面松手。瓶身可以继续由左臂扶住，也可以直立放回桌上；不强制松开瓶身、不规定圈数、固定摆放点或额外等待。
+边界：预松盖，不测试紧盖开启力矩或防盗环；物性和螺纹为照片估算，未实测标定。程序不会自动扶瓶或绑定抓持。
 """

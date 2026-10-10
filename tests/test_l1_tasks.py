@@ -336,15 +336,17 @@ class L1ProtocolTests(unittest.TestCase):
         for name in ("L1-01", "L1-03", "L1-05", "L1-07", "L1-08", "L1-09"):
             spec, config = resolve_task(name)
             self.assertTrue(spec.implemented)
-            self.assertEqual(config.robot.source.name, "r5_tuojing_lab.toml")
+            self.assertEqual(config.robot.source.name, "r5_tuojing_lab_l1.toml")
             self.assertEqual(config.cameras, reference.cameras)
-            self.assertEqual(config.arm_roles, reference.arm_roles)
+            manipulator = "right" if name in {"L1-01", "L1-03"} else "left"
+            observer = "left" if manipulator == "right" else "right"
+            self.assertEqual(config.arm_roles, {manipulator: "manipulation", observer: "observation"})
             for section in ("observation", "policy", "recording"):
                 self.assertEqual(config.raw[section], reference.raw[section], (name, section))
             execution = dict(config.raw["execution"])
             self.assertEqual(execution, reference.raw["execution"])
             self.assertNotIn("policy_options", config.raw)
-            self.assertEqual(config.observation_arms, ("right",))
+            self.assertEqual(config.observation_arms, (observer,))
             self.assertTrue(config.include_depth)
             self.assertEqual(ExecutionSettings.from_config(config).max_decisions, 100)
             self.assertEqual(config.raw["policy"]["reasoning_effort"], "medium")
@@ -370,7 +372,7 @@ class L1ProtocolTests(unittest.TestCase):
                 state = {"left": ArmState(joint_positions_rad=(0.0,) * 6),
                          "right": ArmState(joint_positions_rad=(0.0,) * 6)}
                 task.evaluate(EvaluationState({"robot": state, "simulation_time_s": 0.0}), Feedback("completed"))
-                state = {**state, "right": ArmState(joint_positions_rad=(0.5,) * 6)}
+                state = {**state, config.observation_arms[0]: ArmState(joint_positions_rad=(0.5,) * 6)}
                 task.evaluate(EvaluationState({"robot": state, "simulation_time_s": 1.0}), Feedback("completed"))
                 self.assertEqual(task.scorer.update.call_args.kwargs["inactive_drift"], 0.0)
 
@@ -381,7 +383,9 @@ class L1ProtocolTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             L1Settings.from_config(replace(c, raw={**c.raw, "l1": {"hidden_override": 1}}))
         with self.assertRaisesRegex(ValueError, "legacy"):
-            L1Task.prepare_config(replace(c, raw={**c.raw, "l1": {"position_tolerance_m": .003}}))
+            # The archived L1 v1 adapter still requires a left-arm fixture.
+            L1Task.prepare_config(replace(c, arms=("left",), observation_arms=("right",),
+                                         raw={**c.raw, "l1": {"position_tolerance_m": .003}}))
 
 
 if __name__ == "__main__":

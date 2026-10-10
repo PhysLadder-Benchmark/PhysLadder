@@ -17,11 +17,16 @@
 | lab_v4 | 实验室场景 | 是 |
 | photo_props | 拍摄道具 | 是 |
 | orange_soft | 橘瓣软体 | 是 |
-| tabletop_interactions | 桌面交互道具 | 否：本机缺少原包和解压文件 |
-| book | 书本 | 否：本机缺少原包和解压文件 |
-| desktop_additions | 2026-10-09 黑色陶瓷杯、圆柱承台、插头底座 | 否：本机已安装，尚未发布到 Release |
+| tabletop_interactions | 桌面交互道具 | 否：不在此固定发布内 |
+| book | 书本 | 否：不在此固定发布内 |
+| physical_props_20261008 | 后续七类实物道具 | 否 |
+| oriental_leaf_335ml | 东方树叶瓶 | 否 |
+| anchor_removable_nut_20261008 | 可旋出螺母组件 | 否 |
+| desktop_additions_20261009 | 承台、杯子和插头底座 | 否 |
 
-这不是完整的当前 L1/L2 资产交付；更新后的 L1-01 还需要单独提供的 `desktop_additions`。需要缺失包的任务仍不能仅凭本次发布运行。
+此发布仍只有原来的三个 ZIP；合并后 `release.json` 绑定当前资产锁，并完整列出另外六个未发布包，不修改已有 tag 或 ZIP。
+
+这不是完整的 L1/L2/L3 资产交付。需要缺失包的任务仍不能仅凭本次发布运行。
 补齐时发布新版本，不在旧 tag 下替换或追加包以改变已发布的交付范围。
 
 ## 同事在新机器恢复
@@ -44,7 +49,7 @@ python3 tools/fetch_tuojing_release.py
 python3 tools/tuojing_assets.py --packages lab_v4 photo_props orange_soft
 ```
 
-不带 `--packages` 仍检查锁文件中的全部六个包；本机缺少两个包时会报错，不能把部分校验当成完整交付。
+不带 `--packages` 检查当前锁文件中的全部九个包；任何包缺失都会报错，不能把三个包的部分校验当成完整交付。
 可加 `--usd` 检查 USD 组合依赖（需要 pxr），但文件检查不等于物理仿真或 GPT 任务测试通过。
 
 ## 2026-10-09 本地新增包
@@ -56,7 +61,7 @@ python3 tools/tuojing_assets.py --packages lab_v4 photo_props orange_soft
 拿到 `新增三类资产_圆柱杯子插头底座_20261009.zip` 后，将它放在仓库根目录，执行：
 
 ```bash
-python3 tools/tuojing_assets.py --archives . --packages desktop_additions --usd
+python3 tools/tuojing_assets.py --archives . --packages desktop_additions_20261009 --usd
 ```
 
 新包没有外层目录，锁文件以 `archive_root: ""` 显式表示；安装器仍核对所有成员路径、
@@ -74,3 +79,5 @@ python3 tools/tuojing_assets.py --archives . --packages desktop_additions --usd
 6. 发布后的 tag 和文件按团队规则保持不变，不用 `--clobber`。新版使用新 tag；回退代码时也回退对应清单。
 
 Git 推送和 Release 上传不是一个原子操作。若上传或授权失败，应明确报告“代码已推送，资产发布待完成”，保留草稿和校验信息以便续传，不宣称已经交付完成。
+
+统一使用包 ID `desktop_additions_20261009`。安装器优先使用同名 ZIP；不存在时接受原始中文名 ZIP，分别校验各自的压缩包哈希。两种打包方式解压后的 16 个文件及哈希完全一致。

@@ -22,9 +22,12 @@ class ScrewTask:
 
     def reset(self, backend, seed):
         self.scene.reset(seed)
-        self.evaluator = ScrewEvaluator()
+        self.evaluator = ScrewEvaluator(self.scene.spec)
+        self._last_time = self._assessment = None
 
     def evaluate(self, state, feedback):
-        return self.evaluator.update(
-            state.values["simulation_time_s"], self.scene.measure()
-        )
+        now = state.values["simulation_time_s"]
+        if now != self._last_time:
+            self._assessment = self.evaluator.update(now, self.scene.measure())
+            self._last_time = now
+        return self._assessment

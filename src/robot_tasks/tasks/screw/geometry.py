@@ -66,8 +66,8 @@ def helix_pieces(*, female=False, spec=SPEC):
         yield closed_piece(points)
 
 
-def socket_shell_mesh():
-    s = SPEC
+def socket_shell_mesh(spec=SPEC):
+    s = spec
     pieces = []
     # Open annular shell. Its polygon is circumscribed with a generous bore.
     inner = s.crest_radius + 0.002
@@ -93,9 +93,9 @@ def socket_shell_mesh():
     return vertices, inverse[np.asarray(faces)]
 
 
-def screw_surface():
-    s = SPEC
-    points = [v for v, _ in helix_pieces()]
+def screw_surface(spec=SPEC):
+    s = spec
+    points = [v for v, _ in helix_pieces(spec=spec)]
     angles = np.linspace(0, 2 * math.pi, 32, endpoint=False)
     for radius, levels in (
         (s.core_radius, (0, s.shaft_length)),

@@ -158,8 +158,8 @@ def visible_surfaces(
         inside = (np.abs(local-centre) < bounds).all(axis=1) & (
             world[:, 2] > table_z_m + 0.006
         )
-        # The rendered cyan TCP sphere moves with the robot even during an
-        # empty lift. Exclude its known geometry, never count it as an object.
+        # Historical frames may contain a cyan TCP sphere. Retain this small
+        # exclusion for their evidence; current scenes no longer render it.
         inside &= np.linalg.norm(local, axis=1) > TCP_MARKER_RADIUS_M + 0.002
         if narrow_grasp:
             ids=np.flatnonzero(inside)

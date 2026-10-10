@@ -24,8 +24,14 @@ finger_damping = 40.0
 self_collision = false
 solver_position_iterations = 32
 solver_velocity_iterations = 0
-camera_position = [0.21354960845762927, 0.48765041712220114, 1.32]
-camera_target = [0.1643434123515941, 1.0254038459952994, 0.78]
+
+[orange_physics]
+# Engineering FEM contact qualification, not measured orange tissue properties.
+# Original asset: 35 kPa and dynamic friction 0.45. Mass and mesh stay native.
+youngs_modulus_pa = 100000.0
+dynamic_friction = 2.0
+contact_offset_m = 0.003
+rest_offset_m = 0.0015
 
 [policy]
 model_config = "../models/gpt.toml"
@@ -36,65 +42,51 @@ physics_dt_s = 0.004166666666666667 # 240 Hz, checked in the complete metre-scal
 [task]
 # Guided RGB-D execution; common information boundaries are appended by BenchTask.
 prompt_protocol = "guided_rgbd_l2_v2"
-scoring_protocol = "soft_placement_motion_v3"
+scoring_protocol = "soft_pedestal_lift_v6"
 id = "L2-06"
-name = "软橘子瓣轻夹搬运"
+name = "从圆柱承台夹起橘子瓣 5 厘米"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented_proxy"
 implementation = "household"
-simulation_limitations = "R5 soft-grip qualification pending even with rate-limited closure: tested grasps slipped or produced FEM inversion; full transfer is not certified. Native GPU FEM orange, estimated material, 240 Hz physics, task contact/rest margins 3/1.5 mm. Deformation reference is a proxy, not fracture/juice simulation. Geometry-based support/release, no fabricated contact force."
+simulation_limitations = "Native GPU FEM orange on a fixed native cylindrical pedestal. Engineering Young modulus 100 kPa and dynamic friction 2.0, not real tissue calibration. Goal: held 50 mm centroid rise from initial rest; no transfer/release/dwell or damage threshold. No attachment or automatic lift."
 launch_command = "python tools/launch.py run L2-06 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-06 --gui"
 instruction = """
-Use the LEFT R5 arm to gently transfer the exposed orange segment onto the
-green patch, then release it. The RIGHT arm may move its wrist camera to inspect
-the grasp and deformation, but must not touch or support the orange.
-The segment is about 50 mm long, 26 mm across and 17 mm thick, with mass about
-9 g. It is genuinely deformable in this simulation, not a rigid cell cluster.
+Use the LEFT R5 arm to grasp the orange segment resting on top of the fixed
+round pedestal centred between both arms and lift the segment at least 5 cm above its initial position.
+Keep it held there and request stop. There is no transport destination or
+placement stage: do not put it down, release it, or wait for an extra interval.
+The RIGHT arm may move its wrist camera to observe, but must not touch or support
+the orange or pedestal.
 
-Identify the fuller middle region and its curved sides from current RGB-D
-images. Prefer a broad, balanced grasp across the roughly 26 mm width, away
-from the pointed ends. Leave enough pad overlap while keeping both fingertips
-clear of the table; the TCP is not the lowest point of the fingers.
-Choose orientation from the actual shape, and check two complementary views
-before closing. A projected overlap in one view does not prove the orange
-lies between the pads.
+The pedestal is 13 cm high with a flat top about 6.8 cm across. The orange is
+about 50 mm long, 26 mm wide and 17 mm thick, about 9 g. It lies flat with its
+long axis pointing front/back in the overview (world Y), not across the image.
+Choose a balanced grasp
+across the fuller middle, not the pointed ends. Use RGB-D and complementary views
+to put the orange between the inner finger pads, with adequate overlap on both
+sides; avoid hitting the pedestal. The TCP is not the lowest point of the fingers.
 
-Close gradually using intermediate openings. The minimum 12 mm opening can
-compress this object severely: do not begin with a fully closed command.
-Inspect actual shape, opening and slip after each small adjustment. Use only
-available robot feedback; no soft contact-force sensor or force-control API
-is provided. After plausible capture, perform a short gentle lift and verify
-that the whole segment follows, with no large local squash or unsupported slip.
-If it does not follow, reopen and correct the grasp rather than transporting
-an empty hand. Stop squeezing further once a stable gentle hold is established.
+Close firmly. Elastic squeezing is allowed, and you may use the full 12-70 mm
+opening range. Do not stop closing merely because the pads touch or the orange
+deforms. There is no direct force command: a smaller target opening increases
+closure. If it slips during a short test lift, let the pedestal support it, close
+further and retry; correct the grasp if the pads miss the sides. Reopening fully
+is only needed to reposition. No soft-body damage threshold is imposed.
 
-Carry smoothly with table clearance, lower onto the green patch, then open
-and withdraw without dragging or poking the soft object. Completion requires
-the whole segment within the 120 x 120 mm patch, released and resting on the
-table for about half a simulation second after a verified lift and transport.
-Small local elastic rebound is allowed; the whole segment must stay in place,
-without continued sliding, rolling, or large shape motion.
-Do not mistake a deformed part still touching the fingers for a released object.
-
-A 35% principal-strain reference, sustained for 0.25 simulation seconds, is
-used as a declared engineering deformation limit. Exceeding it ends the episode,
-without requiring you to finish transport after that irreversible violation. It does not represent a
-measured orange rupture force, and this task does not trigger a juice or scene
-replacement demonstration. Use visible shape changes to avoid strong squeezing.
-Temporary soft deformation is expected. No automatic reset or grasp attachment
-is used. Request stop only after observing the released final state.
+Confirm that the ORANGE follows the hand. Raise it about 7 cm to comfortably
+clear the 5 cm goal despite small settling within the grip. Judge height relative
+to its original position on the pedestal, not relative to the tabletop; moving
+an empty gripper does not count. Once the held orange has risen at least 5 cm,
+stop without an additional transfer, release or stabilization action.
 """
 
 # 中文布置和道具说明。
 description = """
-道具：L20 原生橘子瓣软体，约 50×26×17 mm、质量约 8.855 g；绿色 120×120 mm 目标区。替换原 L2-06 的果冻弹性格点代理。
-布置：拓境实验室桌面高 0.78 m，左臂夹取较饱满的中部，右臂只观察；保留原生尺寸、GPU 体积 FEM、碰撞网格和材料参数。
-操作与完成：轻夹抬起，搬到目标区，整个橘子瓣落桌后松手并保持约 0.5 秒。支撑和释放根据实际软体表面与夹指几何校验，不捏造力读数。
-稳定性：整体中心速度低于 10 mm/s，去除平移后的网格点速度 95 分位低于 20 mm/s，稳定窗口内中心漂移不超过 2 mm；允许少量局部回弹，不以单个最快网格点否定放置。
-形变：用去除刚体运动后的单元主应变 95 分位数评估；超过 35% 持续 0.25 秒结束本回合，保留已完成阶段；FEM 数值反转单列为无效仿真，不视为橘子损伤或模型失败。这是工程形变代理，不代表真实破裂或损伤阈值。
-限制：不执行挤破流汁演示，因为该脚本会重建场景和切换碎块；正式任务始终由 GPT 控制 R5，物体运动由 FEM 接触产生。采用 GPU 物理和 240 Hz 步长；接触余量 3 mm、静止余量 1.5 mm 是完整场景适配，不改变原生质量和弹性材料。
-验收状态：保留试验入口，但 R5 软体稳定抓持尚未验收通过。已检查的开口／高度组合出现滑脱或 FEM 单元反转，不能据此认定任务物理可行性已确认，也不能把数值失稳算作 GPT 能力不足。
-复核：渐进限速闭合后，17 mm 开口与降低 2 mm 抓持高度的检查仍滑脱，15 mm 开口的 240 Hz 检查发生网格反转；960 Hz 对照未反转但仍未抬起，不作为更改正式步长的依据。放置评分修复不等于完整搬运已验收。
+道具：原生 GPU FEM 橘子瓣，约 50×26×17 mm、质量约 8.855 g；2026-10-09 新圆柱承台，高 130 mm、平顶直径约 68 mm，原生质量 313.9 g。承台固定在双臂中间的桌面，中心为实验室坐标 (0.19565, 1.30) m，橘子置于顶面中部，绕竖直轴旋转90°，长轴沿世界Y、第三视角画面纵向；仍保持宽面平放，不把薄边立起。取消绿色目标区。
+任务：双手空手开始，左臂抓住橘子并向上提起，右臂可观察但不参与操作。相对本回合初始静置位置，橘子整体中心上升至少 50 mm，已离开承台且仍位于左夹爪双指之间即成功。初始垫高的 130 mm 不计入抬升；只抬空爪或弹飞不算抓起。
+完成后保持拿着即可，不搬运、不松手、不要求额外等待、指定方向、速度或形变阈值。允许用力夹持、弹性挤压以及夹持不稳后继续收紧；掉到桌面可以重抓，无自动复位。
+物性：保持原网格、尺寸、质量与 100 kPa 弹性模量；动摩擦由上一版 0.9 提高到 2.0（原资产为 0.45）。接触/静止余量 3/1.5 mm，240 Hz。仅覆盖运行场景并记录，不修改源资产，不声称这些是实测橘子物性。
+评价版本：soft_pedestal_lift_v6，和旧绿色区域搬运任务分别统计。形变及局部网格反转只作诊断；非有限读数属于仿真故障，不当作模型任务失败。物体不绑定夹爪，运动由真实 FEM 接触产生。
 """
