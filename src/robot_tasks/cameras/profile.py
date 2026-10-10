@@ -25,6 +25,7 @@ class CameraSpec:
     asset_pose_source: str
     clipping_m: tuple[float, float] = (0.005, 20.0)
     existing_prim_path: str = ""  # Bind a camera supplied by the environment, without duplicating it.
+    override_intrinsics: bool = False  # Explicit simulation-only session-layer framing override.
 
     def metadata(self) -> dict:
         return {**asdict(self), "asset": str(self.asset),
@@ -65,7 +66,7 @@ def load_camera_rig(path: Path) -> CameraRigProfile:
         raise ValueError("Camera rig must define at least one camera")
     result = []
     fields = set(CameraSpec.__dataclass_fields__) - {"name"}
-    required = fields - {"clipping_m", "existing_prim_path"}
+    required = fields - {"clipping_m", "existing_prim_path", "override_intrinsics"}
     for name, data in raw["cameras"].items():
         if not name.replace("_", "").isalnum():
             raise ValueError("Camera names must be simple identifiers")
@@ -87,6 +88,13 @@ def load_camera_rig(path: Path) -> CameraRigProfile:
         ):
             raise ValueError(f"{name}: resolution requires two positive integers")
         intrinsic = finite_vector(data["intrinsics"], 4, f"{name}.intrinsics")
+        override = data.get("override_intrinsics", False)
+        if type(override) is not bool:
+            raise ValueError(f"{name}: override_intrinsics must be boolean")
+        if override and (data["parent"] != "world" or not existing
+                         or any(data["distortion"]) or not math.isclose(intrinsic[0], intrinsic[1], rel_tol=1e-6)
+                         or tuple(intrinsic[2:]) != (resolution[0]/2, resolution[1]/2)):
+            raise ValueError(f"{name}: intrinsic override requires a centred square-pixel existing world camera")
         if min(intrinsic[:2]) <= 0 or not (0 <= intrinsic[2] < resolution[0] and 0 <= intrinsic[3] < resolution[1]):
             raise ValueError(f"{name}: invalid focal lengths or principal point")
         distortion = data["distortion"]

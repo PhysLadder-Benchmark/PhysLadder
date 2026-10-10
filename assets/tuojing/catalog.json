@@ -47,14 +47,14 @@
       "package": "photo_props",
       "path": "assets/ripple_paper_cup/ripple_paper_cup.usda",
       "role": "prop",
-      "notes": "L1-01 pen holder, L1-08 two movable nesting cups, and L1-09 fixed flower holder; native hollow colliders, no deformation."
+      "notes": "L1-08 two movable nesting cups and L1-09 fixed flower holder; native hollow colliders, no deformation."
     },
     {
       "id": "usb_charger",
       "package": "photo_props",
       "path": "assets/usb_charger/usb_charger.usda",
       "role": "prop",
-      "notes": "L1-03: native side-lying charger; two-blade geometry and release scoring; housing/blade payload samples."
+      "notes": "L1-03: starts upright in native black storage base; two-blade geometry and release scoring; housing/blade payload samples."
     },
     {
       "id": "artificial_rose",
@@ -161,6 +161,27 @@
       "package": "tabletop_interactions",
       "path": "assets/pearl_8mm/pearl_8mm.usda",
       "role": "prop"
+    },
+    {
+      "id": "black_ceramic_mug",
+      "package": "desktop_additions",
+      "path": "assets/black_ceramic_mug/black_ceramic_mug.usda",
+      "role": "prop",
+      "notes": "L1-01 fixed black/white pen receptacle; photo-based 2026-10-09 layout, native hollow walls and handle."
+    },
+    {
+      "id": "cylindrical_pedestal",
+      "package": "desktop_additions",
+      "path": "assets/cylindrical_pedestal/cylindrical_pedestal.usda",
+      "role": "prop",
+      "notes": "Delivered and verified; not assigned to a task."
+    },
+    {
+      "id": "plug_storage_base",
+      "package": "desktop_additions",
+      "path": "assets/plug_storage_base/plug_storage_base.usda",
+      "role": "prop",
+      "notes": "L1-03 native free-standing pickup holder; 20.8 g, hollow pocket and central through-hole; not the electrical target socket."
     }
   ]
 }

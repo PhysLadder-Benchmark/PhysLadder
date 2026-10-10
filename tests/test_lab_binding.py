@@ -188,7 +188,7 @@ class LabBindingTests(unittest.TestCase):
         original = self.stage.GetRootLayer().ExportToString()
         spec = SimpleNamespace(name="overview", parent="world", existing_prim_path=str(camera.GetPath()),
                                optical_pose_wxyz=(.2, .48765, 1.32, .9238795325, .3826834324, 0, 0),
-                               pose_source="test")
+                               pose_source="test", override_intrinsics=False)
         profile = SimpleNamespace(cameras=(spec,))
         apply_camera_mounts(self.stage, profile)
         self.assertEqual(original, self.stage.GetRootLayer().ExportToString())
@@ -199,6 +199,29 @@ class LabBindingTests(unittest.TestCase):
         self.assertAlmostEqual(riser.GetHeightAttr().Get(), .045)
         apply_camera_mounts(self.stage, profile)
         self.assertAlmostEqual(riser.GetHeightAttr().Get(), .045)
+
+    def test_opt_in_four_by_three_framing_matches_calibration_without_stretching(self):
+        from robot_tasks.backends.tuojing_lab import apply_camera_mounts
+        from robot_tasks.cameras.isaac_rig import validate_existing_camera
+
+        spec, _ = self.camera()
+        camera = UsdGeom.Camera.Define(self.stage, "/World/Cameras/ThirdPerson")
+        camera.CreateFocalLengthAttr(20.)
+        camera.CreateHorizontalApertureAttr(32.)
+        camera.CreateVerticalApertureAttr(18.)
+        camera.CreateClippingRangeAttr(Gf.Vec2f(.01,10.))
+        spec = replace(spec, name="overview", parent="world",
+                       existing_prim_path=str(camera.GetPath()), resolution=(1280,960),
+                       intrinsics=(800.,800.,640.,480.), override_intrinsics=True)
+        original = self.stage.GetRootLayer().ExportToString()
+        profile = SimpleNamespace(cameras=(spec,))
+        apply_camera_mounts(self.stage, profile)
+        self.assertEqual(validate_existing_camera(self.stage,spec,"/World"),str(camera.GetPath()))
+        self.assertAlmostEqual(camera.GetHorizontalApertureAttr().Get(),32.)
+        self.assertAlmostEqual(camera.GetVerticalApertureAttr().Get(),24.)
+        self.assertEqual(original,self.stage.GetRootLayer().ExportToString())
+        apply_camera_mounts(self.stage, profile)
+        self.assertAlmostEqual(camera.GetVerticalApertureAttr().Get(),24.)
 
     def test_session_edits_preserve_delivery_and_planner_uses_actual_table(self):
         from robot_tasks.backends.tuojing_lab import configure_stage

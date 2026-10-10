@@ -2,14 +2,21 @@
 
 from dataclasses import replace
 
-from .spec import build_spec
+from .arm_selection import resolve_bench_spec
 
 
 class BenchTask:
     @staticmethod
     def prepare_config(config):
-        spec = build_spec(config.task_id)
+        spec = resolve_bench_spec(config.raw["task"], config.robot)
         notes = ""
+        if "arm_selection" in spec.parameters:
+            notes = (f"\nEpisode arm assignment: use the {spec.arms[0].upper()} arm for manipulation "
+                     f"and the {spec.observers[0].upper()} arm for observation only. "
+                     "The manipulator was selected by initial proximity to the task object. "
+                     "Keep these roles for this episode; the observation arm may move its camera "
+                     "but must not touch or support props. Proximity is not proof of reachability; "
+                     "use current observations and planner feedback to choose feasible actions.")
         if config.task_id.startswith("L2-"):
             from .l2_protocol import OPERATING_NOTES
 
@@ -46,7 +53,9 @@ class BenchTask:
     def build_scene(self, backend, config):
         from .scene import BenchScene
 
-        self.spec = build_spec(config.task_id)
+        self.spec = resolve_bench_spec(config.raw["task"], config.robot)
+        if config.arms != self.spec.arms or config.observation_arms != self.spec.observers:
+            raise ValueError("Scene arm roles differ from the prepared task configuration")
         if self.spec.mechanism == "native_fem_orange_transfer":
             from .orange_scene import OrangeScene
 

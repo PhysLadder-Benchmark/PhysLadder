@@ -1,6 +1,7 @@
 """Boundary regressions against locked collider geometry; no model requests."""
 
 import hashlib
+from dataclasses import replace
 import unittest
 from pathlib import Path
 import numpy as np
@@ -8,7 +9,7 @@ import numpy as np
 from robot_tasks.planning.scene import article_surface
 from robot_tasks.robots.transforms import pose_transform, transform_pose
 from robot_tasks.tasks.bench.evaluation import BenchEvaluator
-from robot_tasks.tasks.bench.native_geometry import catalog, cup_cavity, shapes, transformed_poly
+from robot_tasks.tasks.bench.native_geometry import catalog, cavity_fit, cup_cavity, shapes, transformed_poly
 from robot_tasks.tasks.bench.scoring_l1 import cups, flower, hat, insertion, marker
 from robot_tasks.tasks.bench.spec import build_spec
 from robot_tasks.tasks.l1.specs import local_corners, pose
@@ -26,21 +27,21 @@ def goal(task):
 
 class NativeOutcomeTests(unittest.TestCase):
     def test_barrel_fits_near_floor_wall_without_using_cap_radius(self):
-        spec,rows,e=goal('L1-01');r=rows['marker'];r['pose'][0]+=.0177
-        result,details,_=marker(e,rows)
-        self.assertTrue(result,details)
-        # Old whole-marker 8.98-mm envelope would reject this measured geometry.
-        p=spec.parameters
-        self.assertGreater(.0177+.00898,p['radius']*np.cos(np.pi/48)+.001)
-        r['pose'][0]+=.003
-        self.assertFalse(marker(e,rows)[1]['inside_holder'])
+        # Preserve the known paper-cup regression independently of L1-01's
+        # new ceramic receptacle: only the barrel reaches this narrow floor.
+        planes, floor, _ = cup_cavity()
+        t = pose_transform(pose(.0177, 0, floor))
+        self.assertTrue(cavity_fit('whiteboard_marker', t, .001)[0])
+        self.assertGreater(.0177 + .00898, .025 * np.cos(np.pi/48) + .001)
+        t[0,3] += .003
+        self.assertFalse(cavity_fit('whiteboard_marker', t, .001)[0])
 
     def test_cap_and_barrel_are_distinct_collision_shapes(self):
         parts=shapes('whiteboard_marker')
         self.assertEqual([(s['kind'],s['radius']) for s in parts],[('cylinder',.0081),('capsule',.0087)])
 
-    def test_slow_drift_cannot_accumulate_one_second_stability(self):
-        spec,rows,e=goal('L1-01');r=rows['marker']
+    def test_flower_slow_drift_cannot_accumulate_one_second_stability(self):
+        spec,rows,e=goal('L1-09');r=rows['rose']
         self.assertEqual(e.update(.1,rows).status,'running')
         r['pose'][0]+=.0008
         self.assertEqual(e.update(.6,rows).status,'running')
@@ -49,8 +50,8 @@ class NativeOutcomeTests(unittest.TestCase):
         self.assertEqual(e.update(1.3,rows).status,'running')
         self.assertEqual(e.update(2.4,rows).status,'succeeded')
 
-    def test_losing_support_resets_stable_interval(self):
-        spec,rows,e=goal('L1-01');r=rows['marker']
+    def test_flower_losing_support_resets_stable_interval(self):
+        spec,rows,e=goal('L1-09');r=rows['rose']
         e.update(.1,rows);r['fixture_force_n']=0
         self.assertEqual(e.update(.9,rows).status,'running')
         r['fixture_force_n']=.22
@@ -58,19 +59,73 @@ class NativeOutcomeTests(unittest.TestCase):
         self.assertEqual(e.update(1.9,rows).status,'running')
         self.assertEqual(e.update(2.1,rows).status,'succeeded')
 
-    def test_blades_inserted_but_housing_unseated_is_not_complete(self):
+    def test_shallow_held_moving_charger_succeeds_without_seating_or_wait(self):
         spec,rows,e=goal('L1-03');r=rows['plug']
-        r['pose'][2]+=.0012
+        r['pose'][2]=spec.parameters['rim']-.001
+        r['fingers']['right']=[1.,1.]
+        r['fixture_force_n']=0.
+        r['linear_velocity']=[.01,0.,-.03]
+        r['angular_velocity']=[0.,0.,.5]
         done,c,_=insertion(e,rows)
-        self.assertTrue(c['inside_socket']);self.assertFalse(c['housing_seated']);self.assertFalse(done)
-        r['pose'][2]-=.0004
-        self.assertTrue(insertion(e,rows)[0])
+        self.assertTrue(c['inside_socket']);self.assertFalse(c['housing_seated']);self.assertTrue(done)
+        self.assertFalse(c['release_required']);self.assertFalse(c['released'])
+        self.assertFalse(c['fixture_supported']);self.assertFalse(c['grasp_lift_recorded'])
+        self.assertEqual(e.update(.1,rows).status,'succeeded')
+        self.assertEqual(spec.parameters['hold_s'],0.)
+
+    def test_charger_alignment_contact_and_numerical_noise_are_not_entry(self):
+        for depth in (-.002,0.,.0001):
+            with self.subTest(depth=depth):
+                spec,rows,e=goal('L1-03')
+                rows['plug']['pose'][2]=spec.parameters['rim']-depth
+                self.assertFalse(insertion(e,rows)[0])
+                self.assertEqual(e.update(.1,rows).status,'running')
+
+    def test_released_shallow_charger_can_succeed_without_support(self):
+        spec,rows,e=goal('L1-03')
+        rows['plug']['pose'][2]=spec.parameters['rim']-.0005
+        rows['plug']['fixture_force_n']=0.
+        self.assertEqual(e.update(.1,rows).status,'succeeded')
+
+    def test_only_one_blade_entering_is_incomplete(self):
+        spec,rows,e=goal('L1-03')
+        local=pose_transform(pose(0,0,.03015-.0002,pitch=.03))
+        rows['plug']['pose']=list(transform_pose(pose_transform(spec.design.fixture_pose) @ local))
+        done,criteria,_=insertion(e,rows)
+        self.assertEqual(sum(c['inside_slot'] for c in criteria['blades']),1)
+        self.assertFalse(done)
+
+    def test_entry_cannot_ignore_floor_or_housing_penetration(self):
+        spec,rows,e=goal('L1-03')
+        rows['plug']['pose'][2]=spec.parameters['floor']-.001
+        self.assertFalse(insertion(e,rows)[0])
+        local=pose_transform(pose(0,0,.03015+.017,pitch=np.pi))
+        rows['plug']['pose']=list(transform_pose(pose_transform(spec.design.fixture_pose) @ local))
+        done,criteria,_=insertion(e,rows)
+        self.assertFalse(criteria['housing_clear_of_strip'])
+        self.assertFalse(done)
 
     def test_real_blade_chamfers_and_both_slots_are_checked(self):
         self.assertGreater(len(shapes('usb_charger')[1]['points']),8)
-        spec,rows,e=goal('L1-03');rows['plug']['pose'][0]+=.0008
+        spec,rows,e=goal('L1-03');rows['plug']['pose'][1]+=.0008
         _,c,_=insertion(e,rows)
         self.assertFalse(c['inside_socket']);self.assertEqual(len(c['blades']),2)
+
+    def test_charger_score_follows_fixture_translation_and_yaw(self):
+        spec,rows,e=goal('L1-03')
+        self.assertTrue(insertion(e,rows)[0])
+        for yaw in (0., .37, -1.2):
+            shift=pose_transform(pose(.13,-.04,.08,yaw=yaw))
+            fixture=shift @ pose_transform(spec.design.fixture_pose)
+            moved=replace(spec, design=replace(spec.design,fixture_pose=transform_pose(fixture)),
+                          parameters={**spec.parameters,'rim':spec.parameters['rim']+.08,
+                                      'floor':spec.parameters['floor']+.08})
+            rows['plug']['pose']=list(transform_pose(shift @ pose_transform(spec.design.articles[0].goal)))
+            evaluator=BenchEvaluator(moved,e.initial)
+            self.assertTrue(insertion(evaluator,rows)[0])
+            # A miss across the narrow slot dimension remains a miss at every yaw.
+            rows['plug']['pose'][:3]=(np.asarray(rows['plug']['pose'][:3])+fixture[:3,0]*.002).tolist()
+            self.assertFalse(insertion(evaluator,rows)[0])
 
     def test_tilted_housing_corner_contact_does_not_count_as_seated(self):
         spec,rows,e=goal('L1-03');r=rows['plug']
@@ -154,10 +209,17 @@ class NativeOutcomeTests(unittest.TestCase):
         np.testing.assert_allclose(np.mean(positions,axis=0),spec.design.articles[0].initial[:2])
 
     def test_cached_colliders_are_from_exact_locked_source_usds(self):
-        root=Path(__file__).resolve().parents[1]/'assets/tuojing/source/photo_assets_20261005/assets'
-        if not root.exists():self.skipTest('Optional private delivery not installed')
-        for name,record in catalog().items():
-            self.assertEqual(hashlib.sha256((root/name/(name+'.usda')).read_bytes()).hexdigest(),record['sha256'])
+        import json
+        root = Path(__file__).resolve().parents[1] / 'assets/tuojing'
+        entries = {e['id']: e for e in json.loads((root / 'catalog.json').read_text())['entries']}
+        packages = {p['id']: p for p in json.loads((root / 'source.lock.json').read_text())['packages']}
+        for name, record in catalog().items():
+            entry = entries[name]
+            package = packages[entry['package']]
+            self.assertEqual(package['files'][entry['path']]['sha256'], record['sha256'])
+            source = root / 'source' / package['directory'] / entry['path']
+            if source.exists():
+                self.assertEqual(hashlib.sha256(source.read_bytes()).hexdigest(), record['sha256'])
         planes,floor,rim=cup_cavity()
         self.assertEqual(len(planes),48)
         self.assertAlmostEqual(floor,.004,places=8);self.assertAlmostEqual(rim,.1075,places=8)

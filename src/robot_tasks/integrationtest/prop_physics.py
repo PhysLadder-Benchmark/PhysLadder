@@ -40,10 +40,17 @@ def run(scene):
 
         return probe_push_drawer(scene)
     result = {"task": task, "scope": "fixture-only, no robot policy or success score"}
+    if task == "L1-03":
+        from .plug_holder_probe import run as probe_holder
+
+        result["source_holder"] = probe_holder(scene)
     if task in {"L1-01", "L1-03", "L1-05", "L1-07", "L1-08", "L1-09"}:
-        article = scene.design.articles[-1]
+        article = (next(a for a in scene.design.articles if a.name == "plug")
+                   if task == "L1-03" else scene.design.articles[-1])
         goal = list(article.goal)
-        goal[2] += 0.008
+        # A native 0.55-mm-clearance socket is a seating check, not an 8-mm
+        # impact-drop test. Start just above the reference shoulder seating.
+        goal[2] += 0.0005 if task == "L1-03" else 0.008
         if task == "L1-08":
             # Check a reachable release *inside* the mouth before fingers on
             # the narrower lower body would hit the other cup's rim. This is a

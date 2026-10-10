@@ -51,7 +51,10 @@ def install_package(root, archives, package):
     temporary = Path(tempfile.mkdtemp(prefix=".install-", dir=destination.parent))
     try:
         with zipfile.ZipFile(archive) as source:
-            prefix = relative_path(package["archive_root"])
+            # Some deliveries place assets/ directly at ZIP root. Only an
+            # explicit empty root enables this; member safety checks still apply.
+            prefix = (relative_path(package["archive_root"])
+                      if package["archive_root"] else Path("."))
             members = {}
             for member in source.infolist():
                 path = relative_path(member.filename)

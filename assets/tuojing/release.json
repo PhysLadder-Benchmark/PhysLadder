@@ -2,7 +2,7 @@
   "schema_version": 1,
   "repository": "TuojingAI/GPT_Benchmark",
   "tag": "assets-20261008-local-v1",
-  "source_lock_sha256": "e04b134c03109fbb09c7d750f03c503509ba6e290f0e0ac9c7d3ed6234d0da51",
+  "source_lock_sha256": "bbb2630b7f30f97ddb78fe8254ed2d6411fbbfeaae55f28e240ddc45019131f7",
   "packages": [
     {
       "id": "lab_v4",
@@ -25,7 +25,8 @@
   ],
   "omitted_packages": [
     "tabletop_interactions",
-    "book"
+    "book",
+    "desktop_additions"
   ],
-  "coverage": "Local delivery only; tabletop_interactions and book are not included. This is not a complete L2 asset release."
+  "coverage": "Pinned 2026-10-08 release only; tabletop_interactions, book and the locally supplied 2026-10-09 desktop_additions are not included. L1-01 now needs desktop_additions installed from the separately supplied ZIP. This is not a complete L1/L2 asset release."
 }

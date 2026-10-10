@@ -62,7 +62,8 @@ class HouseholdTests(unittest.TestCase):
                 self.assertEqual(cfg.raw["execution"]["max_decisions"], 100)
                 self.assertEqual(cfg.raw["policy"]["reasoning_effort"], "medium")
                 self.assertEqual(
-                    cfg.observation_arms, ("right",) if len(cfg.arms) == 1 else ()
+                    cfg.observation_arms,
+                    tuple(a for a in ("left", "right") if a not in cfg.arms),
                 )
                 self.assertTrue(prepared.include_depth)
                 self.assertTrue(prepared.raw["task"]["description"])
@@ -83,24 +84,62 @@ class HouseholdTests(unittest.TestCase):
                     self.assertEqual(assessment.status, "running")
                     json.dumps(asdict(assessment), allow_nan=False)
 
-    def test_marker_accepts_released_cup_support_without_prescribed_grasp_history(self):
+    def test_marker_entry_needs_no_release_support_history_or_wait(self):
         spec = build_spec("L1-01")
         rows = measurement(spec)
-        evaluator = BenchEvaluator(
-            spec, {a.name: a.initial for a in spec.design.articles}
-        )
-        rows["marker"]["pose"][:3] = list(spec.design.articles[0].goal[:3])
-        rows["marker"]["bench_force_n"] = 0.0
-        rows["marker"]["fixture_force_n"] = 0.55
-        for i in range(1, 20):
-            result = evaluator.update(i * 0.1, rows)
+        row = rows["marker"]
+        # A shallow entry while held and moving; no cup contact or bottom seating.
+        row["pose"][:3] = [*spec.parameters["holder_xy"], spec.parameters["rim"] - .005]
+        row["bench_force_n"] = row["fixture_force_n"] = 0.0
+        row["fingers"]["left"] = [1, 1]
+        row["linear_velocity"], row["angular_velocity"] = [.04, 0, 0], [.5, 0, 10]
+        evaluator = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
+        result = evaluator.update(.1, rows)
         self.assertEqual(result.status, "succeeded")
         self.assertEqual(result.metrics["grasp_lift_confirmed"], [])
-        rows["marker"]["fingers"]["left"] = [1, 1]
-        self.assertEqual(evaluator.update(2.0, rows).status, "running")
-        rows["marker"]["fingers"]["left"] = [0, 0]
-        rows["marker"]["fixture_force_n"] = 0
-        self.assertEqual(evaluator.update(2.1, rows).status, "running")
+        self.assertEqual(result.metrics["stable_duration_s"], 0)
+        self.assertEqual(result.metrics["scoring_protocol"], "l1_entry_only_v1")
+        self.assertFalse(result.metrics["criteria"]["released"])
+        self.assertFalse(result.metrics["criteria"]["fixture_supported"])
+        row["fingers"]["left"] = [0, 0]
+        self.assertEqual(evaluator.update(.2, rows).status, "succeeded")
+
+    def test_marker_released_drop_succeeds_only_when_it_reaches_the_cavity(self):
+        spec = build_spec("L1-01")
+        for offset, expected in ((0.0, "succeeded"), (.06, "running")):
+            with self.subTest(horizontal_offset=offset):
+                rows = measurement(spec)
+                row = rows["marker"]
+                row["pose"][:3] = [spec.parameters["holder_xy"][0] + offset,
+                                   spec.parameters["holder_xy"][1], spec.parameters["rim"] + .02]
+                row["bench_force_n"] = row["fixture_force_n"] = 0.0
+                row["fingers"]["left"] = [1, 1]
+                e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
+                self.assertEqual(e.update(.1, rows).status, "running")
+                row["fingers"]["left"] = [0, 0]
+                row["linear_velocity"] = [0, 0, -.3]
+                self.assertEqual(e.update(.2, rows).status, "running")
+                row["pose"][2] = spec.parameters["rim"] - .005
+                result = e.update(.3, rows)
+                self.assertEqual(result.status, expected)
+                self.assertTrue(result.metrics["criteria"]["released"])
+                self.assertFalse(result.metrics["criteria"]["fixture_supported"])
+
+    def test_marker_entry_rejects_rim_hover_handle_and_wall_or_floor_penetration(self):
+        spec = build_spec("L1-01")
+        p = spec.parameters
+        cx, cy = p["holder_xy"]
+        for xyz in ((cx, cy, p["rim"] + .005), (cx, cy, p["rim"]),
+                    (cx, cy - .06, p["floor"]),
+                    (cx + .05, cy, p["rim"] - .01),
+                    (cx, cy, p["floor"] - .005)):
+            with self.subTest(xyz=xyz):
+                rows = measurement(spec)
+                rows["marker"]["pose"][:3] = xyz
+                rows["marker"]["bench_force_n"] = 0
+                rows["marker"]["fixture_force_n"] = .22
+                e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
+                self.assertEqual(e.update(.1, rows).status, "running")
 
     def test_nested_cups_require_support_and_lift_only_for_upper_cup(self):
         spec = build_spec("L1-08")
@@ -151,7 +190,7 @@ class HouseholdTests(unittest.TestCase):
         row["pose"][2] -= .005
         self.assertFalse(marker(evaluator, rows)[1]["inside_holder"])
 
-    def test_marker_axial_spin_is_allowed_but_held_or_tumbling_is_not(self):
+    def test_marker_motion_and_finger_contact_do_not_override_valid_entry(self):
         spec = build_spec("L1-01")
         article = spec.design.articles[0]
         evaluator = BenchEvaluator(spec, {"marker": article.initial})
@@ -161,12 +200,12 @@ class HouseholdTests(unittest.TestCase):
         row["fixture_force_n"] = article.mass * 9.81
         row["angular_velocity"] = [10.,0.,0.]
         for now in (.1,1.2):
-            self.assertEqual(evaluator.update(now,rows).status,"running")
+            self.assertEqual(evaluator.update(now,rows).status,"succeeded")
         row["angular_velocity"] = [0.,0.,10.]
         row["fingers"]["left"] = [1.,1.]
-        self.assertEqual(evaluator.update(1.3,rows).status,"running")
+        self.assertEqual(evaluator.update(1.3,rows).status,"succeeded")
         row["fingers"]["left"] = [0.,0.]
-        self.assertEqual(evaluator.update(1.4,rows).status,"running")
+        self.assertEqual(evaluator.update(1.4,rows).status,"succeeded")
         self.assertEqual(evaluator.update(2.5,rows).status,"succeeded")
 
     def test_lab_floor_failure_uses_raised_table_not_world_zero(self):
@@ -389,7 +428,7 @@ class HouseholdTests(unittest.TestCase):
                 for now in (.1, .5, 1.):
                     self.assertEqual(e.update(now, rows).status, "running")
 
-    def test_marker_table_landing_ends_episode_without_tilt_or_delay(self):
+    def test_marker_table_landing_is_recoverable_and_does_not_block_later_entry(self):
         spec = build_spec("L1-01")
         rows = measurement(spec)
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
@@ -401,11 +440,14 @@ class HouseholdTests(unittest.TestCase):
         row["pose"] = list(spec.design.articles[0].initial)
         row["bench_force_n"] = .22
         result = e.update(.3, rows)
-        self.assertEqual(result.status, "failed")
-        self.assertIn("dropped onto the tabletop", result.reason)
-        self.assertFalse(result.retryable)
+        self.assertEqual(result.status, "running")
+        self.assertTrue(result.metrics["criteria"]["dropped_on_table"])
+        self.assertTrue(result.metrics["quality_warnings"])
+        row["pose"] = list(spec.design.articles[0].goal)
+        row["bench_force_n"] = 0
+        self.assertEqual(e.update(.4, rows).status, "succeeded")
 
-    def test_marker_knocked_over_on_table_fails_before_any_lift(self):
+    def test_marker_knocked_over_on_table_is_recoverable_before_any_lift(self):
         spec = build_spec("L1-01")
         rows = measurement(spec)
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
@@ -414,8 +456,8 @@ class HouseholdTests(unittest.TestCase):
         row["pose"][2] = spec.parameters["table_z"] + spec.parameters["marker_visual_radius"]
         row["pose"][3:] = [2**-.5, 0, 2**-.5, 0]
         result = e.update(.2, rows)
-        self.assertEqual(result.status, "failed")
-        self.assertFalse(result.retryable)
+        self.assertEqual(result.status, "running")
+        self.assertTrue(result.metrics["criteria"]["dropped_on_table"])
 
     def test_marker_can_settle_leaning_or_cap_first_inside_cup(self):
         spec = build_spec("L1-01")

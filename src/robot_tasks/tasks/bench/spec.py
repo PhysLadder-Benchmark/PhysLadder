@@ -29,7 +29,7 @@ class BenchSpec:
 
     @property
     def observers(self):
-        return ("right",) if self.arms == ("left",) else ()
+        return tuple(a for a in ("left", "right") if a not in self.arms) if len(self.arms) == 1 else ()
 
 
 def build_spec(task_id):

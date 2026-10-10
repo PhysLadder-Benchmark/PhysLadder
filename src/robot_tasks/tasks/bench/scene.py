@@ -31,7 +31,7 @@ class BenchScene(L1Scene):
 
             roots = [(a.asset.split(":", 1)[1], self.root + "/" + a.name)
                      for a in self.design.articles if a.asset.startswith("tuojing:")]
-            if self.design.fixture_asset in {"tuojing:ripple_paper_cup", "tuojing:wooden_rack"}:
+            if self.design.fixture_asset in {"tuojing:ripple_paper_cup", "tuojing:black_ceramic_mug", "tuojing:wooden_rack"}:
                 roots.append((self.design.fixture_asset.split(":", 1)[1], self.root + "/Fixture"))
             source_hashes = {record.get("prop"): record.get("sha256")
                              for record in backend.scene_report[self.report_key]["assets"]}
@@ -108,11 +108,13 @@ class BenchScene(L1Scene):
             limitations=spec.limitations,
             public_facts=spec.facts,
             parameters=spec.parameters,
-            goal_rule="task-specific physical geometry, contact/process evidence and stable final state",
+            goal_rule=("marker end inside the main cup cavity; release, support and stability are diagnostic only"
+                       if spec.design.task_id == "L1-01" else
+                       "task-specific physical geometry, contact/process evidence and stable final state"),
             joints=[asdict(j) for j in spec.joints],
             scoring={
                 "version": "household-v1",
-                "scoring_protocol": "recoverable_progress_v1",
+                "scoring_protocol": spec.parameters.get("scoring_protocol", "recoverable_progress_v1"),
                 "stable_s": spec.parameters.get("hold_s", 1.0),
                 "damage": "proxy thresholds only; no material fracture",
                 "quality_references": "uncalibrated force/speed excursions are advisory, not damage or automatic failure",

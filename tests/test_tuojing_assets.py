@@ -51,6 +51,17 @@ class TuojingAssetImportTests(unittest.TestCase):
             install_package(self.root, self.root, self.package)
         self.assertFalse((self.root / "source/delivery").exists())
 
+    def test_explicit_rootless_delivery_retains_inventory_and_path_checks(self):
+        self.package["archive_root"] = ""
+        self.make_archive({"textures/sample.bin": self.content})
+        install_package(self.root, self.root, self.package)
+        self.assertEqual(verify_files(self.root / "source/delivery", self.package), 1)
+        self.package["directory"] = "unsafe"
+        self.make_archive({"../escaped.bin": self.content})
+        with self.assertRaisesRegex(ValueError, "Unsafe asset path"):
+            install_package(self.root, self.root, self.package)
+        self.assertFalse((self.root / "escaped.bin").exists())
+
     def test_path_traversal_is_rejected_even_with_a_matching_archive_hash(self):
         self.make_archive({"original_folder/../../escaped.bin": self.content})
         with self.assertRaisesRegex(ValueError, "Unsafe asset path"):

@@ -38,6 +38,8 @@ dist/
 /assets/cameras/source/
 /assets/l1/source/
 /assets/tuojing/source/
+# Original local delivery; metadata is tracked, ZIPs belong in asset releases.
+/新增三类资产_圆柱杯子插头底座_20261009.zip
 *.log
 # This is an immutable vendor source file covered by the R5 source lock.
 !/assets/r5/R5a/export.log

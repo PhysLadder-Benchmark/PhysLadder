@@ -146,6 +146,24 @@ def apply_camera_mounts(stage, profile):
         changes[spec.name] = {"original_world_pose_wxyz": transform_pose(old_camera),
                               "configured_parent_pose_wxyz": spec.optical_pose_wxyz,
                               "source": spec.pose_source, "layer": "session"}
+        if spec.override_intrinsics:
+            # Opt-in framing only. Keep the optical focal length, adjust the
+            # filmback to the configured square-pixel intrinsics/resolution.
+            camera = UsdGeom.Camera(stage.GetPrimAtPath(expected))
+            focal = camera.GetFocalLengthAttr().Get()
+            old_apertures = [camera.GetHorizontalApertureAttr().Get(), camera.GetVerticalApertureAttr().Get()]
+            width, height = spec.resolution
+            fx, fy, _, _ = spec.intrinsics
+            camera.CreateHorizontalApertureAttr(width * focal / fx)
+            camera.CreateVerticalApertureAttr(height * focal / fy)
+            camera.CreateHorizontalApertureOffsetAttr(0.)
+            camera.CreateVerticalApertureOffsetAttr(0.)
+            changes[spec.name]["intrinsics_override"] = {
+                "original_apertures": old_apertures,
+                "configured_intrinsics": spec.intrinsics,
+                "resolution": spec.resolution,
+                "source": spec.intrinsics_source,
+            }
     return changes
 
 

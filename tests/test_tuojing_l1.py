@@ -20,6 +20,34 @@ except ImportError:
 
 
 class NativeTaskScoringTests(unittest.TestCase):
+    def test_marker_photo_layout_and_native_ceramic_cavity(self):
+        from robot_tasks.robots.transforms import pose_transform
+        from robot_tasks.tasks.bench.native_geometry import cup_cavity, cavity_fit
+
+        spec = build_spec("L1-01")
+        mug = pose_transform(spec.design.fixture_pose)
+        pen = spec.design.articles[0]
+        self.assertEqual(spec.design.fixture_asset, "tuojing:black_ceramic_mug")
+        # From the table front, +X is image right and -Y points toward the viewer.
+        self.assertGreater(pen.initial[0], mug[0, 3])
+        self.assertAlmostEqual(pen.initial[1], mug[1, 3])
+        np.testing.assert_allclose(mug[:3, 0], [0, -1, 0], atol=1e-8)
+        planes, floor, rim = cup_cavity('black_ceramic_mug')
+        self.assertAlmostEqual(floor, .007)
+        self.assertAlmostEqual(rim, .090)
+        # The mug bulges below its mouth. A single cylinder/frustum would lose this.
+        bulge = np.array([.045, 0, .045])
+        self.assertGreater(np.min(planes[:,3] - planes[:,:3] @ bulge), 0)
+        fit = lambda t: cavity_fit('whiteboard_marker', t, .001, receptacle='black_ceramic_mug')[0]
+        self.assertTrue(fit(pose_transform(pose(0, 0, floor))))
+        # Fits this mug, but not the old paper cup. No enlargement of tolerance.
+        near_rim = pose_transform(pose(.031, 0, .075))
+        self.assertTrue(fit(near_rim))
+        self.assertFalse(cavity_fit('whiteboard_marker', near_rim, .001)[0])
+        for xyz in ((0, 0, .004), (0, 0, .10), (.045, 0, .075), (.06, 0, .007)):
+            with self.subTest(xyz=xyz):
+                self.assertFalse(fit(pose_transform(pose(*xyz))))
+
     def test_rigid_rose_requires_release_support_and_native_stem_inside_cup(self):
         spec = build_spec("L1-09")
         article, = spec.design.articles
@@ -62,7 +90,7 @@ class NativeTaskScoringTests(unittest.TestCase):
         e.grasped.add("rose")
         self.assertTrue(flower(e, rows)[0])
 
-    def test_two_native_blades_need_both_slots_and_housing_seating(self):
+    def test_two_native_blades_need_both_slots_but_not_full_depth(self):
         spec = build_spec("L1-03")
         article = spec.design.articles[0]
         e = BenchEvaluator(spec, {"plug": article.initial})
@@ -74,7 +102,7 @@ class NativeTaskScoringTests(unittest.TestCase):
         e.grasped.add("plug")
         self.assertTrue(insertion(e, rows)[0])
         # The pair is symmetric at 180 degrees, but not 90 degrees.
-        for yaw, expected in ((np.pi, True), (np.pi / 2, False)):
+        for yaw, expected in ((3 * np.pi / 2, True), (0, False)):
             r["pose"] = list(pose(*article.goal[:3], yaw=yaw))
             self.assertEqual(insertion(e, rows)[0], expected)
         r["pose"] = list(article.goal)
@@ -82,16 +110,36 @@ class NativeTaskScoringTests(unittest.TestCase):
         self.assertFalse(insertion(e, rows)[0])
         r["pose"] = list(article.goal)
         r["pose"][2] += .01
+        self.assertTrue(insertion(e, rows)[0])
+        r["pose"][2] += .01
         self.assertFalse(insertion(e, rows)[0])
 
-    def test_side_lying_charger_is_not_a_topple_failure(self):
+    def test_charger_in_source_holder_is_incomplete_and_tabletop_recovery_allowed(self):
         spec = build_spec("L1-03")
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
         rows = measurement(spec)
         for now in (.1, .5, 2.):
             self.assertEqual(e.update(now, rows).status, "running")
+        rows["plug"]["pose"] = list(pose(.35, 1.20, .8055, pitch=np.pi / 2))
+        self.assertEqual(e.update(2.2, rows).status, "running")
         rows["plug"]["corners"] = [[0, 0, .5]]
         self.assertEqual(e.update(2.5, rows).status, "failed")
+
+    def test_charger_photo_layout_preserves_free_holder_and_downward_blades(self):
+        from robot_tasks.robots.transforms import pose_transform
+
+        spec = build_spec("L1-03")
+        charger, base = spec.design.articles
+        strip = pose_transform(spec.design.fixture_pose)
+        self.assertEqual(base.asset, "tuojing:plug_storage_base")
+        self.assertAlmostEqual(base.mass, .0208)
+        self.assertEqual(spec.joints, ())
+        self.assertGreater(base.initial[0], strip[0, 3])
+        np.testing.assert_allclose(charger.initial[:2], base.initial[:2])
+        np.testing.assert_allclose(strip[:3, 1], [-1, 0, 0], atol=1e-8)
+        np.testing.assert_allclose(pose_transform(charger.initial)[:3, 2], [0, 0, 1])
+        self.assertGreater(charger.initial[2] + .018, base.initial[2] + .020)
+        self.assertLess(charger.initial[2], base.initial[2] + .020)
 
     def test_cup_rim_balancing_and_interpenetration_do_not_count_as_nesting(self):
         spec = build_spec("L1-08")

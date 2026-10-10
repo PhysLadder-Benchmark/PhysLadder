@@ -127,6 +127,13 @@ class IsaacSimBackend:
             if not self.settings.headless:
                 from isaacsim.core.utils.viewports import set_camera_view
                 set_camera_view(eye=np.array(self.settings.camera_position), target=np.array(self.settings.camera_target))
+                if self.camera_profile is not None:
+                    overview = next((spec for spec in self.camera_profile.select(self.camera_names)
+                                     if spec.name == "overview" and spec.override_intrinsics), None)
+                    if overview is not None:
+                        # Show the same lens and pose used by recordings/model observations.
+                        from isaacsim.core.utils.viewports import set_active_viewport_camera
+                        set_active_viewport_camera(overview.existing_prim_path)
         except Exception:
             self.close()
             raise

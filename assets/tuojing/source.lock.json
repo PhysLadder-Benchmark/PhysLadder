@@ -1,6 +1,6 @@
 {
-  "delivery": "2026-10-06",
-  "source": "User-provided L20 delivery archives; SHA-256 checked against the remote archives and matching unpacked source files.",
+  "delivery": "2026-10-09",
+  "source": "User-provided L20 deliveries; original archives and file inventories are SHA-256 pinned. The 2026-10-09 desktop additions were supplied locally.",
   "packages": [
     {
       "id": "lab_v4",
@@ -2101,6 +2101,81 @@
         }
       },
       "delivery": "2026-10-06"
+    },
+    {
+      "id": "desktop_additions",
+      "delivery": "2026-10-09",
+      "archive": "新增三类资产_圆柱杯子插头底座_20261009.zip",
+      "archive_root": "",
+      "directory": "desktop_additions_20261009",
+      "archive_bytes": 3094951,
+      "archive_sha256": "03addfd760d1025ef4bd5db80594e4ed4eaf2ce75220fad4eafd8ccd72469dfb",
+      "files": {
+        "assets/black_ceramic_mug/black_ceramic_mug.usda": {
+          "bytes": 1730770,
+          "sha256": "150b757fd0f303a77aab6da45ec2a9e538ba91af885c379e3223f28ca4723c57"
+        },
+        "assets/black_ceramic_mug/properties.json": {
+          "bytes": 1194,
+          "sha256": "180d2651595d05c7e7b5412859b258313401a2efa7273fb39b5896bd82754360"
+        },
+        "assets/cylindrical_pedestal/cylindrical_pedestal.usda": {
+          "bytes": 264547,
+          "sha256": "8a97c2e71dd9a8c58480b1b0132feb2dc20fce39907f2d8d397ef998f0812685"
+        },
+        "assets/cylindrical_pedestal/properties.json": {
+          "bytes": 1029,
+          "sha256": "7dd945f8b4e96c611ce0a178c2d7a15ddd15e3c61452e446e6ea43315f8519fe"
+        },
+        "assets/plug_storage_base/plug_storage_base.usda": {
+          "bytes": 2172823,
+          "sha256": "954845da3d0db2598fbb2d8052de4cebd6cf21606eb04ddeefab6cbe350e9771"
+        },
+        "assets/plug_storage_base/properties.json": {
+          "bytes": 1286,
+          "sha256": "b970d4471fe722f13deb8aabaeab05fbb6d8b166d5e546a9dc5711758e3ab078"
+        },
+        "catalog.json": {
+          "bytes": 3753,
+          "sha256": "a2afaf2f2cde110bbe9bce3ae51c27573388a3b23727d0a240d86ac3ee32ca1d"
+        },
+        "manifest.json": {
+          "bytes": 2340,
+          "sha256": "2ba941e92fa771931e6075d729ae6ce96ea79256ceb073fb7085f2cd1e81ba3b"
+        },
+        "parameters.json": {
+          "bytes": 1155,
+          "sha256": "6aa87310761b207af36c51861d688a9f7ba3d2f1acfc77014f0e9855c8a6c022"
+        },
+        "preview/holder_detail.png": {
+          "bytes": 842539,
+          "sha256": "b9594047f0df2fdc7ea865476df035c916bf4b177d8439c0a6d529fe91ac21ad"
+        },
+        "preview/mug_detail.png": {
+          "bytes": 917971,
+          "sha256": "572442659f5910d78654d704cd8c86420618dbbeb7cfb3c1db897d33ddbc287f"
+        },
+        "preview/overview.png": {
+          "bytes": 915239,
+          "sha256": "77bca03444767aeeaa5da6a36eb3c0d96e5bd13f43ae9517f0b62edd02ecfc32"
+        },
+        "showcase.usda": {
+          "bytes": 847,
+          "sha256": "712db629a655f8a2414921e5f45d3b926205b0a07cef45d018311b90bee624e3"
+        },
+        "validation/asset_audit.json": {
+          "bytes": 1808,
+          "sha256": "a3d90c4d194a225118a7f15c116f1d532fc91ce359f848aa052a69b47355bec5"
+        },
+        "validation/physics_report.json": {
+          "bytes": 2906,
+          "sha256": "f3ced714dd44eab3e04b7036938b241811e3b1c7c5e99f51adeefdec5019b5b9"
+        },
+        "使用说明.txt": {
+          "bytes": 2736,
+          "sha256": "c41adcca31f044a990be52ff6708b2844bfaad439a90b1158d5d10923a42e1f0"
+        }
+      }
     }
   ]
 }
