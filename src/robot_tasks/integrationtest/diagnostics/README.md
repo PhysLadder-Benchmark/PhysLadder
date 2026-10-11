@@ -161,3 +161,5 @@ PYTHONPATH=src python -m robot_tasks.integrationtest.diagnostics.rose_rest --out
 0.015 rad/s、位置漂移不超过 0.5 mm、完整姿态角变化不超过 0.01 rad，且由桌面承托、
 没有夹指接触；不满足时在调用模型前报错，不锁定物体或强行清零速度。
 这项启动检查使用仿真测量，只决定场景何时就绪，不将物体真值交给 GPT。
+
+场景检查 `scene_smoke` 和初态图库默认跟随任务的 RGB 设置；`scene_smoke --depth` 同时验证深度。专门验证深度抓持的 `native_grasp`、`tuojing_lab` 诊断显式开启深度，不改变正式任务默认值。

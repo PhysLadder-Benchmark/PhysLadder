@@ -93,14 +93,14 @@ def get_spec(config: TaskConfig) -> TaskSpec:
 
 
 def resolve_task(
-    task_id: str | None = None, config_path: Path | None = None
+    task_id: str | None = None, config_path: Path | None = None, *, depth: bool | None = None
 ) -> tuple[TaskSpec, TaskConfig]:
     if task_id is not None and task_id not in TASKS:
         raise ValueError(f"Unknown task ID: {task_id}; available: {', '.join(TASKS)}")
     if task_id is None and config_path is None:
         raise ValueError("Provide a task ID or --config; use 'list' to see tasks")
     config = load_config(
-        config_path if config_path is not None else TASKS[task_id].default_config
+        config_path if config_path is not None else TASKS[task_id].default_config, depth=depth
     )
     if task_id is not None and config.task_id != task_id:
         raise ValueError(

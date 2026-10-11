@@ -83,7 +83,7 @@ class EpisodeRecorder:
                       "source": "ideal_simulation_render" if self.require_depth else None,
                       "quantity": "optical_axis_z", "units": "m", "hardware_emulated": False,
                       "recording_cadence": "decision observations and reset/final observations; not every physics tick",
-                      "queries_share_model_budget": True},
+                      "queries_share_model_budget": config.include_depth},
             "execution": config.raw.get("execution", {}),
             "episode_isolation": "fresh scene/robot/task and policy history at run start; unique output; no previous runs loaded",
             "retry_protocol": "no automatic retry",
@@ -114,7 +114,7 @@ class EpisodeRecorder:
             frames.append({"camera": frame.camera, "time_s": frame.timestamp_s,
                            "width": frame.width, "height": frame.height, "path": saved_path,
                            "calibration": frame.calibration})
-            if self.require_depth or frame.depth is not None:
+            if self.require_depth:
                 from .cameras.depth import depth_array, depth_metadata, encode_depth_preview
                 metadata = depth_metadata(frame)
                 metadata.update(path=None, preview_path=None)

@@ -27,7 +27,7 @@ solver_velocity_iterations = 0
 model_config = "../models/gpt.toml"
 
 [task]
-prompt_protocol = "guided_rgbd_l2_v2"
+prompt_protocol = "guided_visual_l2_v3"
 scoring_protocol = "cup_received_count_fixed_receiver_v2"
 id = "L2-04"
 name = "纸杯间倒珍珠"
@@ -68,7 +68,7 @@ CLEARANCE BEFORE POURING. Raise the held cup while it is still upright and
 away from the receiver. Begin with the source mouth centre roughly 150 mm
 ABOVE the receiving rim, then move toward the pouring position. This is an
 initial clearance guide, not an exact pose or a scoring target. Judge the
-whole wrist, camera mount, both fingers and cup in 3D using RGB-D. A clear lip
+whole wrist, camera mount, both fingers and cup in 3D using complementary camera views. A clear lip
 does not imply a clear wrist: the lower side of the gripper swings downward
 as the cup tilts. Leave several centimetres of clearance rather than grazing
 the receiving rim. Do not lower the wrist just to shorten the pearl fall.

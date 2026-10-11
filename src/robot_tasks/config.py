@@ -121,7 +121,7 @@ def _boolean(value: object, label: str) -> bool:
     return value
 
 
-def load_config(path: Path) -> TaskConfig:
+def load_config(path: Path, *, depth: bool | None = None) -> TaskConfig:
     source = path.expanduser().resolve()
     with source.open("rb") as f:
         raw = tomllib.load(f)
@@ -131,6 +131,10 @@ def load_config(path: Path) -> TaskConfig:
         raise ValueError("Use schema_version = 2 with an R5 robot.profile and active_arms; legacy robot configs are not supported")
     from .workflow import load_workflow
     raw, workflow_source, workflow_settings = load_workflow(source, raw)
+    if depth is not None:
+        # Command-line overrides are recorded in the effective configuration.
+        raw["observation"]["include_depth"] = _boolean(depth, "depth")
+        raw.setdefault("recording", {})["save_depth"] = depth
     if "planner" in raw:
         raise ValueError("R5 uses the shared cuRobo planner; machine paths belong in runtime configuration")
     required = {"schema_version", "task", "robot", "runtime", "observation", "recording"}

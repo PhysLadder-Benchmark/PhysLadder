@@ -1,18 +1,24 @@
 """Declared assistance and measurement boundaries shared by the five native L2 tasks."""
 
 PROTOCOL = {
-    "prompt_version": "guided_rgbd_l2_v2",
+    "prompt_version": "guided_visual_l2_v3",
     "scoring_version": "native_l2_validity_v2",
-    "scope": "guided RGB-D closed-loop manipulation with declared prop/grasp hints",
-    "policy_information": "RGB-D, camera calibration, robot state, execution feedback, public task facts",
+    "scope": "guided visual closed-loop manipulation with declared prop/grasp hints",
+    "policy_information": "RGB, camera calibration, robot state, execution feedback, public task facts",
     "privileged_information": "object/FEM/contact truth for scoring and planner clearance only",
     "control": "pose/joint and gripper-opening targets; fixed controller gains and timing, no force command",
     "model_wait": "physics paused during model requests",
 }
 
+def protocol_metadata(config) -> dict:
+    return {**PROTOCOL, "policy_information": (
+        ("RGB-D" if config.include_depth else "RGB")
+        + ", camera calibration, robot state, execution feedback, public task facts")}
+
+
 OPERATING_NOTES = """
-Shared L2 protocol (guided_rgbd_l2_v2):
-The task supplies prop dimensions and grasp/direction hints. Use current RGB-D
+Shared L2 protocol (guided_visual_l2_v3):
+The task supplies prop dimensions and grasp/direction hints. Use current camera views
 and robot feedback to locate and manipulate the actual objects; these hints
 are not measured current object poses. This is a guided execution test, not
 an unassisted affordance-discovery test.

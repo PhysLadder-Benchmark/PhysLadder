@@ -64,7 +64,7 @@ class HouseholdTests(unittest.TestCase):
                     cfg.observation_arms,
                     tuple(a for a in ("left", "right") if a not in cfg.arms),
                 )
-                self.assertTrue(prepared.include_depth)
+                self.assertFalse(prepared.include_depth)
                 self.assertTrue(prepared.raw["task"]["description"])
         self.assertTrue(resolve_task("L3-11")[0].implemented)
         self.assertNotIn("L3-16", TASKS)

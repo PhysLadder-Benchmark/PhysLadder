@@ -307,7 +307,7 @@ def main():
         parser.error("--hold-s must be finite and at least 0.1 seconds")
     if not np.isfinite(args.lift_m) or not .02 <= args.lift_m <= .35:
         parser.error("--lift-m must be finite and between 0.02 and 0.35 metres")
-    code=check(args.task,args.output,prepare=False,
+    code=check(args.task,args.output,prepare=False,depth=True,
                capture_hook=lambda backend,task,output:probe(backend,task,output,check_planner=args.check_planner,hold_s=args.hold_s,grasp_style=args.grasp_style,place_nested=args.place_nested,plan_lift=args.plan_lift,lift_m=args.lift_m))
     report=args.output/'grasp.json'
     return 0 if code==0 and report.exists() and json.loads(report.read_text())['passed'] else 2

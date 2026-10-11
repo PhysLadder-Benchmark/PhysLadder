@@ -77,8 +77,8 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(self.config.arms, ("left",))
         self.assertEqual(self.config.command_arms, ("left", "right"))
         self.assertEqual(self.config.arm_roles, {"left": "manipulation", "right": "observation"})
-        self.assertTrue(self.config.include_depth)
-        self.assertTrue(self.config.save_depth)
+        self.assertFalse(self.config.include_depth)
+        self.assertFalse(self.config.save_depth)
         self.assertEqual(self.config.max_wall_time_s, 0.0)
         self.assertEqual(ExecutionSettings.from_config(self.config).max_decisions, 100)
         settings = GPTSettings("https://example.invalid", "fixture", reasoning_effort="low", max_calls=2)
@@ -88,7 +88,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(policy.settings.reasoning_effort, "low")
         self.assertEqual(policy.settings.max_calls, 100)
         self.assertEqual(policy.run_metadata["workflow"], workflow_metadata())
-        self.assertIn("depth_queries", policy.schema["required"])
+        self.assertNotIn("depth_queries", policy.schema["required"])
         self.assertIn("note", policy.schema["required"])
         self.assertNotIn("must remain still", SingleArmPickPlace.prepare_config(self.config).instruction)
 
@@ -99,7 +99,7 @@ class WorkflowTests(unittest.TestCase):
         b, _, _ = load_workflow(TASK, {"workflow_profile": str(shared), "task": {"id": "another-task"}})
         self.assertEqual(a["execution"]["max_decisions"], 7)
         self.assertEqual(a["observation"], b["observation"])
-        self.assertTrue(a["observation"]["include_depth"])
+        self.assertFalse(a["observation"]["include_depth"])
         self.assertEqual(profile["execution"]["max_decisions"], 100)
         self.assertEqual(b["execution"]["max_decisions"], 100)
 
@@ -118,28 +118,28 @@ class WorkflowTests(unittest.TestCase):
             raw, source, _ = load_workflow(TASK, {"task": {"id": task_id}})
             self.assertIsNone(source)
             self.assertEqual(raw["observation"], {
-                "include_depth": True, "include_robot_state": True, "include_feedback": True})
+                "include_depth": False, "include_robot_state": True, "include_feedback": True})
             config = replace(self.config, task_id=task_id, workflow_source=None,
                              raw={**self.config.raw, **raw})
             policy = GPTPolicy(config, GPTSettings("https://example.invalid", "fixture"), client=Mock())
             self.assertEqual(policy.run_metadata["workflow"], workflow_metadata())
-            self.assertEqual(set(policy.schema["required"]), {"commands", "request_stop", "depth_queries", "note"})
+            self.assertEqual(set(policy.schema["required"]), {"commands", "request_stop", "note"})
             self.assertEqual(ExecutionSettings.from_config(config).gripper_timing, "after_motion")
 
     def test_task_and_profile_cannot_disable_fixed_capabilities(self):
         changes = [{"policy_options": {"visual_aids": False}},
                    {"execution": {"gripper_timing": "simultaneous"}}]
         changes += [{"observation": {key: False}}
-                    for key in ("include_depth", "include_robot_state", "include_feedback")]
+                    for key in ("include_robot_state", "include_feedback")]
         for change in changes:
             for reference in ({}, {"workflow_profile": str(self.config.workflow_source)}):
                 with self.subTest(change=change, profile=bool(reference)), self.assertRaises(ValueError):
                     load_workflow(TASK, {**reference, **change})
         with tempfile.TemporaryDirectory() as temporary:
             profile = Path(temporary) / "workflow.toml"
-            profile.write_text('[observation]\ninclude_depth=false\n')
+            profile.write_text('[observation]\ninclude_robot_state=false\n')
             with self.assertRaisesRegex(ValueError, "fixed GPT workflow"):
-                load_workflow(TASK, {"workflow_profile": str(profile), "observation": {"include_depth": True}})
+                load_workflow(TASK, {"workflow_profile": str(profile), "observation": {"include_robot_state": True}})
 
     def test_invalid_roles_and_cameras_are_rejected_before_execution(self):
         text = TASK.read_text().replace('"../workflows/gpt_default.toml"', json.dumps(self.config.workflow_source.as_posix()))
@@ -183,6 +183,7 @@ class WorkflowTests(unittest.TestCase):
             self.assertEqual(fixed.update(states(.2), assessment).status, status)
 
     def test_observer_motion_depth_and_notes_use_common_runner_and_preserve_actual_settings(self):
+        self.config = load_config(TASK, depth=True)
         class Backend(MockBackend):
             def capture_rgb(self):
                 return tuple(rgbd(c, self.t) for c in self.config.cameras)

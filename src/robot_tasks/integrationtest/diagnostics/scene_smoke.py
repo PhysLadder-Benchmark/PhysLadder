@@ -18,7 +18,7 @@ from ...paths import PROJECT_ROOT
 
 
 def check(task_id, output, *, prepare=True, prop_probe=False, capture_hook=None,
-          capture_before_observations=False):
+          capture_before_observations=False, depth=None):
     import numpy as np
     from PIL import Image
 
@@ -30,7 +30,7 @@ def check(task_id, output, *, prepare=True, prop_probe=False, capture_hook=None,
 
     os.environ.setdefault("OMNI_KIT_ACCEPT_EULA", "YES")
     output.mkdir(parents=True, exist_ok=True)
-    spec, config = resolve_task(task_id)
+    spec, config = resolve_task(task_id, depth=depth)
     config = spec.factory.prepare_config(config)
     backend, robot, task = IsaacSimBackend(), R5Adapter(), spec.factory()
     backend.run_directory = output
@@ -38,7 +38,8 @@ def check(task_id, output, *, prepare=True, prop_probe=False, capture_hook=None,
         "task": task_id,
         "passed": False,
         "gpt_called": False,
-        "scope": "scene, physical reset, RGB-D and initial scoring; not task-solving evidence",
+        "scope": "scene, physical reset, camera input and initial scoring; not task-solving evidence",
+        "observation_modalities": ["rgb", "depth"] if config.include_depth else ["rgb"],
         "preparation_requested": prepare,
     }
     try:
@@ -93,9 +94,11 @@ def check(task_id, output, *, prepare=True, prop_probe=False, capture_hook=None,
         for frame in frames:
             from ...cameras.depth import depth_array
 
-            depth = depth_array(frame)
-            if not np.any(np.isfinite(depth) & (depth > 0)):
+            depth_values = depth_array(frame) if config.include_depth else None
+            if depth_values is not None and not np.any(np.isfinite(depth_values) & (depth_values > 0)):
                 raise RuntimeError("Empty depth: " + frame.camera)
+            if not config.include_depth and frame.depth is not None:
+                raise RuntimeError("Depth captured while disabled: " + frame.camera)
             Image.frombytes("RGB", (frame.width, frame.height), frame.data).save(
                 output / (frame.camera + ".png")
             )
@@ -106,10 +109,13 @@ def check(task_id, output, *, prepare=True, prop_probe=False, capture_hook=None,
             # never instantiate a model client or send a request in this check.
             preview, size, calibration = prepare_frame(frame, 768, robot=state, bench=bench_geometry(config))
             (output / ("model_preview_" + frame.camera + ".png")).write_bytes(preview)
-            np.save(output / (frame.camera + "_depth.npy"), depth)
+            if depth_values is not None:
+                np.save(output / (frame.camera + "_depth.npy"), depth_values)
             result["camera_capture"][frame.camera] = {
                 "calibration": frame.calibration, "preview_calibration": calibration,
-                "preview_resolution": size, "valid_depth_fraction": float(np.mean(np.isfinite(depth) & (depth > 0))),
+                "preview_resolution": size,
+                "valid_depth_fraction": (float(np.mean(np.isfinite(depth_values) & (depth_values > 0)))
+                                         if depth_values is not None else None),
             }
         if capture_hook is not None and not capture_before_observations:
             result["preview"] = capture_hook(backend, task, output)
@@ -173,6 +179,7 @@ def main():
     parser.add_argument("--all", action="store_true")
     parser.add_argument("--no-preparation", action="store_true")
     parser.add_argument("--prop-probe", action="store_true")
+    parser.add_argument("--depth", action=argparse.BooleanOptionalAction, default=None)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     root = args.output or PROJECT_ROOT / "runs" / (
@@ -198,6 +205,8 @@ def main():
                 command.append("--no-preparation")
             if args.prop_probe:
                 command.append("--prop-probe")
+            if args.depth is not None:
+                command.append("--depth" if args.depth else "--no-depth")
             with (root / (spec.task_id + ".log")).open("w", encoding="utf-8") as log:
                 process = subprocess.run(
                     command,
@@ -227,7 +236,7 @@ def main():
     if not args.task:
         parser.error("Provide a task ID or --all")
     return check(
-        args.task, root, prepare=not args.no_preparation, prop_probe=args.prop_probe
+        args.task, root, prepare=not args.no_preparation, prop_probe=args.prop_probe, depth=args.depth
     )
 
 

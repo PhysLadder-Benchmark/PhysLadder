@@ -30,7 +30,7 @@ sys.addaudithook(_deny_network)
 
 def robot_config(*, arms=("left", "right")):
     """Use real R5 metadata with both arms controllable for offline contracts."""
-    config = load_config(ROOT / "configs/checks/gpt_single_arm_pick_place.toml")
+    config = load_config(ROOT / "configs/checks/gpt_single_arm_pick_place.toml", depth=True)
     raw = deepcopy(config.raw)
     raw["robot"].update(active_arms=list(arms), observation_arms=[])
     raw["recording"].update(save_depth=False, save_video=False)

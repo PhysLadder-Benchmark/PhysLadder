@@ -24,7 +24,7 @@ class L1ProtocolTests(unittest.TestCase):
             self.assertEqual(execution, reference.raw["execution"])
             self.assertNotIn("policy_options", config.raw)
             self.assertEqual(config.observation_arms, (observer,))
-            self.assertTrue(config.include_depth)
+            self.assertFalse(config.include_depth)
             self.assertEqual(ExecutionSettings.from_config(config).max_decisions, 100)
             self.assertNotIn("reasoning_effort", config.raw["policy"])
             self.assertEqual(config.control_dt_s, reference.control_dt_s)

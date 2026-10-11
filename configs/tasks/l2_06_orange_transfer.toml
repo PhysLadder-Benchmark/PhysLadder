@@ -40,8 +40,8 @@ model_config = "../models/gpt.toml"
 physics_dt_s = 0.004166666666666667 # 240 Hz, checked in the complete metre-scale laboratory.
 
 [task]
-# Guided RGB-D execution; common information boundaries are appended by BenchTask.
-prompt_protocol = "guided_rgbd_l2_v2"
+# Guided visual execution; common information boundaries are appended by BenchTask.
+prompt_protocol = "guided_visual_l2_v3"
 scoring_protocol = "soft_pedestal_lift_v6"
 id = "L2-06"
 name = "从圆柱承台夹起橘子瓣 5 厘米"
@@ -64,7 +64,7 @@ The pedestal is 13 cm high with a flat top about 6.8 cm across. The orange is
 about 50 mm long, 26 mm wide and 17 mm thick, about 9 g. It lies flat with its
 long axis pointing front/back in the overview (world Y), not across the image.
 Choose a balanced grasp
-across the fuller middle, not the pointed ends. Use RGB-D and complementary views
+across the fuller middle, not the pointed ends. Use RGB and complementary views
 to put the orange between the inner finger pads, with adequate overlap on both
 sides; avoid hitting the pedestal. The TCP is not the lowest point of the fingers.
 

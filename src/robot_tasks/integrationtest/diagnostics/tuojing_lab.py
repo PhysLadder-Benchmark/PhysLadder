@@ -29,7 +29,7 @@ def check(output, *, gui=False, hold=False):
     from ...robots.transforms import pose_transform
     from ...types import Action, ArmCommand
 
-    config = load_config(PROJECT_ROOT / "configs/checks/tuojing_lab.toml")
+    config = load_config(PROJECT_ROOT / "configs/checks/tuojing_lab.toml", depth=True)
     config = replace(config, raw={**config.raw, "simulation": {**config.raw["simulation"], "headless": not gui}})
     output.mkdir(parents=True, exist_ok=True)
     os.environ.setdefault("OMNI_KIT_ACCEPT_EULA", "YES")

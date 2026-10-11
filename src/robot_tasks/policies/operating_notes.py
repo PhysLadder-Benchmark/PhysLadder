@@ -5,7 +5,7 @@ from ..robots.kinematics import R5Kinematics
 from ..backends.scene_geometry import bench_geometry
 
 
-def task_execution_guidance() -> str:
+def task_execution_guidance(*, include_depth=False) -> str:
     """Shared observation-driven planning protocol; no task script or hidden state."""
     return (
         "On receiving the task, identify its required final state, process constraints and arm roles. "
@@ -21,8 +21,9 @@ def task_execution_guidance() -> str:
         "completion assumptions and plan from the latest observation. "
         "When an outcome differs from expectation, identify the observable mismatch and revise the "
         "relevant stage before continuing. After repeated planning rejections, stop extending speculative "
-        "detours: reobserve the target, working end, held-object offset and clearance, using depth queries "
-        "or an allowed observation-arm move as needed. A no-valid-trajectory response is a planning "
+        "detours: reobserve the target, working end, held-object offset and clearance, using "
+        + ("depth queries or " if include_depth else "") +
+        "an allowed observation-arm move as needed. A no-valid-trajectory response is a planning "
         "failure, not proof that a particular obstacle or corridor caused it. Select a revised target "
         "from new evidence rather than repeating a rejected goal or moving progressively farther away. "
         "Keep each note within the existing 512-character limit: current stage, observed evidence or "
@@ -42,14 +43,20 @@ def manipulation_guidance(config) -> str:
         if config.grasp_check_mode == "contact_inspection" else
         "Verify a grasp from object motion during a short lift and from current images and feedback. "
     )
-    return (
-        "Use the latest measured state after preparation, execution, timeout or reset. "
-        "Read all available views before moving near uncertain geometry. An empty hole pixel may show "
-        "the background or a distant surface; query visible rim or object surfaces and account for "
-        "their geometry instead of treating one depth point as an object's centre. "
+    depth_advice = (
+        "An empty hole pixel may show the background or a distant surface; query visible rim or object "
+        "surfaces and account for their geometry instead of treating one depth point as an object's centre. "
         "A depth sample can hit the tabletop, background or gripper instead of the intended part. "
         "Check that the returned surface and height match the visible part; do not keep an incorrect "
-        "sample's XY and merely replace its Z. Cross-check complementary views before closing. "
+        "sample's XY and merely replace its Z. "
+        if config.include_depth else
+        "Use complementary views and observed motion to judge alignment and clearance; "
+        "a single image projection does not establish distance or contact. "
+    )
+    return (
+        "Use the latest measured state after preparation, execution, timeout or reset. "
+        "Read all available views before moving near uncertain geometry. "
+        f"{depth_advice}Cross-check complementary views before closing. "
         "After a missed grasp, re-localize and correct the full pose, not only its height. "
         "Use an observation arm when needed, following its role restrictions. "
         "Both arms start at their configured joint home, without a scripted downward or viewing pose. "
@@ -108,7 +115,7 @@ def operating_notes(config) -> dict:
         "contact": "Use measured TCP and RGB to reobserve. A blocked closing target is not proof of a grasp. No force sensor is provided.",
         "information_boundary": "Robot configuration only; no object pose, grasp point, detailed task score, or successful trajectory. A rejected stop discloses only that task completion was not confirmed.",
         "manipulation_guidance": manipulation_guidance(config),
-        "task_execution_guidance": task_execution_guidance(),
+        "task_execution_guidance": task_execution_guidance(include_depth=config.include_depth),
     }
     camera_path = config.raw.get("simulation", {}).get("camera_profile")
     if camera_path:

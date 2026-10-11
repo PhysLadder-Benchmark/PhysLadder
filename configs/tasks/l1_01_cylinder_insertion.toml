@@ -68,16 +68,11 @@ in the finger gap and contact opposite sides at similar heights. Choose the
 grip and entry height from the actual marker-to-finger geometry, rather than
 assuming that centring the TCP above the cup is sufficient.
 
-Localize before approaching. Query depth at several clearly visible pixels
-inside the marker's upper body or cap, avoiding silhouettes, grippers, overlays,
-shadows and background. Use the current image's camera name and pixel dimensions.
-A depth query returns the visible surface at that pixel, not an object identity
-or the marker's centre. Compare the returned height with the known table height:
-a point near the tabletop cannot locate the upper graspable body of an upright
-marker. Do not keep that point's XY and merely replace its Z with a grasp height.
-Recheck pixel selection and query a clearer wrist view if points are inconsistent.
-Use multiple surface points, the visible cylinder and its stated diameter to
-estimate its axis; distinguish a near surface from the centre of the finger gap.
+Localize before approaching. Identify the upper body or cap in complementary
+camera views, distinguishing it from grippers, overlays, shadows and background.
+Use the visible cylinder, stated diameter, known table height and measured hand
+pose to estimate its axis and grasp height. A visible near surface is not the
+centre of the cylinder or finger gap. If uncertain, inspect a clearer wrist view.
 
 Approach with an open gripper, then inspect before closing. Verify in two
 complementary views that the chosen body section is physically between the
@@ -92,7 +87,7 @@ Close in a separate decision. Compare measured opening with the marker diameter
 and inspect the actual images. Reaching the minimum opening around a visibly
 wider marker is strong evidence of an empty grasp, not a reason to squeeze harder.
 A blocked close alone also does not confirm a grasp. If capture is plausible,
-make a small vertical test lift within the allowed grasp-check limits and verify
+make a small vertical test lift, respecting automatic grasp limits if enabled, and verify
 that the whole marker follows the fingers rather than remaining on the table.
 The marker remaining upright at its initial tabletop position immediately after
 closing, before any lift, does not by itself prove failure. Confirm control of
@@ -105,7 +100,7 @@ There is no automatic reset. Falling off the table still ends the episode.
 Tilt in the air is allowed and by itself does not fail the task.
 
 After an empty close or failed lift, open the gripper and inspect again. Discard
-the failed grasp estimate, obtain fresh body-surface depth measurements and
+the failed grasp estimate, observe the body again and
 cross-check the horizontal alignment in another view. Correct XY and, as needed,
 height or orientation before closing again. Do not repeat open-close at the same
 pose, or only vary Z, without new evidence that the marker is now inside the gap.
@@ -113,8 +108,8 @@ In your action note, state the observed mismatch and the correction being made;
 do not describe the fingers as centred solely because they appear so in one image.
 
 After a verified lift, carry with enough clearance for the whole marker and
-fingers. Identify the cup's interior opening from complementary views; a depth
-sample through the opening may hit the bottom rather than the mouth plane.
+fingers. Identify the cup's interior opening from complementary views;
+distinguish the visible cup bottom from its mouth plane.
 Account for the marker's offset from the TCP. Centering the TCP alone does not
 ensure that the marker will enter the cup.
 

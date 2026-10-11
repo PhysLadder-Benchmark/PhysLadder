@@ -68,8 +68,8 @@ the lower-body grasp all the way down into the destination cup. Open separately
 once the bottom has entered. Opening alone does not prove release. Hold position
 and inspect settling and finger clearance; use another view if occluded. Choose a
 small clear withdrawal probe before a full retreat, and check whether the cup
-stays behind or follows the hand. release_check is advisory RGB-D evidence, not
-contact truth or a success verdict; you choose the recovery and exit motion. Gravity
+stays behind or follows the hand. If release_check feedback is enabled, it is advisory,
+not contact truth or a success verdict; you choose the recovery and exit motion. Gravity
 may finish settling the already-entered cup onto the tapered walls. Prefer this
 controlled entry before release to avoid missing the opening. If fingers would strike the rim before any entry,
 withdraw and adjust the supported grasp first.

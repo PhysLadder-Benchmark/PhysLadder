@@ -74,6 +74,17 @@ class BatchTests(unittest.TestCase):
                 config = load_config(root / "configs/L1-01.toml")
                 self.assertEqual(config.raw["policy"]["reasoning_effort"], expected)
 
+    def test_depth_mode_is_frozen_for_batch_and_not_changed_on_resume(self):
+        for name, flags, expected in (("rgb", (), False), ("rgbd", ("--depth",), True)):
+            with self.subTest(name=name):
+                root = self.root / name
+                self.assertEqual(self.main("--tasks", "L1-01", "--output", str(root),
+                    "--model-config", str(self.model), "--dry-run", *flags), 0)
+                config = load_config(root / "configs/L1-01.toml")
+                self.assertEqual(config.include_depth, expected)
+                self.assertEqual(config.save_depth, expected)
+                self.assertEqual(self.main("--resume", str(root), "--no-depth"), 2)
+
     def test_dry_batch_snapshots_overrides_and_skips_real_only(self):
         from dataclasses import replace
         real_only = replace(batch.TASKS["L3-11"], implemented=False, evidence="real_only")

@@ -207,11 +207,23 @@ class DepthPolicyAndRecordingTests(unittest.TestCase):
             policy.act(replace(self.context, observation=replace(self.context.observation, rgb=frames)))
         self.client.generate.assert_not_called()
 
-    def test_rgb_only_is_rejected_before_a_request(self):
-        config = replace(self.config, include_depth=False, save_depth=False)
-        with self.assertRaisesRegex(ValueError, "RGB-D"):
-            GPTPolicy(config, SETTINGS, client=self.client)
-        self.client.generate.assert_not_called()
+    def test_rgb_only_sends_three_images_and_has_no_depth_tool(self):
+        config = load_config(ROOT / "configs/checks/gpt_single_arm_pick_place.toml")
+        frames = tuple(replace(frame, depth=None) for frame in self.frames)
+        context = replace(self.context, observation=replace(self.context.observation, rgb=frames))
+        document = decision_document()
+        del document["depth_queries"]
+        self.client.generate.return_value = reply(document)
+        policy = GPTPolicy(config, SETTINGS, client=self.client)
+        action = policy.act(context)
+        self.assertEqual(action.depth_queries, ())
+        request = self.client.generate.call_args.kwargs
+        self.assertNotIn("depth_queries", request["schema"]["properties"])
+        content = request["messages"][-1]["content"]
+        self.assertEqual(sum(v["type"] == "input_image" for v in content), 3)
+        self.assertNotIn("depth", policy.run_metadata["observation_modalities"])
+        self.assertTrue(all("depth" not in f for f in policy.last_exchange["frames"]))
+        self.assertIn("no automatic grasp_check/release_check", policy.instructions)
 
     def test_raw_depth_is_lossless_and_reset_does_not_overwrite_failure(self):
         frame = self.frames[0]

@@ -31,7 +31,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class OptimizationTests(unittest.TestCase):
     def setUp(self):
-        base = load_config(ROOT / "configs/checks/gpt_single_arm_pick_place.toml")
+        base = load_config(ROOT / "configs/checks/gpt_single_arm_pick_place.toml", depth=True)
         self.config = replace(base, cameras=("overview",), observation_arms=())
         t = origin_transform((.3, .4, .2), (0., 0., 0.))
         t[:3, :3] = REFERENCE
@@ -97,7 +97,7 @@ class OptimizationTests(unittest.TestCase):
         self.assertTrue(policy.run_metadata["workflow"]["visual_aids"])
 
     def test_shared_advice_reaches_real_prompt_without_task_layout_or_recipe(self):
-        _, insertion = resolve_task("L1-01")
+        _, insertion = resolve_task("L1-01", depth=True)
         self.assertEqual(manipulation_guidance(self.config), manipulation_guidance(insertion))
         policy = GPTPolicy(insertion, self.settings, client=self.client)
         self.assertIn("held object's centre", policy.instructions)
@@ -127,7 +127,7 @@ class OptimizationTests(unittest.TestCase):
             if not spec.implemented:
                 continue
             with self.subTest(task=task_id):
-                _, config = resolve_task(task_id)
+                _, config = resolve_task(task_id, depth=True)
                 config = spec.factory.prepare_config(config)
                 frames = tuple(rgbd(name, time_s=1.) for name in config.cameras)
                 robot = {name: ArmState(tcp_pose_world_wxyz=self.pose)
@@ -138,7 +138,7 @@ class OptimizationTests(unittest.TestCase):
                 policy = GPTPolicy(config, self.settings, client=client)
                 policy.act(PolicyInput(config.instruction, observation, 1))
                 sent = client.generate.call_args.kwargs
-                self.assertEqual(sent["instructions"].count(json.dumps(task_execution_guidance())), 1)
+                self.assertEqual(sent["instructions"].count(json.dumps(task_execution_guidance(include_depth=True))), 1)
                 self.assertIn(json.dumps(config.arm_roles), sent["instructions"])
                 user = json.loads(sent["messages"][-1]["content"][0]["text"])
                 self.assertEqual(user["instruction"], config.instruction)

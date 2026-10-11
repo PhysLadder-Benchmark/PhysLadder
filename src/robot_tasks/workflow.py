@@ -1,4 +1,4 @@
-"""One fixed GPT workflow; TOML only supplies experiment parameters."""
+"""One GPT workflow with an explicit, opt-in depth observation channel."""
 
 from copy import deepcopy
 from pathlib import Path
@@ -8,19 +8,25 @@ import tomllib
 SECTIONS = {"runtime", "observation", "recording", "execution", "policy", "simulation"}
 
 
-def workflow_metadata() -> dict:
+def workflow_metadata(config=None) -> dict:
     """Describe implemented behavior for inspection and run records, not switches."""
+    depth = config.include_depth if config is not None else False
+    constrained = config is not None and config.grasp_check_mode == "contact_inspection"
+    guard = depth and not constrained
     return {
-        "version": 12, "action_interface": "sparse_eef_normalized_gripper", "ik": "curobo",
+        "version": 13, "action_interface": "sparse_eef_normalized_gripper", "ik": "curobo",
         "generation_retries": "3 after initial failure; unchanged observation; shared total call budget",
         "motion": "collision_checked_joint_trajectory",
         "stop_protocol": "evaluator_gated_continue_within_total_call_budget",
         "planner_information": "privileged collision geometry; no task goal or score",
         "prompt_protocol": "shared_observe_plan_verify_task_goal_v6",
-        "grasp_check": "rgbd_surface_comotion_v3_tracking_recovery",
-        "release_check": "rgbd_stationary_vs_following_advisory_v1",
-        "grasp_check_information": "visible RGB-D, measured TCP/opening, known robot cavity and bench height; no object truth or contacts",
-        "observation_modalities": ["rgb", "depth", "camera_calibration", "robot_state", "feedback"],
+        "grasp_check": ("rgbd_surface_comotion_v3_tracking_recovery" if guard else
+                        "contact_inspection_no_lift_gate" if constrained else "model_visual_inspection"),
+        "release_check": "rgbd_stationary_vs_following_advisory_v1" if guard else None,
+        "grasp_check_information": (
+            "visible RGB-D, measured TCP/opening, known robot cavity and bench height; no object truth or contacts"
+            if guard else "model inspects current images and measured robot state; no automatic depth gate"),
+        "observation_modalities": ["rgb"] + (["depth"] if depth else []) + ["camera_calibration", "robot_state", "feedback"],
         "retain_text_history": True, "operating_notes": True, "visual_aids": True,
         "decision_notes": True, "gripper_timing": "after_motion",
         "active_observation": "according_to_task_arm_roles",
@@ -36,7 +42,10 @@ def _fixed_inputs(raw: dict) -> dict:
         raise ValueError("Remove execution.gripper_timing: motion always precedes the gripper command")
     result = deepcopy(raw)
     observation = result.setdefault("observation", {})
-    for key in ("include_depth", "include_robot_state", "include_feedback"):
+    depth = observation.setdefault("include_depth", False)
+    if type(depth) is not bool:
+        raise ValueError("observation.include_depth must be true or false")
+    for key in ("include_robot_state", "include_feedback"):
         if key in observation and observation[key] is not True:
             raise ValueError(f"observation.{key} is required by the fixed GPT workflow; remove this override")
         observation[key] = True
@@ -46,8 +55,10 @@ def _fixed_inputs(raw: dict) -> dict:
 def validate_gpt_workflow(config) -> None:
     """Also validate programmatic callers before constructing a paid request."""
     _fixed_inputs(config.raw)
-    if not (config.include_depth and config.include_robot_state and config.include_feedback):
-        raise ValueError("GPT workflow requires RGB-D, measured robot state and execution feedback")
+    if not (config.include_robot_state and config.include_feedback):
+        raise ValueError("GPT workflow requires RGB, measured robot state and execution feedback")
+    if config.save_depth and not config.include_depth:
+        raise ValueError("recording.save_depth requires observation.include_depth")
     if not config.raw.get("simulation", {}).get("camera_profile"):
         raise ValueError("GPT workflow requires a camera rig profile with calibration")
 
