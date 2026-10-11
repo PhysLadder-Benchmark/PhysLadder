@@ -1,5 +1,48 @@
 # 拓境实验室交付资产
 
+## 按任务查找资产
+
+正式任务从 `source/<任务编号>/<物品名>/` 加载资产。同一物品用于不同任务时，
+各任务保存独立副本，不使用符号链接或硬链接；USD、贴图、质量及碰撞参数原样保留。
+两只相同纸杯、三本相同书等同一任务内的实例，仍复用该任务的一份物品文件。
+
+```text
+source/
+  common/lab/                 # 公共实验室、R5 双臂和相机
+  L1-01/marker/  mug/
+  L1-03/plug/  power_strip/  plug_base/
+  L1-05/key_and_lock/          # README：运行时生成，没有交付 USD
+  L1-07/hat/  rack/
+  L1-08/cup/
+  L1-09/rose/  cup/
+  L2-01/marker/
+  L2-03/book/
+  L2-04/cup/  pearl/
+  L2-06/orange/  pedestal/
+  L2-07/drawer/
+  L3-03/bottle/
+  L3-05/bolt/
+  L3-11/board/  eraser/
+  L3-14/triangle/
+  L3-15/brush/  dustpan/  block/
+```
+
+`task_assets.json` 登记每个目录及其原始资产。普通物品的 USD 直接位于物品目录；
+拔帽马克笔保留 `marker/pullable_marker/asset.usda` 与旁边的笔身、笔帽目录；
+瓶子保留 `bottle/assets/oriental_leaf.usda` 和 `bottle/textures/`，确保原相对引用不变。
+`packages/<交付包名>/` 保存完整原始交付，供来源追溯、安装和校验，不作为任务副本的回退路径。
+副本缺失或文件被修改会明确报错；更改任务物性仍应通过场景覆盖，而非直接修改锁定文件。
+
+已有旧目录的机器只需执行一次：
+
+```bash
+python tools/tuojing_assets.py --organize
+```
+
+该命令校验并将旧的 `source/<交付包名>/` 移到 `packages/`，然后复制各任务所需的物品和依赖。
+后续 ZIP 或 Release 安装会自动生成同一布局；再次执行上述命令可核实已有副本。
+`source/` 和 `packages/` 都不进入 Git，目录映射、原始哈希锁和安装程序进入 Git。
+
 当前阶段：六个现行 L1 均迁入实验室，使用原生 R5 双臂和三路相机；
 可对应的道具已替换，准备动作、坐标标注、抓取检查与评分同步适配。五个现行 L2 也已接入同一实验室和对应原生资产；L3-03/05/11/14/15 已接入同一实验室，L3-16 已从任务池移除。
 资产来自 2026-10-05 / 2026-10-06 的 L20 锁定交付包；GPT 操作效果需通过后续正式任务运行验证。
@@ -108,17 +151,17 @@ python -m robot_tasks.integrationtest.marker_settling --output build/marker_sett
 从桌前看，插线板在左，长边横向、原生线圈在后：原点 `(0.02, 1.20, 0.78)` m，
 绕 Z 轴转 +90°。右侧底座初始底部 `(0.35, 1.20, 0.781)` m，
 充电头初始插脚末端原点 `(0.35, 1.20, 0.7845)` m，以极小间隙自然沉降落座。
-中心相距 33 cm。位置依据照片比例估计；机器人基座和资产尺寸没有随之改动，相机调整见下文。
+中心相距 33 cm。位置依据照片比例估计；机器人基座和资产尺寸没有随之改动。
 
 按初始 TCP 到充电头中心距离选臂，当前右臂操作、左臂观察，整轮分工保持固定。
 提示词要求先夹住露出的上方塑料、竖直拔出底座，再移动到中间蓝色双孔。
-L1-03 单独使用 `configs/cameras/r5_tuojing_lab_plug.toml`，参考真机截图的全局构图：
-overview 为 **1280×960（4:3）**，双臂位于上部，插线板及底座位于下部。
-相机光心约 `(0.076, 0.268, 2.20)` m，瞄准 `(0.117, 1.30, 1.033)` m。
-`override_intrinsics=true` 明确允许在 USD 会话层调整投影视野；fx=fy≈1539 像素，
-使用方形像素，不把原 16:9 图像拉伸成 4:3。RGB-D、录像、模型内外参与真实渲染一致，
-原始交付 USD 不修改。这是依据截图的近似构图，不能替代实测标定；两腕相机和物体布局不变。
-GUI 启动时直接选择该 overview 对应的 `/World/Cameras/ThirdPerson`，使用与录像相同的镜头及位姿。
+L1-03 与其他任务共用 `configs/workflows/gpt_default.toml` 中的 overview，
+相机绑定仍为 `configs/cameras/r5_tuojing_lab.toml`，不另设任务专属视角。
+overview 为 **1280×960（4:3）**，光心 `(0.1956512155, 0.55, 1.45)` m，
+瞄准 `(0.1956512155, 1.4721758867, 0.78)` m，fx=fy=1160 像素。
+RGB-D、录像和模型相机参数使用同一配置，两腕相机保留公共安装参数。
+GUI 使用独立的 `/World/GUIView`，初态复制 overview；鼠标调整 GUI 不改变模型或录像视角。
+这些数值为已有公共构图估计，不是实测标定。
 
 成功协议为 `l1_plug_entry_only_v1`：两片插脚分别真正进入对应孔即可，
 允许浅插、继续夹持和运动。不再要求原来的 15 mm 深度、外壳落座、释放承托、
@@ -187,17 +230,17 @@ python -m robot_tasks.integrationtest.scene_smoke L1-03 --prop-probe --output bu
 
 - `source.lock.json`：九个压缩包及包内 544 个文件的 SHA-256、文件长度和目录映射。
 - `catalog.json`：实验室、九种道具、软体及展示场景的 USD 入口与使用边界。
-- `source/tuojing_lab_20261005_v4/`：实验室、R5 双臂、三路任务相机及其他检查视角。
-- `source/photo_assets_20261005/`：九种道具、材质贴图与估计物理参数。
-- `source/orange_segment_soft_20261005/`：橘子瓣软体、预切碎块与演示资料。
-- `source/tabletop_interactions_20261006/`：可拔帽马克笔、纸杯、小珍珠、开口碗与抹布。
-- `source/book_physx_20261006/`：闭合书本、场景和参数。
+- `packages/tuojing_lab_20261005_v4/`：实验室、R5 双臂、三路任务相机及其他检查视角。
+- `packages/photo_assets_20261005/`：九种道具、材质贴图与估计物理参数。
+- `packages/orange_segment_soft_20261005/`：橘子瓣软体、预切碎块与演示资料。
+- `packages/tabletop_interactions_20261006/`：可拔帽马克笔、纸杯、小珍珠、开口碗与抹布。
+- `packages/book_physx_20261006/`：闭合书本、场景和参数。
 
-各 `source/` 子目录保留交付包内部结构。实验室 ZIP 顶层原名是
+各 `packages/` 子目录保留交付包内部结构。实验室 ZIP 顶层原名是
 `tuojing_lab_isaacsim_v4`，安装时只将这一层映射为 `tuojing_lab_20261005_v4`。
 原始交付文件不做修改，也不执行其中的脚本。服务器额外的缓存、日志和临时诊断文件未导入。
 
-`source/` 与下载缓存被 Git 忽略；取得交付包后运行安装命令即可恢复。
+`source/`、`packages/` 与下载缓存被 Git 忽略；取得交付包后运行安装命令即可恢复。
 检出本仓库并不自动授予 L20 访问权限，也不会自动下载私有实验室资产。
 
 ## 安装与校验
@@ -238,7 +281,7 @@ python tools/tuojing_assets.py --usd --report build/tuojing_assets/usd.json
 ```
 
 这个检查不启动物理仿真、渲染或 GPT，不代表任务运行成功。
-`OmniPBR.mdl` 是 Isaac 内置材质，独立 `usd-core` 无法解析时会单独报告；
+`OmniPBR.mdl`、`OmniGlass.mdl` 是 Isaac 内置材质，独立 `usd-core` 无法解析时会单独报告；
 需在下一步 Isaac 场景加载时确认。其他缺失文件、绝对路径依赖及包外依赖均报错。
 51 cm 备选实验室与两个橘子瓣演示场景没有 `defaultPrim`，可整场打开；作为子资产
 引用时必须指定目标 prim，不能默认按普通单件资产引用。检查结果会保留此项说明。

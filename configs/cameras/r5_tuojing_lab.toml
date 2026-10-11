@@ -14,7 +14,7 @@ distortion = [0.0, 0.0, 0.0, 0.0, 0.0]
 optical_pose_wxyz = [0.1956512155, 0.55, 1.45, 0.8910065241883679, 0.45399049973954675, 0.0, 0.0]
 intrinsics_source = "2026-10-07 visual estimate from the 4:3 global video panel; fx=fy=1160 px at 1280x960. Session-layer lens override, not measured camera calibration."
 pose_source = "Video framing estimate: eye [0.1956512155, 0.55, 1.45], facing +world Y at 36 degrees below horizontal. Height is an estimate, not recovered physical camera height."
-asset = "../../assets/tuojing/source/tuojing_lab_20261005_v4/tuojing_lab.usda"
+asset = "../../assets/tuojing/source/common/lab/tuojing_lab.usda"
 asset_pose_wxyz = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
 asset_pose_source = "Delivered camera and tripod head moved together by session-layer overrides; source USD unchanged"
 clipping_m = [0.03999999910593033, 100.0]
@@ -29,7 +29,7 @@ distortion = [0.0, 0.0, 0.0, 0.0, 0.0]
 optical_pose_wxyz = [0.09702965115337059, 0.0, 0.06842268053406901, 0.6532814824381884, 0.27059805007309856, -0.27059805007309856, -0.6532814824381883]
 intrinsics_source = "USD focalLength / horizontalAperture / verticalAperture, centred pinhole; not hardware calibration"
 pose_source = "User-requested 45 degree wrist tilt: optical forward = (+X-Z)/sqrt(2) in link6; image right=-Y. Optical centre unchanged; rotate the delivered sensor/bracket assembly around it in the session layer."
-asset = "../../assets/tuojing/source/tuojing_lab_20261005_v4/tuojing_lab.usda"
+asset = "../../assets/tuojing/source/common/lab/tuojing_lab.usda"
 asset_pose_wxyz = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
 asset_pose_source = "Delivered wrist camera and mounting assembly move together with link6; source USD unchanged"
 clipping_m = [0.009999999776482582, 10.0]
@@ -44,7 +44,7 @@ distortion = [0.0, 0.0, 0.0, 0.0, 0.0]
 optical_pose_wxyz = [0.09702965115337059, 0.0, 0.06842268053406897, 0.6532814824381884, 0.27059805007309856, -0.27059805007309856, -0.6532814824381883]
 intrinsics_source = "USD focalLength / horizontalAperture / verticalAperture, centred pinhole; not hardware calibration"
 pose_source = "User-requested 45 degree wrist tilt: optical forward = (+X-Z)/sqrt(2) in link6; image right=-Y. Optical centre unchanged; rotate the delivered sensor/bracket assembly around it in the session layer."
-asset = "../../assets/tuojing/source/tuojing_lab_20261005_v4/tuojing_lab.usda"
+asset = "../../assets/tuojing/source/common/lab/tuojing_lab.usda"
 asset_pose_wxyz = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
 asset_pose_source = "Delivered wrist camera and mounting assembly move together with link6; source USD unchanged"
 clipping_m = [0.009999999776482582, 10.0]

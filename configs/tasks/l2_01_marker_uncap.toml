@@ -31,8 +31,8 @@ model_config = "../models/gpt.toml"
 physics_dt_s = 0.0005208333333333333 # 1920 Hz for the delivered tiny passive spring shoes.
 
 [task]
-# Guided RGB-D execution; common information boundaries are appended by BenchTask.
-prompt_protocol = "guided_rgbd_l2_v2"
+# Guided visual execution; common information boundaries are appended by BenchTask.
+prompt_protocol = "guided_visual_l2_v3"
 scoring_protocol = "native_l2_validity_v2"
 id = "L2-01"
 name = "双臂拔马克笔帽（桌面横放起步）"
@@ -57,7 +57,7 @@ Neither arm is observation-only; move for a clearer view when it is safe, withou
 losing the other hand's support. The capped black marker initially lies on the
 table. It is about 151 mm long, with a 16.2 mm barrel and 17.4 mm cap diameter.
 
-Identify the barrel, seam, cap and its closed end from current RGB-D images.
+Identify the barrel, seam, cap and its closed end from current RGB images.
 Grip the lower/middle barrel with the left hand, away from the cap seam. The
 barrel is narrow but wider than the 12 mm minimum opening: centre it between
 opposing pads. Close separately, make a small test lift and verify that the

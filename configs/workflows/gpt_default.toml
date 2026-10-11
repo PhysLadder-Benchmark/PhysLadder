@@ -1,4 +1,4 @@
-# Shared experiment parameters. GPT workflow capabilities are fixed in code.
+# Shared experiment parameters. Depth is optional; all other workflow logic is shared.
 # No task assets, task ID, robot roles, provider endpoint or credentials belong here.
 [simulation]
 # Complete overview framing matched to the global panel of 15_book_150s.mp4.
@@ -19,10 +19,11 @@ control_dt_s = 0.08333333333333333
 
 [observation]
 cameras = ["overview", "left_wrist", "right_wrist"]
+include_depth = false # Opt in with run TASK --depth, or set true here/per task.
 
 [recording]
 save_rgb = true
-save_depth = true
+# save_depth defaults to include_depth: RGB runs do not collect or record depth.
 save_video = true
 
 [execution]
@@ -34,5 +35,4 @@ stop_steps = 12
 max_decisions = 100
 fixed_arm_tolerance_rad = 0.01
 
-[policy]
-reasoning_effort = "medium"
+# Model defaults, including reasoning effort, live in configs/models/gpt.toml.

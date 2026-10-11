@@ -120,7 +120,7 @@ class EpisodeExecutionTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         # Runtime snapshots use resolved paths, even if Windows TEMP is an alias.
         self.root = Path(self.temp.name).resolve()
-        base = load_config(ROOT / 'configs/checks/gpt_single_arm_pick_place.toml')
+        base = load_config(ROOT / 'configs/checks/gpt_single_arm_pick_place.toml', depth=True)
         # Controller tests use an explicit 10 Hz fixture with the shared RGB-D protocol.
         base = replace(base, control_dt_s=0.1, save_depth=False)
         self.config = replace(base, raw={**base.raw, "execution": {

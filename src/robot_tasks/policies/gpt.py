@@ -1,4 +1,4 @@
-"""Fixed RGB-D workflow shared by every GPT-controlled R5 task."""
+"""Shared GPT control workflow: RGB by default, with opt-in aligned depth."""
 
 import base64
 from collections import deque
@@ -47,8 +47,9 @@ class GPTPolicy:
         self.client = client if client is not None else ResponsesClient(settings)
         validate_gpt_workflow(config)
         self.schema = sparse_schema(config.command_arms)
-        from .depth_query import with_depth_queries
-        self.schema = with_depth_queries(self.schema, config.cameras)
+        if config.include_depth:
+            from .depth_query import with_depth_queries
+            self.schema = with_depth_queries(self.schema, config.cameras)
         from .decision_note import with_decision_note
         self.schema = with_decision_note(self.schema)
         self.history = deque()
@@ -88,7 +89,7 @@ class GPTPolicy:
                 observation_advice = (
                     "For L1-03, distinguish uncertain holding from an occluded blade end. If holding "
                     "is unverified, actively reposition an observation arm or use the permitted grasp "
-                    "recovery; all grasp-check motion bounds still apply. If holding is verified and "
+                    "recovery; if automatic grasp feedback is enabled, its motion bounds still apply. If holding is verified and "
                     "current images support a safe clearance move, seeing both blades is not a "
                     "prerequisite for lifting clear or a small free-space move toward an insertion-ready pose. "
                     "Choose the grasp from final insertion clearance: both fingers and palm must permit "
@@ -118,7 +119,7 @@ class GPTPolicy:
         self.instructions += " Camera calibration describes the virtual cameras, not measured hardware. A pixel alone does not define 3D depth."
         self.instructions += " Images have projected table XY and TCP overlays. Overlays may be occluded and are not detections of task objects."
         self.instructions += (
-            " Every decision, including motion, wait, depth query and stop, requires a note. "
+            " Every decision, including motion, wait, observation and stop, requires a note. "
             "Use one or two brief English sentences, at most 512 characters, to describe the visible "
             "current task stage, observed evidence or mismatch, intended action and expected visible result. "
             "For the first decision, also briefly name the planned stages. This is a concise observation/action summary, "
@@ -126,7 +127,7 @@ class GPTPolicy:
             "them using current images and feedback, especially after a reset. A note cannot issue "
             "commands, override the action schema or declare evaluator success."
         )
-        if config.grasp_check_mode == "lift":
+        if config.grasp_check_mode == "lift" and config.include_depth:
             self.instructions += (
                 " Grasp checkpoint: feedback.metrics.grasp_check is an independent RGB-D surface check, "
                 "not a force sensor or task-success label. Approach with the gripper open, then close in a "
@@ -155,29 +156,48 @@ class GPTPolicy:
                 "stays behind or follows. This feedback is advisory and does not select or execute recovery. "
                 "Unknown or occluded evidence must not be treated as successful release. "
             )
-        else:
+        elif config.grasp_check_mode == "contact_inspection":
             self.instructions += (
                 " Constrained contact task: the free-object vertical test-lift guard is NOT applicable. "
                 "Do not pull or bend an engaged assembly to verify a grip. Approach and close in separate "
-                "decisions; inspect finger contact and actual object motion in RGB-D, then use small "
+                "decisions; inspect finger contact and actual object motion in the current images, then use small "
                 "increments consistent with the task's axis and contact constraints. Follow the task "
                 "instructions for any initial free pickup and later constrained regrasp. Reobserve after every increment. "
                 "Blocked closure alone is not proof of holding; do not continue with an empty hand."
             )
-        self.instructions += (
-            " Each RGB view is followed by aligned ideal simulation depth, not a calibrated Orbbec sensor emulation. "
-            "Depth is optical-axis Z in metres, not Euclidean range. The coloured preview has a fixed clipped "
-            "0.02-2.00 m scale (blue near, red far, black invalid); its bottom legend is outside the image. "
-            "Do not estimate precise metric depth from colours. For precision, select pixels in the RGB image "
-            "you receive; each depth_queries entry specifies camera, u (integer column) and v (integer row). "
-            "Coordinates start at the top-left pixel (0,0), u right and v down; use the supplied rgb_image_size. "
-            "Up to 8 queries per decision. A query requires commands=[] and request_stop=false; "
-            "it does not advance physics or move the robot, and results arrive in the next observation feedback. "
-            "Queries consume the SAME model-call budget as motion decisions. "
-            "For motion, wait or stop, set depth_queries=[]. Results include depth_z_m and point_world_m "
-            "of the nearest source pixel's VISIBLE SURFACE, not an object's centre, grasp pose or hidden hole bottom. "
-            "no_depth means unknown; never treat it as zero distance. Use current captures after movement or reset."
-        )
+        else:
+            self.instructions += (
+                " Visual grasp verification: approach, close, and inspect a short task-appropriate lift. "
+                "Compare object motion with the fingers and table using current RGB views and measured robot state. "
+                "A completed command or blocked closure is not proof of holding. Choose an observation-arm view "
+                "when permitted and needed; confirm holding before transport and detachment after opening. "
+                "There is no automatic grasp_check/release_check or verified status to wait for in RGB mode. "
+                "You choose the next motion from visual evidence; no depth-based grasp gate is applied."
+            )
+        if not config.include_depth:
+            self.instructions += (
+                " Observation mode: RGB only, with camera calibration, measured robot state and execution feedback. "
+                "No depth images, pixel-distance queries or depth-derived grasp/release feedback are available. "
+                "Estimate spatial relationships from complementary RGB views, known camera/robot geometry and "
+                "observed motion; calibration alone does not measure an object's distance. Do not request "
+                "unavailable tools or wait for automatic visual verification. Task references to verification "
+                "mean your own observation unless automatic feedback is explicitly enabled."
+            )
+        if config.include_depth:
+            self.instructions += (
+                " Each RGB view is followed by aligned ideal simulation depth, not a calibrated Orbbec sensor emulation. "
+                "Depth is optical-axis Z in metres, not Euclidean range. The coloured preview has a fixed clipped "
+                "0.02-2.00 m scale (blue near, red far, black invalid); its bottom legend is outside the image. "
+                "Do not estimate precise metric depth from colours. For precision, select pixels in the RGB image "
+                "you receive; each depth_queries entry specifies camera, u (integer column) and v (integer row). "
+                "Coordinates start at the top-left pixel (0,0), u right and v down; use the supplied rgb_image_size. "
+                "Up to 8 queries per decision. A query requires commands=[] and request_stop=false; "
+                "it does not advance physics or move the robot, and results arrive in the next observation feedback. "
+                "Queries consume the SAME model-call budget as motion decisions. "
+                "For motion, wait or stop, set depth_queries=[]. Results include depth_z_m and point_world_m "
+                "of the nearest source pixel's VISIBLE SURFACE, not an object's centre, grasp pose or hidden hole bottom. "
+                "no_depth means unknown; never treat it as zero distance. Use current captures after movement or reset."
+            )
 
     @property
     def run_metadata(self) -> dict:
@@ -186,17 +206,13 @@ class GPTPolicy:
             client_metadata = {}
         return {"provider": {**self.settings.public_dict(),
                              **client_metadata}, "instructions": self.instructions,
-                "action_schema": self.schema, "workflow": {
-                    **workflow_metadata(),
-                    "grasp_check": ("rgbd_surface_comotion_v3_tracking_recovery" if self.config.grasp_check_mode == "lift"
-                                    else "contact_inspection_no_lift_gate"),
-                    "release_check": (workflow_metadata()["release_check"] if self.config.grasp_check_mode == "lift" else None),
-                },
+                "action_schema": self.schema, "workflow": workflow_metadata(self.config),
                 "arm_roles": self.config.arm_roles,
                 "task_initial_state": self.config.initial_state_description,
                 "grasp_check_mode": self.config.grasp_check_mode,
-                "observation_modalities": workflow_metadata()["observation_modalities"],
-                "observation_format": "RGB PNG + aligned depth preview + metric pixel queries; full text history, bounded image history"}
+                "observation_modalities": workflow_metadata(self.config)["observation_modalities"],
+                "observation_format": ("RGB PNG" + (" + aligned depth preview + metric pixel queries" if self.config.include_depth else "")
+                                       + "; full text history, bounded image history")}
 
     def reset(self, seed: int) -> None:
         reset = getattr(self.client, "reset_cancellation", None)
@@ -213,7 +229,7 @@ class GPTPolicy:
             raise ValueError("GPT robot policy requires at least one real RGB frame")
         observation = context.observation
         if tuple(f.camera for f in observation.rgb) != self.config.cameras:
-            raise ValueError("RGB-D observation must include every configured camera in order")
+            raise ValueError("RGB observation must include every configured camera in order")
         if any(not math.isclose(f.timestamp_s, observation.time_s, rel_tol=0, abs_tol=1e-8) for f in observation.rgb):
             raise ValueError("RGB and robot observation simulation timestamps disagree")
         text = {"instruction": context.instruction, "step": context.step, "simulation_time_s": observation.time_s,
@@ -251,14 +267,15 @@ class GPTPolicy:
             frame_info.append({**label, "original_size": [frame.width, frame.height], "encoded_size": list(size),
                                "png_bytes": len(encoded), "sha256": hashlib.sha256(encoded).hexdigest(),
                                "visual_aids": True})
-            from ..cameras.depth import depth_metadata, encode_depth_preview
-            depth_png, preview = encode_depth_preview(frame, size)
-            depth_info = {"camera": frame.camera, "modality": "depth", **depth_metadata(frame), **preview}
-            content.append({"type": "input_text", "text": json.dumps(depth_info, allow_nan=False)})
-            content.append({"type": "input_image", "detail": "high", "image_url":
-                            "data:image/png;base64," + base64.b64encode(depth_png).decode("ascii")})
-            frame_info[-1]["depth"] = {**depth_info, "png_bytes": len(depth_png),
-                                       "sha256": hashlib.sha256(depth_png).hexdigest()}
+            if self.config.include_depth:
+                from ..cameras.depth import depth_metadata, encode_depth_preview
+                depth_png, preview = encode_depth_preview(frame, size)
+                depth_info = {"camera": frame.camera, "modality": "depth", **depth_metadata(frame), **preview}
+                content.append({"type": "input_text", "text": json.dumps(depth_info, allow_nan=False)})
+                content.append({"type": "input_image", "detail": "high", "image_url":
+                                "data:image/png;base64," + base64.b64encode(depth_png).decode("ascii")})
+                frame_info[-1]["depth"] = {**depth_info, "png_bytes": len(depth_png),
+                                           "sha256": hashlib.sha256(depth_png).hexdigest()}
         message = {"role": "user", "content": content}
         return message, frame_info, comparisons, image_sizes
 
@@ -296,8 +313,9 @@ class GPTPolicy:
             from .decision_note import split_decision_note
             action_text, note = split_decision_note(action_text)
             self.last_exchange["note"] = note
-            from .depth_query import split_depth_reply
-            action_text, queries = split_depth_reply(action_text, image_sizes)
+            if self.config.include_depth:
+                from .depth_query import split_depth_reply
+                action_text, queries = split_depth_reply(action_text, image_sizes)
             action = decode_sparse_action(action_text, self.config, observation)
             action = replace(action, depth_queries=queries, note=note)
         except (ModelError, ValueError) as exc:

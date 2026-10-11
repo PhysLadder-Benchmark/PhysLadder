@@ -5,7 +5,8 @@
 - `master` 保存代码、运行时 USD 覆盖、任务配置、测试、下载工具和版本清单。
 - 本仓库的私有 GitHub Release 保存原始 ZIP；不把大文件塞入 Git 历史。
 - `source.lock.json` 固定每个 ZIP 以及解压文件的 SHA256；`release.json` 固定仓库、Release tag、上传包、大小和未包含的包，并绑定锁文件的 SHA256。
-- `source/`、`.cache/`、运行结果、视频、日志、凭据继续由 Git 忽略。Release 也不得包含它们；只上传清单列出的原始 ZIP 和公开给仓库协作者的校验元数据。
+- `source/`（按任务复制的资产）、`packages/`（完整原始交付）、`.cache/`、运行结果、视频、日志、凭据继续由 Git 忽略。Release 也不得包含它们；只上传清单列出的原始 ZIP 和公开给仓库协作者的校验元数据。
+- `task_assets.json` 随代码保存，声明 `source/<任务编号>/<物品名>/` 的目录及依赖。安装工具从校验后的 `packages/` 生成各任务独立副本。
 - 不直接修改原始资产。物理参数、碰撞几何和任务布局优先保存在代码运行时覆盖中；确需修改原包时，制作新包并更新锁文件及 Release 版本。
 
 ## 本次交付范围
@@ -42,6 +43,9 @@ python3 tools/fetch_tuojing_release.py
 
 下载工具使用 `release.json` 指定的版本，不跟随 `latest`。已缓存 ZIP 必须通过大小和 SHA256 校验；下载先写临时目录，校验后进入缓存。安装保留原有目录，发现本地文件被修改则报错，不覆盖。
 没有网络时，缓存中已有完整的三个 ZIP 也可运行此命令，不需要调用 GitHub CLI。
+
+已经安装旧版目录的机器可运行 `python3 tools/tuojing_assets.py --organize` 迁移；
+只有部分包时加 `--packages` 明确选择。迁移不改原始文件内容，也不改变 Release 的哈希锁。
 
 仅检查这次交付的本地文件：
 

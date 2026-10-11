@@ -211,13 +211,13 @@ class NativeOutcomeTests(unittest.TestCase):
     def test_cached_colliders_are_from_exact_locked_source_usds(self):
         import json
         root = Path(__file__).resolve().parents[1] / 'assets/tuojing'
-        entries = {e['id']: e for e in json.loads((root / 'catalog.json').read_text())['entries']}
-        packages = {p['id']: p for p in json.loads((root / 'source.lock.json').read_text())['packages']}
+        entries = {e['id']: e for e in json.loads((root / 'catalog.json').read_text(encoding='utf-8'))['entries']}
+        packages = {p['id']: p for p in json.loads((root / 'source.lock.json').read_text(encoding='utf-8'))['packages']}
         for name, record in catalog().items():
             entry = entries[name]
             package = packages[entry['package']]
             self.assertEqual(package['files'][entry['path']]['sha256'], record['sha256'])
-            source = root / 'source' / package['directory'] / entry['path']
+            source = root / 'packages' / package['directory'] / entry['path']
             if source.exists():
                 self.assertEqual(hashlib.sha256(source.read_bytes()).hexdigest(), record['sha256'])
         planes,floor,rim=cup_cavity()

@@ -5,8 +5,30 @@ from dataclasses import replace
 
 import numpy as np
 
-from ..l1.specs import BLUE, RED, Part, box
-from ..screw.geometry import closed_piece
+from ..l1.specs import BLUE, RED, Part
+
+# Closed hexahedron faces, oriented outward below.
+_FACES = (
+    (0, 3, 2, 1),
+    (4, 5, 6, 7),
+    (0, 1, 5, 4),
+    (1, 2, 6, 5),
+    (2, 3, 7, 6),
+    (3, 0, 4, 7),
+)
+
+
+def closed_piece(points):
+    points = np.asarray(points, dtype=float)
+    faces = []
+    center = points.mean(axis=0)
+    for quad in _FACES:
+        for tri in ((quad[0], quad[1], quad[2]), (quad[0], quad[2], quad[3])):
+            a, b, c = points[list(tri)]
+            if np.dot(np.cross(b - a, c - a), (a + b + c) / 3 - center) < 0:
+                tri = tuple(reversed(tri))
+            faces.append(tri)
+    return points, np.asarray(faces, dtype=int)
 
 
 def cylinder(name, radius, height, xyz=(0, 0, 0), color=RED, rpy=(0, 0, 0)):
@@ -59,48 +81,6 @@ def translated(parts, xyz, prefix=""):
         replace(p, name=prefix + p.name, position=tuple(np.asarray(p.position) + xyz))
         for p in parts
     )
-
-
-def placed_parts(parts, xyz, yaw):
-    """Place a local fixture assembly with the same yaw as its moving props."""
-    c, s = math.cos(yaw), math.sin(yaw)
-    return tuple(
-        replace(p, position=(xyz[0] + c * p.position[0] - s * p.position[1],
-                             xyz[1] + s * p.position[0] + c * p.position[1],
-                             xyz[2] + p.position[2]),
-                rotation=(p.rotation[0], p.rotation[1], p.rotation[2] + yaw))
-        for p in parts
-    )
-
-
-def tray_parts(
-    name, width=0.16, depth=0.12, wall_height=0.035, floor=0.004, color=BLUE
-):
-    return (
-        box(name + "_floor", (width, depth, floor), (0, 0, floor / 2), color),
-        box(
-            name + "_back",
-            (width, 0.004, wall_height),
-            (0, -depth / 2, wall_height / 2),
-            color,
-        ),
-        box(
-            name + "_left",
-            (0.004, depth, wall_height),
-            (-width / 2, 0, wall_height / 2),
-            color,
-        ),
-        box(
-            name + "_right",
-            (0.004, depth, wall_height),
-            (width / 2, 0, wall_height / 2),
-            color,
-        ),
-    )
-
-
-def floor_target(xy, size=(0.12, 0.12), name="target"):
-    return box(name, (*size, 0.0004), (*xy, 0.0002), (0.1, 0.65, 0.2), collision=False)
 
 
 def design(task_id, name, articles, fixtures=(), *, friction=0.35):

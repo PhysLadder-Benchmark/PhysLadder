@@ -17,7 +17,7 @@ python3 tools/batch_run.py --all --dry-run --output runs/batch_flow_check
 
 ```bash
 PYTHONPATH=src /home/hym/anaconda3/envs/env_isaaclab/bin/python \
-  -m robot_tasks.integrationtest.scene_smoke --all
+  -m robot_tasks.integrationtest.diagnostics.scene_smoke --all
 ```
 
 ## 两个任务试跑
@@ -38,7 +38,8 @@ python3 tools/batch_run.py --tasks L1-01 L2-01 \
 python3 tools/batch_run.py --all --output runs/gpt_master_baseline
 ```
 
-默认每任务 `medium`、最多 100 次模型调用、3600 秒回合墙钟时间、seed=0。
+默认读取 `configs/models/gpt.toml`，思考强度沿用该文件（当前为 `medium`）；
+`--reasoning-effort` 可显式覆盖。每任务默认最多 100 次模型调用、3600 秒回合墙钟时间、seed=0。
 外部进程 watchdog 从启动开始计时，预算为墙钟上限 + 300 秒启动/清理余量；
 必要时用 `--startup-grace-s` 调整。超时先请求正常退出，等待最多 30 秒保存结果
 及关闭视频，再强制结束本批次拥有的进程。Linux 下也跟踪独立会话的 cuRobo

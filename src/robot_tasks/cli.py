@@ -49,7 +49,11 @@ def _validate_robot(args) -> int:
 
 def _inspect(args) -> int:
     from .workflow import workflow_metadata
-    spec, config = resolve_task(args.task, args.config)
+    spec, config = resolve_task(args.task, args.config, depth=args.depth)
+    if spec.factory is not None:
+        prepare = getattr(spec.factory, "prepare_config", None)
+        if prepare is not None:
+            config = prepare(config)
     audit = audit_robot(config.robot)
     print(json.dumps({
         "task_id": spec.task_id, "name": spec.name, "config": str(config.source),
@@ -59,7 +63,7 @@ def _inspect(args) -> int:
         "active_arms": config.arms, "cameras": config.cameras, "robot_audit": audit.as_dict(),
         "command_arms": config.command_arms, "arm_roles": config.arm_roles,
         "workflow_profile": str(config.workflow_source) if config.workflow_source else None,
-        "execution": config.raw.get("execution", {}), "workflow": workflow_metadata(),
+        "execution": config.raw.get("execution", {}), "workflow": workflow_metadata(config),
         "reasoning_effort_override": config.raw.get("policy", {}).get("reasoning_effort"),
         "observation_modalities": ["rgb", "depth"] if config.include_depth else ["rgb"],
         "save_depth": config.save_depth,
@@ -71,7 +75,7 @@ def _inspect(args) -> int:
 
 
 def _run(args) -> int:
-    spec, config = resolve_task(args.task, args.config)
+    spec, config = resolve_task(args.task, args.config, depth=args.depth)
     directory, result = execute_task(
         spec, config, args.output.resolve(), policy_name=args.policy, model_config=args.model_config,
         gui=args.gui, dry_run=args.dry_run, step_limit=args.steps,
@@ -85,6 +89,8 @@ def _run(args) -> int:
 def _task_arguments(parser) -> None:
     parser.add_argument("task", nargs="?", help="注册任务 ID，例如 GPT-PICK-PLACE；只传 --config 也可")
     parser.add_argument("--config", type=Path, help="覆盖该任务的默认实验配置")
+    parser.add_argument("--depth", action=argparse.BooleanOptionalAction, default=None,
+                        help="开启深度采集、模型深度输入/测距和适用的抓取核验；默认关闭，--no-depth 强制关闭")
 
 
 def _output_argument(parser) -> None:

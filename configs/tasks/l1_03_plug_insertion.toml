@@ -10,7 +10,7 @@ observation_arms = ["left"]
 
 [simulation]
 environment = "tuojing_lab_v4"
-camera_profile = "../cameras/r5_tuojing_lab_plug.toml"
+camera_profile = "../cameras/r5_tuojing_lab.toml"
 asset_directory = "../../build/tuojing_lab"
 headless = true
 width = 1280
@@ -23,11 +23,6 @@ finger_damping = 40.0
 self_collision = false
 solver_position_iterations = 32
 solver_velocity_iterations = 4
-camera_reference_frame = "world"
-camera_resolution = [1280, 960]
-camera_intrinsics = [1539.0909857756062, 1539.0909857756062, 640.0, 480.0]
-camera_position = [0.07552374649075427, 0.26829766041080816, 2.2]
-camera_target = [0.11705006159910748, 1.3000000000000003, 1.0328245494353243]
 
 [policy]
 model_config = "../models/gpt.toml"
@@ -77,8 +72,8 @@ This is a visual hypothesis, not an IK/collision certificate: the interface has
 no separate dry-run candidate/path-check tool. Do not invent one, send motions
 as harmless queries, or claim future reachability before planning accepts them.
 
-Locate the housing and both slots from RGB-D views. Query depth on solid visible
-surfaces, not dark holes or silhouettes. The housing's 27 mm thickness fits the
+Locate the housing and both slots from complementary camera views. Distinguish
+solid surfaces from dark holes and silhouettes. The housing's 27 mm thickness fits the
 70 mm gripper opening. Leave both blades exposed. Close, make a short lift and
 verify the whole charger follows before transport. Regrasp after an empty close.
 
@@ -98,8 +93,8 @@ slipped. Do not rotate beside the tabletop or infer blade pose from TCP alone.
 
 Observation budget: for the SAME unresolved visibility question, allow at most
 TWO consecutive observation attempts without new useful evidence. A rejected
-observation-arm move, an executed view that remains occluded, and repeated depth
-queries that do not resolve that question all count. A rejection or changing
+observation-arm move, an executed view that remains occluded, and repeated
+inspection decisions that do not resolve that question all count. A rejection or changing
 camera targets does not reset this count. State the question and attempt count
 briefly in the decision note. Then change strategy instead of another camera
 search: if holding remains verified, choose a safe clearance or free-space move
@@ -122,16 +117,18 @@ For regrasp, use a controlled supported placement and open separately. Judge
 support from multiple views and measured motion together: a sampled visible rim
 need not be the lowest contact point. If further downward commands produce
 little measured motion near the table, stop pushing and inspect; do not chase a
-small depth gap with repeated down commands or invent contact-force readings.
+small apparent gap with repeated down commands or invent contact-force readings.
 
-A tracking_uncertain result after a verified lift
+If automatic grasp feedback is enabled, a tracking_uncertain result after a verified lift
 is not proof that the charger fell. Retain closure; prefer returning to the last
 verified pose to recover visibility, or use the bounded vertical recovery descent
 described by the guard, away from socket contact. Inspect after each recovery.
 Never open in midair to reset an uncertain grasp or because the observation budget
 is exhausted. Restore verification and establish visible support before opening.
 If safe recovery is blocked, hold rather than drop. Unknown grasp status must
-still obey the grasp guard; never bypass it with repeated small motions. Do not repeat a rejected
+still obey that guard; never bypass it with repeated small motions. When this feedback
+is disabled, verify holding yourself from current images; do not wait for a status field.
+Do not repeat a rejected
 target without addressing its reported constraint. All poses remain your choices
 from current observations; there is no supplied successful motion sequence.
 

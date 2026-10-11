@@ -83,7 +83,7 @@ class ObserverTests(unittest.TestCase):
             spec, config = resolve_task(task_id)
             config = spec.factory.prepare_config(config)
             self.assertEqual(config.instruction.count(OPERATING_NOTES), 1)
-            self.assertEqual(config.raw["task"]["prompt_protocol"], "guided_rgbd_l2_v2")
+            self.assertEqual(config.raw["task"]["prompt_protocol"], "guided_visual_l2_v3")
             self.assertIn("no direct force, torque", config.instruction)
 
     def test_transient_contact_does_not_fail_but_sustained_contact_does(self):

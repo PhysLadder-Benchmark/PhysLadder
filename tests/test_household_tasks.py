@@ -59,12 +59,12 @@ class HouseholdTests(unittest.TestCase):
                     f"python tools/launch.py run {spec.task_id} --gui",
                 )
                 self.assertEqual(cfg.raw["execution"]["max_decisions"], 100)
-                self.assertEqual(cfg.raw["policy"]["reasoning_effort"], "medium")
+                self.assertNotIn("reasoning_effort", cfg.raw["policy"])
                 self.assertEqual(
                     cfg.observation_arms,
                     tuple(a for a in ("left", "right") if a not in cfg.arms),
                 )
-                self.assertTrue(prepared.include_depth)
+                self.assertFalse(prepared.include_depth)
                 self.assertTrue(prepared.raw["task"]["description"])
         self.assertTrue(resolve_task("L3-11")[0].implemented)
         self.assertNotIn("L3-16", TASKS)

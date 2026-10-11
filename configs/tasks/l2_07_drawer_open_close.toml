@@ -28,8 +28,8 @@ solver_velocity_iterations = 0
 model_config = "../models/gpt.toml"
 
 [task]
-# Guided RGB-D execution; common information boundaries are appended by BenchTask.
-prompt_protocol = "guided_rgbd_l2_v2"
+# Guided visual execution; common information boundaries are appended by BenchTask.
+prompt_protocol = "guided_visual_l2_v3"
 scoring_protocol = "drawer_absolute_opening_v4"
 id = "L2-07"
 name = "单臂拉开固定化妆抽屉"
@@ -45,7 +45,7 @@ The organizer is in front of the robot on the RIGHT of the shared overview
 image. Use the RIGHT R5 arm to open only the UPPER drawer. The LEFT arm is free to
 move its wrist camera for observation but must not touch the organizer.
 Identify the upper drawer, its original shallow front lip, and the rail direction
-from current RGB-D observations. The cabinet and lower drawer are fixed.
+from current camera observations. The cabinet and lower drawer are fixed.
 The upper drawer starts 30 mm open to give access behind the native front lip.
 This is only the initial layout; you must still pull it farther open.
 There is no added handle or grasp adapter. The native lip is about 102 mm wide,

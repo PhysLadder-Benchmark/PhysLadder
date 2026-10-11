@@ -13,8 +13,6 @@ from robot_tasks.tasks.bench.evaluation import BenchEvaluator
 from robot_tasks.tasks.bench.spec import build_spec
 from robot_tasks.tasks.bench.wiping import WipeLedger
 from robot_tasks.tasks.l1.specs import pose
-from robot_tasks.tasks.screw.evaluation import ScrewEvaluator
-from robot_tasks.tasks.screw.spec import task_spec
 from test_household_tasks import measurement
 
 
@@ -216,42 +214,3 @@ class PhotoLayoutTests(unittest.TestCase):
             )
             ledger.update(i, eraser_pose, pad_contact_n=0.2, held=True)
         self.assertFalse(ledger.dirty[0])
-
-
-class DerivedScrewTests(unittest.TestCase):
-    def test_lab_height_and_released_contact_complete_without_extra_dwell(self):
-        _, cfg = resolve_task("L3-05")
-        s = task_spec(cfg)
-        e = ScrewEvaluator(s)
-
-        def row(z, yaw=0, held=True, support=True):
-            return {
-                "pose": list(pose(*s.socket_xy, s.table_z + z, yaw=yaw)),
-                "linear_velocity": [0.011, 0, 0],
-                "angular_velocity": [0, 0, 0.21],
-                "finger_forces": [1, 1] if held else [0, 0],
-                "fixture_force_n": 0.6 if support else 0,
-                "bench_force_n": 0,
-            }
-
-        e.update(0, row(0.08, support=False))
-        for i in range(14):
-            r = row(0.025 - i * 0.0005, -i * math.pi / 12)
-            e.update(i + 1, r)
-        r["finger_forces"] = [0, 0]
-        self.assertEqual(e.update(15, r).status, "succeeded")
-        self.assertEqual(s.stability_s, 0)
-        self.assertEqual(s.table_z, 0.78)
-
-    def test_drop_threshold_uses_lab_table(self):
-        _, cfg = resolve_task("L3-05")
-        s = task_spec(cfg)
-        r = {
-            "pose": list(pose(*s.source_xy, 0.7)),
-            "linear_velocity": [0, 0, 0],
-            "angular_velocity": [0, 0, 0],
-            "finger_forces": [0, 0],
-            "fixture_force_n": 0,
-            "bench_force_n": 0,
-        }
-        self.assertEqual(ScrewEvaluator(s).update(1, r).status, "failed")

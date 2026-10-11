@@ -1,6 +1,6 @@
 # GPT Benchmark：R5 物理交互测评
 
-本项目使用 **ARX／方舟 R5 双臂平台**。已接入 17 个 L1—L3 仿真任务，以及独立的 GPT 单臂抓放工程检查。任务共用模型接口、三路 RGB-D、相机参数和图像标记、cuRobo 轨迹执行、录像及独立评分。
+本项目使用 **ARX／方舟 R5 双臂平台**。已接入 17 个 L1—L3 仿真任务，以及独立的 GPT 单臂抓放工程检查。任务共用模型接口、三路 RGB（可选深度）、相机参数和图像标记、cuRobo 轨迹执行、录像及独立评分。
 
 任务配置位于 `configs/tasks/`，每项包含英文 prompt、中文道具与布置说明、手臂角色和启动命令。橘子材料参数、弹簧卡扣、商业插头/钥匙、东方树叶瓶盖和扫帚采用明确标注的工程代理，不等同实物材料与损坏模型。L3-11 已实现原生板擦＋固定绿板的接触清洁代理，与湿毛巾真机任务不同。代码接入或场景检查通过不代表 GPT 已完成任务。
 
@@ -44,7 +44,7 @@ python3 tools/launch.py list --checks
 python3 tools/launch.py check gpt-pick-place --gui
 ```
 
-唯一集成检查为 `gpt-pick-place`，需要有效的模型配置和 Token。
+唯一集成检查为 `gpt-pick-place`，需要有效的模型配置及对应登录或 API 凭据。
 去掉 `--gui` 则后台运行。`--output` 可覆盖本机默认输出目录。
 
 任务运行时，模型请求在独立线程中执行；GUI 主线程在等待请求和重试退避期间继续刷新，
@@ -58,31 +58,34 @@ Windows 普通检查也支持原来的 `tools/run_r5_check.ps1 -Check gpt-pick-p
 示例中的 `cache_dir = "auto"` 也属于显式配置，会改用系统用户缓存目录。
 需要保留旧 D 盘缓存布局时，省略该字段；需要新的布局时填写自己的 D 盘缓存目录。
 
-模型继续使用原有 `configs/models/gpt.example.toml` 模板，填写真实服务地址和模型 ID，
-在终端设置其指定的 API 密钥环境变量后运行：
+所有任务默认使用仓库内唯一的 [configs/models/gpt.toml](configs/models/gpt.toml)。
+当前为 `codex_cli`、`gpt-6-astra`、`medium`、普通速度，单次请求超时 9000 秒，最多 100 次调用。
+思考强度直接读取模型文件，公共 workflow 不再暗中覆盖；单任务和批量运行均无需传 `--model-config`。
+需要 Responses API 时，在同一文件将 `transport` 改为 `"responses"`，填写服务地址与模型 ID，
+并在环境变量中设置 `OPENAI_API_KEY`。配置中只保存环境变量名，不写入 Token。
+临时对照实验仍可显式指定其他模型文件：
 
 ```bash
 python3 tools/launch.py run GPT-PICK-PLACE --model-config /path/to/model.toml --gui
 ```
 
-跨平台入口共用任务配置、控制、评分和录像实现。默认 `transport="responses"` 使用 API 凭据；
+跨平台入口共用任务配置、控制、评分和录像实现。`transport="responses"` 使用 API 凭据；
 `transport="codex_cli"` 通过本机 Codex CLI 已保存的 ChatGPT 登录进行模型决策，无需 API Key。
 该方式每次启动独立的模型决策调用，不继承当前聊天的上下文；任务所需历史由项目显式提供。
 不会读取、复制或保存 Codex 的登录令牌，也不会自动退回 API Key 或切换模型。
 
 ```bash
 codex login status  # 应显示 Logged in using ChatGPT；未登录时运行 codex login
-python3 tools/launch.py run L1-01 --model-config configs/models/codex_chatgpt.toml --gui
-python3 tools/batch_run.py --all --model-config configs/models/codex_chatgpt.toml --reasoning-effort medium --gui
+python3 tools/launch.py run L1-01 --gui
+python3 tools/batch_run.py --all --gui
 ```
 
-有 Ultrafast 权限的账号可显式选用 `configs/models/codex_ultrafast.toml`：
+需要 Ultrafast 时，在同一份 `configs/models/gpt.toml` 中启用这行配置：
 
-```bash
-python3 tools/launch.py run L1-01 --model-config configs/models/codex_ultrafast.toml --gui
+```toml
+service_tier = "ultrafast"
 ```
 
-该配置使用 `reasoning_effort = "medium"` 和 `service_tier = "ultrafast"`，
 每项任务仍采用公共的 100 次调用上限。`service_tier` 控制请求速度档位，独立于思考强度；
 模型配置支持 `fast`、`ultrafast`，省略该字段时保留原调用行为。
 项目会把速度档位显式传给每次 `codex exec`（同时启用 `features.fast_mode`），
@@ -101,15 +104,14 @@ WSL 只需 Python 3.10+ 和 Codex，无需安装 Isaac 或另存登录令牌。�
 从 WSL 使用 Windows Isaac 的示例：
 
 ```bash
-powershell.exe -NoProfile -Command '& "D:/conda/envs/isaac51/python.exe" tools/launch.py run GPT-PICK-PLACE --model-config configs/models/codex_chatgpt.toml --gui'
+powershell.exe -NoProfile -Command '& "D:/conda/envs/isaac51/python.exe" tools/launch.py run GPT-PICK-PLACE --gui'
 ```
 
-共享任务配置仍引用本机的 `configs/models/gpt.toml`。希望原来的启动命令默认使用 Codex，
-可备份原模型配置后，用 `codex_chatgpt.toml` 的内容替换 `gpt.toml`。
+共享任务配置引用 `configs/models/gpt.toml`，该文件不含密钥并随仓库提供，无需复制模板。
 临时图像和指令保存在项目 `build/codex/`，调用结束即清理。跨系统取消会先通知
 WSL 结束本次 Codex 进程组；WSL 内部也有独立超时，避免只结束 Windows 启动器。
 
-`codex_chatgpt.toml` 固定请求 `gpt-6-astra`、`medium`。需要能连通 ChatGPT 的网络，
+默认配置请求 `gpt-6-astra`、`medium`。需要能连通 ChatGPT 的网络，
 终端可能需要继承桌面代理，例如 `export HTTPS_PROXY=http://127.0.0.1:<本机代理端口>`。
 CLI 使用独立临时目录、只读沙箱、JSON Schema 和显式图像编号，只允许返回动作决策。
 其 JSONL 协议不提供服务端实际返回的模型 ID；日志标记模型验证方式为显式 CLI 配置，
@@ -142,9 +144,9 @@ L1 使用独立的 `r5_tuojing_lab_l1.toml`，名义夹爪开口 0–70 mm，并
 
 模型接口报告可重试的生成失败／未完成，或发生调用超时（Codex 决策超时、API 连接／读取超时或请求时间预算耗尽）时，公共运行流程固定允许首次请求后再重试 3 次，间隔 2、4、8 秒，无需新增配置。每次重试计入同一个 100 次总调用上限，保留原观测、场景和已接受历史，不执行部分响应，也不推进仿真。每次尝试仍使用模型配置的 `timeout_s`，Codex 超时进程先清理再重试。成功后重置连续重试计数；连续四次失败或总调用预算不足时按接口异常结束，不冒充任务失败。明确的鉴权、额度、拒绝及请求参数错误，以及 HTTP 错误状态和其他非超时网络错误不走这项重试。每次请求、重试进度与脱敏后的服务端原因记入运行日志，事件语义参考 [OpenAI Docs](https://developers.openai.com/api/docs/guides/streaming-responses)。
 
-当前抓放与 L1 共用抓取核验：接近与闭爪分开决策；闭爪保存原始 RGB-D 基准帧，之后给模型提供三路“闭爪前／当前”对照图。基于已公开的 TCP、夹爪尺寸、桌面高度和 RGB-D，检查两指之间的可见表面是否随抬升移动。未通过时只允许保持、观察臂移动、单独开爪恢复，以及相对闭爪位置累计不超过 4 cm 的竖直试抬（水平偏移不超过 5 mm），拦截搬运和插入；达到最小开口会提示可能空夹。模型仍决定全部实际动作。
+开启 `--depth` 后，抓放与 L1 共用基于深度的抓取核验（默认 RGB 模式不启用此拦截）：接近与闭爪分开决策；闭爪保存原始 RGB-D 基准帧，之后给模型提供三路“闭爪前／当前”对照图。基于已公开的 TCP、夹爪尺寸、桌面高度和 RGB-D，检查两指之间的可见表面是否随抬升移动。未通过时只允许保持、观察臂移动、单独开爪恢复，以及相对闭爪位置累计不超过 4 cm 的竖直试抬（水平偏移不超过 5 mm），拦截搬运和插入；达到最小开口会提示可能空夹。模型仍决定全部实际动作。
 
-该核验不读取物体真值、接触力或评分，也不调用额外模型；使用表面几何、颜色匹配和抬升前后的可见空间变化，避免把手的移动或模型自述当成物体移动。遮挡、细小／反光／透明物体、相似表面和夹爪几何近似会造成误判或无法确认，核验通过不代表任务成功。当前适用于需要先抓持抬升的任务，不能直接当成不允许抬升的抽屉等任务协议。核验拦截、参考帧和通过次数进入同一运行目录，正式比较应注明 `rgbd_surface_comotion_v1` 条件。
+该核验不读取物体真值、接触力或评分，也不调用额外模型；使用表面几何、颜色匹配和抬升前后的可见空间变化，避免把手的移动或模型自述当成物体移动。遮挡、细小／反光／透明物体、相似表面和夹爪几何近似会造成误判或无法确认，核验通过不代表任务成功。当前适用于需要先抓持抬升的任务，不能直接当成不允许抬升的抽屉等任务协议。核验拦截、参考帧和通过次数进入同一运行目录，正式比较应注明 `rgbd_surface_comotion_v3_tracking_recovery` 条件。
 
 ## 任务池与运行
 
@@ -182,7 +184,7 @@ L2-06 当前为“从圆柱承台夹起橘子瓣 5 厘米”（`soft_pedestal_li
 
 L2-04 复用两只原生波纹纸杯，装入 200 颗 8 mm 珍珠，初始料面约占杯腔高度的 48%，装料杯总质量约 75.8 g。接收杯固定在桌面，不滑动、不倾倒；源杯保持可抓取和倾倒。纸杯口约 85 mm，超过 R5 的 70 mm 开口；从侧面略向下接近杯底上方约 40 mm 的杯身位置，短距离试提后倾倒。提示词保持 160 颗目标；独立宽松评分为至少 10 颗停留在接收杯内、源杯释放且竖立受桌面支撑约 0.5 秒即完成；固定接收杯按位置校验，不要求桌面支撑力读数。允许残留，不要求零洒落，实际洒落数量单独记录。纸杯按刚体处理，不能据此证明真纸杯不会压坏。抓取、重力流出及 R5 持杯倾倒工程检查放在 `integrationtest/`；持杯检查从预置开爪接近姿态开始，通过生产规划器执行夹持、倾倒、回正和释放，不调用模型，也不代表 GPT 自主任务成功。v8 保留半杯装料，画面右侧为装料源杯，左侧为固定接收杯，中心相距 200 mm；右臂倾倒、左臂观察；提示先建立腕部净空，再同步转动和平移，并依据珍珠实际落点调整杯口位置，避免低位原地转腕或流束越过杯沿。与旧布局和旧版 60 颗回合分开统计。任务定义见 [L2-04 配置](configs/tasks/l2_04_cup_pearl_pouring.toml)。
 
-L2 采用 `guided_rgbd_l2_v2` 提示协议和 `native_l2_validity_v2` 评分协议：任务已给尺寸、抓法及方向提示，因此测的是带提示的 RGB-D 闭环执行。模型发送位姿和夹爪开口，底层控制参数固定；没有直接力／力矩／速度接口，模型等待时仿真暂停。双臂动作共用结束时间，并保留规划器已检查的轨迹时间表，但不保证相对末端位姿或自动保持负载水平。
+L2 采用 `guided_visual_l2_v3` 提示协议和 `native_l2_validity_v2` 评分协议：任务已给尺寸、抓法及方向提示，因此测的是带提示的视觉闭环执行，默认 RGB、可选 RGB-D。模型发送位姿和夹爪开口，底层控制参数固定；没有直接力／力矩／速度接口，模型等待时仿真暂停。双臂动作共用结束时间，并保留规划器已检查的轨迹时间表，但不保证相对末端位姿或自动保持负载水平。
 
 交付实验室的夹指采用单个凸包，会填平内侧凹陷，缩小实际可用夹持间隙。L2 在会话层将四根夹指改为贴合原网格的凸分解，接触余量为 1 mm、静止余量为 0；保留外观、质量和关节定义。覆盖项写入 `scene.json`，不修改锁定源资产，也不改变 L1 的碰撞设置。控制器另用 0.25 秒实测位置窗口补充判断停稳，避免接触瞬时速度抖动造成无效等待；目标误差、受阻闭合和抓取成功仍分别判断。
 
@@ -206,9 +208,9 @@ API 与 Codex 调用均申请公开思考摘要，收到摘要行或摘要结束
 
 ```bash
 # 在 Isaac Python 环境中运行；每个任务使用独立进程。
-python -m robot_tasks.integrationtest.scene_smoke --all
+python -m robot_tasks.integrationtest.diagnostics.scene_smoke --all
 # 只校验物理场景与 RGB-D，跳过规划器及准备动作；不能代替完整启动检查。
-python -m robot_tasks.integrationtest.scene_smoke --all --no-preparation
+python -m robot_tasks.integrationtest.diagnostics.scene_smoke --all --no-preparation
 ```
 
 场景检查不统计任务成功率；GPT 是否能完成仍由真实模型回合及独立评分判定。未建模的断裂、压坏或流体效应不作为已验证能力。
@@ -297,7 +299,7 @@ F5 选择 **R5: GPT pick-place GUI (WSL)**。它运行同一任务实现，可�
 `GPTPolicy.act()`、`R5Adapter.apply()`、`SingleArmPickPlace.evaluate()` 处断点。
 
 默认配置为 [gpt_single_arm_pick_place.toml](configs/checks/gpt_single_arm_pick_place.toml)。
-它引用 [公共运行参数](configs/workflows/gpt_default.toml)。左臂根据三路 RGB-D、相机参数、机器人状态和反馈，
+它引用 [公共运行参数](configs/workflows/gpt_default.toml)。左臂根据三路 RGB（可选深度）、相机参数、机器人状态和反馈，
 自主抓起红色方块并放到绿色目标区；右臂是观察臂，GPT 可移动其腕部相机寻找视角，但不能向它下发夹爪指令。
 观察动作和深度查询沿用同一个决策、执行与反馈循环，共享预算。没有独立的观察控制链路，也没有预设换视角动作。
 初始复位由程序完成，执行过程中的接近、抓取、搬运、松爪和退出均由 GPT 决定，没有脚本补动作。
@@ -310,9 +312,9 @@ F5 选择 **R5: GPT pick-place GUI (WSL)**。它运行同一任务实现，可�
 | `[execution]` | 每动作最多等待多少控制周期、完成确认、空动作等待、启动沉降、停止后观察及决策预算 |
 | `workflow_profile` | 公共步长、预算、相机选择和记录参数；任务中显式写出的同名参数覆盖公共值 |
 | `[robot]` | `active_arms` 为操作臂，`observation_arms` 为仅用于移动相机的观察臂；剩余机械臂固定 |
-| `[policy]` | 模型配置位置；可覆盖公共 `reasoning_effort`，Token 仍只从环境变量读取 |
+| `[policy]` | 模型配置位置；显式 `reasoning_effort` 可用于单次实验覆盖；API Token 从环境变量读取 |
 
-所有 GPT 任务固定使用 RGB-D 与像素查询、相机内外参、桌面/TCP 标记、动作说明、完整回合文字历史和 cuRobo 轨迹规划。
+所有 GPT 任务默认使用 RGB、相机内外参、桌面/TCP 标记、动作说明、完整回合文字历史和 cuRobo 轨迹规划；深度与像素查询通过 `--depth` 开启。
 这些操作逻辑由公共代码实现，不通过任务配置启用或关闭。
 正式任务只提供场景、角色、目标、复位与评分。单臂任务要求一个**操作臂**，允许另一个臂观察；
 双臂任务可将两个臂都设为操作臂，同样复用公共流程。双臂交接目前仍只有模板，不能作为已实现任务运行。
@@ -323,8 +325,9 @@ F5 选择 **R5: GPT pick-place GUI (WSL)**。它运行同一任务实现，可�
 默认使用 medium、最多 100 次模型调用，不设整场实验的控制步数或现实时间上限；保留每条动作的执行预算。
 公共配置 `runtime.max_wall_time_s = 0` 表示不限总时长，`run` 和 `check` 均适用；填写正数可恢复限时（单位秒）。
 单次接口请求超时仍由模型配置的 `timeout_s` 控制；物理步数预算仍可能先于调用上限耗尽。
-公共/任务 `[policy].reasoning_effort` 覆盖模型文件中的思考强度，`execution.max_decisions` 覆盖模型文件中的调用上限；
-`-ModelConfig` 选择提供商文件，不覆盖这些实验设置。需要变更条件时，在任务中显式覆盖或修改公共流程配置。
+模型和思考强度统一在 `configs/models/gpt.toml` 中修改；现有任务与公共 workflow 不额外设置思考强度。
+显式任务 `[policy].reasoning_effort`（如批量冻结配置）仍可覆盖模型值，`execution.max_decisions` 覆盖模型调用上限。
+批量 `--reasoning-effort` 是显式实验覆盖；不传时沿用所选模型文件。`-ModelConfig` 可选择其他模型配置。
 程序在 API 请求期间暂停物理。录像按仿真时间播放，接口等待耗时单独记录。
 公共层检查固定臂的意外移动，观察臂移动本身不会被判失败。观察臂“不接触物体”由模型指令约束；
 当前没有完整避障，也没有覆盖全臂的接触违例检测，不能把允许观察等同于保证无碰撞。
@@ -372,7 +375,7 @@ GPT 抓放接入时的本机历史验证：Windows 与 WSL 各通过 102 项离�
 
 ## 本机配置
 
-首次克隆先将 `configs/models/gpt.example.toml` 复制为 `gpt.toml`，填写模型服务地址与模型 ID。
+首次克隆已包含 `configs/models/gpt.toml`；确认本机 Codex 登录，或在该文件切换到 Responses API。
 跨平台运行按上文配置 `configs/runtime/local.toml`；沿用本项目原有 Windows D 盘布局或调试入口时，
 再将 `configs/runtime/windows.example.json` 复制为 `windows.json` 并填写本机路径。
 已有配置不覆盖，这些本机配置均由 Git 忽略，Linux 无需准备 `windows.json`。
@@ -447,8 +450,7 @@ Python 入口、PowerShell 启动器和 VS Code 的 R5 调试配置均已接入�
 
 实现使用 [Kit portable-root](https://docs.omniverse.nvidia.com/kit/docs/kit-manual/latest/guide/configuring.html)
 与 [Conda 环境变量配置](https://docs.conda.io/projects/conda/en/stable/user-guide/tasks/manage-environments.html)。
-一次性缓存迁移工具为 `tools/migrate_windows_caches.ps1`，复制后逐文件校验 SHA-256，
-再建立目录联接；迁移清单保存在上述运行目录的 `migration/`。普通启动不会重复迁移。
+已有缓存路径由运行配置管理；早期一次性迁移脚本已移除，历史迁移清单保留在运行目录的 `migration/`。
 
 ## 在 WSL 的 VS Code 中单步调试
 
@@ -472,7 +474,7 @@ WSL 重启后若网关改变，同步修改 `connect.host` 与 `-DebugHost`，�
 - 夹爪总开口根据厂家 STL 指端内表面及 URDF 关节原点近似换算；只验证分离状态下的开合，不声称已完成接触零点标定。
 - 采用带重力的力／力矩型位置驱动。这里的驱动类型不代表已经实现面向模型的力控接口。
 - 已导入每侧 9 个部件的碰撞几何，采用凸分解；当前关闭同一机械臂的自碰撞。抓放检查单独设置接触材料与偏移，验证方块接触链路，不代表厂家网格接触精度或真机动力学已标定。
-- 当前默认 GPT 抓放使用三路 RGB-D。真实相机内外参及现场腕部安装仍待确认。
+- 当前默认 GPT 抓放使用三路 RGB（可选深度）。真实相机内外参及现场腕部安装仍待确认。
 - 仿真 TCP 已显式定义；末端检查要求 TCP 配置完整，现场版本和真机 TCP 标定仍待确认。
 - TGS 使用 32 次位置迭代、0 次速度迭代，并在 `scene.json` 记录实际设置。保持原目标时不重复下发驱动命令，避免不断唤醒已经稳定的机械臂；只调整求解迭代次数不足以解决这一问题。完成阈值没有放宽，接触任务仍需单独验证求解参数。
 
@@ -484,8 +486,8 @@ WSL 重启后若网关改变，同步修改 `connect.host` 与 `-DebugHost`，�
 
 2026-10-05 / 2026-10-06 的实验室、照片道具、桌面交互物品、书本和橘子瓣交付包已整理到
 [assets/tuojing](assets/tuojing/README.md)，提供固定版本、安装命令和 USD 入口清单。
-公共实验室已接入现有 Isaac 后端、R5 控制器和三路 RGB-D 采集，并提供无模型调用的
-工程验收入口 `python -m robot_tasks.integrationtest.tuojing_lab --gui`。
+公共实验室已接入现有 Isaac 后端、R5 控制器和三路 RGB（可选深度） 采集，并提供无模型调用的
+工程验收入口 `python -m robot_tasks.integrationtest.diagnostics.tuojing_lab --gui`。
 新场景使用交付 USD 中的机械臂、相机和桌面；配置见
 `configs/checks/tuojing_lab.toml`。**当前六个 L1 任务均使用新实验室、原生 R5 双臂和三路相机**，
 同步适配 0.78 米桌面、准备姿态、抓取检查、规划障碍和任务评分。
@@ -507,7 +509,7 @@ camera_resolution = [1280, 960]
 camera_intrinsics = [1160.0, 1160.0, 640.0, 480.0]
 ```
 
-仿真任务默认继承此设置，控制实际 overview 传感器、模型 RGB-D 输入、录像和 GUI 初始视角。L1-03 在任务配置中成组覆盖位置、目标、参考坐标系、分辨率和内参，保留此前对齐真机插头实验的专用视角（1280×960，焦距约 1539.09 px），不混用公共镜头参数。
+仿真任务默认继承此设置，控制实际 overview 传感器、模型图像输入、录像和 GUI 初始视角；L1-03 也使用公共视角。开启深度不改变相机位置或内参。
 坐标以拓境实验室为参考；L3 等旧场景按桌前沿、双臂中线和桌面高度转换，避免把实验室绝对坐标直接用于旧场景。
 公共参数整体控制 overview，避免旧位置与新焦距混用。相机配置文件保留传感器绑定和腕部参数；其中 overview 参数仅作为未提供公共配置时的回退。
 当前仍是工程估计参数，不是真机标定。修改默认值后重新启动任务即可生效。
@@ -526,10 +528,10 @@ camera_intrinsics = [1160.0, 1160.0, 640.0, 480.0]
 | L1-09 刚体玫瑰插花 | 原生仿真玫瑰＋固定纸杯 | 整株刚体；从较宽花头/花萼抓取，放入后允许靠杯壁 |
 
 五个 L2 任务也已接入同一实验室及对应原生资产，改动与限制见前面的任务说明；L3 继续使用原场景。L1/L2 需先安装锁定的私有交付包；不能只改环境名称就当作任务已适配。
-工程验收复用现有 `scene_smoke`，检查准备动作、三路 RGB-D、初态评分及物理承托，
+工程验收复用现有 `scene_smoke`，检查准备动作、三路 RGB（可选深度）、初态评分及物理承托，
 输出见 `build/tuojing_l1_migration/<任务ID>/`。不调用 GPT，不代表模型完成了任务。
 L1-09 的最新刚体玫瑰验收见 `build/tuojing_rigid_rose/`；旧软茎记录属于历史版本。
-任务 ID、运行命令和公共模型工作流均保留，`codex_ultrafast.toml` 仍通过 `--model-config` 显式选择。
+任务 ID、运行命令和公共模型工作流均保留，速度档位统一在 `configs/models/gpt.toml` 中选择。
 
 厂家 R5a URDF 和 9 个 STL 网格已保存在 [assets/r5](assets/r5/README.md)。来源固定到具体提交，每个文件保留 Git blob 哈希；原文件不做修改。该模型每侧包含 6 个转动关节和 2 个夹爪滑动关节。它与现场 R5 的具体版本是否一致仍需核对。
 
@@ -597,7 +599,8 @@ GPT_Benchmark/
 │   ├── cameras/ / backends/      RGB-D、仿真生命周期与占位后端
 │   ├── tasks/                    各任务的场景、复位和评分
 │   ├── recording.py / reporting.py  全过程记录与报告
-│   └── integrationtest/          唯一 GPT 抓放集成用例及启动/调试设施
+│   └── integrationtest/          GPT 抓放检查及启动/调试设施
+│       └── diagnostics/          独立场景、资产接触与夹持诊断（不调用 GPT）
 ├── tests/                        不调用模型、不启动真实仿真的离线回归
 ├── tools/                        启动、资产转换和环境工具
 └── runs/                         每回合结果、配置快照、报告与录像
@@ -605,6 +608,7 @@ GPT_Benchmark/
 
 `integrationtest/gpt_pick_place_check.py` 是唯一集成用例。其余 `registry.py`、`simulation_process.py`、
 `simulation_worker.py`、`debug_check.py` 负责名称解析、进程隔离、超时和调试，不实现第二套任务或评分。
+保留的工程诊断集中在 [integrationtest/diagnostics/](src/robot_tasks/integrationtest/diagnostics/README.md)。
 `run GPT-PICK-PLACE` 与 `check gpt-pick-place` 最终都调用 `execute_task()` 和 `run_episode()`。
 
 ## 先运行框架
@@ -648,14 +652,14 @@ WSL 中进入同一目录，使用 `/root/miniforge3/envs/sim-research/bin/pytho
 & $taskPython -m robot_tasks run GPT-PICK-PLACE --gui
 ```
 
-当前 `run` 会先拒绝未实现的任务；已实现任务再核查仿真运行条件，失败时退出码为 `2`。方块抓放已有场景与评分，默认 GPT 通过三路 RGB-D、机器人状态和执行反馈自主决策。唯一全链路集成检查为 `check gpt-pick-place`。
+当前 `run` 会先拒绝未实现的任务；已实现任务再核查仿真运行条件，失败时退出码为 `2`。方块抓放已有场景与评分，默认 GPT 通过三路 RGB（可选深度）、机器人状态和执行反馈自主决策。唯一全链路集成检查为 `check gpt-pick-place`。
 
 ## 一次试验的约定
 
 - **执行顺序：**打开后端 → 初始化机器人 → 搭场景 → 六个臂关节置零并静置 → 读取观测 → 策略动作 → 机器人执行 → 物理步进 → 新观测与评分，循环直到终止。夹爪保持原有初始开口，底座位置不变；不执行自动朝下或观察臂摆位。
 - **动作：**关节位置、末端位姿或夹爪总开口；双臂命令放在同一 `Action` 中，在同一次物理步进前应用。具体 SDK 转换、关节限制和 IK 留给机器人适配层。尚未定义力控接口。
 - **单位：**距离用米，角度用弧度，时间用秒；位姿四元数顺序固定为 `w,x,y,z`。夹爪开口指两指总距离。
-- **模型可见信息：**三路 RGB-D、虚拟相机参数、坐标与 TCP 标记、机器人状态、执行反馈及本回合文字历史；历史图片数量按模型配置控制。这是逐次采集图像，不是原生视频流。
+- **模型可见信息：**三路 RGB（可选深度）、虚拟相机参数、坐标与 TCP 标记、机器人状态、执行反馈及本回合文字历史；历史图片数量按模型配置控制。这是逐次采集图像，不是原生视频流。
 - **评分信息：**物体真值位姿、接触力等走 `EvaluationState`，不传进策略输入。若将力觉提供给 GPT，需显式扩展观测协议。
 - **停止：**策略声称完成不等于成功。成功必须来自任务评分器；已启动评估的任务超时或提前停止记失败，服务／仿真异常与未实现模板另行记录。
 - **时间预算：**区分物理时间和墙钟时间。模型请求有 socket 超时和返回后的总耗时检查，超时结果不执行；仿真 CLI 子进程另有总墙钟 watchdog。等待 API 期间仿真不推进，因此不能据此评价真实动态响应。
@@ -677,20 +681,36 @@ runs/<任务编号>_<模式>_<时间>_<随机后缀>/
 
 ## 固定观测与决策记录
 
-通用 GPT 链路固定提供 RGB-D、相机参数、图像标记和决策说明，所有任务自动复用。当前抓放右臂用于主动观察；是否允许其他机械臂移动由公共角色权限决定。
+通用 GPT 链路默认提供 RGB、相机参数、图像标记和决策说明，所有任务自动复用。当前抓放右臂用于主动观察；是否允许其他机械臂移动由公共角色权限决定。
 角色选择、输入、预算和最终模型参数都进入本轮记录，不应把不同条件的结果当作同一个实验。
 
-模型始终收到每个已选视角的 RGB、对齐深度预览、机器人状态和执行反馈。缺少必要输入时在调用接口前报错。
+默认不采集或保存深度、不提供像素测距工具、不启用深度派生的抓取／释放核验。模型根据 RGB 自行观察；成功评分、物理碰撞和轨迹规划保持原有逻辑。规划器仍使用仿真碰撞几何，不能将此称为整个系统完全只依赖视觉。
+
+```bash
+# 默认 RGB；原命令无需改动
+python tools/launch.py run L1-01 --gui
+# 同一流程开启深度图、像素查询及适用任务的抓取／释放核验
+python tools/launch.py run L1-01 --gui --depth
+# 即使配置开了深度，也可在这次运行显式关闭
+python tools/launch.py run L1-01 --gui --no-depth
+```
+
+也可在公共工作流或任务的 `[observation]` 中设置 `include_depth = true`；命令行参数优先。
+`recording.save_depth` 未指定时随 `include_depth`；命令行开关同时控制采集与深度存盘。
+`inspect`、`dry-run` 和 `python -m robot_tasks.batch` 同样支持 `--depth` / `--no-depth`。
+批量任务冻结实际设置，续跑不会改变原批次模式。新模式写入 `effective_config.json`、`manifest.json` 和模型记录。
+
+模型始终收到每个已选视角的 RGB、机器人状态和执行反馈；开启深度后额外收到对齐深度预览。缺少该模式的必要输入时在调用接口前报错。
 虚拟相机内参和逐帧外参随观测提供；图像缩放时同步调整内参。
 参数来自仿真，`hardware_calibrated=false`；深度为光轴 Z 方向的米制距离，
 不模拟真实相机的噪声、盲区或双目匹配误差。
 
-深度预览使用固定 0.02—2.00 m 色标。模型可通过 `depth_queries` 查询 RGB 图像中的像素，
+开启深度时，深度预览使用固定 0.02—2.00 m 色标。模型可通过 `depth_queries` 查询 RGB 图像中的像素，
 每次最多 8 个点，返回对应可见表面的深度、相机坐标和世界坐标，不提供物体中心或评分真值。
 查询不执行动作、不推进物理，但占用模型调用预算；不能与运动或停止请求同时提交。
 无效深度返回 `no_depth`。运动、等待、停止时传空查询列表。
 
-`recording.save_depth=true` 将原始 float32 米制深度保存到 `depth/<camera>/<step>.npy`，
+在已开启深度输入的前提下，`recording.save_depth=true` 将原始 float32 米制深度保存到 `depth/<camera>/<step>.npy`，
 NaN 表示无效像素，同名 PNG 是预览。保存时刻与决策观测一致，复位帧单独保存；
 不是逐物理步深度录像。记录开关只影响存盘，不影响 GPT 获得的输入。
 参考：[Isaac Sim 相机深度 API](https://docs.isaacsim.omniverse.nvidia.com/5.1.0/py/source/extensions/isaacsim.sensors.camera/docs/index.html)。
@@ -769,17 +789,17 @@ MP4 保留所有控制周期的画面；GIF 是覆盖整轮的抽帧预览，最
 | 配置 | 影响内容 | 修改范围 |
 |---|---|---|
 | `configs/tasks/<任务>.toml` | instruction、角色、实现绑定与运行说明；`[simulation]` 还包括驱动刚度/阻尼、碰撞和求解器设置 | 当前选中的实验 |
-| `configs/workflows/gpt_default.toml` | 相机选择、记录设置、物理/控制步长、时间和调用预算、medium 等公共运行参数 | 引用该文件且未覆盖相应字段的任务 |
+| `configs/workflows/gpt_default.toml` | 相机选择、记录设置、物理/控制步长、时间和调用预算等公共运行参数 | 引用该文件且未覆盖相应字段的任务 |
 | `configs/robots/r5_sim.toml` | URDF、左右底座、home、TCP、夹爪映射和关节限位，影响 IK 与动作执行 | 引用这个机器人配置的任务 |
 | `configs/cameras/r5_orbbec_provisional.toml` | 相机型号/外壳、安装方向、分辨率、内参、畸变和视角 | 引用这个相机配置的任务 |
-| `configs/models/gpt.toml`，或 `--model-config` 选中的文件 | API 地址、模型 ID、Token 环境变量名、超时、图片大小和历史图片数 | 选择该模型文件的运行 |
+| `configs/models/gpt.toml`，或 `--model-config` 选中的文件 | 调用方式、模型 ID、思考强度、速度档位、API 地址、Token 环境变量名、超时、图片大小和历史图片数 | 选择该模型文件的运行 |
 | `configs/runtime/local.toml`，可选 `windows.json` | 实际启动的 Python、缓存、输出和本机存储设置 | 本机运行环境；不放任务 prompt 或评分参数 |
 
 生效规则：
 
 1. `--config` 选择任务文件；不传时由 `registry.py` 选择默认文件。
 2. 可调运行参数优先使用任务文件中的显式值，其次使用引用的 workflow 值，再使用代码默认值。固定操作逻辑不参与覆盖。
-3. `--model-config` 优先于任务的 `policy.model_config` 选择模型文件；但合并后的 `policy.reasoning_effort` 和 `execution.max_decisions` 仍会覆盖模型文件中的思考强度和 `max_calls`。
+3. `--model-config` 优先于任务的 `policy.model_config` 选择模型文件。现有任务默认沿用模型文件的思考强度；只有显式的 `policy.reasoning_effort` 才覆盖它。`execution.max_decisions` 仍覆盖 `max_calls`。
 4. `--gui` 覆盖 `simulation.headless`。图形后端未写时按实际 Isaac Python 所在系统选择。
 5. 公共配置当前是 medium、最多 100 次决策；总控制步数和现实时间默认不限；每条动作仍有执行步数限制。未成功的停止请求消耗一次调用，保留场景与历史继续，成功或预算耗尽后结束。
 
@@ -880,7 +900,7 @@ L3-03、L3-05、L3-11、L3-14、L3-15 使用拓境实验室场景及公共相机
 初始场景图片可统一导出（无 GPT 调用）：
 
 ```bash
-python -m robot_tasks.integrationtest.initial_gallery --all --output reports/task_initial_gallery_20261008
+python -m robot_tasks.integrationtest.diagnostics.initial_gallery --all --output reports/task_initial_gallery_20261008
 ```
 
 输出 `index.html` 包含全部任务的公共第三视角、独立展示近景和中文布置说明。初态校验通过不等于机器人或模型能完成任务。

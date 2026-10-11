@@ -38,7 +38,7 @@ class TuojingAssetImportTests(unittest.TestCase):
 
     def test_folder_mapping_and_reinstall_preserve_the_delivery(self):
         install_package(self.root, self.root, self.package)
-        target = self.root / "source/delivery"
+        target = self.root / "packages/delivery"
         self.assertEqual(verify_files(target, self.package), 1)
         self.archive.unlink()
         install_package(self.root, self.root, self.package)
@@ -49,13 +49,13 @@ class TuojingAssetImportTests(unittest.TestCase):
             stream.write(b"changed")
         with self.assertRaisesRegex(ValueError, "checksum mismatch"):
             install_package(self.root, self.root, self.package)
-        self.assertFalse((self.root / "source/delivery").exists())
+        self.assertFalse((self.root / "packages/delivery").exists())
 
     def test_explicit_rootless_delivery_retains_inventory_and_path_checks(self):
         self.package["archive_root"] = ""
         self.make_archive({"textures/sample.bin": self.content})
         install_package(self.root, self.root, self.package)
-        self.assertEqual(verify_files(self.root / "source/delivery", self.package), 1)
+        self.assertEqual(verify_files(self.root / "packages/delivery", self.package), 1)
         self.package["directory"] = "unsafe"
         self.make_archive({"../escaped.bin": self.content})
         with self.assertRaisesRegex(ValueError, "Unsafe asset path"):
@@ -67,7 +67,7 @@ class TuojingAssetImportTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Unsafe asset path"):
             install_package(self.root, self.root, self.package)
         self.assertFalse((self.root / "escaped.bin").exists())
-        self.assertEqual(list((self.root / "source").iterdir()), [])
+        self.assertEqual(list((self.root / "packages").iterdir()), [])
 
     def test_alternative_wrapper_uses_same_inventory(self):
         alternative = self.root / "original.zip"
@@ -79,7 +79,7 @@ class TuojingAssetImportTests(unittest.TestCase):
         }]
         self.archive.unlink()
         install_package(self.root, self.root, self.package)
-        self.assertEqual(verify_files(self.root / "source/delivery", self.package), 1)
+        self.assertEqual(verify_files(self.root / "packages/delivery", self.package), 1)
 
     def test_corrupt_primary_does_not_fall_back_to_alternative(self):
         alternative = self.root / "original.zip"
@@ -91,17 +91,17 @@ class TuojingAssetImportTests(unittest.TestCase):
         self.archive.write_bytes(b"corrupt primary")
         with self.assertRaisesRegex(ValueError, "checksum mismatch"):
             install_package(self.root, self.root, self.package)
-        self.assertFalse((self.root / "source/delivery").exists())
+        self.assertFalse((self.root / "packages/delivery").exists())
 
     def test_bad_extracted_content_leaves_no_partial_install(self):
         self.make_archive({"original_folder/textures/sample.bin": b"wrong"})
         with self.assertRaisesRegex(ValueError, "Missing or modified"):
             install_package(self.root, self.root, self.package)
-        self.assertEqual(list((self.root / "source").iterdir()), [])
+        self.assertEqual(list((self.root / "packages").iterdir()), [])
 
     def test_existing_modified_delivery_is_not_overwritten(self):
         install_package(self.root, self.root, self.package)
-        target = self.root / "source/delivery/textures/sample.bin"
+        target = self.root / "packages/delivery/textures/sample.bin"
         target.write_bytes(b"local change")
         with self.assertRaisesRegex(ValueError, "Missing or modified"):
             install_package(self.root, self.root, self.package)

@@ -13,10 +13,10 @@ from robot_tasks.backends.mock import MockBackend, MockRobot, MockTask
 from robot_tasks.config import ExecutionSettings, load_config
 from robot_tasks.execution import _gpt_policy
 from robot_tasks.policies.gpt import GPTPolicy
-from robot_tasks.policies.model_config import GPTSettings
+from robot_tasks.policies.model_config import GPTSettings, load_gpt_settings
 from robot_tasks.policies.responses import ModelReply
 from robot_tasks.policies.sparse_action import FIELDS
-from robot_tasks.registry import get_spec
+from robot_tasks.registry import TASKS, get_spec, resolve_task
 from robot_tasks.robot_roles import FixedArmMonitor
 from robot_tasks.runner import run_episode, validate_action
 from robot_tasks.tasks.pick_place import SingleArmPickPlace
@@ -40,23 +40,55 @@ class WorkflowTests(unittest.TestCase):
     def setUp(self):
         self.config = load_config(TASK)
 
+    def test_all_tasks_use_the_single_default_and_allow_explicit_model_selection(self):
+        default = ROOT / "configs/models/gpt.toml"
+        settings = load_gpt_settings(default)
+        self.assertEqual(settings.transport, "codex_cli")
+        self.assertEqual(settings.reasoning_effort, "medium")
+        self.assertIsNone(settings.service_tier)
+        with tempfile.TemporaryDirectory() as temporary:
+            override = Path(temporary) / "model.toml"
+            override.write_text(default.read_text(encoding="utf-8").replace(
+                'reasoning_effort = "medium"', 'reasoning_effort = "xhigh"'), encoding="utf-8")
+            with patch("robot_tasks.policies.codex_cli.CodexProcess"), \
+                    patch("robot_tasks.policies.codex_cli.CodexCLIClient.require_chatgpt_login"), \
+                    patch("robot_tasks.execution.read_api_key", side_effect=AssertionError("No API call")):
+                for task_id, spec in TASKS.items():
+                    if not spec.implemented:
+                        continue
+                    _, config = resolve_task(task_id)
+                    selected = config.source.parent / config.raw["policy"]["model_config"]
+                    self.assertEqual(selected.resolve(), default.resolve())
+                    for model, expected in ((None, settings), (override, replace(settings, reasoning_effort="xhigh"))):
+                        with self.subTest(task=task_id, model=model):
+                            policy = _gpt_policy(config, model)
+                            self.assertEqual(policy.settings, expected)
+
+    def test_explicit_experiment_reasoning_override_is_preserved(self):
+        config = replace(self.config, raw={**self.config.raw, "policy": {
+            **self.config.raw["policy"], "reasoning_effort": "high"}})
+        with patch("robot_tasks.execution.load_gpt_settings", return_value=GPTSettings("https://example.org", "fixture")), \
+                patch("robot_tasks.execution.read_api_key", return_value="offline-fixture"):
+            policy = _gpt_policy(config, None)
+        self.assertEqual(policy.settings.reasoning_effort, "high")
+
     def test_default_task_uses_shared_features_and_effective_model_budget(self):
         self.assertEqual(get_spec(self.config).task_id, "GPT-PICK-PLACE")
         self.assertEqual(self.config.arms, ("left",))
         self.assertEqual(self.config.command_arms, ("left", "right"))
         self.assertEqual(self.config.arm_roles, {"left": "manipulation", "right": "observation"})
-        self.assertTrue(self.config.include_depth)
-        self.assertTrue(self.config.save_depth)
+        self.assertFalse(self.config.include_depth)
+        self.assertFalse(self.config.save_depth)
         self.assertEqual(self.config.max_wall_time_s, 0.0)
         self.assertEqual(ExecutionSettings.from_config(self.config).max_decisions, 100)
         settings = GPTSettings("https://example.invalid", "fixture", reasoning_effort="low", max_calls=2)
         with patch("robot_tasks.execution.load_gpt_settings", return_value=settings), \
                 patch("robot_tasks.execution.read_api_key", return_value="offline-fixture"):
             policy = _gpt_policy(self.config, Path("explicit-provider-config.toml"))
-        self.assertEqual(policy.settings.reasoning_effort, "medium")
+        self.assertEqual(policy.settings.reasoning_effort, "low")
         self.assertEqual(policy.settings.max_calls, 100)
         self.assertEqual(policy.run_metadata["workflow"], workflow_metadata())
-        self.assertIn("depth_queries", policy.schema["required"])
+        self.assertNotIn("depth_queries", policy.schema["required"])
         self.assertIn("note", policy.schema["required"])
         self.assertNotIn("must remain still", SingleArmPickPlace.prepare_config(self.config).instruction)
 
@@ -67,7 +99,7 @@ class WorkflowTests(unittest.TestCase):
         b, _, _ = load_workflow(TASK, {"workflow_profile": str(shared), "task": {"id": "another-task"}})
         self.assertEqual(a["execution"]["max_decisions"], 7)
         self.assertEqual(a["observation"], b["observation"])
-        self.assertTrue(a["observation"]["include_depth"])
+        self.assertFalse(a["observation"]["include_depth"])
         self.assertEqual(profile["execution"]["max_decisions"], 100)
         self.assertEqual(b["execution"]["max_decisions"], 100)
 
@@ -86,28 +118,28 @@ class WorkflowTests(unittest.TestCase):
             raw, source, _ = load_workflow(TASK, {"task": {"id": task_id}})
             self.assertIsNone(source)
             self.assertEqual(raw["observation"], {
-                "include_depth": True, "include_robot_state": True, "include_feedback": True})
+                "include_depth": False, "include_robot_state": True, "include_feedback": True})
             config = replace(self.config, task_id=task_id, workflow_source=None,
                              raw={**self.config.raw, **raw})
             policy = GPTPolicy(config, GPTSettings("https://example.invalid", "fixture"), client=Mock())
             self.assertEqual(policy.run_metadata["workflow"], workflow_metadata())
-            self.assertEqual(set(policy.schema["required"]), {"commands", "request_stop", "depth_queries", "note"})
+            self.assertEqual(set(policy.schema["required"]), {"commands", "request_stop", "note"})
             self.assertEqual(ExecutionSettings.from_config(config).gripper_timing, "after_motion")
 
     def test_task_and_profile_cannot_disable_fixed_capabilities(self):
         changes = [{"policy_options": {"visual_aids": False}},
                    {"execution": {"gripper_timing": "simultaneous"}}]
         changes += [{"observation": {key: False}}
-                    for key in ("include_depth", "include_robot_state", "include_feedback")]
+                    for key in ("include_robot_state", "include_feedback")]
         for change in changes:
             for reference in ({}, {"workflow_profile": str(self.config.workflow_source)}):
                 with self.subTest(change=change, profile=bool(reference)), self.assertRaises(ValueError):
                     load_workflow(TASK, {**reference, **change})
         with tempfile.TemporaryDirectory() as temporary:
             profile = Path(temporary) / "workflow.toml"
-            profile.write_text('[observation]\ninclude_depth=false\n')
+            profile.write_text('[observation]\ninclude_robot_state=false\n')
             with self.assertRaisesRegex(ValueError, "fixed GPT workflow"):
-                load_workflow(TASK, {"workflow_profile": str(profile), "observation": {"include_depth": True}})
+                load_workflow(TASK, {"workflow_profile": str(profile), "observation": {"include_robot_state": True}})
 
     def test_invalid_roles_and_cameras_are_rejected_before_execution(self):
         text = TASK.read_text().replace('"../workflows/gpt_default.toml"', json.dumps(self.config.workflow_source.as_posix()))
@@ -151,6 +183,7 @@ class WorkflowTests(unittest.TestCase):
             self.assertEqual(fixed.update(states(.2), assessment).status, status)
 
     def test_observer_motion_depth_and_notes_use_common_runner_and_preserve_actual_settings(self):
+        self.config = load_config(TASK, depth=True)
         class Backend(MockBackend):
             def capture_rgb(self):
                 return tuple(rgbd(c, self.t) for c in self.config.cameras)

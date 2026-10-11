@@ -80,7 +80,7 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
         raise ValueError("Dry-run requires a finite step_limit")
     options = ExecutionSettings() if dry_run else ExecutionSettings.from_config(config)
     from .grasp_guard import GraspGuard
-    grasp_guard = None if dry_run or config.grasp_check_mode == "contact_inspection" else GraspGuard(config)
+    grasp_guard = None if dry_run or not config.include_depth or config.grasp_check_mode == "contact_inspection" else GraspGuard(config)
     role_monitor = FixedArmMonitor(config, options.fixed_arm_tolerance_rad)
     mode = "dry_run" if dry_run else "simulation"
     recorder = EpisodeRecorder(output_root, config, mode, limit, run_directory=run_directory)
@@ -456,7 +456,7 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
             "rejected_stop_requests": rejected_stops,
             "grasp_check_rejections": grasp_guard.rejections if grasp_guard is not None else 0,
             "grasp_visual_verifications": grasp_guard.verifications if grasp_guard is not None else 0,
-            "grasp_check_protocol": "rgbd_surface_comotion_v3_tracking_recovery" if grasp_guard is not None else (None if dry_run else config.grasp_check_mode),
+            "grasp_check_protocol": "rgbd_surface_comotion_v3_tracking_recovery" if grasp_guard is not None else (None if dry_run else "contact_inspection" if config.grasp_check_mode == "contact_inspection" else "model_visual_inspection"),
             "release_check_protocol": "rgbd_stationary_vs_following_advisory_v1" if grasp_guard is not None else None,
             "stop_protocol": "evaluator_gated_continue_within_total_call_budget",
             "false_completion": bool(stopped and evaluated and assessment.status != "succeeded"),

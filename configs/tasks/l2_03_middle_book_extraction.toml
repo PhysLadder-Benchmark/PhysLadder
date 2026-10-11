@@ -28,8 +28,8 @@ solver_velocity_iterations = 0
 model_config = "../models/gpt.toml"
 
 [task]
-# Guided RGB-D execution; common information boundaries are appended by BenchTask.
-prompt_protocol = "guided_rgbd_l2_v2"
+# Guided visual execution; common information boundaries are appended by BenchTask.
+prompt_protocol = "guided_visual_l2_v3"
 scoring_protocol = "native_l2_validity_v2"
 id = "L2-03"
 name = "固定上下层的单臂侧向抽书"

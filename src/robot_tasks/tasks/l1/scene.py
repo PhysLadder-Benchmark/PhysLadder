@@ -1,15 +1,19 @@
-"""Eight passive physical scenes. Pose writes occur only in episode reset."""
+"""Shared rigid scene primitives. Pose writes occur only in episode reset."""
 
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 
 import numpy as np
 
 from ...robots.transforms import origin_transform, pose_transform, transform_pose
 from .assets import import_asset
-from .evaluation import InsertionAttemptMonitor
-from .shaped_recess import ShapedRecess
-from .specs import build_design, local_corners
+from .specs import local_corners
 from ...backends.scene_geometry import bench_geometry
+
+
+@dataclass(frozen=True)
+class ResetSettings:
+    position_jitter_m: float = 0.0
+    yaw_jitter_rad: float = 0.0
 
 
 class L1Scene:
@@ -17,7 +21,7 @@ class L1Scene:
 
     report_key = "l1"
 
-    def __init__(self, backend, config, settings, *, design=None):
+    def __init__(self, backend, config, settings, *, design):
         from isaacsim.core.api.materials import PhysicsMaterial
         from isaacsim.core.prims import RigidPrim, SingleRigidPrim
         from pxr import PhysxSchema, UsdGeom, UsdPhysics, UsdShade
@@ -25,7 +29,7 @@ class L1Scene:
         self.backend, self.config, self.settings = backend, config, settings
         self.bench = bench_geometry(config)
         backend.planning_payloads = self.planning_payloads
-        self.design = design if design is not None else build_design(config.task_id)
+        self.design = design
         self.bodies, self.contacts = {}, {}
         self.material = PhysicsMaterial(
             self.root + "/Material", static_friction=0.8, dynamic_friction=0.8, restitution=0.0
@@ -52,6 +56,7 @@ class L1Scene:
                 self.design.fixture_size,
                 (0, 0, 0),
                 dynamic=False,
+                task_id=config.task_id,
             )
             self.colliders.extend(paths)
             evidence.append(record)
@@ -63,7 +68,8 @@ class L1Scene:
             UsdGeom.Xform.Define(stage, path)
             if article.asset:
                 paths, record = import_asset(
-                    stage, path, article.asset, article.asset_size, article.asset_rotation, dynamic=True
+                    stage, path, article.asset, article.asset_size, article.asset_rotation,
+                    dynamic=True, task_id=config.task_id,
                 )
                 self.colliders.extend(paths)
                 evidence.append(record)
@@ -136,26 +142,11 @@ class L1Scene:
             )
             for a in self.design.articles
         }
-        scoring = asdict(settings)
-        if self.design.insertion:
-            # These legacy pose thresholds do not define the wide socket goal.
-            scoring.pop("position_tolerance_m")
-            scoring.pop("height_tolerance_m")
-            scoring["attempt_termination"] = {
-                "contact_loss_or_topple_persistence_s": InsertionAttemptMonitor.persistence_s,
-                "topple_tilt_rad": InsertionAttemptMonitor.topple_tilt_rad,
-                "guided_release_exempt": True,
-            }
-        if isinstance(self.design.insertion, ShapedRecess):
-            scoring.pop("retreat_m")
-            scoring["release_rule"] = "no finger contact; fixture support; no opening-width or retreat-distance gate"
         backend.scene_report[self.report_key] = {
             "version": self.design.version,
             "design": asdict(self.design),
             "assets": evidence,
-            "scoring": scoring,
-            "goal_rule": ("object containment, insertion depth, guided insertion and fixture support"
-                          if self.design.insertion else "task geometry and pose tolerances"),
+            "reset": asdict(settings),
             "contact_materials": {"gripper_peg_and_bench": {"static": 0.8, "dynamic": 0.8},
                                   "fixture": {"static": self.design.fixture_friction,
                                               "dynamic": self.design.fixture_friction},

@@ -29,14 +29,14 @@ class OrangeScene:
         self.stage = backend.world.stage
         self.colliders = []
         self.path = self.root + "/orange"
-        asset, evidence = verified_prop("orange_segment")
+        asset, evidence = verified_prop("orange_segment", task_id=config.task_id)
         prim = self.stage.DefinePrim(self.path)
         prim.GetReferences().AddReference(str(asset))
         self.placement = self.design.articles[0].initial
         self.set_pose(self.path, self.placement)
         pedestal_path = self.root + "/Pedestal"
         pedestal_asset, pedestal_evidence = verified_prop(
-            spec.parameters["pedestal_asset"]
+            spec.parameters["pedestal_asset"], task_id=config.task_id
         )
         pedestal = self.stage.DefinePrim(pedestal_path)
         pedestal.GetReferences().AddReference(str(pedestal_asset))

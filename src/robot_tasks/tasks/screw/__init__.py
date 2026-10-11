@@ -1,1 +1,1 @@
-"""Coarse, initially unengaged screw assembly on the shared GPT workflow."""
+"""Native loose-nut task on the shared GPT workflow."""

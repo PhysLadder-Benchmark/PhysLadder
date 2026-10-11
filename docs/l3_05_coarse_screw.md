@@ -21,9 +21,9 @@ python tools/launch.py run L3-05 --gui
 无 GPT 的诊断：
 
 ```bash
-python -m robot_tasks.integrationtest.initial_gallery L3-05 --output reports/nut_initial
-python -m robot_tasks.integrationtest.nut_clearance --output reports/nut_clearance.json
-python -m robot_tasks.integrationtest.nut_probe --output reports/nut_thread
+python -m robot_tasks.integrationtest.diagnostics.initial_gallery L3-05 --output reports/nut_initial
+python -m robot_tasks.integrationtest.diagnostics.nut_clearance --output reports/nut_clearance.json
+python -m robot_tasks.integrationtest.diagnostics.nut_probe --output reports/nut_thread
 ```
 
 `nut_probe` 只在独立诊断夹具中固定主体并约束同轴，对螺母施加有限扭矩与拉力；正式任务没有这些辅助条件。机制检查、采样净空检查均不等于 R5/GPT 完整任务成功。

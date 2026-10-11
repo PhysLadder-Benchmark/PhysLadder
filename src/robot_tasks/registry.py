@@ -10,7 +10,6 @@ from .tasks.bench.spec import build_spec
 from .tasks.bench.task import BenchTask
 from .tasks.pick_place import SingleArmPickPlace
 from .tasks.screw.nut import NutTask
-from .tasks.uncap.task import UncapTask
 
 
 @dataclass(frozen=True)
@@ -26,7 +25,7 @@ class TaskSpec:
 
 def catalogue(directory: Path) -> dict[str, TaskSpec]:
     result = {}
-    factories = {"household": BenchTask, "uncap": UncapTask, "loose_nut": NutTask}
+    factories = {"household": BenchTask, "loose_nut": NutTask}
     for path in sorted(directory.glob("*.toml")):
         if path.stem.endswith(".local"):
             continue  # Local experiment overrides are selected with --config.
@@ -94,14 +93,14 @@ def get_spec(config: TaskConfig) -> TaskSpec:
 
 
 def resolve_task(
-    task_id: str | None = None, config_path: Path | None = None
+    task_id: str | None = None, config_path: Path | None = None, *, depth: bool | None = None
 ) -> tuple[TaskSpec, TaskConfig]:
     if task_id is not None and task_id not in TASKS:
         raise ValueError(f"Unknown task ID: {task_id}; available: {', '.join(TASKS)}")
     if task_id is None and config_path is None:
         raise ValueError("Provide a task ID or --config; use 'list' to see tasks")
     config = load_config(
-        config_path if config_path is not None else TASKS[task_id].default_config
+        config_path if config_path is not None else TASKS[task_id].default_config, depth=depth
     )
     if task_id is not None and config.task_id != task_id:
         raise ValueError(

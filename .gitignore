@@ -23,7 +23,6 @@ dist/
 *.local.json
 *.pem
 *.key
-/configs/models/gpt.toml
 /configs/runtime/windows.json
 
 # Per-machine editor configuration; see .vscode/*.example.json
@@ -38,6 +37,7 @@ dist/
 /assets/cameras/source/
 /assets/l1/source/
 /assets/tuojing/source/
+/assets/tuojing/packages/
 # Original local delivery; metadata is tracked, ZIPs belong in asset releases.
 /新增三类资产_圆柱杯子插头底座_20261009.zip
 *.log

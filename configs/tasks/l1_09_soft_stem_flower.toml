@@ -58,14 +58,14 @@ Pickup decision rules (v2: head grip, whole-rose lift, then stem-down insertion)
 bud can pivot in a crosswise pinch; consider contacts along its long axis on
 the wider sides, not just its upper surface. Choose all poses from current
 images. Localize the cup precisely after pickup, when its alignment matters.
-2. Batch the depth samples needed for one concrete grasp candidate in a single
-query decision (up to 8 pixels). State which uncertainty each new query resolves.
-A visible surface sample is not the bud centre. Do not repeatedly remeasure the
-same feature without a specific missing or contradicted fact. After a camera
+2. Inspect one concrete grasp candidate using the available views. State which
+uncertainty each new observation resolves. A visible near surface is not the bud
+centre. Do not repeatedly inspect the same feature without a specific missing
+or contradicted fact. After a camera
 move, pixel coordinates change: use fresh images/calibration. Retain a previous
 world-position estimate only when current evidence supports that the rose has
 not moved; apparent image motion alone is not proof of object displacement.
-3. CLOSE-READY means current RGB-D evidence shows the intended wider head
+3. CLOSE-READY means current visual evidence shows the intended wider head
 between the open fingers, opposing pad locations at its sides, and clearance
 from the table, stem and camera housing. One informative view can be sufficient;
 use another view only for a specific hidden contact or clearance. Neither exact
@@ -85,7 +85,7 @@ After a rejected view move, choose a different reachable view based on feedback;
 do not repeat an equivalent rejected target. During pickup, briefly carry the stage,
 close-ready or specific blocker, correction count (0/2, 1/2 or 2/2), and no-progress
 count (0/3 to 3/3) in each existing decision note. Reset the correction count only
-for a genuinely new candidate, not after another depth query. Reset no-progress
+for a genuinely new candidate, not after another inspection. Reset no-progress
 only for useful new evidence or observed progress, not merely a completed command.
 These are decision rules for you, not an automatic
 grasp controller or a declaration of task success.
@@ -93,10 +93,10 @@ grasp controller or a declaration of task success.
 orientation held. Check that the head follows and stays seated between the pads
 without visible slip. The free stem tip MAY still touch the table at this stage;
 that alone is NOT a failed grasp and is NOT a reason to open or start over.
-A verified RGB-D grasp check confirms local following near the fingers, not
-whole-rose clearance. Empty closure or blocked fingers alone prove neither.
-Keep the existing grasp-verification movement limits until status=verified;
-do not bypass them when the check is pending or unknown.
+Local following near the fingers does not prove whole-rose clearance.
+Empty closure or blocked fingers alone prove neither. If automatic grasp feedback
+is enabled, keep its movement limits until status=verified; do not bypass a pending
+or unknown check. Otherwise verify visually; no automatic status is supplied.
 7. WHOLE-ROSE LIFT: once the head grip is verified and visibly stable, KEEP THE
 GRIPPER CLOSED and progressively raise the head, inspecting the entire stem.
 Use small safe pose adjustments as needed to bring the free tip fully off the

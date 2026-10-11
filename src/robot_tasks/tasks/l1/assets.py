@@ -26,7 +26,7 @@ def verified_asset(name):
     }
 
 
-def import_asset(stage, parent, name, size, rotation, *, dynamic):
+def import_asset(stage, parent, name, size, rotation, *, dynamic, task_id=None):
     """Keep source meshes/materials, normalize their bounds, unify rigid body.
 
     Source SDF shapes are replaced by convex decomposition for free bodies and
@@ -36,7 +36,8 @@ def import_asset(stage, parent, name, size, rotation, *, dynamic):
     if name.startswith("tuojing:"):
         if size or any(rotation):
             raise ValueError("Tuojing props retain native metre dimensions and axes; scale/rotation must not be hidden in import")
-        return import_tuojing_asset(stage, parent, name.split(":", 1)[1], dynamic=dynamic)
+        return import_tuojing_asset(stage, parent, name.split(":", 1)[1],
+                                    dynamic=dynamic, task_id=task_id)
 
     import numpy as np
     from pxr import Gf, Usd, UsdGeom, UsdPhysics
@@ -146,14 +147,14 @@ def import_asset(stage, parent, name, size, rotation, *, dynamic):
     }
 
 
-def import_tuojing_asset(stage, parent, name, *, dynamic):
+def import_tuojing_asset(stage, parent, name, *, dynamic, task_id=None):
     """Reference native geometry, material and origin; apply declared task overrides."""
     from pxr import Gf, Usd, UsdGeom, UsdPhysics
     from ...asset_delivery import verified_prop
 
     if name not in {"whiteboard_marker", "ripple_paper_cup", "black_ceramic_mug", "usb_charger", "plug_storage_base", "power_strip", "wooden_rack", "artificial_rose", "yellow_visor"}:
         raise ValueError(f"Tuojing prop has no validated task adapter yet: {name}")
-    path, evidence = verified_prop(name)
+    path, evidence = verified_prop(name, task_id=task_id)
     prim = stage.GetPrimAtPath(parent)
     prim.GetReferences().AddReference(str(path))
     if not dynamic:

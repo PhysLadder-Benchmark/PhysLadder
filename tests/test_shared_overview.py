@@ -17,19 +17,12 @@ class SharedOverviewTests(unittest.TestCase):
     def test_all_task_rigs_use_complete_video_framing_and_preserve_wrists(self):
         checked = 0
         for path in (ROOT / "configs/tasks").glob("*.toml"):
-            if path.name.endswith(".local.toml"):
-                continue
             if not tomllib.loads(path.read_text(encoding="utf-8"))["task"].get("simulation_enabled"):
                 continue
             cfg = load_config(path)
             with self.subTest(task=cfg.task_id):
                 local = tomllib.loads(path.read_text(encoding="utf-8")).get("simulation", {})
-                camera_keys = {"camera_position", "camera_target", "camera_resolution", "camera_intrinsics"}
-                if cfg.task_id == "L1-03":
-                    self.assertTrue(camera_keys <= set(local))
-                    self.assertEqual(local["camera_reference_frame"], "world")
-                else:
-                    self.assertFalse(set(local) & camera_keys)
+                self.assertFalse(set(local) & {"camera_position", "camera_target", "camera_resolution", "camera_intrinsics"})
                 settings = SimulationSettings.from_config(cfg)
                 rig = load_camera_rig(path.parent / settings.camera_profile)
                 updated = override_overview(rig, settings)
@@ -42,13 +35,9 @@ class SharedOverviewTests(unittest.TestCase):
                     -transform[:3, 2], direction / np.linalg.norm(direction), atol=1e-10
                 )
                 self.assertEqual(rig.cameras[1:], updated.cameras[1:])
-                focal = 1539.0909857756062 if cfg.task_id == "L1-03" else 1160.
-                self.assertEqual(new.intrinsics, (focal, focal, 640., 480.))
+                self.assertEqual(new.intrinsics, (1160., 1160., 640., 480.))
                 self.assertEqual(new.resolution, (1280, 960))
-                if cfg.task_id == "L1-03":
-                    np.testing.assert_allclose(eye, [.07552374649075427, .26829766041080816, 2.2])
-                    np.testing.assert_allclose(settings.camera_target, [.11705006159910748, 1.3, 1.0328245494353243])
-                elif settings.environment == "tuojing_lab_v4":
+                if settings.environment == "tuojing_lab_v4":
                     np.testing.assert_allclose(
                         eye, [0.1956512155, 0.55, 1.45]
                     )

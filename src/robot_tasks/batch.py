@@ -85,7 +85,7 @@ def toml_text(data):
 
 
 def freeze_config(task_id, destination, model, workflow, options):
-    _, config = resolve_task(task_id)
+    _, config = resolve_task(task_id, depth=options.get("depth"))
     raw = deepcopy(config.raw)
     raw["workflow_profile"] = str(workflow)
     for section, key in (("robot", "profile"), ("simulation", "camera_profile"),
@@ -95,7 +95,7 @@ def freeze_config(task_id, destination, model, workflow, options):
     raw["policy"].update(model_config=str(model), reasoning_effort=options["reasoning_effort"])
     raw["runtime"].update(seed=options["seed"], max_wall_time_s=options["wall_time_s"])
     raw["execution"]["max_decisions"] = options["max_calls"]
-    raw["recording"].update(save_rgb=True, save_depth=True, save_video=True)
+    raw["recording"].update(save_rgb=True, save_depth=config.save_depth, save_video=True)
     destination.write_text(toml_text(raw), encoding="utf-8")
     load_config(destination)  # Validate relocated paths and merged overrides before any API call.
 
@@ -375,10 +375,11 @@ def create_batch(root, args, model, runtime):
     ids = args.tasks or sorted(key for key in TASKS if key.startswith("L"))
     if len(set(ids)) != len(ids) or any(key not in TASKS for key in ids):
         raise ValueError("Task IDs must be registered and unique")
+    settings = load_gpt_settings(model)
     options = {"max_calls": args.max_calls or 100, "wall_time_s": args.wall_time_s or 3600.,
                "startup_grace_s": args.startup_grace_s if args.startup_grace_s is not None else 300.,
-               "seed": args.seed if args.seed is not None else 0, "reasoning_effort": args.reasoning_effort or "medium",
-               "dry_run": bool(args.dry_run), "gui": bool(args.gui)}
+               "seed": args.seed if args.seed is not None else 0, "reasoning_effort": args.reasoning_effort or settings.reasoning_effort,
+               "dry_run": bool(args.dry_run), "gui": bool(args.gui), "depth": args.depth}
     root.mkdir(parents=True, exist_ok=False)
     configs = root / "configs"
     configs.mkdir()
@@ -403,8 +404,8 @@ def create_batch(root, args, model, runtime):
         tasks.append(task)
     inputs += list(configs.glob("*.toml"))
     manifest = {"version": 1, "created_at": datetime.now(timezone.utc).isoformat(),
-                "model": load_gpt_settings(model).model, "python": runtime.python,
-                "transport": load_gpt_settings(model).transport,
+                "model": settings.model, "python": runtime.python,
+                "transport": settings.transport,
                 "model_config": str(model_copy), "options": options, "tasks": tasks, "inputs": fingerprint(inputs)}
     write_json(root / "batch.json", manifest)
     write_json(root / "state.json", {})
@@ -486,6 +487,8 @@ def main(argv=None):
     parser.add_argument("--reasoning-effort", choices=("low", "medium", "high", "xhigh", "max"))
     parser.add_argument("--dry-run", action="store_true", default=None, help="仅验证批量流程；不调用 API、不运行 Isaac")
     parser.add_argument("--gui", action="store_true", default=None)
+    parser.add_argument("--depth", action=argparse.BooleanOptionalAction, default=None,
+                        help="本批次开启 RGB-D；默认使用任务配置（RGB），续跑沿用已保存设置")
     args = parser.parse_args(argv)
     try:
         if args.max_calls is not None and not 1 <= args.max_calls <= 1000:
@@ -498,7 +501,7 @@ def main(argv=None):
             raise ValueError("--seed must be nonnegative")
         resuming = args.resume or args.summarize
         if resuming:
-            if any(getattr(args, key) is not None for key in ("tasks", "output", "model_config", "max_calls", "wall_time_s", "startup_grace_s", "seed", "reasoning_effort", "dry_run", "gui")) or args.all:
+            if any(getattr(args, key) is not None for key in ("tasks", "output", "model_config", "max_calls", "wall_time_s", "startup_grace_s", "seed", "reasoning_effort", "dry_run", "gui", "depth")) or args.all:
                 raise ValueError("Resume/summarize uses the saved experiment; do not override its options")
             root = resuming.expanduser().resolve()
             manifest = json.loads((root / "batch.json").read_text(encoding="utf-8"))
