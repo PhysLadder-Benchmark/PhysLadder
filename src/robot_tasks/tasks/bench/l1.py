@@ -9,29 +9,37 @@ from .spec import BenchSpec
 
 
 def marker():
+    from .native_geometry import cup_cavity
+
     # Native delivery coordinates are bottom-centred, metres, Z-up. The cup is
     # the fixed pen receptacle; no hidden joint is used to keep the marker up.
-    table_z, holder_xy = 0.78, (0.095, 1.145)
+    # Looking from the front of the table (+Y): mug on image left, marker on
+    # image right, at the same depth. Photo-proportional, not a measured calibration.
+    table_z, holder_xy = 0.78, (0.04, 1.22)
+    _, cup_floor, cup_rim = cup_cavity('black_ceramic_mug')
     a = Article(
-        "marker", (), pose(-0.08, 1.16, table_z + 0.001), pose(*holder_xy, table_z + 0.004), 0.022,
+        "marker", (), pose(0.34, 1.22, table_z + 0.001), pose(*holder_xy, table_z + cup_floor), 0.022,
         asset="tuojing:whiteboard_marker",
         asset_bounds=((-0.00898, -0.00898, 0.0), (0.00898, 0.00898, 0.1512)),
     )
-    d = replace(design("L1-01", "白板笔入固定纸杯笔筒", [a], (), friction=0.52),
-                fixture_asset="tuojing:ripple_paper_cup", fixture_pose=pose(*holder_xy, table_z),
-                version="l1-01-tuojing-marker-cup-v5-finger-contact",
-                provenance="Tuojing L20 2026-10-05 locked props; native size, flat marker barrel collider and fixed low-friction cup")
+    d = replace(design("L1-01", "白板笔入固定黑色陶瓷杯", [a], (), friction=0.52),
+                fixture_asset="tuojing:black_ceramic_mug",
+                fixture_pose=pose(*holder_xy, table_z, yaw=-math.pi / 2),
+                version="l1-01-tuojing-marker-ceramic-mug-v8-nearest-arm",
+                provenance="Tuojing locked 2026-10-05 marker and 2026-10-09 ceramic mug; photo-proportional front-view layout, handle toward table front")
     return BenchSpec(
         d,
-        facts="The capped black whiteboard marker is 0.151 m tall; barrel diameter is 0.0162 m and maximum visible width about 0.018 m. The fixed red-brown ripple paper cup serves as the pen holder: height 0.1075 m, inside mouth diameter about 0.0786 m, floor 0.004 m above its bottom. Both are rigid. Keep the cap on. Get the marker into the cup and release it; either end may enter and leaning is allowed. There is no prescribed angle, 40 mm insertion depth or release height. A drop into the cup is allowed if it settles inside and is supported by the cup, without finger or tabletop support, for one simulation second. The initial tabletop placement is valid, but dropping the marker back onto the table or knocking it down onto its side ends the episode as a failure. There is no automatic reset/retry. No absolute prop coordinates are provided.",
-        limitations="Photo-estimated native dimensions/mass; rigid fixed paper cup retains delivered static/dynamic contact friction. Flat marker barrel collider replaces a rounded-bottom capsule for upright reset; 0.2 mm contact margin and configured velocity solver iterations. No material deformation or hardware calibration.",
+        facts="The capped black whiteboard marker is 0.151 m tall; barrel diameter is 0.0162 m and maximum visible width about 0.018 m. The fixed black ceramic mug with white interior serves as the pen holder: height 0.090 m, inside mouth diameter about 0.085 m, floor 0.007 m above its bottom. It has a bulging body and an open handle; the target is the main cup cavity, not the handle hole. Both are rigid. Keep the cap on. L1 success is genuine entry of either marker end into the main cavity, without significant wall or floor penetration. Holding the marker, moving and leaning are allowed. Releasing above the opening and letting the marker fall into the cavity is also valid; release alone is not success, actual entry must occur. Release, cup support, bottom seating and a stable waiting period are not required. There is no prescribed angle or 40 mm insertion depth. Merely aligning above the mouth or resting across its rim is insufficient. Returning to or toppling on the tabletop permits recovery in the same scene; falling below the table still ends the episode. There is no automatic reset. No absolute prop coordinates are provided.",
+        limitations="Photo-estimated native dimensions and initial layout; rigid fixed ceramic mug retains delivered static/dynamic contact friction. The reference real mug is free-standing, whereas this task retains its fixed-receptacle protocol. Flat marker barrel collider replaces a rounded-bottom capsule for upright reset; 0.2 mm contact margin and configured velocity solver iterations. No material deformation or hardware calibration.",
         parameters={
+            "scoring_protocol": "l1_entry_only_v1",
+            "hold_s": 0.0,
             "table_z": table_z,
             "holder_xy": holder_xy,
-            "rim": table_z + 0.1075,
-            "floor": table_z + 0.004,
-            "radius": 0.025,
-            "mouth_radius": 0.0393,
+            "rim": table_z + cup_rim,
+            "floor": table_z + cup_floor,
+            "radius": 0.029,
+            "mouth_radius": 0.0425,
             "marker_visual_radius": 0.00898,  # Visual label/ridges only; never a scoring envelope.
             "marker_height": 0.1512,
             "min_support_n": 0.022 * 9.81 * 0.5,
@@ -40,7 +48,9 @@ def marker():
 
 
 def plug():
-    table_z, socket_xy = 0.78, (0.07, 1.10)
+    table_z, socket_xy = 0.78, (0.02, 1.20)
+    source_xy = (0.35, 1.20)
+    strip_yaw = math.pi / 2
     # These payload samples follow the three native convex colliders. A single
     # enclosing box would fill the gap between the two blades in the planner.
     parts = (
@@ -49,24 +59,33 @@ def plug():
         box("blade_right", (0.0015, 0.0063, 0.018), (0.00685, 0, 0.009), GREY),
     )
     a = Article(
-        "plug", parts, pose(-0.12, 1.23, table_z + 0.0255, pitch=math.pi / 2),
-        pose(*socket_xy, table_z + 0.01315), 0.055,
+        "plug", parts, pose(*source_xy, table_z + 0.0045),
+        pose(*socket_xy, table_z + 0.01315, yaw=strip_yaw), 0.055,
         asset="tuojing:usb_charger",
         asset_bounds=((-0.0245, -0.01355, 0), (0.0245, 0.0135, 0.07075)),
     )
-    d = replace(design("L1-03", "USB 充电器插入固定插线板", [a], (), friction=0),
-                fixture_asset="tuojing:power_strip", fixture_pose=pose(*socket_xy, table_z),
-                version="l1-03-tuojing-charger-strip-v2-native-score",
-                provenance="Tuojing locked USB charger and power strip; native middle two-slot socket, fixed zero-friction fixture")
+    # The native 20.8-g holder is free-standing, not attached to the charger or
+    # table. Its recessed floor supports the housing; both blades enter the
+    # 22-mm through-hole. Start 1.5 mm above nominal shoulder seating and settle.
+    base_pose = pose(*source_xy, table_z + 0.001)
+    base = Article("plug_storage_base", (), base_pose, base_pose, 0.0208,
+                   asset="tuojing:plug_storage_base",
+                   asset_bounds=((-0.0507, -0.0507, 0), (0.0507, 0.0507, 0.055)))
+    d = replace(design("L1-03", "USB 充电器插入固定插线板", [a, base], (), friction=0),
+                fixture_asset="tuojing:power_strip", fixture_pose=pose(*socket_xy, table_z, yaw=strip_yaw),
+                version="l1-03-tuojing-charger-holder-v4-entry-only",
+                release=False,
+                provenance="Tuojing locked charger, strip and 2026-10-09 free-standing plug holder; photo-proportional strip-left/charger-right layout, not calibrated")
     return BenchSpec(
         d,
-        facts="The white USB charger starts lying on its side. Grip its plastic housing (49 x 27 x 53 mm), not the two metal blades. Insert both blades downward into the MIDDLE blue two-slot socket of the fixed, unpowered strip. Blade spacing is 13.7 mm; each blade is 1.5 x 6.3 mm. Each target slot is 2.6 x 8.2 mm. Native side clearance is only 0.55 mm across blade thickness, so this delivered pair needs finer alignment than the old wide-clearance dummy. There is no latch or powered circuit. Seat the housing at the socket face, release and inspect support.",
-        limitations="Photo-estimated rigid charger and fixed strip; native slots retained, 0.55 mm minimum side clearance. Zero fixture friction; no electrical contacts, spring retention or flexible cable. More precise than the former enlarged L1 proxy.",
+        facts="The white USB charger starts upright, blades downward, naturally supported in a black recessed storage base on the right side of the table. The free-standing base is about 101 x 101 x 55 mm and 20.8 g, with a 22-mm central through-hole; it is passive storage, not the target socket. Grip the exposed upper plastic housing (whole housing 49 x 27 x 53 mm), not the base or metal blades. Lift vertically clear of the recess before translation or rotation; the base should remain on the table. The fixed unpowered white strip lies horizontally on the left, with its coiled cable behind it. Insert both blades downward into the MIDDLE blue two-slot socket. Blade spacing is 13.7 mm; each blade is 1.5 x 6.3 mm. Each target slot is 2.6 x 8.2 mm. Native side clearance is only 0.55 mm across blade thickness. There is no latch or powered circuit. L1 success requires both blades genuinely entering their corresponding middle slots without significant wall, floor or housing penetration. Holding, motion and partial insertion are allowed. No 15-mm insertion depth, housing seating, release, support force, grasp history or stable waiting period is required. Alignment above the face, rim contact and only one blade entering are insufficient. Entry must exceed the existing 0.15-mm numerical contact tolerance; this is not a task-depth target.",
+        limitations="Photo-estimated layout and rigid native props, not hardware calibrated. Free-standing 20.8-g storage base retains its hollow native colliders; shared task object friction is 0.8. Fixed strip keeps native slots, 0.55 mm minimum side clearance and zero fixture friction. No electrical contacts, spring retention or flexible cable.",
         parameters={"table_z": table_z, "socket_xy": socket_xy,
+                    "scoring_protocol": "l1_plug_entry_only_v1", "hold_s": 0.0,
                     "slot_centres": ((-0.00685, 0), (0.00685, 0)),
                     "opening": (0.0026, 0.0082), "tongue": (0.0015, 0.0063),
                     "floor": table_z + 0.01315, "rim": table_z + 0.03015,
-                    "depth": 0.015, "seat_gap_m": 0.001, "contact_tolerance_m": 0.00015},
+                    "seat_gap_m": 0.001, "contact_tolerance_m": 0.00015},
     )
 
 
@@ -152,19 +171,22 @@ def hat():
 
 def cups():
     # Both cups retain the same native dimensions, hollow walls and 14 g mass.
+    # Photo-proportional layout, not calibrated: viewed from the table front,
+    # the source is on the left and the receiver is 30 cm right, 2 cm forward.
+    source_xy, receiver_xy, table_z = (0.04, 1.20), (0.34, 1.18), 0.78
     bounds = ((-0.0426, -0.0426, 0), (0.0426, 0.0426, 0.107594535))
     # Hollow payload samples preserve the opening instead of filling it with an AABB.
     parts = cup_parts(bottom_radius=0.025, top_radius=0.0393, height=0.1075,
                       wall=0.003, segments=48)
-    lower = Article("lower_cup", parts, pose(0.07, 1.13, 0.781), pose(0.07, 1.13, 0.78),
+    lower = Article("lower_cup", parts, pose(*receiver_xy, table_z + 0.001), pose(*receiver_xy, table_z),
                     0.014, asset="tuojing:ripple_paper_cup", asset_bounds=bounds)
-    upper = Article("upper_cup", parts, pose(-0.10, 1.22, 0.781), pose(0.07, 1.13, 0.805),
+    upper = Article("upper_cup", parts, pose(*source_xy, table_z + 0.001), pose(*receiver_xy, table_z + 0.025),
                     0.014, asset="tuojing:ripple_paper_cup", asset_bounds=bounds)
     return BenchSpec(
         replace(design("L1-08", "两个波纹纸杯套叠", [lower, upper]),
-                version="l1-08-tuojing-identical-cups-v3-finger-contact",
-                provenance="Two copies of the locked native hollow ripple paper cup; no resizing"),
-        facts="Two identical empty red-brown ripple cups start upright. Move the cup initially nearer the LEFT robot into the farther cup. Both are movable. Each is 107.5 mm tall, outer mouth about 85 mm wide, lower-body diameter about 56-67 mm within the bottom 40 mm. Gripper opening is nominally 0-70 mm: the full mouth is too wide. A shallow pinch across one rigid wall near the rim is possible from above with vertical fingers, one distal pad inside and one outside. Alternatively grip opposite outer sides of the narrower lower body, with both finger tips clear of the table. Lift and verify support, carry upright, and centre its bottom over the other cup's mouth. A recommended release point is with the cup bottom 5-8 mm INSIDE the mouth and before any finger reaches the rim. Open separately and inspect settling. Opening does not prove detachment; choose a small clear withdrawal probe and inspect whether the cup follows before a full retreat. RGB-D release_check is advisory; the model chooses recovery. Gravity may finish settling the entered cup onto the taper. A 20-35 mm rim separation is typical, not a hard scoring band. Completion uses geometric cavity fit and stable support, without a 3 mm centre cutoff or fixed small-angle gate. No yaw target is required. Temporary tilt or a missed placement can be recovered in the same scene without reset.",
+                version="l1-08-tuojing-identical-cups-v4-photo-layout",
+                provenance="Two native hollow ripple paper cups; photo-proportional left-source/right-receiver layout, receiver slightly toward the table front; not calibrated; no resizing"),
+        facts="Two identical empty red-brown ripple cups start upright. Viewed from the table front toward the robots, move the initially LEFT cup into the initially RIGHT cup, which starts slightly toward the table front. Both are movable. Each is 107.5 mm tall, outer mouth about 85 mm wide, lower-body diameter about 56-67 mm within the bottom 40 mm. Gripper opening is nominally 0-70 mm: the full mouth is too wide. A shallow pinch across one rigid wall near the rim is possible from above with vertical fingers, one distal pad inside and one outside. Alternatively grip opposite outer sides of the narrower lower body, with both finger tips clear of the table. Lift and verify support, carry upright, and centre its bottom over the other cup's mouth. A recommended release point is with the cup bottom 5-8 mm INSIDE the mouth and before any finger reaches the rim. Open separately and inspect settling. Opening does not prove detachment; choose a small clear withdrawal probe and inspect whether the cup follows before a full retreat. RGB-D release_check is advisory; the model chooses recovery. Gravity may finish settling the entered cup onto the taper. A 20-35 mm rim separation is typical, not a hard scoring band. Completion uses geometric cavity fit and stable support, without a 3 mm centre cutoff or fixed small-angle gate. No yaw target is required. Temporary tilt or a missed placement can be recovered in the same scene without reset.",
         limitations="Native photo-estimated rigid paper cups, identical taper and size; no paper crushing. Rigid native cup walls; nominal 0-70 mm fingers permit a rim-wall pinch or a lower-body grasp.",
         parameters={"table_z": 0.78, "cup_height": 0.1075, "entry_depth": 0.008,
                     "cup_outer_bottom_radius": 0.028, "cup_outer_top_radius": 0.042,

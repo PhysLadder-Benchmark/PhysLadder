@@ -38,7 +38,7 @@ execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
 implementation = "household"
-simulation_limitations = "Native photo-estimated rigid paper cups, identical taper and size; no paper crushing. Native hollow cups retain their dimensions; corrected 0-70 mm nominal finger gap permits thin-wall or lower-body grasp."
+simulation_limitations = "Photo-proportional left-source/right-receiver layout, receiver slightly toward the table front; not calibrated. Native rigid paper cups, identical taper and size; no paper crushing. Native hollow cups retain their dimensions; corrected 0-70 mm nominal finger gap permits thin-wall or lower-body grasp."
 launch_command = "python tools/launch.py run L1-08 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L1-08 --gui"
 instruction = """
@@ -47,8 +47,10 @@ it may move its wrist camera when a grasp, opening or contact is obscured, but
 must not touch or support the props. Keep the left arm steady while changing
 view. Choose grasp points, poses and motion from current images and available
 robot feedback; no object coordinates or successful action sequence is supplied.
-Nest the cup initially nearer the LEFT robot inside the farther cup. Both are
-identical empty red-brown ripple cups; remember their initial roles before moving.
+Viewed from the table front toward the robots, nest the initially LEFT cup
+inside the initially RIGHT cup. The right cup starts slightly toward the table
+front. Both are identical empty red-brown ripple cups; remember their initial
+roles before moving.
 Both start upright and both are movable. Each mouth is about 85 mm wide, exceeding
 your 70 mm maximum opening. The nominal minimum gap is 0 mm: a shallow pinch
 across ONE rigid wall near the rim is possible from ABOVE with vertical fingers,
@@ -90,7 +92,7 @@ or assume a force-control tool that the interface does not expose.
 # Chinese setup/props description; keep this the final task attribute.
 description = """
 道具：两只交付波纹纸杯，原生相同尺寸，杯高约 107.5 mm、外口径约 85 mm、各重约 14 g；保留空心碰撞体，不再使用一大一小的彩色代理杯。
-布置：拓境实验室、原生 R5 双臂及三相机。两杯竖直且未固定，移动初始靠近左臂的一杯套入较远的一杯；右臂仅观察。
+布置：参考真机照片，从桌前朝双臂看，两杯竖直、杯口向上且未固定，分别位于双臂前方；左杯为待移动杯，右杯为接收杯并略靠桌前。左杯底部初始坐标 (0.04, 1.20, 0.781) m，右杯 (0.34, 1.18, 0.781) m，左右间距 30 cm、前后错开 2 cm；按照片比例估计，非实测标定。左臂将左杯套入右杯，右臂仅观察；overview 沿用云端公共视角。
 操作：夹爪名义范围 0–70 mm，不能从两侧包住 85 mm 宽杯口。可让夹指竖直从上方夹住单侧杯壁，一指在杯内、一指在杯外；也可选择下部可夹持的外壁。避免夹指粗大部分横穿弯曲杯壁。将杯底送入目标杯口且夹指仍有退出空间时松手，允许杯子自然落稳。
 完成：按原生分段杯壁与杯底检查，上杯底部实际进入下杯、杯壁不穿透且由下杯承重，杯口朝上，松手后两杯相对位置、倾斜与下杯支撑持续稳定 1 秒，不因单纯绕轴自转失败。20–35 mm 杯底高差仅为典型姿态，不设单独的中心误差或小倾角门槛；临时倾斜和放偏允许原地调整，不复位。
 边界：纸杯按刚体处理，不模拟压皱损坏；抓法和评分随原生尺寸调整。

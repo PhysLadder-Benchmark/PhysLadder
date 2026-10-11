@@ -152,7 +152,7 @@ def import_tuojing_asset(stage, parent, name, *, dynamic, task_id=None):
     from pxr import Gf, Usd, UsdGeom, UsdPhysics
     from ...asset_delivery import verified_prop
 
-    if name not in {"whiteboard_marker", "ripple_paper_cup", "usb_charger", "power_strip", "wooden_rack", "artificial_rose", "yellow_visor"}:
+    if name not in {"whiteboard_marker", "ripple_paper_cup", "black_ceramic_mug", "usb_charger", "plug_storage_base", "power_strip", "wooden_rack", "artificial_rose", "yellow_visor"}:
         raise ValueError(f"Tuojing prop has no validated task adapter yet: {name}")
     path, evidence = verified_prop(name, task_id=task_id)
     prim = stage.GetPrimAtPath(parent)

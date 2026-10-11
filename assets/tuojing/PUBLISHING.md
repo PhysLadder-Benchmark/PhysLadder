@@ -56,6 +56,23 @@ python3 tools/tuojing_assets.py --packages lab_v4 photo_props orange_soft
 不带 `--packages` 检查当前锁文件中的全部九个包；任何包缺失都会报错，不能把三个包的部分校验当成完整交付。
 可加 `--usd` 检查 USD 组合依赖（需要 pxr），但文件检查不等于物理仿真或 GPT 任务测试通过。
 
+## 2026-10-09 本地新增包
+
+当前 `release.json` 仍指向已发布的三个旧包，下载地址、ZIP 哈希及旧 tag 保持不变。
+其锁文件摘要和 `omitted_packages` 已随当前代码更新，将新包明确列为未发布。
+这是客户端清单对新增本地依赖的记录，并未更改云端 Release 文件。
+
+拿到 `新增三类资产_圆柱杯子插头底座_20261009.zip` 后，将它放在仓库根目录，执行：
+
+```bash
+python3 tools/tuojing_assets.py --archives . --packages desktop_additions_20261009 --usd
+```
+
+新包没有外层目录，锁文件以 `archive_root: ""` 显式表示；安装器仍核对所有成员路径、
+完整文件清单和 SHA256，安装至 `assets/tuojing/source/desktop_additions_20261009/`。
+不修改或重新打包原 ZIP。向协作者正式交付时，应按下面流程发布新 tag，纳入此包，
+不能仅推送代码便宣称 L1-01 的新资产也已上传。
+
 ## 维护者发布流程
 
 1. 核对所有待发布 ZIP 和已解压文件与锁文件一致；只允许清单中的包进入发布目录。
@@ -66,3 +83,5 @@ python3 tools/tuojing_assets.py --packages lab_v4 photo_props orange_soft
 6. 发布后的 tag 和文件按团队规则保持不变，不用 `--clobber`。新版使用新 tag；回退代码时也回退对应清单。
 
 Git 推送和 Release 上传不是一个原子操作。若上传或授权失败，应明确报告“代码已推送，资产发布待完成”，保留草稿和校验信息以便续传，不宣称已经交付完成。
+
+统一使用包 ID `desktop_additions_20261009`。安装器优先使用同名 ZIP；不存在时接受原始中文名 ZIP，分别校验各自的压缩包哈希。两种打包方式解压后的 16 个文件及哈希完全一致。

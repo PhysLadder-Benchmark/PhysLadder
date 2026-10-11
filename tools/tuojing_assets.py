@@ -52,14 +52,26 @@ def install_package(root, archives, package):
     if destination.exists():
         verify_files(destination, package)
         return
-    archive = archives / relative_path(package["archive"])
-    if sha256(archive) != package["archive_sha256"]:
+    # Different delivery wrappers may contain exactly the same pinned files.
+    # Fall back only when an archive is absent, never after a checksum failure.
+    wrapper = package
+    archive = archives / relative_path(wrapper["archive"])
+    if not archive.exists():
+        for candidate in package.get("archive_alternatives", []):
+            alternative = archives / relative_path(candidate["archive"])
+            if alternative.exists():
+                wrapper, archive = candidate, alternative
+                break
+    if sha256(archive) != wrapper["archive_sha256"]:
         raise ValueError(f"Archive checksum mismatch: {archive}")
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = Path(tempfile.mkdtemp(prefix=".install-", dir=destination.parent))
     try:
         with zipfile.ZipFile(archive) as source:
-            prefix = relative_path(package["archive_root"])
+            # Some deliveries place assets/ directly at ZIP root. Only an
+            # explicit empty root enables this; member safety checks still apply.
+            prefix = (relative_path(wrapper["archive_root"])
+                      if wrapper["archive_root"] else Path("."))
             members = {}
             for member in source.infolist():
                 path = relative_path(member.filename)

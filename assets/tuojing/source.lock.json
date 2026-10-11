@@ -2276,7 +2276,15 @@
           "bytes": 2736,
           "sha256": "c41adcca31f044a990be52ff6708b2844bfaad439a90b1158d5d10923a42e1f0"
         }
-      }
+      },
+      "archive_alternatives": [
+        {
+          "archive": "新增三类资产_圆柱杯子插头底座_20261009.zip",
+          "archive_root": "",
+          "archive_bytes": 3094951,
+          "archive_sha256": "03addfd760d1025ef4bd5db80594e4ed4eaf2ce75220fad4eafd8ccd72469dfb"
+        }
+      ]
     }
   ]
 }

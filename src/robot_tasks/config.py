@@ -147,6 +147,16 @@ def load_config(path: Path) -> TaskConfig:
     if not isinstance(robot["profile"], str) or not robot["profile"].strip():
         raise ValueError("robot.profile must reference an R5 profile TOML")
     profile = load_robot_profile(source.parent / robot["profile"])
+    if task.get("arm_selection", "fixed") != "fixed":
+        if task.get("implementation") != "household":
+            raise ValueError("Automatic arm selection is supported by household L1 tasks only")
+        from .tasks.bench.arm_selection import resolve_bench_spec
+
+        selected = resolve_bench_spec(task, profile)
+        # Resolve before validating cameras and before constructing policies,
+        # controllers or contact monitors. The effective config records the roles.
+        robot["active_arms"] = list(selected.arms)
+        robot["observation_arms"] = list(selected.observers)
     arms = names(robot["active_arms"], "robot.active_arms")
     if not set(arms).issubset(profile.available_arms):
         raise ValueError("robot.active_arms must be a nonempty subset of the R5 left/right arms")

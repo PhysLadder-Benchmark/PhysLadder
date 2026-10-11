@@ -39,10 +39,12 @@ def stable_outcome(e, key, rows, active, *, relative_frame=None):
 
 
 def marker(e, rows):
+    """L1 entry-only outcome; release/support/motion are diagnostic evidence."""
     r,p=rows['marker'],e.spec.parameters
     t=pose_transform(r['pose'])
-    cavity=t.copy(); cavity[:2,3]-=p['holder_xy']; cavity[2,3]-=p['table_z']
-    inside,margin=cavity_fit('whiteboard_marker',cavity,.001)
+    cavity=np.linalg.inv(pose_transform(e.spec.design.fixture_pose)) @ t
+    inside,margin=cavity_fit('whiteboard_marker',cavity,.001,
+                            receptacle=e.spec.design.fixture_asset.split(':',1)[1])
     vertices=np.concatenate([transformed_poly('whiteboard_marker',i,t)[0]
                              for i in range(len(shapes('whiteboard_marker')))])
     depth=p['rim']-vertices[:,2].min()
@@ -53,11 +55,13 @@ def marker(e, rows):
     if (not held(r) and r['bench_force_n']>.05 and
             ('marker_left_table' in e.flags or body_on_table)):
         e.flags.add('marker_dropped_on_table')
-    failure='Marker dropped onto the tabletop' if 'marker_dropped_on_table' in e.flags else ''
-    done=stable_outcome(e,'marker',[r],inside and support and released(r))
-    return done, {'inside_holder':inside,'depth_m':float(depth),'fixture_supported':bool(support),
+    returned_to_table = 'marker_dropped_on_table' in e.flags
+    return inside, {'inside_holder':inside,'depth_m':float(depth),'fixture_supported':bool(support),
                   'collider_clearance_m':float(margin),'geometry':'native barrel cylinder + cap capsule',
-                  'dropped_on_table':bool(failure),'stability':'position and tilt; axial spin ignored'}, failure
+                  'released':released(r),'dropped_on_table':returned_to_table,
+                  'stability':'not required for L1 entry-only success',
+                  'quality_warnings':(['Marker returned to or toppled on the tabletop; recovery allowed']
+                                      if returned_to_table else [])}, ''
 
 
 def insertion(e, rows):
@@ -112,39 +116,47 @@ def insertion(e, rows):
 
 def plug(e, rows):
     r,p=rows['plug'],e.spec.parameters
-    t=pose_transform(r['pose']); tol=p['contact_tolerance_m']
-    slots=np.asarray(p['slot_centres']) + p['socket_xy']
+    # Evaluate in the strip frame: rotating its layout must rotate both slot
+    # centres and their rectangular cross-sections, not just the visual asset.
+    fixture=pose_transform(e.spec.design.fixture_pose)
+    t=np.linalg.inv(fixture) @ pose_transform(r['pose']); tol=p['contact_tolerance_m']
+    rim=p['rim']-fixture[2,3]; floor=p['floor']-fixture[2,3]
+    slots=np.asarray(p['slot_centres'])
     slot_half=np.asarray(p['opening'])/2
     blades=[]
     for i,s in enumerate(shapes('usb_charger')):
         if not s['name'].startswith('Blade'):continue
         vertices,edges,_=transformed_poly('usb_charger',i,t)
-        clipped=clip_below(vertices,edges,p['rim'])
+        clipped=clip_below(vertices,edges,rim)
         blades.append((vertices,clipped))
     assignments=[]
     for order in (slots,slots[::-1]):
         checks=[]
         for (vertices,clipped),centre in zip(blades,order):
-            depth=p['rim']-vertices[:,2].min()
+            depth=rim-vertices[:,2].min()
             fit=bool(len(clipped) and np.all(np.abs(clipped[:,:2]-centre)<=slot_half+tol)
-                     and vertices[:,2].min()>=p['floor']-tol and depth>=p['depth'])
+                     and vertices[:,2].min()>=floor-tol and depth>tol)
             checks.append({'inside_slot':fit,'depth_m':float(depth)})
         assignments.append(checks)
     checks=max(assignments,key=lambda a:sum(c['inside_slot'] for c in a))
     housing_index=next(i for i,s in enumerate(shapes('usb_charger')) if s['name']=='Housing')
     housing=transformed_poly('usb_charger',housing_index,t)[0]
-    # Inspect the authored housing's broad shoulder, not only a blade tip or
-    # a chamfer's lowest corner: a tilted charger may contact without seating.
+    # Seating is diagnostic only. Keep a geometric nonpenetration check on the
+    # housing so reversed/upside-down insertion cannot put plastic into the strip.
     local=transformed_poly('usb_charger',housing_index,np.eye(4))[0]
     shoulder=housing[np.isclose(local[:,2],local[:,2].min(),atol=1e-8)]
-    gaps=shoulder[:,2]-p['rim']
+    gaps=shoulder[:,2]-rim
     seated=bool(t[2,2]>0 and gaps.min()>=-tol and gaps.max()<=p['seat_gap_m'])
+    housing_clear=bool(housing[:,2].min()>=rim-tol)
     inside=bool(all(c['inside_slot'] for c in checks))
     support=r['fixture_force_n']>.05 and r['bench_force_n']<.05
-    done=inside and seated and released(r) and support and quiet(r)
+    done=inside and housing_clear
     return done, {'inside_socket':inside,'blades':checks,'housing_seated':seated,
                   'housing_seat_gap_range_m':[float(gaps.min()),float(gaps.max())],
-                  'depth_m':min(c['depth_m'] for c in checks),'release_required':True,
+                  'depth_m':min(c['depth_m'] for c in checks),'release_required':False,
+                  'entry_epsilon_m':tol,'housing_clear_of_strip':housing_clear,
+                  'released':released(r),'fixture_supported':support,
+                  'stability':'not required for L1 entry-only success',
                   'grasp_lift_recorded':'plug' in e.grasped,'native_dimensions_retained':True}, ''
 
 

@@ -66,12 +66,19 @@ def clip_below(vertices, edges, height):
     return np.concatenate((vertices[vertices[:,2] <= height], cut))
 
 
-@lru_cache(maxsize=1)
-def cup_cavity():
+@lru_cache(maxsize=4)
+def cup_cavity(receptacle='ripple_paper_cup'):
+    """Convex cavity from native inner wall facets, including a bulging mug.
+
+    Both supported vessels have a convex interior: the ceramic mug's radial
+    profile is concave in height. Verify this rather than extending arbitrary
+    segmented wall planes into an incorrectly narrowed cavity.
+    """
     planes = []
-    for shape in shapes('ripple_paper_cup'):
+    inner_vertices = []
+    for i, shape in enumerate(shapes(receptacle)):
         if not shape['name'].startswith('Wall_'): continue
-        vertices = np.asarray(shape['points'])
+        vertices = polyhedron(receptacle, i)[0]
         levels = np.unique(vertices[:,2])
         inner = []
         for z in levels:
@@ -81,14 +88,21 @@ def cup_cavity():
         normal = np.cross(b-a,c-a); normal /= np.linalg.norm(normal)
         if np.dot(normal[:2],a[:2]) < 0: normal = -normal
         planes.append([*normal, np.dot(normal,a)])
-    floor_shape = next(i for i,s in enumerate(shapes('ripple_paper_cup')) if s['name']=='Floor')
-    floor = polyhedron('ripple_paper_cup', floor_shape)[0][:,2].max()
-    rim = max(max(np.asarray(s['points'])[:,2]) for s in shapes('ripple_paper_cup') if s['name'].startswith('Wall_'))
+        inner_vertices.extend(inner)
+    if not planes:
+        raise ValueError('No native cavity walls: ' + receptacle)
+    planes = np.asarray(planes)
+    inner_vertices = np.asarray(inner_vertices)
+    if np.max(inner_vertices @ planes[:,:3].T - planes[:,3]) > 1e-7:
+        raise ValueError('Native cavity is not convex: ' + receptacle)
+    floor_shape = next(i for i,s in enumerate(shapes(receptacle)) if s['name'] in {'Floor','CupFloor'})
+    floor = polyhedron(receptacle, floor_shape)[0][:,2].max()
+    rim = inner_vertices[:,2].max()
     return np.asarray(planes), float(floor), float(rim)
 
 
-def cavity_fit(prop, transform, tolerance, *, indices=None):
-    planes, floor, rim = cup_cavity()
+def cavity_fit(prop, transform, tolerance, *, indices=None, receptacle='ripple_paper_cup'):
+    planes, floor, rim = cup_cavity(receptacle)
     margins, entered = [], False
     for i in (range(len(shapes(prop))) if indices is None else indices):
         vertices, edges, error = transformed_poly(prop,i,transform)

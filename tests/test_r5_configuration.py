@@ -27,6 +27,8 @@ HANDOVER = ROOT / "configs/tasks/l2_01_marker_uncap.toml"
 class R5ConfigurationTests(unittest.TestCase):
     def test_l1_thin_grasp_limits_do_not_change_l2_or_l3_profiles(self):
         for path in (ROOT / "configs/tasks").glob("*.toml"):
+            if path.name.endswith(".local.toml"):
+                continue  # Private experiments are not part of the maintained task pool.
             config = load_config(path)
             if not config.raw["task"].get("simulation_enabled"):
                 continue

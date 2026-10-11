@@ -52,7 +52,11 @@ def catalogue(directory: Path) -> dict[str, TaskSpec]:
         )
         if key == "household":
             design = build_spec(task_id)
-            if tuple(data["robot"]["active_arms"]) != design.arms:
+            if task.get("arm_selection", "fixed") != "fixed":
+                # Loading resolves automatic roles and validates observer cameras.
+                resolved = load_config(path)
+                arms = len(resolved.arms)
+            elif tuple(data["robot"]["active_arms"]) != design.arms:
                 raise ValueError(
                     f"{task_id}: configured arms do not match physical task"
                 )

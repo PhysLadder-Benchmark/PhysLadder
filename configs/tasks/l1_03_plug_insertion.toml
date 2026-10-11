@@ -5,8 +5,8 @@ workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
 profile = "../robots/r5_tuojing_lab_l1.toml"
-active_arms = ["left"]
-observation_arms = ["right"]
+active_arms = ["right"]
+observation_arms = ["left"]
 
 [simulation]
 environment = "tuojing_lab_v4"
@@ -22,7 +22,7 @@ finger_stiffness = 2000.0
 finger_damping = 40.0
 self_collision = false
 solver_position_iterations = 32
-solver_velocity_iterations = 0
+solver_velocity_iterations = 4
 
 [policy]
 model_config = "../models/gpt.toml"
@@ -34,29 +34,38 @@ execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented_proxy"
 implementation = "household"
-simulation_limitations = "Photo-estimated rigid charger and fixed strip; native slots retained, 0.55 mm minimum side clearance. Zero fixture friction; no electrical contacts, spring retention or flexible cable. More precise than the former enlarged L1 proxy."
+arm_selection = "nearest_initial_object"
+manipulation_object = "plug"
+simulation_limitations = "Photo-proportional strip-left/charger-right layout; upright charger in native free-standing 20.8-g black storage base, no attachment. Fixed native strip rotated horizontally, 0.55 mm minimum slot side clearance and zero socket friction. No electrical contacts or flexible cable; dimensions and layout are not calibrated."
 launch_command = "python tools/launch.py run L1-03 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L1-03 --gui"
 instruction = """
-Use the LEFT R5 arm for manipulation. The RIGHT arm is an observation arm:
-it may move its wrist camera when a grasp, opening or contact is obscured, but
-must not touch or support the props. Keep the left arm steady while changing
-view. Choose grasp points, poses and motion from current images and available
+Use the episode-assigned manipulation arm, selected by initial TCP proximity
+to the charger. The other arm observes: it may move its wrist camera when a
+grasp, opening or contact is obscured, but must not touch or support the props.
+Keep these roles for the whole episode. Keep the manipulation arm steady while
+changing view; proximity does not certify reachability or a collision-free path. Choose grasp points, poses and motion from current images and available
 robot feedback; no object coordinates or successful action sequence is supplied.
-Pick up the white USB charger lying on its side and insert its two metal blades
+Pick up the white USB charger standing upright in the black storage base on
+the right of the table and insert its two metal blades
 into the MIDDLE blue two-slot socket of the fixed, unpowered white power strip.
 Grip plastic, not metal blades; the USB output opening is not the entering end.
-The strip's coiled cable is fixed and is not a manipulation target.
+The strip lies horizontally on the left, its fixed coiled cable behind it.
+The black base is passive storage, not the target socket. It is free-standing
+and must remain on the table. Grip the exposed upper plastic, not the base.
+The blades initially point down through the base's central hole. Lift vertically
+until the whole charger clears the recess before translating or rotating.
+Neither the base nor the cable is a manipulation target.
 
 Choose the grasp BACKWARD FROM INSERTION, not merely from pickup or visibility.
 First inspect the final relation: both blades point down into their respective
-middle slots and the plastic housing can seat on the socket face. Choose a
+middle slots while the plastic housing stays clear of the socket face. Choose a
 plastic contact region away from the blades, with enough finger overlap for a
 reliable hold. Check the WHOLE gripper: both fingers and the palm must clear the
-strip throughout alignment, descent and housing seating. Exposed blade tips or
+strip throughout alignment and shallow insertion. Exposed blade tips or
 a clear TCP alone do not prove this clearance. Side-entry grasps are acceptable
 when these conditions hold; no single gripper orientation is prescribed.
-Consider the tabletop grasp, clear-of-table reorientation and above-socket
+Consider the recessed-base pickup, clearance lift and any needed reorientation and above-socket
 pre-insertion poses together before closing. Prefer a grasp that plausibly
 connects these poses without extreme wrist rotation or an obstructed approach.
 This is a visual hypothesis, not an IK/collision certificate: the interface has
@@ -71,25 +80,25 @@ verify the whole charger follows before transport. Regrasp after an empty close.
 After a VERIFIED short lift, progress to clearance and reorientation. A 25 mm
 test lift is only a grasp checkpoint, not necessarily enough clearance to rotate
 the whole charger. With closure retained, choose a vertical lift that clears the
-housing, blades and fingers from the table and fixtures throughout the intended
+housing, blades and fingers from the storage base, table and fixtures throughout the intended
 rotation. Use the visible housing and measured hand pose to choose this move;
 do not require a perfect view of both blades before a safe clearance lift.
 Once clear, use small, separately inspected motions toward an insertion-ready
 pose. Seeing the underside is information, not the motion objective. Do not
 keep rotating at the pickup XY just to expose the blades if this worsens the
-approach. When needed and feasible, use the right camera for visibility while
-retaining a useful left-hand pose. Keep the right arm clear of the swept space.
+approach. When needed and feasible, use the observation wrist camera for visibility while
+retaining a useful manipulation-hand pose. Keep the observation arm clear of the swept space.
 Recheck that the charger follows and that its pose relative to the hand has not
 slipped. Do not rotate beside the tabletop or infer blade pose from TCP alone.
 
 Observation budget: for the SAME unresolved visibility question, allow at most
 TWO consecutive observation attempts without new useful evidence. A rejected
-right-arm move, an executed view that remains occluded, and repeated depth
+observation-arm move, an executed view that remains occluded, and repeated depth
 queries that do not resolve that question all count. A rejection or changing
 camera targets does not reset this count. State the question and attempt count
 briefly in the decision note. Then change strategy instead of another camera
 search: if holding remains verified, choose a safe clearance or free-space move
-that advances toward the pre-insertion pose; if the right arm blocks it,
+that advances toward the pre-insertion pose; if the observation arm blocks it,
 retract that arm toward a previously reached clear pose as a clearance action.
 Exhausting this observation budget does NOT by itself require placement/regrasp.
 
@@ -123,18 +132,25 @@ from current observations; there is no supplied successful motion sequence.
 
 Reorient both blades downward and carry their tips clear of the strip. Account
 for their offset from the TCP and align BOTH blades with BOTH middle slots.
-Use a clear oblique right-wrist view if alignment is obscured. Native minimum
+Use a clear oblique observation-wrist view if alignment is obscured. Native minimum
 side clearance is 0.55 mm; do not assume the old enlarged dummy socket geometry.
 Lower vertically in small, slow increments. If blocked, withdraw, inspect and
-correct; do not force or twist a blade caught on an edge. Seat the housing gently
-on the socket face, with both blade tips at least 15 mm below that face. Open
-separately and withdraw without dragging. Inspect released support for one
-simulation second. No electricity, latch operation or cable routing is required.
+correct; do not force or twist a blade caught on an edge. Success is actual
+entry of BOTH blades into their corresponding middle slots, even if shallow
+and still held. Merely aligning above the holes, touching the rim, or entering
+only one slot is insufficient. Keep entered blade portions inside the native
+slot walls and above the cavity floor; the housing must not penetrate the strip.
+Entry must exceed the existing 0.15-mm numerical contact tolerance to distinguish
+entry from surface contact. This is not a prescribed insertion-depth target.
+There is no 15-mm depth, full housing seating, release, support-force, grasp-history
+or one-second stability requirement. Do not deepen insertion or release just
+to satisfy those former requirements. No electricity, latch operation or cable
+routing is required.
 A miss, temporary tilt or a recoverable tabletop placement permits another
 approach in this scene. Physical insertion still needs both blades inside.
 No automatic reset occurs.
 
-Inspect the actual released or completed state before requesting stop. A
+Inspect actual blade entry before requesting stop; continued holding is allowed. A
 commanded pose, blocked gripper, or completion claim is not evidence of success.
 If a grasp is lost, use new observations and reassess rather
 than continuing with stale object positions. Do not invent force measurements
@@ -143,9 +159,9 @@ or assume a force-control tool that the interface does not expose.
 
 # Chinese setup/props description; keep this the final task attribute.
 description = """
-道具：交付 USB 充电器和插线板，原生尺寸、材质及两片插脚/插孔碰撞体；插线板固定且不通电。
-布置：拓境实验室、原生 R5 双臂及三相机。充电器侧躺在左臂前方，目标为插线板中间的蓝色双孔；右臂仅观察。
-操作：从双脚向下、外壳可落座的最终姿态倒推抓法，检查两指和掌部全过程不干涉插线板；短提验证后建立离桌间隙，朝预插入姿态调整，不能只为看清底部而转动。右臂按需提供视角；连续两次观察无进展时改变策略，不自动放回。重抓前说明抓法问题及下一次的具体改变；落桌受阻时停止下压并观察。确认双脚对齐两孔后轻插、松手并退出。
-完成：逐片原生倒角插脚进入对应孔至少 15 mm，塑料外壳肩部落座（距插座面不超过 1 mm），松手后由插座承托并稳定 1 秒。抓持抬升记录独立报告，不作为最终插接结果的历史门槛。
+道具：交付 USB 充电器、固定插线板及 2026-10-09 黑色收纳底座；原生尺寸与空腔碰撞体。底座为自由刚体，质量 20.8 g，不绑定桌面或充电头；插线板固定且不通电。
+布置：参考真机图，从桌前看，左侧插线板长边横向、线圈在后，右侧黑色底座内竖放充电器，插脚朝下。插线板中心 (0.02, 1.20, 0.78) m，底座底部 (0.35, 1.20, 0.781) m，中心相距 33 cm；按照片估计，非实测标定。按初始 TCP 到充电器中心的距离选操作臂，当前右臂操作、左臂观察，本轮不换手。
+操作：从双脚向下进入两孔的最终姿态倒推抓法，检查两指和掌部全过程不干涉插线板；先竖直拔出并短提验证，再建立离底座间隙，朝预插入姿态调整，不能只为看清底部而转动。观察臂按需提供视角；连续两次观察无进展时改变策略，不自动放回。重抓前说明抓法问题及下一次的具体改变；落桌受阻时停止下压并观察。确认双脚对齐两孔后轻插，实际进入即可，可继续夹持。
+完成：两片原生插脚分别实际进入中间对应孔，进入部分不得明显穿过孔壁或孔底，外壳不得穿入插线板。仅对准悬空、碰孔沿、只入一脚不算。沿用 0.15 mm 数值容差区分实际进入与面接触，不设置原来的 15 mm 深度目标。允许浅插、继续夹持和运动；不要求外壳落座、松手、承托力、抓取历史或稳定等待。
 边界：插脚 1.5×6.3 mm，孔 2.6×8.2 mm，最小单侧间隙 0.55 mm，比旧代理更精密，不能标成同等难度。插座零摩擦，不模拟电接触或弹簧卡持。
 """

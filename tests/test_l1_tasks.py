@@ -15,13 +15,15 @@ class L1ProtocolTests(unittest.TestCase):
             self.assertTrue(spec.implemented)
             self.assertEqual(config.robot.source.name, "r5_tuojing_lab_l1.toml")
             self.assertEqual(config.cameras, reference.cameras)
-            self.assertEqual(config.arm_roles, reference.arm_roles)
+            manipulator = "right" if name in {"L1-01", "L1-03"} else "left"
+            observer = "left" if manipulator == "right" else "right"
+            self.assertEqual(config.arm_roles, {manipulator: "manipulation", observer: "observation"})
             for section in ("observation", "policy", "recording"):
                 self.assertEqual(config.raw[section], reference.raw[section], (name, section))
             execution = dict(config.raw["execution"])
             self.assertEqual(execution, reference.raw["execution"])
             self.assertNotIn("policy_options", config.raw)
-            self.assertEqual(config.observation_arms, ("right",))
+            self.assertEqual(config.observation_arms, (observer,))
             self.assertTrue(config.include_depth)
             self.assertEqual(ExecutionSettings.from_config(config).max_decisions, 100)
             self.assertNotIn("reasoning_effort", config.raw["policy"])

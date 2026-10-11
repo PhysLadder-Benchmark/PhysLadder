@@ -5,8 +5,9 @@ workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
 profile = "../robots/r5_tuojing_lab_l1.toml"
-active_arms = ["left"]
-observation_arms = ["right"]
+# Baseline for this layout; task.arm_selection recomputes roles at each launch.
+active_arms = ["right"]
+observation_arms = ["left"]
 
 [simulation]
 environment = "tuojing_lab_v4"
@@ -29,34 +30,42 @@ model_config = "../models/gpt.toml"
 
 [task]
 id = "L1-01"
-name = "白板笔入固定纸杯笔筒"
+name = "白板笔入固定黑色陶瓷杯"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
 implementation = "household"
-simulation_limitations = "Native photo-estimated marker and rigid ripple cup; flat barrel collider, fixed cup with delivered contact friction, 0.2 mm contact margin and four velocity solver iterations. Not hardware calibrated."
+arm_selection = "nearest_initial_object"
+manipulation_object = "marker"
+simulation_limitations = "Native marker and 2026-10-09 black ceramic mug; front-view mug-left/marker-right photo-proportional layout. Mug stays fixed, with delivered friction and hollow segmented wall colliders; marker flat barrel, 0.2 mm contact margin and four velocity solver iterations. Dimensions/layout are estimates, not hardware calibrated."
 launch_command = "python tools/launch.py run L1-01 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L1-01 --gui"
 instruction = """
-Use the LEFT R5 arm for manipulation. The RIGHT arm is an observation arm:
-it may move its wrist camera when a grasp, opening or contact is obscured, but
-must not touch or support the props. Keep the left arm steady while changing
-view. Choose grasp points, poses and motion from current images and available
+Use the episode's assigned manipulation arm, selected as the arm whose initial
+TCP is nearer the marker's initial centre. The other arm is the observation arm.
+Read the resolved arm roles in robot feedback and the episode assignment below;
+do not assume that manipulation always means LEFT. Keep these roles for the
+whole episode, even when carrying the marker closer to the other arm or the cup.
+The observation arm may move its wrist camera when a grasp, opening or contact
+is obscured, but must not touch or support props. Keep the manipulation arm
+steady while changing view. The proximity rule does not guarantee a feasible
+path: inspect clearance and use the planner's feedback to refine your approach. Choose grasp points, poses and motion from current images and available
 robot feedback; no object coordinates or successful action sequence is supplied.
 Get the capped marker standing upright on the table into the single fixed,
-upright red-brown ripple paper cup used as a pen holder. Keep the cap on. The holder has
+upright black ceramic mug with a white interior used as a pen holder. Aim for
+the main cup opening, not the handle hole. Keep the cap on. The holder has
 a broad, open mouth and a loose, low-resistance fit: this is not press fitting.
 Identify the marker's upper graspable section, lower entering end, cup opening
 from observations. Either end may enter; keeping the cap up is a suggested
-approach, not a completion requirement. This cup is tall relative to the
-marker: grasping the middle of the barrel may leave the fingers too low to
-insert and open without striking the rim. Prefer a stable upper section with
+approach, not a completion requirement. The mug is about 90 mm tall with an 85 mm inner mouth.
+Grasping too low on the barrel may leave the fingers too low to
+insert without striking the rim. Prefer a stable upper section with
 substantial overlap against BOTH opposing finger pads, including the ribbed
 body of the cap when that provides the needed clearance. The cap remains on
 and is part of the same rigid marker in this simulation. Avoid pinching only
 the very tip, a narrow edge or the cap/barrel seam. Centre the cylinder axis
 in the finger gap and contact opposite sides at similar heights. Choose the
-grip and release height from the actual marker-to-finger geometry, rather than
+grip and entry height from the actual marker-to-finger geometry, rather than
 assuming that centring the TCP above the cup is sufficient.
 
 Localize before approaching. Query depth at several clearly visible pixels
@@ -74,9 +83,9 @@ Approach with an open gripper, then inspect before closing. Verify in two
 complementary views that the chosen body section is physically between the
 opposing finger contact surfaces, both laterally and in depth. A marker projected
 between the fingers in one wrist image can still be behind or in front of them.
-If that relationship is unclear, hold the left arm still and move the RIGHT
+If that relationship is unclear, hold the manipulation arm still and move the
 observation arm to a clear oblique or side view, then use its updated image.
-Choose the left wrist orientation as needed; the initial zero-joint pose is not
+Choose the manipulation wrist orientation as needed; the initial zero-joint pose is not
 a required grasp orientation. Keep the chosen entering end unobstructed.
 
 Close in a separate decision. Compare measured opening with the marker diameter
@@ -90,10 +99,9 @@ closing, before any lift, does not by itself prove failure. Confirm control of
 the marker before choosing transport or release.
 During the test lift, check for downward sliding relative to the finger pads.
 If the grip is slipping but the marker remains held, correct the grip while
-maintaining control. Do not intentionally put it back on the table and release:
-once the marker has left the table, a released landing on the table is failure.
-Knocking the initially standing marker down onto the tabletop is also failure.
-The episode ends on such a failure; no reset or second attempt will follow.
+maintaining control. Returning the marker to the table, or a topple on the table,
+is recoverable: inspect its current pose and regrasp in the same scene if needed.
+There is no automatic reset. Falling off the table still ends the episode.
 Tilt in the air is allowed and by itself does not fail the task.
 
 After an empty close or failed lift, open the gripper and inspect again. Discard
@@ -110,24 +118,31 @@ sample through the opening may hit the bottom rather than the mouth plane.
 Account for the marker's offset from the TCP. Centering the TCP alone does not
 ensure that the marker will enter the cup.
 
-A controlled placement is a useful strategy, but neither a vertical trajectory
-nor a particular angle or insertion depth is required. You may release above
-the opening and let the marker drop in if the whole motion will clear the rim.
-Either end may enter and the marker may lean against the inner wall. Choose the
-release pose from the observed object and cup geometry, not an assumed grasp.
-If the pen catches on the rim while still held, lift clear and correct alignment.
-Do not continue a transport plan after losing the object.
+Success requires either end of the marker to genuinely pass below the cup rim
+into its main cavity, without significant penetration of the wall or floor.
+You may keep holding the marker after entry. Release, bottom seating, cup support,
+retreat and a one-second stability wait are NOT completion requirements.
+Alternatively, align the marker above the opening, open the gripper and let it
+fall into the cup under gravity. This is also a valid completion strategy.
+Opening alone is not success: observe until the marker actually enters the main
+cavity. A released marker still above the rim or falling outside the cup has not
+completed the task. Downward velocity during valid entry does not prevent success.
+Motion, axial spin and leaning do not disqualify an otherwise valid entry.
+There is no mandatory 40 mm insertion or upright-angle threshold. The geometric
+check keeps a 1 mm numerical contact tolerance; merely touching the mouth plane,
+aligning above it, resting across the rim or entering the handle hole is insufficient.
 
-Open in a separate decision, withdraw without dragging the marker, and observe
-one simulation second of released cup support. Success requires an end genuinely
-inside the cup and the marker supported by the cup, without finger or tabletop
-support. Resting across the rim, remaining above the opening or merely reaching
-a commanded TCP pose is not enough. There is no mandatory 40 mm insertion or
-upright-angle threshold. A confirmed earlier test lift is useful feedback but
-is not an extra scoring requirement. Dropping onto the table or off the table
-ends this episode as a failure without resetting the props or robot.
+Choose entry from observed object and cup geometry, accounting for the held
+marker's offset from the TCP. Do not continue descending toward the bottom or
+open the fingers merely to satisfy an assumed placement requirement. If the
+marker catches on the rim while held, lift clear and correct alignment. Once
+genuine entry is observed, request stop; the evaluator independently verifies it.
+If you choose to release, do so in a separate decision with adequate clearance;
+release is optional. A confirmed earlier test lift is useful feedback, not an
+extra scoring requirement. If the marker is lost unexpectedly before entry, obtain fresh
+observations and recover rather than continuing the old transport plan.
 There is no need to uncap, write, rotate a thread or apply a precise insertion force.
-Inspect the actual released or completed state before requesting stop. A
+Inspect the actual entry state before requesting stop. A
 commanded pose, blocked gripper, or completion claim is not evidence of success.
 If a grasp is lost, use new observations and reassess rather
 than continuing with stale object positions. Do not invent force measurements
@@ -136,10 +151,10 @@ or assume a force-control tool that the interface does not expose.
 
 # Chinese setup/props description; keep this the final task attribute.
 description = """
-道具：交付包中的黑色白板笔（高约 151 mm，笔身直径 16.2 mm，最大宽约 18 mm，质量估计 22 g）及波纹纸杯（高约 107.5 mm，内口径约 78.6 mm）。纸杯固定，用作收笔容器；不是实物笔筒标定模型。
-布置：使用拓境实验室、原生 R5 双臂和三路相机。桌面世界高度 0.78 m。笔竖直放在左臂前方，空纸杯在旁边；左臂操作，右臂只可换视角，不能接触道具。
+道具：交付包中的黑色白板笔（高约 151 mm，笔身直径 16.2 mm，最大宽约 18 mm，质量估计 22 g）及 2026-10-09 交付的黑外白内陶瓷杯（高约 90 mm，内口径约 85 mm，杯身最大直径约 96 mm，杯腔底面距杯底约 7 mm）。陶瓷杯固定，用作收笔容器，杯把孔不是目标容器。
+布置：使用拓境实验室、原生 R5 双臂和三路相机。桌面世界高度 0.78 m。参照真机全局照片，从桌前朝机械臂看，空杯在画面左侧、笔在右侧，前后齐平，中心间距约 30 cm；杯把朝桌前，笔带帽竖立。位置按照片比例估计，未做像素到世界坐标标定。每次启动比较两臂初始 TCP 到笔初始几何中心的三维距离，近的一臂操作，另一臂观察；本轮分工固定，搬运途中不换手。当前布局为右臂操作、左臂观察；观察臂只可换视角，不能接触道具。
 操作：自主选抓点并结合观测将笔送入杯内；允许倾斜、任一端入杯，也允许从杯口上方松手后落入。抓取与短抬核验是操作建议，不指定唯一入杯轨迹。
-完成：笔的一端真正进入杯腔，由杯体承重、无夹指或桌面支撑，释放后位置、倾斜和承托持续稳定 1 秒；单纯绕笔轴自转不拒绝完成。笔身与笔帽分别按实际碰撞形状检查，沿用 1 mm 接触容差。不设置竖直角度或 40 mm 深度门槛，也不强制某种夹持过程。
-失败：初始竖立在桌上不算失败；操作中离桌后掉回桌面、被碰倒躺到桌面或掉下桌面即失败结束。全程不自动复位重试。
-适配：保留交付尺寸、材质和独立杯壁碰撞体；将笔身圆底胶囊碰撞体替换为与可见平底相符的圆柱，防止初始竖立失稳。杯体静/动摩擦沿用交付值，抓持保持基础摩擦；接触距离为 0.2 mm，速度求解迭代为 4，源 USD 不修改。尺寸、质量与摩擦均未真机标定。
+完成：笔任一端真正越过杯口进入主杯腔，且无明显穿透杯壁或杯底，即算成功；允许仍在夹持、运动和倾斜。不要求松手、杯体承重、触底、撤退或静置 1 秒。笔身与笔帽按真实碰撞形状检查，沿用 1 mm 数值接触容差；仅贴杯口、杯口上方对准或进入把手孔不算成功。不设置竖直角度或 40 mm 深度门槛，也不强制抓取历史。
+恢复与失败：放回桌面或碰倒在桌上可以继续观察、重抓和调整，只记录为过程信息；不自动复位。物体掉到桌下仍按通用规则结束为失败，保留原有预算、仿真有效性和机械臂角色约束。
+适配：保留交付尺寸、材质和独立杯壁碰撞体；将笔身圆底胶囊碰撞体替换为与可见平底相符的圆柱，防止初始竖立失稳。杯体静/动摩擦沿用交付值，抓持保持基础摩擦；接触距离为 0.2 mm，速度求解迭代为 4，源 USD 不修改。新杯保留 657 个原生复合碰撞体，评分按原生分段内壁与杯底检查。照片中的真杯是自由放置，当前任务仍沿用固定容器协议；位置、尺寸和摩擦未真机标定。
 """

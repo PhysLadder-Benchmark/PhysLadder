@@ -55,7 +55,7 @@
       "package": "photo_props",
       "path": "assets/usb_charger/usb_charger.usda",
       "role": "prop",
-      "notes": "L1-03: native side-lying charger; two-blade geometry and release scoring; housing/blade payload samples."
+      "notes": "L1-03: starts upright in native black storage base; two-blade geometry and entry-only scoring; housing/blade payload samples."
     },
     {
       "id": "artificial_rose",
@@ -232,6 +232,20 @@
       "path": "assets/cylindrical_pedestal/cylindrical_pedestal.usda",
       "role": "prop",
       "notes": "130 mm tall, 68 mm flat top, 313.9 g. L2-06 fixes the native support in the scene; source remains movable."
+    },
+    {
+      "id": "black_ceramic_mug",
+      "package": "desktop_additions_20261009",
+      "path": "assets/black_ceramic_mug/black_ceramic_mug.usda",
+      "role": "prop",
+      "notes": "L1-01 fixed black/white pen receptacle; photo-based 2026-10-09 layout, native hollow walls and handle."
+    },
+    {
+      "id": "plug_storage_base",
+      "package": "desktop_additions_20261009",
+      "path": "assets/plug_storage_base/plug_storage_base.usda",
+      "role": "prop",
+      "notes": "L1-03 native free-standing pickup holder; 20.8 g, hollow pocket and central through-hole; not the electrical target socket."
     }
   ]
 }

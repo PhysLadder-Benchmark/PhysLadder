@@ -27,6 +27,7 @@ python -m robot_tasks.integrationtest.diagnostics.scene_smoke --all --no-prepara
 
 前者验证共同准备动作、场景、RGB-D 和初始评分；后者跳过规划器，只验证物理场景。
 加 `--prop-probe` 可对有检查定义的空腔承重、滑轨和螺纹做物理夹具诊断。
+L1-03 会先调用同目录 `plug_holder_probe.py` 验证自由底座对充电头的承托与拔出，再检查插线板接触几何；这些检查不调用 GPT，也不代表机器人自主完成任务。
 `prop_physics.py` 会明确设置诊断初态或施加测试驱动，不能作为机器人任务成功视频或 GPT 成功率。
 结果位于 `runs/`，与正式测评分别保存。
 
