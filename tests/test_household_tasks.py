@@ -59,7 +59,7 @@ class HouseholdTests(unittest.TestCase):
                     f"python tools/launch.py run {spec.task_id} --gui",
                 )
                 self.assertEqual(cfg.raw["execution"]["max_decisions"], 100)
-                self.assertEqual(cfg.raw["policy"]["reasoning_effort"], "medium")
+                self.assertNotIn("reasoning_effort", cfg.raw["policy"])
                 self.assertEqual(
                     cfg.observation_arms, tuple(a for a in ("left", "right") if a not in cfg.arms)
                 )

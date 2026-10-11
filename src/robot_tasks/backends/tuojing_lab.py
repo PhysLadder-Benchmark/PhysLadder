@@ -1,12 +1,11 @@
 """Bind the pinned L20 laboratory delivery; never edit its source layers."""
 
-from ..asset_delivery import verified_package
+from ..asset_delivery import verified_shared
 
 
 def require_lab_assets():
     """Fail before launching Kit if a private delivery is absent or modified."""
-    directory, _ = verified_package("lab_v4")
-    return directory / "tuojing_lab.usda"
+    return verified_shared("lab")
 
 
 def configure_stage(stage, camera_profile=None):

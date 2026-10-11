@@ -375,9 +375,10 @@ def create_batch(root, args, model, runtime):
     ids = args.tasks or sorted(key for key in TASKS if key.startswith("L"))
     if len(set(ids)) != len(ids) or any(key not in TASKS for key in ids):
         raise ValueError("Task IDs must be registered and unique")
+    settings = load_gpt_settings(model)
     options = {"max_calls": args.max_calls or 100, "wall_time_s": args.wall_time_s or 3600.,
                "startup_grace_s": args.startup_grace_s if args.startup_grace_s is not None else 300.,
-               "seed": args.seed if args.seed is not None else 0, "reasoning_effort": args.reasoning_effort or "medium",
+               "seed": args.seed if args.seed is not None else 0, "reasoning_effort": args.reasoning_effort or settings.reasoning_effort,
                "dry_run": bool(args.dry_run), "gui": bool(args.gui)}
     root.mkdir(parents=True, exist_ok=False)
     configs = root / "configs"
@@ -403,8 +404,8 @@ def create_batch(root, args, model, runtime):
         tasks.append(task)
     inputs += list(configs.glob("*.toml"))
     manifest = {"version": 1, "created_at": datetime.now(timezone.utc).isoformat(),
-                "model": load_gpt_settings(model).model, "python": runtime.python,
-                "transport": load_gpt_settings(model).transport,
+                "model": settings.model, "python": runtime.python,
+                "transport": settings.transport,
                 "model_config": str(model_copy), "options": options, "tasks": tasks, "inputs": fingerprint(inputs)}
     write_json(root / "batch.json", manifest)
     write_json(root / "state.json", {})

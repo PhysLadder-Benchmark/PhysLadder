@@ -38,7 +38,7 @@ class TuojingAssetImportTests(unittest.TestCase):
 
     def test_folder_mapping_and_reinstall_preserve_the_delivery(self):
         install_package(self.root, self.root, self.package)
-        target = self.root / "source/delivery"
+        target = self.root / "packages/delivery"
         self.assertEqual(verify_files(target, self.package), 1)
         self.archive.unlink()
         install_package(self.root, self.root, self.package)
@@ -49,24 +49,24 @@ class TuojingAssetImportTests(unittest.TestCase):
             stream.write(b"changed")
         with self.assertRaisesRegex(ValueError, "checksum mismatch"):
             install_package(self.root, self.root, self.package)
-        self.assertFalse((self.root / "source/delivery").exists())
+        self.assertFalse((self.root / "packages/delivery").exists())
 
     def test_path_traversal_is_rejected_even_with_a_matching_archive_hash(self):
         self.make_archive({"original_folder/../../escaped.bin": self.content})
         with self.assertRaisesRegex(ValueError, "Unsafe asset path"):
             install_package(self.root, self.root, self.package)
         self.assertFalse((self.root / "escaped.bin").exists())
-        self.assertEqual(list((self.root / "source").iterdir()), [])
+        self.assertEqual(list((self.root / "packages").iterdir()), [])
 
     def test_bad_extracted_content_leaves_no_partial_install(self):
         self.make_archive({"original_folder/textures/sample.bin": b"wrong"})
         with self.assertRaisesRegex(ValueError, "Missing or modified"):
             install_package(self.root, self.root, self.package)
-        self.assertEqual(list((self.root / "source").iterdir()), [])
+        self.assertEqual(list((self.root / "packages").iterdir()), [])
 
     def test_existing_modified_delivery_is_not_overwritten(self):
         install_package(self.root, self.root, self.package)
-        target = self.root / "source/delivery/textures/sample.bin"
+        target = self.root / "packages/delivery/textures/sample.bin"
         target.write_bytes(b"local change")
         with self.assertRaisesRegex(ValueError, "Missing or modified"):
             install_package(self.root, self.root, self.package)

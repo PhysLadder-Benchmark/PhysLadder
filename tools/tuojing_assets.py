@@ -7,11 +7,14 @@ from pathlib import Path, PurePosixPath
 import re
 import shutil
 import stat
+import sys
 import tempfile
 import zipfile
 
 
 ROOT = Path(__file__).resolve().parents[1] / "assets" / "tuojing"
+sys.path.insert(0, str(ROOT.parents[1] / "src"))
+from robot_tasks.asset_layout import bundles, install_layout, verify_files as verify_bundle_files
 
 
 def sha256(path):
@@ -40,7 +43,12 @@ def verify_files(directory, package):
 
 
 def install_package(root, archives, package):
-    destination = root / "source" / relative_path(package["directory"])
+    destination = root / "packages" / relative_path(package["directory"])
+    previous = root / "source" / relative_path(package["directory"])
+    if previous.exists() and not destination.exists():
+        verify_files(previous, package)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        previous.rename(destination)
     if destination.exists():
         verify_files(destination, package)
         return
@@ -85,7 +93,7 @@ def verify_usd(path, source_root, require_component=False):
 
     layers, assets, unresolved = UsdUtils.ComputeAllDependencies(str(path))
     # This shader ships with Isaac; plain usd-core does not register its resolver.
-    builtins = {"OmniPBR.mdl"}
+    builtins = {"OmniPBR.mdl", "OmniGlass.mdl"}
     missing = sorted(set(unresolved) - builtins)
     if missing:
         raise ValueError(f"Unresolved USD dependencies in {path.name}: {missing}")
@@ -130,10 +138,27 @@ def select_packages(lock, package_ids=None):
     return {key: packages[key] for key in package_ids}
 
 
+def organize(root, package_ids=None):
+    """Migrate complete old deliveries, then populate task-local copies."""
+    lock = json.loads((root / "source.lock.json").read_text(encoding="utf-8"))
+    packages = select_packages(lock, package_ids)
+    for package in packages.values():
+        old = root / "source" / relative_path(package["directory"])
+        destination = root / "packages" / relative_path(package["directory"])
+        if old.exists():
+            verify_files(old, package)
+            if destination.exists():
+                raise ValueError(f"Both old and new deliveries exist; preserve and inspect: {old}, {destination}")
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            old.rename(destination)
+        verify_files(destination, package)
+    return install_layout(root, packages)
+
+
 def verify(root, usd=False, package_ids=None):
     lock = json.loads((root / "source.lock.json").read_text(encoding="utf-8"))
     packages = select_packages(lock, package_ids)
-    counts = {key: verify_files(root / "source" / relative_path(p["directory"]), p)
+    counts = {key: verify_files(root / "packages" / relative_path(p["directory"]), p)
               for key, p in packages.items()}
     catalog = json.loads((root / "catalog.json").read_text(encoding="utf-8"))
     entries = {}
@@ -144,11 +169,22 @@ def verify(root, usd=False, package_ids=None):
         relative = relative_path(entry["path"])
         if relative.as_posix() not in package["files"]:
             raise ValueError(f"Catalog entry is not pinned: {entry['id']}")
-        path = root / "source" / relative_path(package["directory"]) / relative
+        path = root / "packages" / relative_path(package["directory"]) / relative
         entries[entry["id"]] = verify_usd(
-            path, root / "source", require_component=entry["role"] in
+            path, root / "packages", require_component=entry["role"] in
             {"prop", "fragment_template", "environment"}) if usd else "file_verified"
+    task_assets = {}
+    if (root / "task_assets.json").is_file():
+        for item in bundles(root):
+            if item.package not in packages:
+                continue
+            count = verify_bundle_files(item.destination, item.files)
+            task_assets[item.destination.relative_to(root).as_posix()] = {
+                "asset": item.asset, "files": count, "entry": item.entry.as_posix(),
+                "usd": verify_usd(item.destination / item.entry, item.destination,
+                                  require_component=True) if usd else "not_checked"}
     return {"delivery": lock["delivery"], "verified_files": counts, "entries": entries,
+            "task_assets": task_assets,
             "omitted_packages": [p["id"] for p in lock["packages"] if p["id"] not in packages],
             "usd_composition_checked": usd, "physics_tested": False,
             "rendering_tested": False, "task_workflow_integrated": False}
@@ -159,12 +195,16 @@ def main(argv=None):
     parser.add_argument("--archives", type=Path, help="Install from a directory containing the selected pinned ZIPs")
     parser.add_argument("--packages", nargs="+", help="Only install/verify these package IDs; default: all locked packages")
     parser.add_argument("--usd", action="store_true", help="Also compose USDs; requires pxr (usd-core or Isaac Python)")
+    parser.add_argument("--organize", action="store_true", help="Migrate old source/package folders and install task-local copies")
     parser.add_argument("--report", type=Path, help="Optional JSON verification report")
     args = parser.parse_args(argv)
     if args.archives is not None:
         lock = json.loads((ROOT / "source.lock.json").read_text(encoding="utf-8"))
         for package in select_packages(lock, args.packages).values():
             install_package(ROOT, args.archives, package)
+        install_layout(ROOT, args.packages)
+    if args.organize:
+        organize(ROOT, args.packages)
     result = verify(ROOT, usd=args.usd, package_ids=args.packages)
     if args.report:
         args.report.parent.mkdir(parents=True, exist_ok=True)

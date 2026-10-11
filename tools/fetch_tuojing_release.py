@@ -8,9 +8,9 @@ import subprocess
 import tempfile
 
 try:
-    from .tuojing_assets import ROOT, install_package, relative_path, select_packages, sha256, verify
+    from .tuojing_assets import ROOT, install_layout, install_package, relative_path, select_packages, sha256, verify
 except ImportError:  # Direct script invocation.
-    from tuojing_assets import ROOT, install_package, relative_path, select_packages, sha256, verify
+    from tuojing_assets import ROOT, install_layout, install_package, relative_path, select_packages, sha256, verify
 
 
 def release_packages(root, manifest):
@@ -82,6 +82,7 @@ def main(argv=None):
     for entry in manifest["packages"]:
         download_archive(args.cache, entry, manifest, args.gh)
         install_package(ROOT, args.cache, packages[entry["id"]])
+    install_layout(ROOT, packages)
     report = verify(ROOT, usd=args.usd, package_ids=list(packages))
     report["release"] = manifest["tag"]
     print(json.dumps(report, ensure_ascii=False, indent=2))

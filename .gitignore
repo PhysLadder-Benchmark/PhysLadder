@@ -23,7 +23,6 @@ dist/
 *.local.json
 *.pem
 *.key
-/configs/models/gpt.toml
 /configs/runtime/windows.json
 
 # Per-machine editor configuration; see .vscode/*.example.json
@@ -38,6 +37,7 @@ dist/
 /assets/cameras/source/
 /assets/l1/source/
 /assets/tuojing/source/
+/assets/tuojing/packages/
 *.log
 # This is an immutable vendor source file covered by the R5 source lock.
 !/assets/r5/R5a/export.log

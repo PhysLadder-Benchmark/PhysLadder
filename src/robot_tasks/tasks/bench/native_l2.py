@@ -40,7 +40,7 @@ class NativeL2Scene:
         for item in spec.parameters["native_instances"]:
             parent = self.root + "/" + item["name"]
             if item["asset"] not in self.deliveries:
-                self.deliveries[item["asset"]] = verified_prop(item["asset"])
+                self.deliveries[item["asset"]] = verified_prop(item["asset"], task_id=config.task_id)
             path, evidence = self.deliveries[item["asset"]]
             prim = self.stage.DefinePrim(parent)
             prim.GetReferences().AddReference(str(path))

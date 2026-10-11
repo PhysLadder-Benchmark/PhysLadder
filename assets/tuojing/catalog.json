@@ -1,6 +1,7 @@
 {
   "status": "l1_integrated_with_declared_proxy_exceptions",
-  "path_base": "source/<package.directory>/",
+  "path_base": "packages/<package.directory>/",
+  "task_layout": "task_assets.json",
   "units": {
     "length": "metre",
     "up_axis": "Z"

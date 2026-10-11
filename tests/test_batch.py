@@ -59,6 +59,21 @@ class BatchTests(unittest.TestCase):
             batch.load_env(env, {})
         self.assertNotIn("SECRET_VALUE", str(error.exception))
 
+    def test_reasoning_uses_selected_model_unless_cli_explicitly_overrides(self):
+        with self.model.open("a", encoding="utf-8") as stream:
+            stream.write('reasoning_effort="xhigh"\n')
+        for name, arguments, expected in (
+                ("model-default", (), "xhigh"),
+                ("explicit-override", ("--reasoning-effort", "medium"), "medium")):
+            with self.subTest(name=name):
+                root = self.root / name
+                self.assertEqual(self.main("--tasks", "L1-01", "--output", str(root),
+                    "--model-config", str(self.model), "--dry-run", *arguments), 0)
+                manifest = json.loads((root / "batch.json").read_text(encoding="utf-8"))
+                self.assertEqual(manifest["options"]["reasoning_effort"], expected)
+                config = load_config(root / "configs/L1-01.toml")
+                self.assertEqual(config.raw["policy"]["reasoning_effort"], expected)
+
     def test_dry_batch_snapshots_overrides_and_skips_real_only(self):
         from dataclasses import replace
         real_only = replace(batch.TASKS["L3-11"], implemented=False, evidence="real_only")
@@ -68,7 +83,7 @@ class BatchTests(unittest.TestCase):
         self.assertEqual(config.max_wall_time_s, 30)
         self.assertEqual(config.raw["execution"]["max_decisions"], 7)
         self.assertTrue(config.raw["recording"]["save_video"])
-        self.assertEqual(config.raw["policy"]["reasoning_effort"], "medium")
+        self.assertEqual(config.raw["policy"]["reasoning_effort"], "low")
         self.assertTrue(config.robot.asset_path.is_absolute())
         result = json.loads((root / "summary.json").read_text(encoding="utf-8"))
         self.assertEqual(result["counts"]["dry_run"], 1)

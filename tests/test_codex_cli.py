@@ -192,7 +192,9 @@ class CodexBoundaryTests(unittest.TestCase):
 
     def test_ultrafast_profile_survives_task_policy_overrides(self):
         root = Path(__file__).resolve().parents[1]
-        model = root / "configs/models/codex_ultrafast.toml"
+        model = self.root / "ultrafast.toml"
+        model.write_text((root / "configs/models/gpt.toml").read_text(encoding="utf-8")
+                         + '\nservice_tier = "ultrafast"\n', encoding="utf-8")
         _, config = resolve_task("L1-03")
         with patch("robot_tasks.policies.codex_cli.CodexProcess"), \
                 patch.object(CodexCLIClient, "require_chatgpt_login"), \

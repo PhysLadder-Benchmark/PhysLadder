@@ -1,7 +1,5 @@
-"""Physical household scenes. Object pose writes are restricted to episode reset.
+"""Shared rigid task scenes. Object pose writes are restricted to episode reset.
 
-Joint drives are passive springs. Bowl contents move only under gravity/contact.
-The push-to-open proxy changes its rail lock from measured compression/rebound.
 No success detector attaches, moves, releases or teleports task objects.
 """
 
@@ -10,8 +8,7 @@ from dataclasses import asdict
 import numpy as np
 
 from ...robots.transforms import pose_transform, transform_pose
-from ..l1.evaluation import L1Settings
-from ..l1.scene import L1Scene
+from ..l1.scene import L1Scene, ResetSettings
 
 
 class BenchScene(L1Scene):
@@ -22,7 +19,7 @@ class BenchScene(L1Scene):
         from isaacsim.core.prims import RigidPrim
 
         self.spec = spec
-        settings = L1Settings(position_jitter_m=0, yaw_jitter_rad=0)
+        settings = ResetSettings()
         super().__init__(backend, config, settings, design=spec.design)
         if spec.design.task_id == "L1-01":
             self.configure_marker_contacts()
@@ -52,10 +49,6 @@ class BenchScene(L1Scene):
             # Restore the delivered 0.2-mm margin without enlarging the slots.
             for path in self.colliders:
                 PhysxSchema.PhysxCollisionAPI.Apply(self.stage.GetPrimAtPath(path)).CreateContactOffsetAttr(0.0002)
-        if spec.mechanism == "free_bottle_and_explicit_helical_contact":
-            self.configure_thread_contacts()
-        if spec.mechanism == "preloaded_low_friction_spheres_transport":
-            self.configure_ball_contacts()
         paths = [self.root + "/" + a.name for a in self.design.articles]
         self.arm_contacts = {config.arms[0]: self.fingers}
         for mount in config.robot.mounts:
@@ -132,72 +125,6 @@ class BenchScene(L1Scene):
             "sleep_disabled": "required by contact-force sampling; do not lose support reports",
             "source_usd_modified": False,
         }
-
-    def configure_ball_contacts(self):
-        """Slippery contents only; external bowl/handle grasp friction is retained."""
-        from isaacsim.core.api.materials import PhysicsMaterial
-        from pxr import PhysxSchema, UsdShade
-
-        friction = self.spec.parameters["ball_friction"]
-        self.ball_material = PhysicsMaterial(self.root + "/BallMaterial", static_friction=friction,
-                                             dynamic_friction=friction, restitution=0.0)
-        PhysxSchema.PhysxMaterialAPI.Apply(self.ball_material.material.GetPrim()).CreateFrictionCombineModeAttr("min")
-        for article in self.design.articles:
-            if not article.name.startswith("load_"):
-                continue
-            root = self.root + "/" + article.name
-            body = PhysxSchema.PhysxRigidBodyAPI.Apply(self.stage.GetPrimAtPath(root))
-            body.CreateSolverPositionIterationCountAttr(32)
-            body.CreateSolverVelocityIterationCountAttr(4)
-            body.CreateLinearDampingAttr(0.0)
-            body.CreateAngularDampingAttr(0.0)
-            for part in article.parts:
-                prim = self.stage.GetPrimAtPath(root + "/" + part.name)
-                PhysxSchema.PhysxCollisionAPI.Apply(prim).CreateContactOffsetAttr(0.0003)
-                UsdShade.MaterialBindingAPI.Apply(prim).Bind(
-                    self.ball_material.material, bindingStrength=UsdShade.Tokens.strongerThanDescendants,
-                    materialPurpose="physics")
-
-    def configure_thread_contacts(self):
-        """Thread clearance is smaller than general grasp contact offsets.
-
-        Preserve grip friction on the shells. Only the mating helical surfaces
-        use the declared sliding material, as in the existing coarse-screw task.
-        """
-        from isaacsim.core.api.materials import PhysicsMaterial
-        from pxr import PhysxSchema, UsdShade
-
-        p = self.spec.parameters
-        self.thread_material = PhysicsMaterial(
-            self.root + "/ThreadMaterial",
-            static_friction=p["thread_friction"],
-            dynamic_friction=p["thread_friction"],
-            restitution=0.0,
-        )
-        PhysxSchema.PhysxMaterialAPI.Apply(
-            self.thread_material.material.GetPrim()
-        ).CreateFrictionCombineModeAttr("min")
-        for path in self.colliders:
-            if "/thread_" in path:
-                prim = self.stage.GetPrimAtPath(path)
-                PhysxSchema.PhysxCollisionAPI.Apply(prim).CreateContactOffsetAttr(
-                    p["thread_contact_offset_m"]
-                )
-                UsdShade.MaterialBindingAPI.Apply(prim).Bind(
-                    self.thread_material.material,
-                    bindingStrength=UsdShade.Tokens.strongerThanDescendants,
-                    materialPurpose="physics",
-                )
-        for name in ("bottle", "cap"):
-            api = PhysxSchema.PhysxRigidBodyAPI.Apply(
-                self.stage.GetPrimAtPath(self.root + "/" + name)
-            )
-            api.CreateSolverPositionIterationCountAttr(48)
-            api.CreateSolverVelocityIterationCountAttr(4)
-            # Preserve slow thread motion instead of damping small movements
-            # for pile stabilization. Contacts still carry the complete load.
-            api.CreateStabilizationThresholdAttr(0.0)
-            api.CreateSleepThresholdAttr(0.0)
 
     def create_joint(self, spec):
         from pxr import Gf, UsdPhysics

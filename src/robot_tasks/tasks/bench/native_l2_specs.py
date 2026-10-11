@@ -138,7 +138,9 @@ def books():
 
 
 def orange():
-    pedestal = pose(0.19565, 1.30, TABLE_Z)
+    # Keep the setup between both arms; move it 50 mm toward the overview
+    # camera (world -Y), with the orange and pedestal moving together.
+    pedestal = pose(0.19565, 1.25, TABLE_Z)
     support_z = TABLE_Z + 0.13
     # Rotate in the tabletop plane: the segment's long axis runs front/back
     # in the shared overview, while its original broad underside stays down.
@@ -156,7 +158,7 @@ def orange():
     return BenchSpec(
         replace(
             design("L2-06", "从圆柱承台夹起橘子瓣 5 厘米", [a]),
-            version="l2-06-centred-lengthwise-lift-v8",
+            version="l2-06-centred-forward-lengthwise-lift-v9",
             release=False,
             provenance="Pinned native FEM orange and 2026-10-09 cylindrical pedestal",
         ),

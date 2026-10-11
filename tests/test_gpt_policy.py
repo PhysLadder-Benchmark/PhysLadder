@@ -410,7 +410,7 @@ class SettingsTests(unittest.TestCase):
             replace(SETTINGS, reasoning_effort="ultrafast")
 
     def test_committed_config_has_no_credentials(self):
-        settings = load_gpt_settings(ROOT / "configs/models/gpt.example.toml")
+        settings = load_gpt_settings(ROOT / "configs/models/gpt.toml")
         self.assertEqual(settings.api_key_env, "OPENAI_API_KEY")
         self.assertNotIn("api_key", settings.public_dict())
 

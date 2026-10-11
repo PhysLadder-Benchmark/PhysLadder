@@ -154,7 +154,7 @@ class NativeOutcomeTests(unittest.TestCase):
         np.testing.assert_allclose(np.mean(positions,axis=0),spec.design.articles[0].initial[:2])
 
     def test_cached_colliders_are_from_exact_locked_source_usds(self):
-        root=Path(__file__).resolve().parents[1]/'assets/tuojing/source/photo_assets_20261005/assets'
+        root=Path(__file__).resolve().parents[1]/'assets/tuojing/packages/photo_assets_20261005/assets'
         if not root.exists():self.skipTest('Optional private delivery not installed')
         for name,record in catalog().items():
             self.assertEqual(hashlib.sha256((root/name/(name+'.usda')).read_bytes()).hexdigest(),record['sha256'])

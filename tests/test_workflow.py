@@ -13,10 +13,10 @@ from robot_tasks.backends.mock import MockBackend, MockRobot, MockTask
 from robot_tasks.config import ExecutionSettings, load_config
 from robot_tasks.execution import _gpt_policy
 from robot_tasks.policies.gpt import GPTPolicy
-from robot_tasks.policies.model_config import GPTSettings
+from robot_tasks.policies.model_config import GPTSettings, load_gpt_settings
 from robot_tasks.policies.responses import ModelReply
 from robot_tasks.policies.sparse_action import FIELDS
-from robot_tasks.registry import get_spec
+from robot_tasks.registry import TASKS, get_spec, resolve_task
 from robot_tasks.robot_roles import FixedArmMonitor
 from robot_tasks.runner import run_episode, validate_action
 from robot_tasks.tasks.pick_place import SingleArmPickPlace
@@ -40,6 +40,38 @@ class WorkflowTests(unittest.TestCase):
     def setUp(self):
         self.config = load_config(TASK)
 
+    def test_all_tasks_use_the_single_default_and_allow_explicit_model_selection(self):
+        default = ROOT / "configs/models/gpt.toml"
+        settings = load_gpt_settings(default)
+        self.assertEqual(settings.transport, "codex_cli")
+        self.assertEqual(settings.reasoning_effort, "medium")
+        self.assertIsNone(settings.service_tier)
+        with tempfile.TemporaryDirectory() as temporary:
+            override = Path(temporary) / "model.toml"
+            override.write_text(default.read_text(encoding="utf-8").replace(
+                'reasoning_effort = "medium"', 'reasoning_effort = "xhigh"'), encoding="utf-8")
+            with patch("robot_tasks.policies.codex_cli.CodexProcess"), \
+                    patch("robot_tasks.policies.codex_cli.CodexCLIClient.require_chatgpt_login"), \
+                    patch("robot_tasks.execution.read_api_key", side_effect=AssertionError("No API call")):
+                for task_id, spec in TASKS.items():
+                    if not spec.implemented:
+                        continue
+                    _, config = resolve_task(task_id)
+                    selected = config.source.parent / config.raw["policy"]["model_config"]
+                    self.assertEqual(selected.resolve(), default.resolve())
+                    for model, expected in ((None, settings), (override, replace(settings, reasoning_effort="xhigh"))):
+                        with self.subTest(task=task_id, model=model):
+                            policy = _gpt_policy(config, model)
+                            self.assertEqual(policy.settings, expected)
+
+    def test_explicit_experiment_reasoning_override_is_preserved(self):
+        config = replace(self.config, raw={**self.config.raw, "policy": {
+            **self.config.raw["policy"], "reasoning_effort": "high"}})
+        with patch("robot_tasks.execution.load_gpt_settings", return_value=GPTSettings("https://example.org", "fixture")), \
+                patch("robot_tasks.execution.read_api_key", return_value="offline-fixture"):
+            policy = _gpt_policy(config, None)
+        self.assertEqual(policy.settings.reasoning_effort, "high")
+
     def test_default_task_uses_shared_features_and_effective_model_budget(self):
         self.assertEqual(get_spec(self.config).task_id, "GPT-PICK-PLACE")
         self.assertEqual(self.config.arms, ("left",))
@@ -53,7 +85,7 @@ class WorkflowTests(unittest.TestCase):
         with patch("robot_tasks.execution.load_gpt_settings", return_value=settings), \
                 patch("robot_tasks.execution.read_api_key", return_value="offline-fixture"):
             policy = _gpt_policy(self.config, Path("explicit-provider-config.toml"))
-        self.assertEqual(policy.settings.reasoning_effort, "medium")
+        self.assertEqual(policy.settings.reasoning_effort, "low")
         self.assertEqual(policy.settings.max_calls, 100)
         self.assertEqual(policy.run_metadata["workflow"], workflow_metadata())
         self.assertIn("depth_queries", policy.schema["required"])

@@ -34,5 +34,4 @@ stop_steps = 12
 max_decisions = 100
 fixed_arm_tolerance_rad = 0.01
 
-[policy]
-reasoning_effort = "medium"
+# Model defaults, including reasoning effort, live in configs/models/gpt.toml.

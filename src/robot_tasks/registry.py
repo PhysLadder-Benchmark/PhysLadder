@@ -10,7 +10,6 @@ from .tasks.bench.spec import build_spec
 from .tasks.bench.task import BenchTask
 from .tasks.pick_place import SingleArmPickPlace
 from .tasks.screw.nut import NutTask
-from .tasks.uncap.task import UncapTask
 
 
 @dataclass(frozen=True)
@@ -26,7 +25,7 @@ class TaskSpec:
 
 def catalogue(directory: Path) -> dict[str, TaskSpec]:
     result = {}
-    factories = {"household": BenchTask, "uncap": UncapTask, "loose_nut": NutTask}
+    factories = {"household": BenchTask, "loose_nut": NutTask}
     for path in sorted(directory.glob("*.toml")):
         if path.stem.endswith(".local"):
             continue  # Local experiment overrides are selected with --config.

@@ -1,5 +1,48 @@
 # 拓境实验室交付资产
 
+## 按任务查找资产
+
+正式任务从 `source/<任务编号>/<物品名>/` 加载资产。同一物品用于不同任务时，
+各任务保存独立副本，不使用符号链接或硬链接；USD、贴图、质量及碰撞参数原样保留。
+两只相同纸杯、三本相同书等同一任务内的实例，仍复用该任务的一份物品文件。
+
+```text
+source/
+  common/lab/                 # 公共实验室、R5 双臂和相机
+  L1-01/marker/  cup/
+  L1-03/plug/  power_strip/
+  L1-05/key_and_lock/          # README：运行时生成，没有交付 USD
+  L1-07/hat/  rack/
+  L1-08/cup/
+  L1-09/rose/  cup/
+  L2-01/marker/
+  L2-03/book/
+  L2-04/cup/  pearl/
+  L2-06/orange/  pedestal/
+  L2-07/drawer/
+  L3-03/bottle/
+  L3-05/bolt/
+  L3-11/board/  eraser/
+  L3-14/triangle/
+  L3-15/brush/  dustpan/  block/
+```
+
+`task_assets.json` 登记每个目录及其原始资产。普通物品的 USD 直接位于物品目录；
+拔帽马克笔保留 `marker/pullable_marker/asset.usda` 与旁边的笔身、笔帽目录；
+瓶子保留 `bottle/assets/oriental_leaf.usda` 和 `bottle/textures/`，确保原相对引用不变。
+`packages/<交付包名>/` 保存完整原始交付，供来源追溯、安装和校验，不作为任务副本的回退路径。
+副本缺失或文件被修改会明确报错；更改任务物性仍应通过场景覆盖，而非直接修改锁定文件。
+
+已有旧目录的机器只需执行一次：
+
+```bash
+python tools/tuojing_assets.py --organize
+```
+
+该命令校验并将旧的 `source/<交付包名>/` 移到 `packages/`，然后复制各任务所需的物品和依赖。
+后续 ZIP 或 Release 安装会自动生成同一布局；再次执行上述命令可核实已有副本。
+`source/` 和 `packages/` 都不进入 Git，目录映射、原始哈希锁和安装程序进入 Git。
+
 当前阶段：六个现行 L1 均迁入实验室，使用原生 R5 双臂和三路相机；
 可对应的道具已替换，准备动作、坐标标注、抓取检查与评分同步适配。五个现行 L2 也已接入同一实验室和对应原生资产；L3-03/05/11/14/15 已接入同一实验室，L3-16 已从任务池移除。
 资产来自 2026-10-05 / 2026-10-06 的 L20 锁定交付包；GPT 操作效果需通过后续正式任务运行验证。
@@ -136,17 +179,17 @@ python -m robot_tasks.integrationtest.scene_smoke L1-03 --prop-probe --output bu
 
 - `source.lock.json`：九个压缩包及包内 544 个文件的 SHA-256、文件长度和目录映射。
 - `catalog.json`：实验室、九种道具、软体及展示场景的 USD 入口与使用边界。
-- `source/tuojing_lab_20261005_v4/`：实验室、R5 双臂、三路任务相机及其他检查视角。
-- `source/photo_assets_20261005/`：九种道具、材质贴图与估计物理参数。
-- `source/orange_segment_soft_20261005/`：橘子瓣软体、预切碎块与演示资料。
-- `source/tabletop_interactions_20261006/`：可拔帽马克笔、纸杯、小珍珠、开口碗与抹布。
-- `source/book_physx_20261006/`：闭合书本、场景和参数。
+- `packages/tuojing_lab_20261005_v4/`：实验室、R5 双臂、三路任务相机及其他检查视角。
+- `packages/photo_assets_20261005/`：九种道具、材质贴图与估计物理参数。
+- `packages/orange_segment_soft_20261005/`：橘子瓣软体、预切碎块与演示资料。
+- `packages/tabletop_interactions_20261006/`：可拔帽马克笔、纸杯、小珍珠、开口碗与抹布。
+- `packages/book_physx_20261006/`：闭合书本、场景和参数。
 
-各 `source/` 子目录保留交付包内部结构。实验室 ZIP 顶层原名是
+各 `packages/` 子目录保留交付包内部结构。实验室 ZIP 顶层原名是
 `tuojing_lab_isaacsim_v4`，安装时只将这一层映射为 `tuojing_lab_20261005_v4`。
 原始交付文件不做修改，也不执行其中的脚本。服务器额外的缓存、日志和临时诊断文件未导入。
 
-`source/` 与下载缓存被 Git 忽略；取得交付包后运行安装命令即可恢复。
+`source/`、`packages/` 与下载缓存被 Git 忽略；取得交付包后运行安装命令即可恢复。
 检出本仓库并不自动授予 L20 访问权限，也不会自动下载私有实验室资产。
 
 ## 安装与校验
@@ -187,7 +230,7 @@ python tools/tuojing_assets.py --usd --report build/tuojing_assets/usd.json
 ```
 
 这个检查不启动物理仿真、渲染或 GPT，不代表任务运行成功。
-`OmniPBR.mdl` 是 Isaac 内置材质，独立 `usd-core` 无法解析时会单独报告；
+`OmniPBR.mdl`、`OmniGlass.mdl` 是 Isaac 内置材质，独立 `usd-core` 无法解析时会单独报告；
 需在下一步 Isaac 场景加载时确认。其他缺失文件、绝对路径依赖及包外依赖均报错。
 51 cm 备选实验室与两个橘子瓣演示场景没有 `defaultPrim`，可整场打开；作为子资产
 引用时必须指定目标 prim，不能默认按普通单件资产引用。检查结果会保留此项说明。

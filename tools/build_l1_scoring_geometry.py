@@ -9,7 +9,6 @@ from pathlib import Path
 import numpy as np
 from scipy.spatial import ConvexHull
 from pxr import Usd,UsdGeom,UsdPhysics
-root=Path('assets/tuojing/source/photo_assets_20261005/assets')
 result={'delivery':'2026-10-05','source':'authored enabled convex colliders, native metres; marker flat-barrel runtime override recorded explicitly','props':{}}
 for name in ['whiteboard_marker','ripple_paper_cup','usb_charger','artificial_rose','yellow_visor','wooden_rack']:
  from robot_tasks.asset_delivery import verified_prop
