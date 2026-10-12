@@ -35,7 +35,7 @@ def link_transforms(kin, positions):
 
 
 class CuroboWorker:
-    def __init__(self, profile, directory):
+    def __init__(self, profile, directory, attachments=None):
         for key, leaf in [
             ("XDG_CACHE_HOME", "xdg"),
             ("TORCH_EXTENSIONS_DIR", "torch"),
@@ -53,7 +53,7 @@ class CuroboWorker:
         from curobo.motion_planner import MotionPlanner, MotionPlannerCfg
 
         self.torch = torch
-        self.assets, self.kin = build_assets(profile, directory)
+        self.assets, self.kin = build_assets(profile, directory, attachments)
         self.profile = profile
         self.planner = MotionPlanner(
             MotionPlannerCfg.create(
@@ -61,7 +61,7 @@ class CuroboWorker:
                 scene_model={"cuboid": {}},
                 # Delivered room (126 fixed colliders) plus a 49-piece cup and
                 # task fixtures exceed the previous 128-mesh capacity.
-                collision_cache={"obb": 256, "mesh": 256},
+                collision_cache={"obb": 512, "mesh": 256},
                 position_tolerance=0.001,
                 orientation_tolerance=0.01,
                 optimizer_collision_activation_distance=0.002,
@@ -83,13 +83,13 @@ class CuroboWorker:
             gpu=torch.cuda.get_device_name(0),
             collision_geometry_sha256=hashlib.sha256(
                 json.dumps(
-                    {key: self.assets[key] for key in ("spheres", "finger_geometry")},
+                    {key: self.assets[key] for key in ("spheres", "finger_geometry", "wrist_spheres")},
                     sort_keys=True,
                 ).encode()
             ).hexdigest(),
         )
         self.metadata.update(
-            collision_scope="table, static fixtures, other R5 arm; held-object clearance guard",
+            collision_scope="table, static fixtures, both R5 arms including wrist cameras/mounts; held-object clearance guard",
             payload_source="simulator contacts and surface geometry; planner-only privilege",
         )
         # Cross-check the generated model before allowing any real actuation.
@@ -113,9 +113,10 @@ class CuroboWorker:
         ):
             raise RuntimeError("cuRobo FK differs from R5 URDF/TCP")
 
-    def spheres(self, state):
+    def spheres(self, state, arm):
         rows = {k: list(v) for k, v in self.assets["spheres"].items()}
         end = list(self.assets["link6_static"])
+        end.extend(self.assets.get("wrist_spheres", {}).get(arm, []))
         for (_, geometry), q in zip(
             self.assets["finger_geometry"].items(), state["finger_positions_m"]
         ):
@@ -159,7 +160,7 @@ class CuroboWorker:
             if other == arm:
                 continue
             rows = self.world_spheres(
-                other, state["joint_positions_rad"], self.spheres(state)
+                other, state["joint_positions_rad"], self.spheres(state, other)
             )
             for index, (x, y, z, r) in enumerate(rows):
                 pose = np.eye(4)
@@ -186,10 +187,10 @@ class CuroboWorker:
                 next(x for x in self.profile.operating_limits if x.joint == n)
                 for n in self.profile.joint_names
             ]
-            # PhysX can report a few float32 ULPs beyond a rail limit. Keep the
-            # raw observation, but supply a strictly bounded planning reference.
+            # Keep the raw observation while bounding small PhysX constraint
+            # settling errors, so a requested retreat remains plannable.
             reference = bounded_measured_joints(state["joint_positions_rad"], bounds)
-            rows = self.spheres(state)[self.profile.ee_link]
+            rows = self.spheres(state, arm)[self.profile.ee_link]
             spheres = torch.tensor(
                 [[*s["center"], s["radius"]] for s in rows],
                 device="cuda",
@@ -289,7 +290,7 @@ class CuroboWorker:
             a: JointPath(tuple(paths[a]["positions"]), tuple(paths[a]["times_s"]))
             for a in names
         }
-        geometry = {a: self.spheres(states[a]) for a in names}
+        geometry = {a: self.spheres(states[a], a) for a in names}
         duration = max(t.duration_s for t in trajectories.values())
         for t in np.arange(0, duration + 0.01, 0.01):
             first, second = [
@@ -374,6 +375,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--profile", type=Path, required=True)
     parser.add_argument("--directory", type=Path, required=True)
+    parser.add_argument("--attachments", type=Path)
     args = parser.parse_args()
     incoming = queue.Queue()
 
@@ -390,7 +392,9 @@ def main():
         print("R5_PLANNER " + json.dumps(data, allow_nan=False), flush=True)
 
     try:
-        worker = CuroboWorker(load_robot_profile(args.profile), args.directory)
+        worker = CuroboWorker(load_robot_profile(args.profile), args.directory,
+                              json.loads(args.attachments.read_text(encoding="utf-8"))
+                              if args.attachments else None)
         emit({"ready": True, **worker.metadata})
     except Exception as exc:
         import traceback

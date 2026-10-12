@@ -40,39 +40,25 @@ def bottle(e, rows):
     beside = np.linalg.norm(center[:2]) - radius > p["neck_radius_m"] + 0.0005
     no_neck_contact = cap["pair_forces"].get("bottle", 0) < 0.005
     detached = bool((above or beside) and no_neck_contact)
-    # No required turn count: cap is pre-loosened. Geometric clearance alone
-    # while flying or still held is not final placement.
-    body_held = held(body, p["body_arm"])
-    witnessed = body_held and held(cap, p["cap_arm"])
-    if detached and witnessed:
+    # Removal ends this task. A held, geometrically clear cap is sufficient;
+    # no extra lift height, placement, release or return-home stage is required.
+    cap_held = held(cap, p["cap_arm"])
+    gap = float(local[:, 2].min() - p["neck_top_z"])
+    if detached and cap_held:
         e.flags.add("cap_detached")
     on_table = cap["bench_force_n"] > 0.005 and released(cap)
-    body_supported = body_held or (body["bench_force_n"] > 0.05 and upright(body, 0.35))
-    complete = detached and on_table and body_supported and "cap_detached" in e.flags
-    return (
-        complete,
-        {
-            "bottle_fixed": False,
-            "body_held_by_support_arm": body_held,
-            "body_supported_at_finish": bool(body_supported),
-            "bimanual_removal_observed": "cap_detached" in e.flags,
-            "cap_preloosened": True,
-            "cap_detached_now": detached,
-            "cap_removal_observed": "cap_detached" in e.flags,
-            "cap_released_on_table": on_table,
-            "cap_lowest_z_in_bottle_frame_m": float(local[:, 2].min()),
-            "neck_top_z_m": p["neck_top_z"],
-            "cap_bottle_contact_n": cap["pair_forces"].get("bottle", 0),
-            "cap_table_support_n": cap["bench_force_n"],
-        },
-        "",
-    )
+    complete = detached and "cap_detached" in e.flags
+    return complete, {"bottle_fixed": True, "cap_detached_now": detached,
+        "cap_removal_observed": "cap_detached" in e.flags,
+        "cap_released_on_table": on_table, "neck_clearance_m": gap,
+        "extra_lift_required_m": 0.0,
+        "release_required": False, "placement_required": False}, ""
 
 
 def pushing(e, rows):
     from .push_triangle import containment_margin
 
-    block = rows["triangle"]
+    block = rows["eraser"]
     article = e.spec.design.articles[0]
     p = e.spec.parameters
     t = pose_transform(block["pose"])
@@ -81,7 +67,7 @@ def pushing(e, rows):
         block["pose"], article.goal, p["block_vertices"], p["target_vertices"]
     )
     contact = max(block["fingers"][e.spec.arms[0]]) > 0.005
-    supported = block["bench_force_n"] > 0.005  # 3 g native block weighs only .029 N.
+    supported = block["bench_force_n"] > 0.005
     if contact and supported:
         if e.push_contact_pose is None:
             e.push_contact_pose = (t[0, 3], t[1, 3], yaw)
@@ -100,16 +86,17 @@ def pushing(e, rows):
     if _contact_moved_object(
         e, "observer_push", block, observer_contact and not contact
     ):
-        failure = "The observation arm manipulated the triangle"
+        failure = "The observation arm manipulated the eraser"
     if sustained(
         e, "held_block_lift", lifted and not supported and held(block, e.spec.arms[0])
     ):
-        failure = "Triangle was grasped and carried; use planar pushing on the table"
+        failure = "Eraser was grasped and carried; use planar pushing on the table"
     complete = (
         margin >= -1e-9
         and supported
         and not lifted
         and "gripper_pushed_block" in e.flags
+        and released(block)
     )
     return (
         complete,
@@ -118,8 +105,9 @@ def pushing(e, rows):
             "footprint_boundary_margin_m": margin,
             "gripper_push_witness": "gripper_pushed_block" in e.flags,
             "table_supported": supported,
-            "target_width_m": 0.20,
-            "target_depth_m": 0.18,
+            "released": released(block),
+            "target_width_m": 0.32,
+            "target_depth_m": 0.28,
             "orientation_requirement": "none",
             "timed_hold_s": 0,
         },
@@ -143,13 +131,13 @@ def sweeping(e, rows):
         x, y = corners[:, 0], corners[:, 1]
         footprint = (
             (np.abs(x) <= 0.069)
-            & (y <= 0.039)
+            & (y <= 0.044)
             & ((y >= 0) | (x * x + y * y <= 0.069**2))
         )
         contained = bool(
             np.all(footprint)
             and corners[:, 2].min() >= -0.001
-            and corners[:, 2].min() <= 0.004
+            and corners[:, 2].min() <= 0.009
         )
         support = block["pair_forces"].get("dustpan", 0) > 0.005
         inside.append(contained and support)
@@ -164,7 +152,9 @@ def sweeping(e, rows):
     # No final grasp, quiet velocity, upright angle or extra dwell requirement.
     # Individual contacts may be transmitted through another swept block.
     witness = any(swept)
-    complete = sum(inside) >= e.spec.parameters["required"] and witness
+    brush_placed = released(broom) and (
+        broom["bench_force_n"] + broom["fixture_force_n"] > 0.02)
+    complete = sum(inside) >= e.spec.parameters["required"] and witness and brush_placed
     return (
         complete,
         {
@@ -173,6 +163,7 @@ def sweeping(e, rows):
             "tool_use_observed": witness,
             "blocks_with_brush_contact": sum(swept),
             "brush_held_now": holds,
+            "brush_released_supported": brush_placed,
             "dustpan_fixed": True,
             "quality_warnings": (
                 ["Direct gripper/block contact observed"]

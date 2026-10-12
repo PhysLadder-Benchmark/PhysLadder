@@ -2,7 +2,14 @@ from ..config import ExecutionSettings, TaskConfig
 from ..interfaces import Backend
 from ..types import Action, ArmState, Feedback, InvalidSimulationState
 from .audit import require_joint_sim_ready
-from .control import bounded_measured_joints, empty_close_tolerance, joints_to_width, plan_targets, width_to_joints
+from .control import (
+    ARM_JOINT_TRACKING_TOLERANCE_RAD,
+    bounded_measured_joints,
+    empty_close_tolerance,
+    joints_to_width,
+    plan_targets,
+    width_to_joints,
+)
 from .settling import SettlingWindow
 
 
@@ -63,6 +70,7 @@ class R5Adapter(RobotAdapter):
         self.stable_grips = {}
         self.settling = SettlingWindow()
         self.tracking_time_s = 0.0
+        self.collision_stop = None
 
     def initialize(self, backend: Backend, config: TaskConfig) -> None:
         from ..backends.isaacsim import IsaacSimBackend
@@ -83,6 +91,7 @@ class R5Adapter(RobotAdapter):
             config.robot,
             backend.settings.asset_directory / "curobo",
             log_directory=getattr(backend, "run_directory", None),
+            attachments=backend.wrist_geometry,
         )
         backend.scene_report["ik_solver"] = "curobo"
         backend.scene_report["motion_planner"] = self.planner.metadata
@@ -96,6 +105,7 @@ class R5Adapter(RobotAdapter):
         self.stable_grips.clear()
         self.settling = SettlingWindow()
         self.tracking_time_s = 0.0
+        self.collision_stop = None
         self.paths.clear()
         self.drive_targets.clear()
         self.grip_elapsed.clear()
@@ -276,6 +286,10 @@ class R5Adapter(RobotAdapter):
                 metrics["planning_failure"] = exc.diagnostic
             self.rejection = Feedback("rejected", str(exc), metrics)
             raise
+        self.collision_stop = None
+        monitor = getattr(self.backend, "collision_monitor", None)
+        if monitor is not None:
+            monitor.begin_action(allow_retreat=bool(paths))
         self.pending_grippers = {}
         self.paths = paths
         self.path_time_s = 0.0
@@ -353,6 +367,7 @@ class R5Adapter(RobotAdapter):
                 self.drive_targets[name] = reference
 
     def before_physics_step(self, dt_s: float) -> None:
+        self._stop_on_collision()
         self.tracking_time_s += dt_s
         for name, arm in self.instances.items():
             self.settling.add(self.tracking_time_s, name,
@@ -401,6 +416,15 @@ class R5Adapter(RobotAdapter):
                 self._send_targets(targets)
 
         self._advance_drive_targets(dt_s)
+
+    def _stop_on_collision(self):
+        monitor = getattr(getattr(self, "backend", None), "collision_monitor", None)
+        if monitor is not None and monitor.blocked and self.collision_stop is None:
+            self.collision_stop = dict(monitor.blocked)
+            self.on_action_timeout()
+            self.motion_arms.clear()
+            self.cartesian_targets.clear()
+            self.grip_arms.clear()
 
     def on_action_timeout(self) -> None:
         """Cancel queued motion/closing; preserve the current bounded grip drive."""
@@ -458,6 +482,16 @@ class R5Adapter(RobotAdapter):
             return Feedback("not_initialized", "R5 state is unavailable before reset")
         if self.rejection is not None:
             return self.rejection
+        self._stop_on_collision()
+        if self.collision_stop is not None:
+            row = self.collision_stop
+            return Feedback("collision_blocked",
+                            f"Motion stopped: {row['arm']} {row['component']} contacted an external shape. "
+                            "Inspect the images and choose a clear retreat or a different approach; "
+                            "no automatic recovery was performed. This is not a task-failure verdict.",
+                            {"collision": {k: row[k] for k in ("arm", "component")},
+                             "source": "simulated rigid contact flag; no force magnitude or object pose supplied",
+                             "phase": "held_after_collision"})
         return self._tracking_feedback()
 
     def _tracking_feedback(self) -> Feedback:
@@ -525,7 +559,7 @@ class R5Adapter(RobotAdapter):
                 and state.gripper_width_m > desired_width + 0.0015
             )
             motion_reached = (
-                arm_error < 0.015
+                arm_error < ARM_JOINT_TRACKING_TOLERANCE_RAD
                 and arm_settled
                 and cartesian_reached
                 and name not in self.paths

@@ -256,6 +256,7 @@ class HouseholdTests(unittest.TestCase):
         row["fingers"]["right"] = [1, 1]
         e.update(.2, rows)
         row["fingers"]["right"] = [0, 0]
+        row["pose"] = list(spec.design.articles[0].initial)
         e.update(.5, rows)
         result = e.update(1.4, rows)
         self.assertEqual(result.status, "succeeded")
@@ -272,13 +273,13 @@ class HouseholdTests(unittest.TestCase):
         rows = measurement(spec)
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
         block = rows["block_0"]
-        block["fingers"]["left"] = [1, 0]
+        block["fingers"]["right"] = [1, 0]
         result = e.update(.1, rows)
         self.assertEqual(result.status, "running")
         self.assertTrue(result.metrics["quality_warnings"])
-        block["fingers"]["left"] = [0, 0]
+        block["fingers"]["right"] = [0, 0]
         self.assertEqual(e.update(.2, rows).status, "running")
-        block["fingers"]["left"] = [1, 0]
+        block["fingers"]["right"] = [1, 0]
         e.update(.3, rows)
         block["pose"][0] += .01
         result = e.update(.5, rows)
@@ -316,44 +317,62 @@ class HouseholdTests(unittest.TestCase):
         with self.assertRaises(InvalidSimulationState):
             evaluator.update(0.2, bad)
 
-    def test_drawer_requires_grasped_opening_then_release_while_open(self):
+    def test_drawer_requires_grasped_opening_then_return_and_release(self):
         spec = build_spec("L2-07")
         rows = measurement(spec)
+        row = rows["drawer"]
         initial = {a.name: a.initial for a in spec.design.articles}
         e = BenchEvaluator(spec, initial)
-        for i in range(1, 20):
-            self.assertEqual(e.update(i * 0.1, rows).status, "running")
-        rows["drawer"]["fingers"]["right"] = [1, 1]
-        e.update(1.95, rows)
-        rows["drawer"]["pose"][1] += 0.08 - spec.parameters["initial_open_m"]
-        rows["drawer"]["fingers"]["right"] = [1, 1]
-        self.assertEqual(e.update(2, rows).status, "running")
-        rows["drawer"]["fingers"]["right"] = [0, 0]
-        for i in range(21, 35):
-            result = e.update(i * 0.1, rows)
-        self.assertEqual(result.status, "succeeded")
-        rows["drawer"]["pose"][1] -= 0.08 - spec.parameters["initial_open_m"]
-        self.assertEqual(e.update(3.6, rows).status, "running")
-        fresh = BenchEvaluator(spec, initial)
-        rows["drawer"]["pose"][1] += 0.08 - spec.parameters["initial_open_m"]
-        self.assertEqual(fresh.update(0.1, rows).status, "running")
+        self.assertEqual(e.update(.1, rows).status, "running")
+        row["fingers"]["right"] = [1, 1]
+        e.update(.2, rows)
+        row["pose"][:3] = (np.asarray(row["pose"][:3]) + .05 * np.asarray(spec.parameters["outward_axis_world"])).tolist()
+        self.assertEqual(e.update(.3, rows).status, "running")
+        row["fingers"]["right"] = [0, 0]
+        self.assertEqual(e.update(.4, rows).status, "running")
+        row["pose"] = list(spec.design.articles[0].initial)
+        self.assertEqual(e.update(.5, rows).status, "succeeded")
+        self.assertEqual(BenchEvaluator(spec, initial).update(.1, rows).status, "running")
 
-    def test_books_only_require_single_arm_complete_extraction(self):
+    def test_books_retain_dynamic_neighbours_and_require_released_support(self):
         spec = build_spec("L2-03")
-        self.assertEqual([a.name for a in spec.design.articles], ["middle_book"])
+        self.assertEqual([a.name for a in spec.design.articles], ["lower_book", "middle_book", "upper_book"])
         rows = measurement(spec)
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
         row = rows["middle_book"]
-        row["pose"][0] += 0.11
-        row["corners"] = (np.asarray(row["corners"]) + [0.11, 0, 0]).tolist()
-        self.assertEqual(e.update(0.1, rows).status, "running")
-        row["fingers"][spec.arms[0]] = [1, 1]
-        for i in range(2, 16):
-            result = e.update(i * 0.1, rows)
+        row["pose"][0] += .05
+        row["corners"] = (np.asarray(row["corners"]) + [.05, 0, 0]).tolist()
+        self.assertEqual(e.update(.1, rows).status, "running")
+        row["fingers"]["right"] = [1, 1]
+        self.assertEqual(e.update(.2, rows).status, "running")
+        for r in rows.values():
+            r["fixture_force_n"] = 3.7
+        row["fingers"]["right"] = [0, 0]
+        result = e.update(.3, rows)
         self.assertEqual(result.status, "succeeded")
-        self.assertFalse(result.metrics["criteria"]["release_required"])
-        row["fingers"][spec.arms[0]] = [0, 0]
-        self.assertEqual(e.update(1.7, rows).status, "running")
+        self.assertTrue(result.metrics["criteria"]["release_required"])
+
+    def test_books_require_box_anchored_support_not_airborne_contact_or_table_drop(self):
+        spec = build_spec("L2-03")
+        rows = measurement(spec)
+        e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
+        middle = rows["middle_book"]
+        middle["pose"][0] += .02
+        middle["corners"] = (np.asarray(middle["corners"]) + [.02, 0, 0]).tolist()
+        middle["fingers"]["right"] = [1, 1]
+        e.update(.1, rows)
+        middle["fingers"]["right"] = [0, 0]
+        middle["pair_forces"]["lower_book"] = 7.4
+        rows["upper_book"]["pair_forces"]["middle_book"] = 3.7
+        self.assertEqual(e.update(.2, rows).status, "running")
+        rows["lower_book"]["fixture_force_n"] = 11.1
+        self.assertEqual(e.update(.3, rows).status, "succeeded")
+        # A later drop of the neighbours to the table loses the support goal.
+        for name in ("lower_book", "upper_book"):
+            rows[name]["fixture_force_n"] = 0
+            rows[name]["bench_force_n"] = 3.7
+            rows[name]["corners"] = (np.asarray(rows[name]["corners"]) - [0, 0, .1]).tolist()
+        self.assertEqual(e.update(.4, rows).status, "running")
 
 
     def test_marker_airborne_tilt_never_fails_by_angle_alone(self):

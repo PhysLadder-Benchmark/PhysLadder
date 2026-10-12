@@ -54,22 +54,26 @@ class ObserverTests(unittest.TestCase):
     def test_repeated_task_frame_reuses_score_and_observer_checks(self):
         task = BenchTask()
         task.spec = build_spec("L2-06")
+        from robot_tasks.registry import resolve_task
+        from types import SimpleNamespace
+        task.config = resolve_task("L2-06")[1]
+        homes = {m.name: SimpleNamespace(joint_positions_rad=m.home_positions_rad) for m in task.config.robot.mounts}
         task.scene = Mock()
         task.scene.measure.return_value = soft_row(task.spec)
         task.scene.observer_evidence.return_value = {
-            "right": {"mode": "soft_geometry_proximity", "distance_m": .25}
+            "left": {"mode": "soft_geometry_proximity", "distance_m": .25}
         }
         task.reset(Mock(), 0)
-        state = EvaluationState({"simulation_time_s": .1})
+        state = EvaluationState({"simulation_time_s": .1, "robot": homes})
         first = task.evaluate(state, Feedback("completed"))
         for _ in range(3):
             self.assertIs(task.evaluate(state, Feedback("completed")), first)
         task.scene.measure.assert_called_once()
         task.scene.observer_evidence.assert_called_once()
         task.scene.measure.return_value = soft_row(task.spec, lifted=True, touching=True)
-        task.evaluate(EvaluationState({"simulation_time_s": .2}), Feedback("completed"))
-        task.scene.measure.return_value = soft_row(task.spec, lifted=True, touching=True)
-        self.assertEqual(task.evaluate(EvaluationState({"simulation_time_s": .3}),
+        task.evaluate(EvaluationState({"simulation_time_s": .2, "robot": homes}), Feedback("completed"))
+        task.scene.measure.return_value = soft_row(task.spec)
+        self.assertEqual(task.evaluate(EvaluationState({"simulation_time_s": .3, "robot": homes}),
                                        Feedback("completed")).status, "succeeded")
         task.reset(Mock(), 0)
         # A new episode cannot inherit the cached result or previous lift.
@@ -106,7 +110,7 @@ class ObserverTests(unittest.TestCase):
 
     def test_soft_bounds_nearness_requires_review_not_fake_contact_failure(self):
         monitor = ObserverContactMonitor()
-        evidence = {"right": {"mode": "soft_geometry_proximity", "distance_m": 0.002}}
+        evidence = {"left": {"mode": "soft_geometry_proximity", "distance_m": 0.002}}
         monitor.update(0.1, evidence, Assessment("running", ""))
         result = monitor.update(0.4, evidence, Assessment("succeeded", ""))
         self.assertEqual(result.status, "invalid")
@@ -136,14 +140,15 @@ class ObserverTests(unittest.TestCase):
         self.assertTrue(result.metrics["quality_warnings"])
         evaluator.update(0.2, soft_row(spec, lifted=True, touching=True))
         # A recovered mesh still retains the diagnostic history.
-        result = evaluator.update(0.3, soft_row(spec, lifted=True, touching=True))
+        result = evaluator.update(0.3, soft_row(spec))
         self.assertEqual(result.status, "succeeded")
         self.assertTrue(result.metrics["quality_warnings"])
         self.assertEqual(result.metrics["simulation_quality"]["minimum_volume_ratio_seen"], -.1)
         # Nor does an inverted but finite sample veto a held lift.
         rows = soft_row(spec, lifted=True, touching=True)
         rows["orange"]["minimum_volume_ratio"] = -.2
-        self.assertEqual(evaluator.update(.4, rows).status, "succeeded")
+        self.assertEqual(evaluator.update(.4, rows).status, "running")
+        self.assertTrue(evaluator.lifted)
 
 
 if __name__ == "__main__":

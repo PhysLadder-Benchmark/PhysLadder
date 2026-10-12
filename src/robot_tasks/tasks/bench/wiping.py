@@ -36,12 +36,14 @@ def ink_centers():
 
 
 class WipeLedger:
-    def __init__(self, board_pose, centers=None):
+    def __init__(self, board_pose, centers=None, *, pad_z=0.018, half_extents=(0.0495, 0.0245), weights=None):
         t = pose_transform(board_pose)
         self.centers = ink_centers() if centers is None else np.asarray(centers)
         self.world = self.centers @ t[:3, :3].T + t[:3, 3]
         self.normal = t[:3, 2]
         self.dirty = np.ones(len(self.centers), dtype=bool)
+        self.pad_z, self.half_extents = pad_z, half_extents
+        self.weights = np.ones(len(self.centers)) if weights is None else np.asarray(weights)
         self.previous = None
         self.last_time = None
 
@@ -50,7 +52,7 @@ class WipeLedger:
             return ()  # Rendering/repeated scoring is not additional wiping.
         self.last_time = now
         t = pose_transform(eraser_pose)
-        center = t[:3, 3] + 0.018 * t[:3, 2]
+        center = t[:3, 3] + self.pad_z * t[:3, 2]
         facing = float(t[:3, 2] @ self.normal) < -0.5
         active = held and pad_contact_n > 0.005 and facing
         old = self.previous
@@ -65,9 +67,9 @@ class WipeLedger:
         # Physical pad-board contact is independently required. The distance
         # tolerance only covers contact offsets and the visual ink's 0.2 mm lift.
         under_pad = (
-            (np.abs(local[:, 0]) <= 0.0495)
-            & (np.abs(local[:, 1]) <= 0.0245)
-            & (np.abs(local[:, 2] - 0.018) <= 0.0015)
+            (np.abs(local[:, 0]) <= self.half_extents[0])
+            & (np.abs(local[:, 1]) <= self.half_extents[1])
+            & (np.abs(local[:, 2] - self.pad_z) <= 0.0015)
         )
         changed = np.flatnonzero(self.dirty & under_pad)
         self.dirty[changed] = False
@@ -79,16 +81,18 @@ class WipeLedger:
         return {
             "initial_cells": initial,
             "remaining_cells": remaining,
-            "clean_fraction": 1.0 - remaining / initial,
+            "clean_fraction": 1.0 - float(self.weights[self.dirty].sum() / self.weights.sum()),
             "mechanism": "measured pad contact and sliding, equal-area visual cells",
         }
 
 
 def score(e, rows):
     m = rows["eraser"]["wiping"]
-    threshold = e.spec.parameters["required_clean_fraction"]
+    removed = m["initial_cells"] - m["remaining_cells"]
+    required = e.spec.parameters["required_clean_cells"]
     return (
-        m["clean_fraction"] >= threshold,
-        {**m, "required_clean_fraction": threshold},
+        removed >= required,
+        {**m, "removed_cells": removed, "required_clean_cells": required,
+         "release_required": False, "placement_required": False},
         "",
     )

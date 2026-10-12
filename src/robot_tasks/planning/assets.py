@@ -16,7 +16,7 @@ TCP_FRAME = "robot_tasks_tcp"
 REVISION = "78fd485fa82d9b9a063fb4985e371814587e666a"
 
 
-def build_assets(profile, directory):
+def build_assets(profile, directory, attachments=None):
     import trimesh
     from curobo.scene import Mesh
 
@@ -25,6 +25,7 @@ def build_assets(profile, directory):
         profile.source.read_bytes()
         + profile.asset_lock.read_bytes()
         + Path(__file__).read_bytes()
+        + json.dumps(attachments or {}, sort_keys=True).encode()
     ).hexdigest()[:16]
     output = directory.resolve() / identity
     output.mkdir(parents=True, exist_ok=True)
@@ -83,6 +84,21 @@ def build_assets(profile, directory):
     # Finger collision spheres follow actual measured opening, expressed in link6.
     # They are NOT exaggerated to the fully-open swept envelope while holding.
     link6_static = deepcopy(spheres[profile.ee_link])
+    wrist_spheres = {}
+    for arm, parts in (attachments or {}).items():
+        fitted = []
+        for part in parts:
+            mesh = Mesh(name=part["name"].replace("/", "_"), vertices=part["vertices"],
+                        faces=part["faces"], pose=[0, 0, 0, 1, 0, 0, 0])
+            count = 32 if part["name"].startswith("Mount/") else 12
+            fitted.extend({"center": s.pose[:3], "radius": s.radius}
+                          for s in mesh.get_bounding_spheres(num_spheres=count, surface_radius=.002))
+        wrist_spheres[arm] = fitted
+    wrist_count = max((len(rows) for rows in wrist_spheres.values()), default=0)
+    for rows in wrist_spheres.values():
+        rows.extend({"center": [0, 0, 0], "radius": -1.0} for _ in range(wrist_count-len(rows)))
+    # A fixed-size sphere buffer supports different left/right attachment poses.
+    spheres[profile.ee_link] += next(iter(wrist_spheres.values()), [])
     finger_count = sum(len(f["spheres"]) for f in fingers.values())
     spheres[profile.ee_link] += [
         {"center": [0, 0, 0], "radius": -1.0} for _ in range(finger_count)
@@ -150,6 +166,7 @@ def build_assets(profile, directory):
         "spheres": spheres,
         "finger_geometry": fingers,
         "link6_static": link6_static,
+        "wrist_spheres": wrist_spheres,
         "metadata": {
             "solver": "cuRobo V2",
             "revision": REVISION,
@@ -158,6 +175,8 @@ def build_assets(profile, directory):
             "self_collision": "nonadjacent links; immediate two neighbours excluded",
             "fixed_base_collision": "anchored base excluded from own motion checks; retained as other-arm obstacle",
             "finger_geometry": "updated from measured finger positions",
+            "wrist_geometry": "live mounted USD housing/lenses/CAD bracket, link6-frame fitted spheres" if wrist_spheres else "no attachments supplied",
+            "wrist_sphere_count_per_arm": wrist_count,
             "fallback": None,
             "asset_identity": identity,
         },

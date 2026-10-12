@@ -6,9 +6,13 @@ from ..types import Action
 from .profile import RobotProfile
 
 
-# PhysX limit solving can leave several float32 ULPs beyond a bound under load.
-# 1e-5 rad (~0.00057 degrees) covers recorded L2-04 noise, not physical overtravel.
-MEASURED_JOINT_LIMIT_TOLERANCE_RAD = 1e-5
+# Use the same measured-error allowance as joint tracking completion. A settled
+# loaded joint was accepted by the controller but rejected as the next planning
+# start (L2-03: 2.503939 rad; L3-11: 2.506142 rad at a 2.5-rad software limit).
+# Only the planning/timeout reference is bounded. Raw observations, requested
+# goals, trajectory limits and collision checks remain unchanged.
+ARM_JOINT_TRACKING_TOLERANCE_RAD = 0.015
+MEASURED_JOINT_LIMIT_TOLERANCE_RAD = ARM_JOINT_TRACKING_TOLERANCE_RAD
 
 
 def empty_close_tolerance(minimum_width):
@@ -18,7 +22,7 @@ def empty_close_tolerance(minimum_width):
 
 
 def bounded_measured_joints(positions, limits) -> tuple[float, ...]:
-    """Bound a measured reference, allowing only tiny solver/float32 limit noise.
+    """Bound a measured reference within the small solver-settling allowance.
 
     Raw observations remain untouched. This is never used to repair requested
     model joint goals or planned waypoints, which retain strict limit checks.
@@ -34,7 +38,7 @@ def bounded_measured_joints(positions, limits) -> tuple[float, ...]:
                 or q > bound.upper + MEASURED_JOINT_LIMIT_TOLERANCE_RAD):
             raise ValueError(
                 f"Measured {bound.joint}: {q:.9g} outside configured limits "
-                f"[{bound.lower}, {bound.upper}] beyond numerical tolerance"
+                f"[{bound.lower}, {bound.upper}] beyond solver-settling tolerance"
             )
         result.append(float(min(bound.upper, max(bound.lower, q))))
     return tuple(result)

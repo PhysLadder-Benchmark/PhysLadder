@@ -27,15 +27,22 @@ def orientation_degrees(pose) -> tuple[float, float, float]:
     return tuple(math.degrees(v) for v in (roll, pitch, yaw))
 
 
-def sparse_schema(arms: tuple[str, ...]) -> dict:
+def sparse_schema(arms: tuple[str, ...], *, joint_targets: bool = False) -> dict:
     properties = {name: {"type": ["number", "null"]} for name in FIELDS}
+    fields = list(FIELDS)
+    if joint_targets:
+        fields.append("joint_positions_rad")
+        properties["joint_positions_rad"] = {
+            "type": ["array", "null"], "items": {"type": "number"},
+            "minItems": 6, "maxItems": 6,
+        }
     properties["gripper"].update(minimum=0, maximum=1)
     properties["arm"] = {"type": "string", "enum": list(arms)}
     return {"type": "object", "additionalProperties": False, "required": ["commands", "request_stop"],
             "properties": {"request_stop": {"type": "boolean"}, "commands": {
                 "type": "array", "maxItems": len(arms), "items": {
                     "type": "object", "additionalProperties": False,
-                    "required": ["arm", *FIELDS], "properties": properties}}}}
+                    "required": ["arm", *fields], "properties": properties}}}}
 
 
 def decode_sparse_action(text, config, observation) -> Action:
@@ -48,7 +55,11 @@ def decode_sparse_action(text, config, observation) -> Action:
             raise ValueError("Invalid commands or stop flag")
         commands, seen = [], set()
         for row in rows:
-            if not isinstance(row, dict) or set(row) != {"arm", *FIELDS}:
+            keys = {"arm", *FIELDS}
+            allowed = [keys]
+            if config.raw.get("completion", {}).get("return_home", False):
+                allowed.append(keys | {"joint_positions_rad"})
+            if not isinstance(row, dict) or set(row) not in allowed:
                 raise ValueError("Each sparse command must contain arm and all nullable target fields")
             arm = row["arm"]
             if not isinstance(arm, str) or arm not in config.command_arms or arm in seen:
@@ -59,8 +70,20 @@ def decode_sparse_action(text, config, observation) -> Action:
                 if value is not None and (type(value) not in (int, float) or not math.isfinite(value)):
                     raise ValueError(f"{field} must be finite or null")
             motion = any(row[f] is not None for f in FIELDS[:6])
+            joints = row.get("joint_positions_rad")
+            if joints is not None:
+                if motion:
+                    raise ValueError("Joint targets and Cartesian targets are mutually exclusive")
+                if (not isinstance(joints, list) or len(joints) != 6
+                        or any(type(v) not in (int, float) or not math.isfinite(v) for v in joints)):
+                    raise ValueError("joint_positions_rad requires six finite numbers")
+                limits = {v.joint: v for v in config.robot.operating_limits}
+                if any(not limits[n].lower <= v <= limits[n].upper
+                       for n, v in zip(config.robot.joint_names, joints)):
+                    raise ValueError("Joint target outside configured R5 limits")
+                commands.append(ArmCommand(arm, "joint_position", tuple(float(v) for v in joints)))
             width = None if row["gripper"] is None else normalized_to_width(config.robot, row["gripper"])
-            if not motion and width is None:
+            if not motion and joints is None and width is None:
                 raise ValueError("Use commands=[] to wait; an all-null command has no target")
             if motion:
                 state = observation.robot.get(arm)

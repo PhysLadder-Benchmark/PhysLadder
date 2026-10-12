@@ -138,6 +138,14 @@ class NativeL2Scene:
                 ):
                     self.auxiliary.append(str(body.GetPath()))
 
+        marker_contacts = None
+        if spec.design.task_id == "L2-01":
+            from .marker_contacts import configure_marker_box_contacts
+
+            marker_contacts = configure_marker_box_contacts(
+                self.stage, self.root + "/marker", self.root + "/support_box"
+            )
+
         if spec.parameters.get("native_cup_names"):
             from .native_geometry import catalog, verify_stage
 
@@ -297,6 +305,7 @@ class NativeL2Scene:
             "initial_poses": self.initial,
             "physics_overrides": {
                 "fixed_bodies": fixed_body_paths,
+                "marker_box_contacts": marker_contacts,
                 "pearl_collision": spec.parameters.get("pearl_collision"),
                 "pearl_friction": spec.parameters.get("ball_friction"),
             },

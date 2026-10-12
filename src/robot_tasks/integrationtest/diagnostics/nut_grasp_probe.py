@@ -21,6 +21,8 @@ def run(backend, task, output, fixture):
     from PIL import Image
 
     scene = task.scene
+    if scene.spec.parameters["shaft_tip_z"] != 0.09:
+        raise ValueError("This retired 90 mm grasp fixture does not validate the current 140 mm asset")
     cfg = scene.config
     indices, targets = {}, {}
     saved = {}

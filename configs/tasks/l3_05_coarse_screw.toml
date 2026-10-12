@@ -4,7 +4,7 @@ schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_tuojing_lab_small_grasp.toml"
+profile = "../robots/r5_tuojing_lab.toml"
 active_arms = ["left", "right"]
 observation_arms = []
 
@@ -25,15 +25,19 @@ solver_position_iterations = 32
 solver_velocity_iterations = 0
 
 [runtime]
-# Native SDF thread asset validated at 1920 Hz, only this task overrides the shared step.
+# Fine SDF thread contact uses 1920 Hz; new geometry needs runtime qualification, only this task overrides the shared step.
 physics_dt_s = 0.0005208333333333333
 
 [policy]
 model_config = "../models/gpt.toml"
 
+[completion]
+return_home = true
+home_tolerance_rad = 0.05
+
 [task]
 id = "L3-05"
-name = "双臂旋下预松螺母"
+name = "绿盒横置螺杆双臂旋下螺母"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented_proxy"
@@ -41,45 +45,13 @@ implementation = "loose_nut"
 launch_command = "python tools/launch.py run L3-05 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L3-05 --gui"
 instruction = """
-The silver sleeve-anchor assembly lies horizontally in the middle between both
-arms: its sleeve body points LEFT and its hex nut points RIGHT in the overview
-image. Pick up its body from the table with LEFT. Keep holding it while RIGHT
-grasps and unscrews the loose hex nut completely off the exposed threaded end.
-Both arms manipulate; there is no observation-only arm. Both hands start empty.
+The 140 mm silver stud lies horizontally on the green box centre between both arms, body toward image-left and 24 mm hex nut toward image-right. LEFT picks and holds the 14 mm smooth shaft; RIGHT pinches the nut flats and unscrews counterclockwise viewed from the exposed threaded end. Lift clear of the box before bringing the second hand in. Nut thickness 13 mm, 2 mm pitch, approximately 2.5 turns remain. Use actual relative movement, not whole-assembly rotation, to check progress. Once fully detached, place both parts safely on the box or table and release.
 
-The assembly is 90 mm long. Grip the straight lower sleeve, about 12 mm across,
-with LEFT; do not hold the nut or the narrow exposed threaded shaft with this
-hand. Use current RGB and complementary views to confirm the assembly follows
-the hand when lifted. Lift clear of the table and establish enough room between
-both hands and wrist cameras before bringing RIGHT to the nut. Preserve the horizontal
-arrangement, with the threaded end toward the RIGHT hand: LEFT can
-hold the lower sleeve from above while RIGHT approaches the nut from its free
-end. Do not force both wrist housings into the same space over a vertical bolt.
-
-The nut is about 13 mm across opposite flat faces and 6.5 mm thick. RIGHT must
-pinch these flat faces without clamping the adjacent shaft or washer. It is
-already loose, with roughly two turns of engagement remaining; there is no
-initial tightening preload to overcome. Counterclockwise viewed toward the body
-from the exposed threaded end moves the nut outward. The right-hand thread lead
-is 1.25 mm per full turn. Coordinate outward travel with small rotation steps;
-regrasp when the wrist range requires it while LEFT keeps the body steady.
-Do not pull straight outward while the nut is still engaged. Inspect actual nut
-motion relative to the body, not just wrist rotation. If the grip slips, regain
-it before continuing. Use the available gripper closure and Cartesian tools;
-there is no force/torque command API.
-
-The task is complete when the nut has actually rotated off the thread and is
-fully separated, with LEFT holding the body and RIGHT holding the nut. Stop at
-that point: no release, exact final pose, table placement, extra dwell, or fixed
-number of turns is required. Empty-gripper motion or moving the whole assembly
-without relative nut rotation does not complete the task.
+Use current RGB views and measured robot feedback. First identify the objects and make a short plan, then execute and verify each physical subgoal. If an object did not follow the gripper, correct the grasp before continuing. Reobserve after contact; do not infer success from a commanded pose. There is no automatic grasp, reset, release or return-home action. The common completion instructions appended below are mandatory.
 """
 
 # Chinese setup and props; final task attribute.
 description = """
-道具：2026-10-08 可旋出螺母的原生膨胀螺栓资产；主体与螺母两个独立刚体，保留原尺寸、网格、质量和真实 SDF 内外螺纹；不使用原来的蓝色孔座与放大教学螺丝。
-布置：组件横放在双臂中间桌面，整体中心为实验室坐标 (0.19565, 1.30) m；从第三视角看套管主体朝左、螺母端朝右，双手空手开始；左手从桌面拿起并稳住主体，右手夹螺母旋出。螺母初态沿原螺距预松 10 圈、沿轴向退出 12.5 mm，剩约两圈；没有初始拧紧预载。主体不固定，任务中没有同轴导轨、螺旋关节或自动旋转。
-尺寸：总长 90 mm，套管直径 12 mm，螺母对边 13 mm、厚 6.5 mm，右旋螺距 1.25 mm。仅本任务使用最小开口 10 mm 的小件夹持配置（单指 5 mm，处于原有关节下限）；其余机器人设置不变。
-完成：左手拿起并持稳主体、右手实际旋转并把螺母完全分离，仍拿在手里即可结束。不要求放回桌面、指定位置、固定转圈数或额外等待；掉到桌面允许重新拿取，掉桌则失败。
-物理：仅本任务采用 1920 Hz 物理步进，控制周期与公共工作流不变。夹指沿用已用于 L2 的凸分解碰撞，保留内侧凹形，不改变外观与尺寸。精细螺纹几何和摩擦是工程估计，不模拟塑性损伤、滑牙或膨胀锚固。交付包的同轴夹具测试不是 R5 双臂自主成功证据。
+新版锥尾螺杆长140 mm、螺距2 mm，螺母对边24 mm/厚13 mm；主体约185.6 g，螺母约32.1 g。横置于两臂正中间的绿盒凹面，主体朝画面左侧、螺母朝右；左臂拿主体，右臂旋螺母。初态沿真实螺旋预松14 mm/7圈，保留约5 mm啮合；新资产SDF螺纹接触，不加螺旋关节。完全旋离后两部分放到盒面或桌面并释放。
+所有道具按要求释放，并且双臂回到初始关节位置，才算完成；关节回位容差0.05 rad。不自动执行回位。资产来源：飞书《GPT6评测任务及资产管理》2026-10-11下载包。
 """

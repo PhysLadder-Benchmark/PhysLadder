@@ -24,7 +24,7 @@ def linux_path(path):
 
 
 class PlannerClient:
-    def __init__(self, profile, directory, *, log_directory=None):
+    def __init__(self, profile, directory, *, log_directory=None, attachments=None):
         local = PROJECT_ROOT / "configs/runtime/planner.local.toml"
         data = tomllib.loads(local.read_text()) if local.is_file() else {}
         if set(data) - {"python", "wsl_distribution"}:
@@ -62,6 +62,16 @@ class PlannerClient:
         self.process = None
         self.messages = queue.Queue()
         directory.mkdir(parents=True, exist_ok=True)
+        if attachments:
+            import hashlib
+            payload = json.dumps(attachments, sort_keys=True)
+            identity = hashlib.sha256(payload.encode()).hexdigest()[:16]
+            attachment_path = directory / ("wrist_" + identity + ".json")
+            if not attachment_path.is_file():
+                temporary = attachment_path.with_suffix(f".{os.getpid()}.tmp")
+                temporary.write_text(payload, encoding="utf-8")
+                temporary.replace(attachment_path)
+            command += ["--attachments", convert(attachment_path)]
         log_directory = log_directory or directory
         log_directory.mkdir(parents=True, exist_ok=True)
         self.log_path = log_directory / "planner_worker.log"
