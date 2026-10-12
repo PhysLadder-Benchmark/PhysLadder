@@ -27,66 +27,31 @@ solver_velocity_iterations = 0
 [policy]
 model_config = "../models/gpt.toml"
 
+[completion]
+return_home = true
+home_tolerance_rad = 0.05
+
 [task]
 # Guided visual execution; common information boundaries are appended by BenchTask.
 prompt_protocol = "guided_visual_l2_v3"
-scoring_protocol = "drawer_absolute_opening_v4"
+scoring_protocol = "drawer_pull_return_v5"
 id = "L2-07"
-name = "单臂拉开固定化妆抽屉"
+name = "预开抽屉拉出并推回"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
 implementation = "household"
-simulation_limitations = "Original native organizer and handle, 90 mm passive rail, initialized 30 mm open; no added grasp adapter or mass. Native lip is 102 x 6 x 8 mm; R5 grasp feasibility with the configured 12-70 mm opening is not qualified. Estimated physical properties."
+simulation_limitations = "Delivered cabinet fixed, lower drawer fixed; original upper rail and passive resistance retained. Five dynamic 20 mm cubes remain loose in the upper drawer. Friction and cabinet dimensions uncalibrated."
 launch_command = "python tools/launch.py run L2-07 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-07 --gui"
 instruction = """
-The organizer is in front of the robot on the RIGHT of the shared overview
-image. Use the RIGHT R5 arm to open only the UPPER drawer. The LEFT arm is free to
-move its wrist camera for observation but must not touch the organizer.
-Identify the upper drawer, its original shallow front lip, and the rail direction
-from current camera observations. The cabinet and lower drawer are fixed.
-The upper drawer starts 30 mm open to give access behind the native front lip.
-This is only the initial layout; you must still pull it farther open.
-There is no added handle or grasp adapter. The native lip is about 102 mm wide,
-6 mm deep and 8 mm high. The configured gripper opening is 12-70 mm: do not
-attempt to span its full width or request closure below that minimum. Select
-an accessible contact arrangement from the actual geometry, keeping fingers,
-wrist and camera clear of the cabinet roof and front panel. A viable native-lip
-grasp is not guaranteed; do not assume an invisible larger handle exists.
+The white organizer is at the far RIGHT of the overview image, diagonal to the camera as in the real setup. Its centre is 70 mm farther right than the previous layout and retains the 100 mm table-front clearance shift. Part of the cabinet may be outside the overview frame; use wrist views when necessary. Its upper drawer starts 30 mm open, original grip edge facing diagonally toward the robots (world -X/+Y), away from the overview camera. Pulling moves the drawer toward the arms; pushing returns it away from the arms. The cabinet and lower drawer are fixed. RIGHT grips the existing edge/handle, pulls the upper drawer about 50 mm FURTHER along its rail, then pushes it back to its INITIAL 30 mm opening and releases. It should not finish fully closed. LEFT observes. Five blue cubes are loose inside; no object-removal task and no added handle.
 
-Approach with an open gripper and inspect from complementary views. Close in
-a separate decision. A blocked close is not proof of capture: inspect the
-actual finger-lip contact and drawer movement during a short pull.
-Do not test-lift a rail-constrained drawer. Preserve handle height and alignment.
-Keep the established grasp height and orientation as your pull reference;
-do not accumulate sag or tracking error by copying each imperfect reached pose
-into the next target. Reobserve and regrasp if the alignment is no longer valid.
-
-Pull toward the robots along world +Y, using short movements and checking that
-the drawer follows. The native rail has 90 mm TOTAL travel from fully closed.
-Aim for 75-85 mm TOTAL opening: another 45-55 mm from the 30 mm initial
-opening, not another 75-85 mm. Estimate current opening from observations.
-There is no push latch or button. Do not force beyond the mechanical stop,
-rotate the cabinet, lift the drawer, or move along the wrong axis.
-If the grip slips, reobserve and regrasp rather than continuing an empty pull.
-
-Once the total opening from fully closed is at least 75 mm, release, withdraw without pushing it closed, and
-observe approximately half a simulation second of released, nearly stationary
-opening. No item retrieval or closing is required. Completion requires
-an actual grasped pull and the final released opening; a small amount
-of passive rail travel after release is allowed, but merely touching an already
-open drawer is not a grasped pull. Request stop only after
-observing this physical result. Use available control feedback; do not invent
-force sensors or a force-control API. No automatic scene reset is performed.
+Use current RGB views and measured robot feedback. First identify the objects and make a short plan, then execute and verify each physical subgoal. If an object did not follow the gripper, correct the grasp before continuing. Reobserve after contact; do not infer success from a commanded pose. There is no automatic grasp, reset, release or return-home action. The common completion instructions appended below are mandatory.
 """
 
 # 中文布置和道具说明。
 description = """
-道具：L20 双抽屉收纳盒原生资产；柜体和下层抽屉固定，上层保留原生 90 mm 滑轨和原把手，不增加抓持片。原把手约宽 102 mm、深 6 mm、高 8 mm。
-布置：使用拓境实验室 R5 双臂与三路相机，桌高 0.78 m；收纳盒放在第三视角画面右侧机械臂前方，抽屉正面朝该机械臂（世界 +Y），上层初始预拉开 30 mm，留出接近原把手的空间；右臂操作，左臂只观察。
-操作与完成：自主选择原把手的接触方式，沿 +Y 继续拉至相对全闭位置的总开度 75—85 mm，即从初态再拉约 45—55 mm，最大总行程 90 mm；释放并保持开启约 0.5 秒。不取物、不关闭、不要求扶柜或抬升。
-评分：先记录连续双指抓持期间至少 5 mm 的净拉动，再独立判断相对全闭位置的最终总开度和释放稳定；预开 30 mm 不计为模型拉动，初态不算成功；不要求越过 75 mm 时仍有双指接触，不把仅触碰已打开抽屉算作拉开。
-物理：保留原生尺寸、80 g 抽屉质量、惯量、材质及被动滑轨，不增加几何或质量，不与机器人吸附或绑定。源资产不修改。
-可行性：原把手的宽度超过夹爪 70 mm 最大开口，厚度又小于 12 mm 最小开口；普通对夹方式受限，原把手抓取尚未通过 R5 验收，不能沿用加装把手时的成功记录。
+更新为白色收纳盒及上层5个自由蓝方块。整盒按真机照片放在画面最右侧，比上一版再向画面右移70 mm，保留向桌前移100 mm的间距，中心(0.55,1.12)m；允许柜体局部超出第三视角画面，需要时用腕部视角观察，不移动公共相机；保持原斜摆方向，原把手/开口朝机械臂一侧（画面左后方，世界-X/+Y），拉出时向机械臂靠近；柜体及下层固定，上层初开30 mm，总行程90 mm。右臂沿原滑轨再拉出约50 mm，然后推回本轮初始30 mm开度，松手；左臂观察。不加把手，不取出方块。返回开度容差8 mm，不要求毫米级配准。
+所有道具按要求释放，并且双臂回到初始关节位置，才算完成；关节回位容差0.05 rad。不自动执行回位。资产来源：飞书《GPT6评测任务及资产管理》2026-10-11下载包。
 """

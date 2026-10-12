@@ -15,6 +15,8 @@ def probe(backend, task, output):
     from pxr import Gf, UsdPhysics
 
     scene = task.scene
+    if scene.spec.parameters["shaft_tip_z"] != 0.09:
+        raise ValueError("This retired 90 mm nut fixture does not validate the current 140 mm asset")
     body, nut = scene.bodies["anchor"], scene.bodies["nut"]
     start = scene.measure()
     body_pose, nut_pose = start["anchor"]["pose"], start["nut"]["pose"]

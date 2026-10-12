@@ -33,6 +33,8 @@ L1-03 会先调用同目录 `plug_holder_probe.py` 验证自由底座对充电�
 
 L2 原生资产诊断：`python -m robot_tasks.integrationtest.diagnostics.scene_smoke L2-03 --no-preparation --prop-probe`。ID 可换为 L2-01、L2-04、L2-06、L2-07。`native_l2_probe.py` 检查拔帽、抽书、纸杯珍珠初态和原生滑轨；`orange_probe.py` 检查软体接触、压缩及释放。施加的是诊断夹具驱动，不是 GPT 或机器人任务成功。
 
+笔帽／绿盒接触回归：`python -m robot_tasks.integrationtest.diagnostics.marker_contact --baseline`。覆盖原释放姿态、已穿透状态压力测试以及四种落点／朝向，检查后段接触力、速度和相对原外观表面的穿透；默认输出 `build/marker_contact/result.json`。不调用 GPT，不改变任务成功条件。
+
 `python -m robot_tasks.integrationtest.diagnostics.l2_clearance` 在规划器环境检查五个任务的采样抓取／操作姿态，默认输出 `reports/l2_asset_validation/clearance.json`。范围包括关节限位、机械臂／相机／支架对桌面和固定道具的包围盒间隙；不证明连续路径、全身自碰撞或真实抓持稳定性。
 
 局部 R5 接触与执行检查（Isaac Python，不调用模型）：
@@ -128,7 +130,7 @@ PYTHONPATH=src python -m robot_tasks.integrationtest.diagnostics.native_grasp L1
 L1-08 和 L1-09 的 `stable_gripper_drive=true` 启用软件对称驱动、物理关节限速与闭合误差限制。
 `finger_max_acceleration` 单位 m/s²，`finger_closing_lead` 为每指最大闭合领先量，
 `finger_effort_limit` 为每指驱动力上限 N。软件同步不代表已确认真实夹爪机械联动。
-L2 与常规 L3 保留 12–70 mm，L3-05 保留 10–70 mm；L2／螺母碰撞覆盖优先，不叠加 L1 参数。其它任务默认保持其原有控制方式。新结果记录 `release_check_protocol`，避免与旧测评混淆。
+L2 与常规 L3 保留 12–70 mm，L3-05 保留 10–70 mm；L2／L3 使用各自的夹指凸分解碰撞覆盖，不叠加 L1 参数。其它任务默认保持其原有控制方式。新结果记录 `release_check_protocol`，避免与旧测评混淆。
 
 加 `--place-nested` 会在保持检查之后调用生产规划器执行升高、搬运与浅入杯诊断。
 规划失败写入 `placement_failure.json` 并使诊断失败；不会关闭碰撞检查或改用直接传送。
@@ -163,3 +165,7 @@ PYTHONPATH=src python -m robot_tasks.integrationtest.diagnostics.rose_rest --out
 这项启动检查使用仿真测量，只决定场景何时就绪，不将物体真值交给 GPT。
 
 场景检查 `scene_smoke` 和初态图库默认跟随任务的 RGB 设置；`scene_smoke --depth` 同时验证深度。专门验证深度抓持的 `native_grasp`、`tuojing_lab` 诊断显式开启深度，不改变正式任务默认值。
+
+`wrist_collision <run目录> --step 37 --output <证据目录>` 回放已记录的关节路径，独立验证腕相机/支架的物理碰撞与执行中止；不调用 GPT，故意绕过规划器，不能算任务成功。`--isolate-box` 仅在诊断中关闭刷子接触以单独检查绿盒；`--baseline` 仅在诊断中关闭腕部附件碰撞以复现旧问题。两者均不修改任务配置或源资产。
+
+`--check-retreat` 在接触停止后另行下发返回原清空姿态的诊断动作，检查接触反馈不会将后续退出动作锁死；生产流程仍由模型选择恢复动作。

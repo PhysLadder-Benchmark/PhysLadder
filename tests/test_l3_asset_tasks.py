@@ -56,15 +56,24 @@ class CleaningTests(unittest.TestCase):
         )
         self.assertEqual(self.ledger.metrics()["remaining_cells"], 2)
 
-    def test_ninety_percent_finishes_without_releasing_or_waiting(self):
+    def test_one_removed_cell_succeeds_while_eraser_is_still_held(self):
         spec = build_spec("L3-11")
         rows = measurement(spec)
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
         rows["eraser"]["fingers"]["right"] = [1, 1]
-        rows["eraser"]["wiping"]["clean_fraction"] = 0.89
+        ledger = WipeLedger(pose(0, 0, 0), self.points, half_extents=(.003, .003))
+        rows["eraser"]["wiping"] = ledger.metrics()
         self.assertEqual(e.update(1, rows).status, "running")
-        rows["eraser"]["wiping"]["clean_fraction"] = 0.9
-        self.assertEqual(e.update(2, rows).status, "succeeded")
+        for i in range(2):
+            ledger.update(i, pose(i * .001, 0, .028, roll=math.pi),
+                          pad_contact_n=.2, held=True)
+        self.assertEqual(ledger.metrics()["remaining_cells"], 1)
+        rows["eraser"]["wiping"] = ledger.metrics()
+        rows["eraser"]["bench_force_n"] = 0
+        result = e.update(2, rows)
+        self.assertEqual(result.status, "succeeded")
+        self.assertEqual(result.metrics["criteria"]["removed_cells"], 1)
+        self.assertFalse(result.metrics["criteria"]["release_required"])
 
 
 class SweepingTests(unittest.TestCase):
@@ -125,10 +134,10 @@ class SweepingTests(unittest.TestCase):
         self.all_inside()
         self.assertEqual(self.e.update(1, self.rows).status, "running")
 
-    def test_right_hand_brush_contact_records_use_and_left_hand_does_not(self):
+    def test_only_manipulation_hand_brush_use_qualifies(self):
         self.e.flags.clear()
         broom = self.rows["broom"]
-        broom["pair_forces"]["block_0"] = 0.02
+        broom["pair_forces"]["block_0"] = .02
         broom["fingers"]["left"] = [1, 1]
         self.e.update(1, self.rows)
         self.assertNotIn("swept_block_0", self.e.flags)
@@ -162,7 +171,7 @@ class PhotoLayoutTests(unittest.TestCase):
         )
         self.assertEqual(cfg.arms, ("right",))
         self.assertEqual(cfg.observation_arms, ("left",))
-        self.assertEqual(a.initial[3:], a.goal[3:])
+        self.assertEqual(a.asset, "tuojing:board_eraser")
 
     def test_pan_mouth_faces_two_blocks_and_brush_on_image_right(self):
         entry, cfg = resolve_task("L3-15")
@@ -180,7 +189,7 @@ class PhotoLayoutTests(unittest.TestCase):
             self.assertLess(pan_x, x)
             self.assertLess(x, brush_x)
         self.assertGreater(pose_transform(pan.initial)[0, 1], 0.99)
-        self.assertLess(pose_transform(brush.initial)[0, 1], -0.99)
+        self.assertLess(pose_transform(brush.initial)[2, 1], -.9)  # Bristles down, handle up.
         self.assertEqual(cfg.arms, ("right",))
         self.assertEqual(cfg.observation_arms, ("left",))
 

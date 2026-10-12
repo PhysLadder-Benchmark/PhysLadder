@@ -223,7 +223,7 @@ class OptimizationTests(unittest.TestCase):
             robot.targets = targets
         action = Action((ArmCommand("left", "joint_position", home), ArmCommand("left", "gripper", (.06,))), self.config.control_dt_s)
         robot.state = Mock(return_value={"left": ArmState(joint_positions_rad=home, finger_positions_m=fingers)})
-        robot.backend = Mock()
+        robot.backend = Mock(collision_monitor=None)
         robot.planner = Mock()
         robot.planner.plan.return_value = {"paths": {"left": {"positions": [home,home], "times_s": [0., .001]}}, "diagnostics": {}}
         ready = Feedback("executing", metrics={"arms": {"left": {"motion_reached": False}}})

@@ -246,7 +246,7 @@ class PlanningExecutionTests(unittest.TestCase):
         self.assertTrue(all(row[1] <= 2.5 for row in path.positions))
         # A genuinely out-of-range state or requested path must still fail.
         with self.assertRaises(ValueError):
-            JointPath.from_waypoints([bounded, end], (0., 2.5001, 1.2, 0., 0., 0.), self.bounds)
+            JointPath.from_waypoints([bounded, end], (0., 2.52, 1.2, 0., 0., 0.), self.bounds)
         with self.assertRaises(ValueError):
             JointPath.from_waypoints([actual, end], actual, self.bounds)
 
@@ -262,12 +262,36 @@ class PlanningExecutionTests(unittest.TestCase):
         self.assertNotEqual(robot.feedback().status, "rejected")
         self.assertIsNone(robot.last_plan)
 
-    def test_only_measured_roundoff_is_bounded_not_real_limit_violations(self):
+    def test_only_small_measured_settling_is_bounded_not_large_limit_violations(self):
         q = (-2.5000016689300537, 2.5000014305114746, 0., 0., 0., 0.)
         self.assertEqual(bounded_measured_joints(q, self.bounds), (-2.5, 2.5, 0., 0., 0., 0.))
-        for bad in ((-2.5001,) + q[1:], q[:1], (float("nan"),) + q[1:]):
+        for bad in ((-2.516,) + q[1:], q[:1], (float("nan"),) + q[1:]):
             with self.subTest(bad=bad), self.assertRaises(ValueError):
                 bounded_measured_joints(bad, self.bounds)
+
+    def test_recorded_book_joint_limit_state_can_retreat_without_relaxing_goals(self):
+        actual = (0.328737, 2.50393915, 1.61446, -2.321331, 1.232714, 1.569857)
+        start = bounded_measured_joints(actual, self.bounds)
+        target = (0.328737, 2.48, 1.61446, -2.321331, 1.232714, 1.569857)
+        path = JointPath.from_waypoints([start, target], actual, self.bounds)
+        self.assertEqual(actual[1], 2.50393915)
+        self.assertEqual(path.positions[0][1], 2.5)
+        self.assertEqual(path.positions[-1], target)
+        self.assertTrue(all(row[1] <= 2.5 for row in path.positions))
+        with self.assertRaises(ValueError):
+            JointPath.from_waypoints([start, actual], actual, self.bounds)
+
+    def test_recorded_wiping_limit_settling_can_retreat_without_relaxing_goals(self):
+        actual = (1.21571958, 2.50613928, 2.21401072, -0.96910769, 0.72445977, 1.08780611)
+        start = bounded_measured_joints(actual, self.bounds)
+        target = actual[:1] + (2.48,) + actual[2:]
+        path = JointPath.from_waypoints([start, target], actual, self.bounds)
+        self.assertEqual(actual[1], 2.50613928)
+        self.assertEqual(path.positions[0][1], 2.5)
+        self.assertEqual(path.positions[-1], target)
+        self.assertTrue(all(row[1] <= 2.5 for row in path.positions))
+        with self.assertRaises(ValueError):
+            JointPath.from_waypoints([start, actual], actual, self.bounds)
 
     def test_planner_uses_bounded_start_and_preserves_raw_observation(self):
         from robot_tasks.planning.worker import CuroboWorker

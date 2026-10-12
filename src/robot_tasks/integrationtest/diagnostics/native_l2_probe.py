@@ -122,27 +122,24 @@ def run(scene):
         drive.CreateStiffnessAttr(150.0)
         drive.CreateDampingAttr(8.0)
         drive.CreateMaxForceAttr(8.0)
-        drive.CreateTargetPositionAttr(0.11)
+        # Follow the task's extraction axis. This fixture only
+        # checks sliding; it is not the bimanual task or its success evaluator.
+        direction = float(scene.spec.parameters["outward_axis_world"][0])
+        joint.CreateLowerLimitAttr(min(0.0, direction * 0.14))
+        joint.CreateUpperLimitAttr(max(0.0, direction * 0.14))
+        drive.CreateTargetPositionAttr(direction * 0.05)
         try:
             advance(scene, 4.0)
             row = scene.measure()["middle_book"]
             p = scene.spec.parameters
-            clearance = float(
-                np.min(
-                    (np.asarray(row["corners"]) - p["stack_front_world"])
-                    @ p["outward_axis_world"]
-                )
-            )
+            travel = float((np.asarray(row["pose"][:3]) - start) @ p["outward_axis_world"])
             result.update(
-                rear_clearance_m=clearance,
-                travel_m=float(
-                    np.asarray(row["pose"][:3]) @ p["outward_axis_world"]
-                    - np.asarray(start) @ p["outward_axis_world"]
-                ),
+                travel_m=travel,
+                required_travel_m=p["minimum_travel_m"],
             )
-            if clearance < p["clearance_m"]:
+            if travel < p["minimum_travel_m"] - 0.002:
                 raise RuntimeError(
-                    "Native book cannot clear fixed neighbours: " + str(result)
+                    "Native book did not slide the required distance: " + str(result)
                 )
         finally:
             joint.CreateJointEnabledAttr(False)

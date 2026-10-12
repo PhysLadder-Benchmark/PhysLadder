@@ -17,6 +17,8 @@ from ...tasks.screw.nut import nut_spec
 def check():
     _, config = resolve_task("L3-05")
     s = nut_spec()
+    if s.parameters["shaft_tip_z"] != 0.09:
+        raise ValueError("This retired 90 mm clearance fixture does not validate the current 140 mm asset")
     g = Geometry(config)
     base = np.array(s.design.articles[0].initial[:3])
     initial_transform = pose_transform(s.design.articles[0].initial)

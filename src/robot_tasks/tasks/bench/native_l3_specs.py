@@ -6,6 +6,7 @@ from dataclasses import replace
 from ..l1.specs import Article, box, pose
 from .geometry import design
 from .spec import BenchSpec
+from .native_l2_specs import support_box
 
 TABLE_Z = 0.78
 
@@ -29,7 +30,7 @@ def bottle():
             "oriental_leaf_335ml",
             base,
             0.358,
-            ((-0.031, -0.023, 0.001), (0.031, 0.023, 0.1865)),
+            ((-0.0267, -0.0267, 0.001), (0.0267, 0.0267, 0.1865)),
         ),
         _article(
             "cap",
@@ -41,19 +42,19 @@ def bottle():
     ]
     return BenchSpec(
         replace(
-            design("L3-03", "双臂扶东方树叶瓶旋下松盖", articles),
-            version="l3-03-centred-bimanual-loose-cap-v5",
+            design("L3-03", "固定瓶身旋下瓶盖", articles),
+            version="l3-03-real-left-overview-right-v9",
             release=False,
             provenance="Delivered Oriental Leaf 335 ml body/cap, pre-loosened initial state",
         ),
-        arms=("left", "right"),
-        mechanism="native_bimanual_loose_cap_contact",
-        limitations="Photo-estimated native interrupted threads, not measured opening torque. Body is free and must be supported by the other arm; cap pre-loosened 7.5 mm/300 degrees, no tamper-band breaking or seal preload. Rigid visual liquid, no slosh. This simplified cap-removal task does not measure breaking a tight seal.",
-        facts="The Oriental Leaf 335 ml bottle stands freely between both arms. LEFT steadies the lower straight section of the bottle body, preferably keeping its base on the table; RIGHT grasps the transparent cap sidewall (about 42 mm diameter, 16 mm tall). Both arms manipulate; neither is observation-only. The body is about 62 x 46 mm wide: grip the narrower parallel faces below the shoulder and leave vertical clearance for the cap hand. The cap is already loosened, with only the last partial thread engagement. Turn counterclockwise viewed from above and allow it to rise; inspect whether it is already free before pulling away. No prescribed turn count or minimum measured torque. Keep the LEFT body grasp while the RIGHT turns and removes the cap; do not pinch the neck with the cap hand. Once completely detached, place the cap anywhere clear on the table and release it. The bottle may remain supported by LEFT, or stand upright on the table after release. No exact parking point or timed wait is required.",
+        arms=("right",),
+        mechanism="native_fixed_bottle_loose_cap_contact",
+        limitations="Native empty-bottle appearance but delivered body mass still 358 g, not an empty-bottle weighing. Body anchored by task request. Cap pre-loosened 7.5 mm/300 degrees; photo-estimated interrupted threads and friction. No claim of real opening torque.",
+        facts="The square Oriental Leaf bottle stands at the centre between both arms and is FIXED to the table. RIGHT unscrews the loose cap counterclockwise as seen from above; LEFT only observes. No support-hand grasp is needed. Body width approximately 52 mm, cap diameter 42 mm. The cap is pre-loosened but still threaded, with 9 mm lead per turn. Complete the task as soon as the cap is fully detached from the neck. Keeping it held is allowed; no additional lift height, placement, release or return home is required. Do not try to move the fixed bottle.",
         parameters={
             "table_z": TABLE_Z,
             "hold_s": 0.0,
-            "body_arm": "left",
+            "body_arm": "left", "body_fixed": True,
             "cap_arm": "right",
             "cap_bottom_z": 0.1742,
             "cap_top_z": 0.1900,
@@ -68,6 +69,7 @@ def bottle():
                     "asset": "oriental_leaf_335ml",
                     "pose": base,
                     "tracked": {"bottle": "Body", "cap": "Cap"},
+                    "static": ["Body"],
                     "initial_body_transforms": {"Cap": pose(0, 0, lift, yaw=turn)},
                 }
             ],
@@ -77,134 +79,53 @@ def bottle():
 
 def wiping():
     board = pose(0.25, 1.29, TABLE_Z, yaw=math.pi)
-    eraser = pose(
-        0.505, 1.30, TABLE_Z + 0.025 + 0.0184 + 0.001, roll=math.pi, yaw=math.pi / 2
-    )
-    a = _article(
-        "eraser",
-        "board_eraser",
-        eraser,
-        0.020,
-        ((-0.05, -0.025, 0), (0.05, 0.025, 0.0184)),
-    )
+    eraser = pose(0.565, 1.28, TABLE_Z + 0.021, roll=math.pi, yaw=math.pi / 2)
+    a = _article("eraser", "board_eraser", eraser, 0.0154,
+                 ((-0.06, -0.03, 0), (0.06, 0.03, 0.020)))
     return BenchSpec(
-        replace(
-            design(
-                "L3-11",
-                "抓取板擦擦除绿板字迹（清洁代理）",
-                [a],
-                (
-                    box(
-                        "eraser_start_rest",
-                        (0.030, 0.060, 0.025),
-                        (0.505, 1.30, TABLE_Z + 0.0125),
-                        (0.32, 0.33, 0.35),
-                    ),
-                ),
-            ),
-            version="l3-11-inverted-gpt6-right-arm-v2",
-            release=False,
-            provenance="2026-10-08 native board and eraser; contact-driven visual ink proxy",
-        ),
-        arms=("right",),
-        mechanism="native_contact_wiping",
-        limitations="Rigid eraser, fixed green board and discrete equal-area ink cells. Contact plus measured sliding removes cells; 25 mm passive starting rest for finger clearance; no real ink chemistry, moisture, pad compliance or calibrated pressure-cleaning law. This simplified proxy does not establish real L3 cleaning competence.",
-        facts="The green board is fixed flat on the table (410 x 280 mm). The loose eraser is 100 x 50 x 18 mm and starts pad-down on a low passive rest beside it. Grip the upper plastic side edges across the 50 mm width, keeping finger tips above the cleaning face; the long 100 mm direction cannot fit the gripper. Its cleaning face is opposite its plastic back. The board and BLACK GPT6 lettering are rotated 180 degrees in the tabletop plane, so the text is upside-down from the shared overview image. The eraser starts on the board's image-right. Wipe with the RIGHT hand; LEFT observes only. Clean at least 90% of the initial visible writing. No timed hold, final eraser placement or specific force value is required. Hovering and occlusion cannot erase marks.",
-        parameters={
-            "table_z": TABLE_Z,
-            "hold_s": 0.0,
-            "required_clean_fraction": 0.90,
-            "board_pose": board,
-            "board_surface_z": 0.010,
-            "native_instances": [
-                {
-                    "name": "board",
-                    "asset": "green_board_20261008",
-                    "pose": board,
-                    "static": [""],
-                    "tracked": {},
-                },
-                {
-                    "name": "eraser",
-                    "asset": "board_eraser",
-                    "pose": eraser,
-                    "tracked": {"eraser": ""},
-                },
-            ],
-        },
-    )
+        replace(design("L3-11", "抓板擦擦除原生字迹", [a]),
+                version="l3-11-any-ink-removal-v6", release=False),
+        arms=("right",), mechanism="native_contact_wiping",
+        limitations="Original photo-derived GPT6 mask, rigid eraser and contact-driven single-pass removal. Cleaning proxy, not real ink chemistry. No scripted grasp or automatic cleaning motion.",
+        facts="The board lies flat, fixed, in front of the arms; its original red GPT6 writing is upside-down from overview. The loose blue eraser lies pad-down to image-right of the board in the overview camera. RIGHT must pick it up; LEFT observes only. Eraser dimensions 120 x 60 x 20 mm: pinch the 60 mm width with the cleaning pad unobstructed below. Its cloth face is opposite the blue plastic back. Contact and sweep the cloth over the writing; each covered mark disappears on the first genuine wipe, no repeated scrubbing or exact force required. The task succeeds as soon as a genuine contact wipe removes any part of the original writing. No percentage target, further wiping, placement, release or return home is required.",
+        parameters={"table_z": TABLE_Z, "hold_s": 0.0,
+                    "required_clean_cells": 1, "board_pose": board,
+                    "board_surface_z": 0.010, "pad_half_extents": (0.059, 0.029),
+                    "pad_z": 0.020,
+                    "native_instances": [
+                      {"name": "board", "asset": "green_board_20261008", "pose": board,
+                       "static": [""], "tracked": {}},
+                      {"name": "eraser", "asset": "board_eraser", "pose": eraser,
+                       "tracked": {"eraser": ""}}]})
 
 
 def sweeping():
-    # Native thin handles cannot be pinched through their 1.2/8 mm thickness.
-    # Passive starting rests expose the 28/32 mm handle WIDTH; they do not move
-    # or attach to the tool and are not part of the goal region.
-    pan = pose(0.0913, 1.31, TABLE_Z, yaw=-math.pi / 2)
-    broom = pose(0.4813, 1.31, TABLE_Z + 0.026, yaw=math.pi / 2)
+    # Match overview photo: pan left, green box right, brush leaning against
+    # the box's left wall, two loose blue cubes between brush and pan.
+    pan = pose(0.02, 1.26, TABLE_Z + 0.00145, yaw=-math.pi / 2)
+    # Native +Y points toward bristles. Tilt it down and to image-left,
+    # leaving the narrow top of the handle clear of the box for a side pinch.
+    broom = pose(0.237, 1.26, TABLE_Z + 0.070, roll=-math.radians(70), yaw=math.pi / 2)
     articles = [
-        _article(
-            "dustpan", "dustpan", pan, 0.0232, ((-0.07, -0.14, 0), (0.07, 0.04, 0.018))
-        ),
-        _article(
-            "broom",
-            "hand_brush",
-            broom,
-            0.0365,
-            ((-0.07, -0.105, 0), (0.07, 0.0702, 0.008)),
-        ),
-    ]
-    instances = [
-        {
-            "name": a.name,
-            "asset": a.asset.removeprefix("tuojing:"),
-            "pose": a.initial,
-            "tracked": {a.name: ""},
-        }
-        for a in articles
-    ]
+        _article("dustpan", "dustpan", pan, 0.0232,
+                 ((-0.0709, -0.1049, -0.00145), (0.0709, 0.04502, 0.0145))),
+        _article("broom", "hand_brush", broom, 0.0365,
+                 ((-0.0741, -0.0693, -0.00059), (0.0739, 0.07404, 0.00679)))]
+    instances = [{"name": a.name, "asset": a.asset.removeprefix("tuojing:"),
+                  "pose": a.initial, "tracked": {a.name: ""}} for a in articles]
     instances[0]["static"] = [""]
-    for i, (x, y) in enumerate(((0.2913, 1.27), (0.2513, 1.32))):
-        a = _article(
-            f"block_{i}",
-            "blue_square",
-            pose(x, y, TABLE_Z + 0.001),
-            0.003,
-            ((-0.01, -0.01, 0), (0.01, 0.01, 0.01)),
-        )
+    instances.append(support_box(0.35, 1.26))
+    for i, (x, y) in enumerate(((0.145, 1.295), (0.158, 1.235))):
+        a = _article(f"block_{i}", "blue_square", pose(x, y, TABLE_Z + 0.001),
+                     0.0026, ((-0.01, -0.01, 0), (0.01, 0.01, 0.020)))
         articles.append(a)
-        instances.append(
-            {
-                "name": a.name,
-                "asset": "blue_square",
-                "pose": a.initial,
-                "tracked": {a.name: ""},
-            }
-        )
-    rests = (
-        box(
-            "brush_start_rest",
-            (0.06, 0.10, 0.025),
-            (0.4713, 1.31, TABLE_Z + 0.0125),
-            (0.32, 0.33, 0.35),
-        ),
-    )
+        instances.append({"name": a.name, "asset": "blue_square", "pose": a.initial,
+                          "tracked": {a.name: ""}})
     return BenchSpec(
-        replace(
-            design("L3-15", "单臂持手刷扫方块入固定簸箕", articles, rests),
-            version="l3-15-right-brush-two-blocks-v4",
-            release=False,
-            provenance="2026-10-08 native hand brush, dustpan and two blue square blocks",
-        ),
-        arms=("right",),
-        mechanism="native_rigid_brush_sweeping",
-        limitations="Delivered geometry and mass; bristles are rigid capsule bundles, not elastic fibers. A passive 25 mm brush starting rest exposes its handle to an R5 side pinch. The dustpan is fixed at tabletop height. Friction is estimated; no fine dust or material damage model.",
-        facts="The dustpan is FIXED with its thin entry lip on the tabletop; do not grasp or move it. From the shared overview image, the pan is on the LEFT with its mouth toward the RIGHT; the brush starts on the RIGHT, with TWO blocks between them. RIGHT grips the loose small hand brush; LEFT observes only. The two BLUE blocks are 20 x 20 x 10 mm. The brush rests on a low passive support. Pinch its handle ACROSS the roughly 28 mm width, not the 8 mm thickness. Bristles project forward in the handle plane. Sweep BOTH blocks across the open straight lip into the pan basket. Direct gripper transport of blocks does not count. No final brush release, exact yaw or timed wait is required.",
-        parameters={
-            "table_z": TABLE_Z,
-            "hold_s": 0.0,
-            "count": 2,
-            "required": 2,
-            "pan_floor_z": 0.0012,
-            "native_instances": instances,
-        },
-    )
+        replace(design("L3-15", "持刷扫两块入固定簸箕", articles),
+                version="l3-15-overview-right-brush-v6", release=True),
+        arms=("right",), mechanism="native_rigid_brush_sweeping",
+        limitations="Rigid native bristle contact, not flexible fibers. Pan/green box anchored. Brush is free and rests against the box, no attachment. Real setup's pan fixation was not measured.",
+        facts="From overview: gray dustpan on LEFT, green box on RIGHT, brush leaning against the box's LEFT side with handle high and bristles down, TWO blue 20 mm cubes between pan and brush. The pan mouth faces RIGHT and is fixed. RIGHT picks the brush near its narrow upper handle, brings bristles to table height and sweeps both cubes through the thin lip. LEFT observes only and must not touch the pan. Do not move cubes with the gripper itself. Once both cubes rest inside the pan, put down the brush on the table or against the box and release.",
+        parameters={"table_z": TABLE_Z, "hold_s": 0.0, "count": 2, "required": 2,
+                    "pan_floor_z": 0.0013, "native_instances": instances})

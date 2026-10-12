@@ -48,7 +48,7 @@ def apply_l2_finger_collisions(stage, profile):
     """Keep the tapered R5 finger's concavity; a single hull closes its throat.
 
     Only the session layer is changed. Visual meshes, link mass and kinematics
-    remain the delivered R5. Applied to migrated L2 and native loose-nut tasks.
+    remain the delivered R5. Applied to every L2/L3 task, including thin tools.
     """
     from pxr import PhysxSchema, Usd, UsdPhysics
 

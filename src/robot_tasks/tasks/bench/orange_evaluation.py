@@ -1,10 +1,19 @@
-"""Score a held 50 mm lift from the initial rest; shape metrics are diagnostic."""
+"""Score a held lift, return to the original box and release; deformation is diagnostic."""
 
 import math
 
 import numpy as np
 
 from ...types import Assessment, InvalidSimulationState
+
+
+FINGER_ARM_ORDER = ("left", "right")
+
+
+def arm_finger_distances(row, arm):
+    """Distances remain serialized left/right; select the configured operator."""
+    start = 2 * FINGER_ARM_ORDER.index(arm)
+    return row["finger_distances_m"][start:start + 2]
 
 
 def motion_metrics(current, previous, dt):
@@ -77,10 +86,19 @@ class OrangeEvaluator:
         if self.initial_centroid_z is None:
             self.initial_centroid_z = float(centroid[2])
         rise = float(centroid[2] - self.initial_centroid_z)
-        held = all(d < p["finger_proximity_m"] for d in near[:2])
+        held = all(d < p["finger_proximity_m"]
+                   for d in arm_finger_distances(row, self.spec.arms[0]))
         clear = bool(row["collision_bounds_min"][2] > p["support_z"] + 0.001)
-        complete = bool(held and clear and rise >= p["lift_m"] - 1e-9)
-        self.lifted |= complete
+        lifted_now = bool(held and clear and p["lift_m"] - 1e-9 <= rise <= p["max_lift_m"] + 1e-9)
+        self.lifted |= lifted_now
+        support_xy = np.asarray(p["pedestal_pose"][:2])
+        within_box = bool(np.all(np.abs(centroid[:2] - support_xy) <= p["support_half_extents_m"]))
+        # The native recessed centre and raised rim differ by 6.5 mm.
+        on_support = bool(p["support_z"] - 0.003 <= row["collision_bounds_min"][2]
+                          <= p["table_z"] + 0.100 + 0.003)
+        released = all(d >= 0.006 for d in near)
+        complete = bool(self.lifted and within_box and on_support and released
+                        and row["centroid_speed_m_s"] < 0.05)
         strain = row["strain_p95"]
         self.peak_strain = max(self.peak_strain, strain)
         failure = ""
@@ -103,9 +121,11 @@ class OrangeEvaluator:
                 "centroid_rise_m": rise,
                 "required_rise_m": p["lift_m"],
                 "clear_of_pedestal": clear,
-                "release_required": False,
+                "release_required": True,
+                "returned_to_original_support": within_box and on_support,
+                "released": released,
                 "hold_s": 0.0,
-                "target_rule": "held segment centroid rises at least 50 mm from initial settled rest",
+                "target_rule": "held 50-200 mm lift, then original box support and release",
                 "centroid_speed_m_s": row["centroid_speed_m_s"],
                 "shape_speed_p95_m_s": row["shape_speed_p95_m_s"],
                 "peak_vertex_speed_m_s": row["speed_m_s"],
@@ -116,7 +136,7 @@ class OrangeEvaluator:
             },
             "stages": {
                 "grasped": held,
-                "lifted_50mm": complete,
+                "lifted_50mm": self.lifted, "returned_released": complete,
             },
             "goal_complete": complete,
             "process_constraints_satisfied": not bool(failure),
@@ -140,13 +160,13 @@ class OrangeEvaluator:
         elif complete:
             self.last_assessment = Assessment(
                 "succeeded",
-                "Held soft segment lifted at least 50 mm from initial rest",
+                "Soft segment lifted 5-20 cm and released on original box",
                 metrics,
             )
         else:
             self.last_assessment = Assessment(
                 "running",
-                "Waiting for a held 50 mm lift from the pedestal",
+                "Waiting for a held 5-20 cm lift, return and release on original box",
                 metrics,
             )
         return self.last_assessment

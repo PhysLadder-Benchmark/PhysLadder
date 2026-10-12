@@ -5,7 +5,9 @@ import numpy as np
 from ...asset_delivery import verified_prop
 from ...types import InvalidSimulationState
 from ..l1.scene import L1Scene
-from .orange_evaluation import deformation_metrics, motion_metrics
+from .orange_evaluation import (
+    FINGER_ARM_ORDER, arm_finger_distances, deformation_metrics, motion_metrics,
+)
 
 
 class OrangeScene:
@@ -14,7 +16,7 @@ class OrangeScene:
     add_part = L1Scene.add_part
 
     def __init__(self, backend, config, spec):
-        from pxr import PhysxSchema, Usd, UsdGeom, UsdPhysics
+        from pxr import PhysxSchema, Usd, UsdGeom, UsdPhysics, UsdShade
 
         if not backend.settings.gpu_dynamics:
             raise ValueError(
@@ -54,6 +56,19 @@ class OrangeScene:
         for part in self.design.fixtures:
             self.add_part(self.root + "/Fixture/" + part.name, part)
         self.visual = self.stage.GetPrimAtPath(self.path + "/Visual")
+        # The delivered FEM mesh has photo subsets but no mesh-level material.
+        # RTX's dynamic mesh path otherwise displays the unbound grey fallback.
+        # Keep both native photo materials; remove only non-rendering lobe groups
+        # from this session to avoid overlapping GeomSubset face assignments.
+        photo = UsdShade.Material(self.stage.GetPrimAtPath(self.path + "/Looks/FrontPhoto"))
+        if not photo:
+            raise ValueError("Delivered orange front-photo material is missing")
+        UsdShade.MaterialBindingAPI.Apply(self.visual).Bind(photo)
+        hidden_groups = []
+        for child in self.visual.GetChildren():
+            if child.IsA(UsdGeom.Subset) and child.GetAttribute("familyName").Get() == "anatomicalLobes":
+                hidden_groups.append(child.GetName())
+                child.SetActive(False)
         self.sim = self.stage.GetPrimAtPath(self.path + "/Simulation")
         self.collision = self.stage.GetPrimAtPath(self.path + "/Collision")
         from .orange_physics import apply
@@ -73,7 +88,7 @@ class OrangeScene:
 
         self.finger_paths, self.finger_surfaces = [], []
         bounds = UsdGeom.BBoxCache(0.0, ["default", "render"])
-        for arm in ("left", "right"):
+        for arm in FINGER_ARM_ORDER:
             mount = next(m for m in config.robot.mounts if m.name == arm)
             for link in ("link7", "link8"):
                 path = mount.prim_path + "/" + link
@@ -115,6 +130,12 @@ class OrangeScene:
                     "elasticity_damping",
                 )
             ),
+            "visual_material_adapter": {
+                "mesh_fallback": "native FrontPhoto",
+                "native_photo_subsets_preserved": True,
+                "nonrendering_lobe_groups_hidden": hidden_groups,
+                "source_asset_modified": False,
+            },
             "orange_physics": physics,
             "object_attachment": False,
             "contact_overrides_m": {
@@ -207,13 +228,14 @@ class OrangeScene:
     def planning_payloads(self):
         row = self.measure()["orange"]
         payloads = {a: [] for a in self.config.arms}
+        arm = self.spec.arms[0]
         if (
-            all(d < 0.003 for d in row["finger_distances_m"][:2])
+            all(d < 0.003 for d in arm_finger_distances(row, arm))
             and row["bounds_min"][2] > self.spec.parameters["support_z"] + 0.003
         ):
             from itertools import product
 
-            payloads["left"].append(
+            payloads[arm].append(
                 {
                     "surface_points_world": list(
                         product(*zip(row["bounds_min"], row["bounds_max"]))

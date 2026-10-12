@@ -9,6 +9,8 @@ class BenchTask:
     @staticmethod
     def prepare_config(config):
         spec = resolve_bench_spec(config.raw["task"], config.robot)
+        from ..completion import completion_instruction
+
         notes = ""
         if "arm_selection" in spec.parameters:
             notes = (f"\nEpisode arm assignment: use the {spec.arms[0].upper()} arm for manipulation "
@@ -45,7 +47,10 @@ class BenchTask:
         }
         return replace(
             config,
-            instruction=config.instruction + "\nDeclared prop facts and guidance:\n" + spec.facts + notes,
+            instruction=config.instruction + (
+                "" if spec.facts in config.instruction
+                else "\nDeclared prop facts and guidance:\n" + spec.facts
+            ) + notes + completion_instruction(config),
             grasp_check_mode="contact_inspection" if constrained else "lift",
             initial_state_description="Both hands start empty. Props are physically supported in the declared initial layout. No task object is pre-attached to a gripper.",
         )
@@ -53,6 +58,7 @@ class BenchTask:
     def build_scene(self, backend, config):
         from .scene import BenchScene
 
+        self.config = config
         self.spec = resolve_bench_spec(config.raw["task"], config.robot)
         if config.arms != self.spec.arms or config.observation_arms != self.spec.observers:
             raise ValueError("Scene arm roles differ from the prepared task configuration")
@@ -106,6 +112,9 @@ class BenchTask:
             return self._last_assessment
         assessment = self.evaluator.update(now, self.scene.measure())
         evidence = getattr(self.scene, "observer_evidence", lambda: {})()
+        from ..completion import require_home
+
+        assessment = require_home(assessment, state.values["robot"], self.config)
         self._last_assessment = self.observer_monitor.update(now, evidence, assessment)
         self._last_evaluation_time = now
         return self._last_assessment

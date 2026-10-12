@@ -42,20 +42,20 @@ def marker(e, rows):
         and p["cap_mouth_z"] + 0.002 < tip[2] < p["cap_end_z"]
     )
     if (
-        held(body, "left")
+        held(body, p["body_arm"])
         and tip_in_cap
         and min(np.min(rows[n]["corners"], axis=0)[2] for n in ("body", "cap"))
-        > p["table_z"] + 0.008
+        > p["support_z"] + 0.008
     ):
         e.flags.add("assembly_lifted")
     separated = gap >= 0.002
-    if separated and held(body, "left") and held(cap, "right"):
+    if separated and held(body, p["body_arm"]) and held(cap, p["cap_arm"]):
         e.flags.add("separated_while_held")
     placed = {
         name: bool(
             released(row)
             and axial_quiet(row)
-            and row["bench_force_n"] > p[name + "_mass_kg"] * 9.81 * 0.3
+            and (row["bench_force_n"] + row["fixture_force_n"]) > p[name + "_mass_kg"] * 9.81 * 0.3
         )
         for name, row in (("body", body), ("cap", cap))
     }
@@ -72,9 +72,8 @@ def marker(e, rows):
         )
     )
     complete = (
-        "assembly_lifted" in e.flags
+        separated
         and "separated_while_held" in e.flags
-        and all(placed.values())
         and not recapped
     )
     return (
@@ -86,6 +85,8 @@ def marker(e, rows):
             "current_axial_gap_m": gap,
             "placed": placed,
             "recapped": recapped,
+            "release_required": False,
+            "placement_required": False,
             "support_thresholds_n": {
                 n: p[n + "_mass_kg"] * 9.81 * 0.3 for n in ("body", "cap")
             },
@@ -100,47 +101,34 @@ def marker(e, rows):
 
 
 def books(e, rows):
-    middle = rows["middle_book"]
     p = e.spec.parameters
+    middle = rows["middle_book"]
     outward = np.asarray(p["outward_axis_world"])
-    travel = float(
-        (np.asarray(middle["pose"][:3]) - e.initial["middle_book"][:3]) @ outward
-    )
-    # The trailing corner must cross the fixed stack's exit plane. Projection
-    # includes every corner, so translating or rotating sideways cannot fake it.
-    rear_clearance = float(
-        np.min((np.asarray(middle["corners"]) - p["stack_front_world"]) @ outward)
-    )
-    extracted = rear_clearance >= p["clearance_m"] and travel >= p["minimum_travel_m"]
-    grasped = held(middle, e.spec.arms[0])
-    if extracted and grasped:
+    travel = float((np.asarray(middle["pose"][:3]) - e.initial["middle_book"][:3]) @ outward)
+    if held(middle, p["manipulation_arm"]) and travel >= p["minimum_travel_m"] - 0.002:
         e.flags.add("middle_extracted_while_held")
-    extracted_while_held = "middle_extracted_while_held" in e.flags
-    table_supported = (
-        middle["bench_force_n"] > 0.05
-        and abs(float(np.min(np.asarray(middle["corners"])[:, 2])) - p["table_z"]) < 0.005
-    )
-    # Extraction is the goal. Do not force a regrasp of a book already resting
-    # on the table, or add a stationary retention stage after a valid pull.
-    complete = extracted and extracted_while_held and (grasped or table_supported)
-    return (
-        complete,
-        {
-            "middle_extracted": bool(extracted),
-            "outward_travel_m": travel,
-            "rear_clearance_m": rear_clearance,
-            "outward_axis_world": outward.tolist(),
-            "manipulation_arm": e.spec.arms[0],
-            "held_by_manipulation_arm": grasped,
-            "table_supported": bool(table_supported),
-            "extracted_while_held": extracted_while_held,
-            "adjacent_books": "fixed fixtures; no support evaluation",
-            "release_required": False,
-            "stages": {"grasped": "middle_book" in e.touched,
-                       "fully_extracted": bool(extracted), "supported_after_extraction": bool(complete)},
-        },
-        "",
-    )
+    # Book-to-book contact alone is not support: the contact chain must reach
+    # the fixed box. Dropping the stack onto the table cannot finish this task.
+    supported = {n for n, row in rows.items() if row["fixture_force_n"] > 0.05}
+    for _ in rows:
+        supported.update(
+            n for n, row in rows.items()
+            if any(row["pair_forces"].get(other, 0.0) > 0.05 for other in tuple(supported))
+        )
+    on_box = {n for n in supported if min(c[2] for c in rows[n]["corners"])
+              >= p["support_z"] - 0.01}
+    adjacent_supported = all(n in on_box and upright(rows[n], 0.45)
+                             for n in ("upper_book", "lower_book"))
+    complete = ("middle_extracted_while_held" in e.flags
+                and travel >= p["minimum_travel_m"] - 0.002
+                and "middle_book" in on_box and adjacent_supported
+                and all(released(r) for r in rows.values()))
+    return complete, {"outward_travel_m": travel, "required_travel_m": p["minimum_travel_m"],
+        "middle_extracted": "middle_extracted_while_held" in e.flags,
+        "adjacent_books_supported": adjacent_supported,
+        "release_required": True, "complete_extraction_required": False,
+        "stages": {"visible_extraction": "middle_extracted_while_held" in e.flags,
+                   "released_supported": complete}}, ""
 
 
 def drawer(e, rows):
@@ -173,13 +161,17 @@ def drawer(e, rows):
             e.flags.add("pulled_while_held")
     else:
         pull["start"] = None
+    if travel >= p["required_open_m"] - 0.002 and "pulled_while_held" in e.flags:
+        e.flags.add("opening_reached")
+    returned = abs(travel - p["initial_open_m"]) <= p["return_tolerance_m"]
     at_stop = travel < 0.006 or travel > p["max_travel_m"] - 0.006
     impact = at_stop and np.linalg.norm(row["linear_velocity"]) > p["max_speed_m_s"]
     if impact:
         e.flags.add("drawer_speed_reference_exceeded")
     complete = (
         "pulled_while_held" in e.flags
-        and p["required_open_m"] <= travel <= p["max_travel_m"] + 0.003
+        and "opening_reached" in e.flags
+        and returned
         and released(row)
         and quiet(row)
         and not guide_deviation
@@ -195,13 +187,14 @@ def drawer(e, rows):
             "pulled_while_held": "pulled_while_held" in e.flags,
             "maximum_grasped_pull_m": pull["net_m"],
             "minimum_grasped_pull_m": p["minimum_grasped_pull_m"],
-            "opening_reached": travel >= p["required_open_m"],
+            "opening_reached": "opening_reached" in e.flags,
+            "returned_to_initial_opening": returned,
             "released": released(row),
             "quiet": bool(quiet(row)),
-            "final_state": "released and open",
+            "final_state": "pulled 50 mm, returned to initial opening, released",
             "stages": {"grasped": "drawer" in e.touched,
-                       "opened": "pulled_while_held" in e.flags and travel >= p["required_open_m"],
-                       "released_open": bool(complete)},
+                       "opened": "opening_reached" in e.flags,
+                       "returned_released": bool(complete)},
             "quality_affects_success": False,
             "impact_speed_reference_m_s": p["max_speed_m_s"],
             "peak_speed_m_s": e.peak_speeds.get("drawer", 0.0),
