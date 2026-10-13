@@ -30,7 +30,7 @@ def polyhedron(prop, index):
         points, edges = np.asarray(shape['points']), np.asarray(shape['edges'])
         error = 0.
     else:
-        radius, height = shape['radius'], shape['height']
+        radius, height = shape['radius'], shape.get('height', 0.)
         angles = np.arange(64) * (2 * np.pi / 64)
         if shape['kind'] == 'cylinder':
             rings = [(radius, -height / 2), (radius, height / 2)]
@@ -46,8 +46,8 @@ def polyhedron(prop, index):
         edges += [(j * 64 + i, (j + 1) * 64 + (i + 1) % 64)
                   for j in range(len(rings)-1) for i in range(64)]
         edges = np.array(edges)
-        if shape['axis'] == 'X': points = points[:, [2, 1, 0]]
-        if shape['axis'] == 'Y': points = points[:, [0, 2, 1]]
+        if shape.get('axis') == 'X': points = points[:, [2, 1, 0]]
+        if shape.get('axis') == 'Y': points = points[:, [0, 2, 1]]
         error = radius * (1 - np.cos(np.pi / 64)**2)
     transform = np.asarray(shape['transform'])
     return points @ transform[:3,:3].T + transform[:3,3], edges, error
@@ -116,10 +116,10 @@ def cavity_fit(prop, transform, tolerance, *, indices=None, receptacle='ripple_p
 
 
 @lru_cache(maxsize=1)
-def band_opening():
+def band_opening(prop='yellow_visor'):
     """64 native inner edges; the common open band plane is z=35 mm."""
     planes=[]
-    for shape in shapes('yellow_visor'):
+    for shape in shapes(prop):
         if not shape['name'].startswith('Band_'): continue
         points=np.asarray(shape['points']); ring=points[np.isclose(points[:,2],points[:,2].min(),atol=1e-9)]
         a,b=ring[np.argsort(np.linalg.norm(ring[:,:2],axis=1))[:2],:2]
@@ -129,8 +129,8 @@ def band_opening():
     return np.asarray(planes)
 
 
-def hook_geometry(rack_pose):
-    shape=shapes('wooden_rack')[0]
+def hook_geometry(rack_pose, prop='wooden_rack'):
+    shape=shapes(prop)[0]
     transform=pose_transform(rack_pose) @ np.asarray(shape['transform'])
     axis=transform[:3,2]; centre=transform[:3,3]
     return centre-axis*shape['height']/2, centre+axis*shape['height']/2, shape['radius']
@@ -144,7 +144,7 @@ def verify_stage(stage, roots):
         parent=stage.GetPrimAtPath(root)
         inverse=np.linalg.inv(np.asarray(cache.GetLocalToWorldTransform(parent)).T)
         for shape in shapes(prop):
-            prim=stage.GetPrimAtPath(root+'/Colliders/'+shape['name'])
+            prim=stage.GetPrimAtPath(root+'/'+shape.get('path','Colliders/'+shape['name']))
             if not prim or prim.GetTypeName().lower()!=shape['kind']:
                 raise ValueError('Native scoring collider mismatch: '+str(prim.GetPath()) if prim else root+'/'+shape['name'])
             transform=inverse @ np.asarray(cache.GetLocalToWorldTransform(prim)).T
@@ -154,6 +154,9 @@ def verify_stage(stage, roots):
                 points=np.asarray(UsdGeom.Mesh(prim).GetPointsAttr().Get())
                 if not all(np.min(np.linalg.norm(points-v,axis=1)) < 1e-7 for v in shape['points']):
                     raise ValueError('Native scoring vertices mismatch: '+str(prim.GetPath()))
+            elif shape['kind']=='sphere':
+                if not np.isclose(UsdGeom.Sphere(prim).GetRadiusAttr().Get(), shape['radius'], atol=1e-9, rtol=0):
+                    raise ValueError('Native scoring sphere mismatch: '+str(prim.GetPath()))
             else:
                 schema=UsdGeom.Cylinder(prim) if shape['kind']=='cylinder' else UsdGeom.Capsule(prim)
                 if (schema.GetAxisAttr().Get()!=shape['axis'] or

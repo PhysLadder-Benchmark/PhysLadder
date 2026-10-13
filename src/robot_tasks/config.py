@@ -174,7 +174,7 @@ def load_config(path: Path, *, depth: bool | None = None) -> TaskConfig:
         camera_profile = raw.get("simulation", {}).get("camera_profile")
         if not camera_profile or not observation["include_robot_state"] or not observation["include_feedback"]:
             raise ValueError("Observation arms require a camera profile, robot state and execution feedback")
-        rig = load_camera_rig(source.parent / camera_profile)
+        rig = load_camera_rig(source.parent / camera_profile, robot_profile=profile)
         parents = {camera.parent for camera in rig.select(cameras)}
         if not set(observation_arms).issubset(parents):
             raise ValueError("Each observation arm must carry a selected camera")

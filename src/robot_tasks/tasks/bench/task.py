@@ -45,9 +45,15 @@ class BenchTask:
         }
         return replace(
             config,
-            instruction=config.instruction + "\nDeclared prop facts and guidance:\n" + spec.facts + notes,
+            instruction=(config.instruction if spec.parameters.get("real_prompt_protocol") else
+                         config.instruction + "\nDeclared prop facts and guidance:\n" + spec.facts + notes),
             grasp_check_mode="contact_inspection" if constrained else "lift",
-            initial_state_description="Both hands start empty. Props are physically supported in the declared initial layout. No task object is pre-attached to a gripper.",
+            initial_state_description=(
+                "Both hands start empty. Props are physically supported in the declared initial layout. "
+                "No task object is pre-attached to a gripper."
+                + ("\nDocumented task setup (complements the verbatim trial instruction):\n"
+                   + config.raw["task"]["scene_context"]
+                   if spec.parameters.get("real_prompt_protocol") and config.raw["task"].get("scene_context") else "")),
         )
 
     def build_scene(self, backend, config):
@@ -104,7 +110,10 @@ class BenchTask:
         # paused frame must not re-run either stateful evaluator.
         if now == self._last_evaluation_time:
             return self._last_assessment
-        assessment = self.evaluator.update(now, self.scene.measure())
+        if self.spec.parameters.get("real_prompt_protocol"):
+            assessment = self.evaluator.update(now, self.scene.measure(), robot=state.values.get("robot", {}))
+        else:
+            assessment = self.evaluator.update(now, self.scene.measure())
         evidence = getattr(self.scene, "observer_evidence", lambda: {})()
         self._last_assessment = self.observer_monitor.update(now, evidence, assessment)
         self._last_evaluation_time = now

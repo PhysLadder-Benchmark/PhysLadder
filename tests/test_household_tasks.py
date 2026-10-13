@@ -62,7 +62,8 @@ class HouseholdTests(unittest.TestCase):
                 self.assertNotIn("reasoning_effort", cfg.raw["policy"])
                 self.assertEqual(
                     cfg.observation_arms,
-                    tuple(a for a in ("left", "right") if a not in cfg.arms),
+                    (() if spec.task_id in {"L1-08"}
+                     else tuple(a for a in ("left", "right") if a not in cfg.arms)),
                 )
                 self.assertFalse(prepared.include_depth)
                 self.assertTrue(prepared.raw["task"]["description"])
@@ -170,7 +171,7 @@ class HouseholdTests(unittest.TestCase):
         article = spec.design.articles[0]
         corners = local_corners(article)
         self.assertAlmostEqual(corners[:, 2].min(), 0.)
-        self.assertAlmostEqual(corners[:, 2].max(), .1512)
+        self.assertAlmostEqual(corners[:, 2].max(), .151)
         evaluator = BenchEvaluator(spec, {"marker": article.initial})
         evaluator.grasped.add("marker")  # Scorer fixture, not robot execution evidence.
         rows = measurement(spec)

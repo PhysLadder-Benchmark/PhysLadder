@@ -46,7 +46,7 @@ class IsaacSimBackend:
             raise ValueError("Depth capture requires a camera rig profile")
         if self.settings.camera_profile:
             from ..cameras.profile import load_camera_rig
-            self.camera_profile = load_camera_rig(config.source.parent / self.settings.camera_profile)
+            self.camera_profile = load_camera_rig(config.source.parent / self.settings.camera_profile, robot_profile=config.robot)
             if "camera_position" in config.raw.get("simulation", {}):
                 from ..cameras.overview import override_overview
                 self.camera_profile = override_overview(self.camera_profile, self.settings)
@@ -79,7 +79,7 @@ class IsaacSimBackend:
                 if not open_stage(str(self.lab_asset)):
                     raise RuntimeError(f"Could not open laboratory: {self.lab_asset}")
                 stage = omni.usd.get_context().get_stage()
-                self.environment_report = configure_stage(stage, self.camera_profile)
+                self.environment_report = configure_stage(stage, self.camera_profile, config.robot)
                 if config.task_id.startswith("L2-") or config.raw.get("task", {}).get("implementation") == "loose_nut":
                     from .tuojing_lab import apply_l2_finger_collisions
                     self.environment_report["finger_collision_overrides"] = apply_l2_finger_collisions(stage, config.robot)

@@ -64,7 +64,7 @@ class PayloadClearanceTests(unittest.TestCase):
             self.worker.check_payload('left',self.path,request,{})
 
     def rose_pickup(self, downward=False):
-        from robot_tasks.tasks.bench.l1 import flower
+        from robot_tasks.tasks.l1.specs import Article
         from robot_tasks.planning.scene import article_surface
         from robot_tasks.robots.transforms import pose_transform
 
@@ -73,7 +73,11 @@ class PayloadClearanceTests(unittest.TestCase):
         pose = [-.28030720353126526, 1.2197195291519165, .7818540334701538,
                 .2691560387611389, -.6684878468513489, .15632425248622894, -.675456702709198]
         transform = pose_transform(pose)
-        points = article_surface(flower().design.articles[0])
+        # Preserve this historical rose regression independently of L1-09,
+        # which now transfers a different tulip asset between cups.
+        article = Article('legacy_rose', (), tuple(pose), tuple(pose), .008,
+                          asset='tuojing:artificial_rose')
+        points = article_surface(article)
         world = points @ transform[:3, :3].T + transform[:3, 3]
         self.assertGreater(world[:, 2].min(), .78)
         table = trimesh.creation.box(extents=[2., 2., .08])

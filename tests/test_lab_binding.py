@@ -162,6 +162,15 @@ class LabBindingTests(unittest.TestCase):
         original = self.stage.GetRootLayer().ExportToString()
         apply_camera_mounts(self.stage, profile)
         self.assertEqual(validate_existing_camera(self.stage, spec, parent), str(camera.GetPath()))
+
+        # Real L1 calls this physical R5_Left arm "right". Camera transforms
+        # must follow the declared mount, never reconstruct a prim from its name.
+        renamed = replace(spec, name="right_wrist", parent="right")
+        robot = SimpleNamespace(mounts=(SimpleNamespace(name="right", prim_path=parent.rsplit('/', 1)[0]),))
+        apply_camera_mounts(self.stage, SimpleNamespace(cameras=(renamed,)), robot)
+        self.assertEqual(validate_existing_camera(self.stage, renamed, parent), str(camera.GetPath()))
+        with self.assertRaisesRegex(ValueError, "camera binding"):
+            apply_camera_mounts(self.stage, SimpleNamespace(cameras=(renamed,)))
         self.assertEqual(original, self.stage.GetRootLayer().ExportToString())
         cache = UsdGeom.XformCache()
         np.testing.assert_allclose(np.array(cache.GetLocalToWorldTransform(housing.GetPrim())),
@@ -238,6 +247,10 @@ class LabBindingTests(unittest.TestCase):
                                 base_pose_wxyz=(0.1, 0.2, 0.79, 1, 0, 0, 0))
         profile = SimpleNamespace(mounts=(mount,))
         validate_robot_binding(self.stage, profile)
+        mount.name = "right"  # Task-facing identity can differ from the USD name.
+        validate_robot_binding(self.stage, profile)
+        with self.assertRaisesRegex(ValueError, "distinct"):
+            validate_robot_binding(self.stage, SimpleNamespace(mounts=(mount, mount)))
         mount.base_pose_wxyz = (0., 0.42, 0.04, 1, 0, 0, 0)
         with self.assertRaisesRegex(ValueError, "base pose"):
             validate_robot_binding(self.stage, profile)

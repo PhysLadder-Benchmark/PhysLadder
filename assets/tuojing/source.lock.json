@@ -2285,6 +2285,376 @@
           "archive_sha256": "03addfd760d1025ef4bd5db80594e4ed4eaf2ce75220fad4eafd8ccd72469dfb"
         }
       ]
+    },
+    {
+      "id": "l1_mug_marker_20261011",
+      "delivery": "2026-10-11",
+      "source_document": "https://my.feishu.cn/docx/QK4EdOD3hotgp4x782ycgoyyn6g",
+      "source_revision": 67,
+      "attachment_token": "ZNP7bPV4CotcU8xc1YyceN2MnTe",
+      "archive": "杯子与可开合马克笔_仅资产_20261011.zip",
+      "archive_root": "mug_and_pullable_marker_20261011",
+      "directory": "l1_mug_marker_20261011",
+      "archive_bytes": 1765594,
+      "archive_sha256": "ebeaf1343fe51ec689567ef5a6a31078206589901b5e10fb1095f71f806d806f",
+      "files": {
+        "README_入口与状态.txt": {
+          "bytes": 1669,
+          "sha256": "d9296ffa61a3968cd65195d16e7692714526943907ce1350eedb68738289ec5f"
+        },
+        "assets/black_ceramic_mug/black_ceramic_mug.usda": {
+          "bytes": 1732951,
+          "sha256": "1234361a239d04308ed5ea78a83cecf80b89948ecf92dc934cc10f42c8bfb931"
+        },
+        "assets/black_ceramic_mug/exterior_normal.png": {
+          "bytes": 1039068,
+          "sha256": "edf7a4fe03b22daa7ae0c97c996b832650041ff13f0f954713efd8f0392efb77"
+        },
+        "assets/black_ceramic_mug/exterior_roughness.png": {
+          "bytes": 348784,
+          "sha256": "331f60adced46c0c266d87a7627c1473b8f0d5fa287f7c443134f8352f80aba8"
+        },
+        "assets/black_ceramic_mug/properties.json": {
+          "bytes": 549,
+          "sha256": "3f90e246fcbbaa2dad23ce957ef29ce93861a99d2293c93abfff12409775c80c"
+        },
+        "assets/marker_body/label.png": {
+          "bytes": 62284,
+          "sha256": "ae414077e57b68715b4109fda5bedbb675abe0c83ea454e65be155bb1a061f82"
+        },
+        "assets/marker_body/marker_body.usda": {
+          "bytes": 245542,
+          "sha256": "481985e5f8702bc8a54d17cadeb4331d95b1276c99477ea38c01ac01236226bd"
+        },
+        "assets/marker_cap/marker_cap.usda": {
+          "bytes": 553752,
+          "sha256": "e84fb30a2e873c47133c4df0e8013ec26b425fe436028a1d7fc8bf76cdca91db"
+        },
+        "assets/pullable_marker/asset.usda": {
+          "bytes": 6933,
+          "sha256": "f864739919d11717ea40ecf1bc60f623fbdba6d404703aa34adc5dcb3c560870"
+        },
+        "assets/pullable_marker/fit_parameters.json": {
+          "bytes": 1857,
+          "sha256": "04e1fb52a8a2450330d69e7eb30b8f6f2a32478b9b5257c24a48e534a1e3d0e1"
+        },
+        "manifest.json": {
+          "bytes": 2742,
+          "sha256": "6bdc3524a8a38b461deca3d2d6add2cdb9607529e9cc74d46c775bb0da2d5ec6"
+        },
+        "marker_test_result.json": {
+          "bytes": 5634,
+          "sha256": "6313aad9f04f3fb360496ffd26a8c0d43615d7ba7882665e0b890f4d9f9a70ef"
+        },
+        "mug_validation.json": {
+          "bytes": 538,
+          "sha256": "6a848cccd7e769461b0082d3a350e182ab00fdc1b642215b8428ba5560d4ea46"
+        },
+        "real_measurement_template.csv": {
+          "bytes": 99,
+          "sha256": "5a6f4e7647c727bbabe0ef1afb3ea528a377916b7cde448ac2f3c47bea706de2"
+        },
+        "阻力设计与实物标定.md": {
+          "bytes": 9155,
+          "sha256": "64d4e682efec563d59c1bd36019c0e04ab3023308bbe80e9dc2631f8c8c304f3"
+        }
+      }
+    },
+    {
+      "id": "l1_charger_20261010",
+      "delivery": "2026-10-11",
+      "source_document": "https://my.feishu.cn/docx/QK4EdOD3hotgp4x782ycgoyyn6g",
+      "source_revision": 67,
+      "attachment_token": "TNCxbnPyPoGjIwxg8iGcjyyenRb",
+      "archive": "插头_回插碰撞精度修正版_仅资产_20261010.zip",
+      "archive_root": "",
+      "directory": "l1_charger_20261010",
+      "archive_bytes": 26141,
+      "archive_sha256": "b549476a49105e91e45ea17e9704009ff0596a164770391cf2a5cc4435a9281f",
+      "files": {
+        "README_入口.txt": {
+          "bytes": 454,
+          "sha256": "ace87a9f093cb640ebda99853a1abbd269810926f566fccefb58cea235a8d7f0"
+        },
+        "SHA256.json": {
+          "bytes": 199,
+          "sha256": "12acbe972a0b48eaf5acd0839b772ea5d9d9fdd81473bc7a124cb0d52b6a4806"
+        },
+        "usb_charger/logo.png": {
+          "bytes": 5007,
+          "sha256": "134a28be5a33aa7dfdda5dea421f732e8835468226c62f6c68851af38571da9b"
+        },
+        "usb_charger/usb_charger.usda": {
+          "bytes": 150311,
+          "sha256": "eccc9cc824733bc66b339fe5a94913d2bd03e9ba077818c547387c09eeb3cf5d"
+        },
+        "原包说明_供参考.md": {
+          "bytes": 861,
+          "sha256": "a2537e9551a159307c78f067937683777b3970a70089dd898da0620d3e15a077"
+        }
+      }
+    },
+    {
+      "id": "l1_strip_20261010",
+      "delivery": "2026-10-11",
+      "source_document": "https://my.feishu.cn/docx/QK4EdOD3hotgp4x782ycgoyyn6g",
+      "source_revision": 67,
+      "attachment_token": "DKZ1b3iluoLUsOxjILzcfrwGnqc",
+      "archive": "插排_回插碰撞精度修正版_仅资产_20261010.zip",
+      "archive_root": "",
+      "directory": "l1_strip_20261010",
+      "archive_bytes": 80454,
+      "archive_sha256": "57fe50f2a5917626ae10fd02be89ab4ec941f719eb70b45fc0ad01ee893c3715",
+      "files": {
+        "README_入口.txt": {
+          "bytes": 454,
+          "sha256": "2916f76e562b62846308a97e8a2eb8f052929072f13a87f44c38bedbc9c3ca9c"
+        },
+        "SHA256.json": {
+          "bytes": 203,
+          "sha256": "7518d260bf2faa8423f470a4c1f4209a53d7baf62f33455c56be9774594279b3"
+        },
+        "power_strip/housing.usda": {
+          "bytes": 1057700,
+          "sha256": "0ed504619c3a4a75c536adfe27c295f248f652eb46cb17c5cad08c29bd1b915f"
+        },
+        "power_strip/power_strip.usda": {
+          "bytes": 35582,
+          "sha256": "bcea3722551685153632933240bc7e708cb0140ee454f179989ceef5b926a685"
+        },
+        "原包说明_供参考.md": {
+          "bytes": 861,
+          "sha256": "a2537e9551a159307c78f067937683777b3970a70089dd898da0620d3e15a077"
+        }
+      }
+    },
+    {
+      "id": "l1_rack_20261011",
+      "delivery": "2026-10-11",
+      "source_document": "https://my.feishu.cn/docx/QK4EdOD3hotgp4x782ycgoyyn6g",
+      "source_revision": 67,
+      "attachment_token": "MyY3bBzWzoH6cBxPshFcNo24ng6",
+      "archive": "木质挂架_仅资产_20261011.zip",
+      "archive_root": "",
+      "directory": "l1_rack_20261011",
+      "archive_bytes": 608751,
+      "archive_sha256": "06c2954a10e2e7e95f4268162d48f651e6222f279b2f6ee512e9c5b40d83b048",
+      "files": {
+        "SHA256.json": {
+          "bytes": 213,
+          "sha256": "b2ff09761bfd9399b8ea8fd64339ebfc454c993d7688163d13e25f782266fc3f"
+        },
+        "assets/wooden_rack/wood.png": {
+          "bytes": 474080,
+          "sha256": "9757a96e5b70af3e731112cada04aaf528aa338de60dd0a3e4d1ae9dce12364a"
+        },
+        "assets/wooden_rack/wooden_rack.usda": {
+          "bytes": 476429,
+          "sha256": "4a26eb6b72f00b437c1af93ee04d76c7eca664c35c8e88cc3c5f425dc181a966"
+        },
+        "properties.json": {
+          "bytes": 1737,
+          "sha256": "843730446adbd2d4172e3842c2f4042ed68ecebf461a0253e8bcb7b2e53c17d5"
+        },
+        "使用说明.txt": {
+          "bytes": 676,
+          "sha256": "a947f88e4bcd3b2c7d2c5177e89f2c04f66c07e43dda8a33716ef1b57c6589ac"
+        }
+      }
+    },
+    {
+      "id": "l1_visor_20261011",
+      "delivery": "2026-10-11",
+      "source_document": "https://my.feishu.cn/docx/QK4EdOD3hotgp4x782ycgoyyn6g",
+      "source_revision": 67,
+      "attachment_token": "D4rRb1o8SoXkVDxcvfccHtu6nsg",
+      "archive": "黄色空顶帽_仅资产_20261011.zip",
+      "archive_root": "",
+      "directory": "l1_visor_20261011",
+      "archive_bytes": 1464273,
+      "archive_sha256": "94bcd3384a00d2d9cb3d546f109f2ad1711be0df2dbf162dfb258a417fca4ccb",
+      "files": {
+        "SHA256.json": {
+          "bytes": 319,
+          "sha256": "116880560011d45cd12744f9e4d66c928436ab818b6835013dfeb1017acba361"
+        },
+        "assets/yellow_visor/band.png": {
+          "bytes": 488344,
+          "sha256": "09ea27b874b6d8c3f6d6e25498f1f8c942f441c53b019e72033506b7e7e6c625"
+        },
+        "assets/yellow_visor/cloth.png": {
+          "bytes": 493935,
+          "sha256": "d89a8fa45ac8ae90323d189635eaac244a9c84a2459ba2b013802839e5eb539a"
+        },
+        "assets/yellow_visor/yellow_visor.usda": {
+          "bytes": 2189812,
+          "sha256": "42dda043d68f7b7a52adbe02f8d304a442c9d6f41f5a96c85b5ae668e6c3e3a4"
+        },
+        "properties.json": {
+          "bytes": 2050,
+          "sha256": "2e8d2849ad8e118af8e0bfaddab4cfe563f6edca243edc3fe703d3db8820383a"
+        },
+        "使用说明.txt": {
+          "bytes": 662,
+          "sha256": "5f1ccfe336960611558179782ebc10a27c18d85d2963daed1ec0ed736c6e1eba"
+        }
+      }
+    },
+    {
+      "id": "l1_box_20261011",
+      "delivery": "2026-10-11",
+      "source_document": "https://my.feishu.cn/docx/QK4EdOD3hotgp4x782ycgoyyn6g",
+      "source_revision": 67,
+      "attachment_token": "UETDb4eg3o4Sdyxr9QvcOQSln1f",
+      "archive": "绿盒子_资产_20261011_高度10cm.zip",
+      "archive_root": "绿盒子",
+      "directory": "l1_box_20261011",
+      "archive_bytes": 4553393,
+      "archive_sha256": "b5c88710232122b86126efc2879cdcfeef72379c9b52ddd612c20401a2ab796d",
+      "files": {
+        "assets/green_support_box/green_support_box.usda": {
+          "bytes": 519891,
+          "sha256": "1308310ccf4a08acfe6727579416b4b7bde29af3b693f5ac64265275adeb6701"
+        },
+        "assets/green_support_box/molded_plastic_base.png": {
+          "bytes": 22059,
+          "sha256": "e018d2722bcd811382718e7f3dc5ca5225d3b2e0a7c37b09a03a9e9423ba0ab5"
+        },
+        "assets/green_support_box/molded_plastic_normal.png": {
+          "bytes": 3230393,
+          "sha256": "89dc699a50c2e098c8d5b90e661b901863b81c5ed31c171369b7bb6869823ec9"
+        },
+        "assets/green_support_box/molded_plastic_roughness.png": {
+          "bytes": 1260060,
+          "sha256": "5a88ed9a4d8cf9963a4018a9b6a80d687f408d8607a5293a3b58c6215404a8e6"
+        },
+        "assets/green_support_box/properties.json": {
+          "bytes": 1151,
+          "sha256": "29c361bd2d536125ee6cf4620d3633ee99aa78c40cda7cddbc93f5019870357d"
+        },
+        "使用说明.txt": {
+          "bytes": 371,
+          "sha256": "8d7032498c24e94aa7f8e13868d869a12ed95a6a3a8c91ad343c343ba0ebe339"
+        },
+        "原包说明_供参考.txt": {
+          "bytes": 2733,
+          "sha256": "599e103e1cf9e61e2bac06748df3f11909074b8efbaabd24ab4fc0037476a727"
+        }
+      }
+    },
+    {
+      "id": "l1_cup_20261011",
+      "delivery": "2026-10-11",
+      "source_document": "https://my.feishu.cn/docx/QK4EdOD3hotgp4x782ycgoyyn6g",
+      "source_revision": 67,
+      "attachment_token": "EjfTbNM0ooGcYXxdBrtcKp5EnRd",
+      "archive": "纸杯_颜色修正版_仅资产_20261011.zip",
+      "archive_root": "",
+      "directory": "l1_cup_20261011",
+      "archive_bytes": 651415,
+      "archive_sha256": "3955f6405933ee4e01db2dacc4d844c2bb6ea285ba0cf65881703e6a1f77d5da",
+      "files": {
+        "SHA256.json": {
+          "bytes": 408,
+          "sha256": "8667daaf2a7923be2e8fe4ffb20addfcffed1107012e2ebc5bfcf7b3dba667ea"
+        },
+        "assets/ripple_paper_cup/ripple_paper_cup.usda": {
+          "bytes": 3949255,
+          "sha256": "1687ee33c091015a97f41b8d0d93fe0912e0f93eeb66eb59be6ac67ccde36de0"
+        },
+        "qa/audit.json": {
+          "bytes": 689,
+          "sha256": "2c385749154c44223ef0c935c53bca8ff1c18a450107aa89af1dabf27fa06698"
+        },
+        "qa/material_changes.json": {
+          "bytes": 791,
+          "sha256": "780edfac720804e4f223da648e5fe7f53dfae698bd3bd686b0f1265328162c3b"
+        },
+        "使用说明.txt": {
+          "bytes": 1403,
+          "sha256": "ebe69024cd8790b3afbb06f8c7eb20908a88d465566a88b22beed1054c5113d7"
+        }
+      }
+    },
+    {
+      "id": "l1_tulip_20261011",
+      "delivery": "2026-10-11",
+      "source_document": "https://my.feishu.cn/docx/QK4EdOD3hotgp4x782ycgoyyn6g",
+      "source_revision": 67,
+      "attachment_token": "M0i9bH3nMoLLzSxHaDEcl7S4noH",
+      "archive": "奶白色郁金香_30cm_照片对照版_仅资产_20261011.zip",
+      "archive_root": "",
+      "directory": "l1_tulip_20261011",
+      "archive_bytes": 1823886,
+      "archive_sha256": "fb447b6c304af8a180c9ac792f7fc7a7298f82f22c1390599f28a642f4e9d69b",
+      "files": {
+        "assets/cream_tulip/cream_tulip.usda": {
+          "bytes": 6117347,
+          "sha256": "07910dfd0543532e1033b57a7b94dd6069e94933efc340440267c2cbcaf9e05e"
+        },
+        "parameters.json": {
+          "bytes": 173,
+          "sha256": "75a8d2440aad72461af7411adfc3259162c405d90a820f699e61b9d1b05a5426"
+        },
+        "使用说明.txt": {
+          "bytes": 869,
+          "sha256": "bda4970705b3c24756a177901249646d250b9f1da214727fdf68f859bdd616a3"
+        }
+      }
+    },
+    {
+      "id": "glass_marbles_20261011",
+      "delivery": "2026-10-11",
+      "source_document": "https://my.feishu.cn/docx/QK4EdOD3hotgp4x782ycgoyyn6g",
+      "source_sheet": "Vhw6spSo1hC5MXtq2L1cLrSTnyb/I9RXyJ!9:9",
+      "attachment_token": "B4qFb7tx1owHtfxqDyDc0vajn5c",
+      "archive": "玻璃小弹珠_16mm_五种配色_仅资产_20261011.zip",
+      "archive_root": "",
+      "directory": "glass_marbles_20261011",
+      "archive_bytes": 1860703,
+      "archive_sha256": "811abd996b8d67d0807969818d43a0ef96be5ae68eb27252795658917156794e",
+      "files": {
+        "SHA256.json": {
+          "bytes": 991,
+          "sha256": "11df9f61cc97337c4e9752bcf463dfb3cfecc9d50e6fec291282ea327b4c147b"
+        },
+        "assets/glass_marble_16mm.usda": {
+          "bytes": 206,
+          "sha256": "a62802839ce3e1e2e818c6c2d795d368b6e40d859165ea603092470d11df3865"
+        },
+        "assets/marble_aqua_blue/marble_aqua_blue.usda": {
+          "bytes": 1651933,
+          "sha256": "12c60e8ac8eea48071415f8714192ccce503652491d33827d1a7f1d1634d93c6"
+        },
+        "assets/marble_clear_mint/marble_clear_mint.usda": {
+          "bytes": 1269784,
+          "sha256": "bf317136f7dacad0a14056bab4c6a697b435819382e5e60656ae323006ed413f"
+        },
+        "assets/marble_emerald_green/marble_emerald_green.usda": {
+          "bytes": 1651934,
+          "sha256": "570d537e0700e56820f6ef0cd9edd3529198dd474e68d99a91f404e9145810cf"
+        },
+        "assets/marble_red_white/marble_red_white.usda": {
+          "bytes": 2419835,
+          "sha256": "bb81840c2304099122a370ac7090e7a1ad96de7f114c9caa90486ffb60fffa16"
+        },
+        "assets/marble_yellow_green/marble_yellow_green.usda": {
+          "bytes": 2036211,
+          "sha256": "fffe7d88f07e88be241a8ecb24ba5f5e05e0502ba51be0ec79ba22e19010c409"
+        },
+        "assets/marbles_11.usda": {
+          "bytes": 3559,
+          "sha256": "c8ef178ac9ffe1d629d18c13f68e093418f249e3320348d28571af1f720f03d6"
+        },
+        "parameters.json": {
+          "bytes": 1002,
+          "sha256": "699a272c741e6a5461b193799ea5b024849799a9b6455b25ecfffa542cbdbbba"
+        },
+        "使用说明.txt": {
+          "bytes": 2255,
+          "sha256": "af373dad759ce82c52f082bb6d0ec93c509566bddfbad027bd9c83e3b3bea659"
+        }
+      }
     }
   ]
 }

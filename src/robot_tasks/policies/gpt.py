@@ -78,6 +78,8 @@ class GPTPolicy:
         from ..config import ExecutionSettings
         self.instructions += f" Combined motion/gripper timing: {ExecutionSettings.from_config(config).gripper_timing}."
         self.instructions += f" Arm roles: {json.dumps(config.arm_roles)}. Only manipulation arms may manipulate task objects. Fixed arms must remain still."
+        if config.task_id == "L1-08" and config.raw["task"].get("arm_selection") == "real_prompt":
+            self.instructions += " Sequential-arm interface: issue commands for only one arm in each decision."
         if config.observation_arms:
             observation_advice = (
                 "If the available views do not clearly show the grasp, working end, target opening or "

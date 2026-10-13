@@ -27,6 +27,9 @@ def validate_action(action: Action, config: TaskConfig, *, require_control_durat
         raise ValueError("This scaffold uses a fixed control_dt_s per action")
     if action.request_stop and action.commands:
         raise ValueError("A stop request cannot contain commands")
+    if (config.task_id == "L1-08" and config.raw["task"].get("arm_selection") == "real_prompt"
+            and len({c.arm for c in action.commands}) > 1):
+        raise ValueError("Real L1-08 protocol permits commands to only one arm at a time")
     if action.depth_queries:
         from .cameras.depth import validate_depth_queries
         if not config.include_depth or not config.include_feedback or action.commands or action.request_stop:

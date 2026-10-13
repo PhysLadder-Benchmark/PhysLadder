@@ -15,15 +15,15 @@ class L1ProtocolTests(unittest.TestCase):
             self.assertTrue(spec.implemented)
             self.assertEqual(config.robot.source.name, "r5_tuojing_lab_l1.toml")
             self.assertEqual(config.cameras, reference.cameras)
-            manipulator = "right" if name in {"L1-01", "L1-03"} else "left"
-            observer = "left" if manipulator == "right" else "right"
-            self.assertEqual(config.arm_roles, {manipulator: "manipulation", observer: "observation"})
+            roles = {"left": "manipulation", "right": ("manipulation" if name == "L1-08" else
+                     "observation")}
+            self.assertEqual(config.arm_roles, roles)
             for section in ("observation", "policy", "recording"):
                 self.assertEqual(config.raw[section], reference.raw[section], (name, section))
             execution = dict(config.raw["execution"])
             self.assertEqual(execution, reference.raw["execution"])
             self.assertNotIn("policy_options", config.raw)
-            self.assertEqual(config.observation_arms, (observer,))
+            self.assertEqual(config.observation_arms, tuple(a for a, role in roles.items() if role == "observation"))
             self.assertFalse(config.include_depth)
             self.assertEqual(ExecutionSettings.from_config(config).max_decisions, 100)
             self.assertNotIn("reasoning_effort", config.raw["policy"])
@@ -32,5 +32,8 @@ class L1ProtocolTests(unittest.TestCase):
             prompt = BenchTask.prepare_config(config).instruction
             self.assertNotIn("metadata", prompt)
             self.assertNotIn("sha256", prompt)
-            self.assertIn("observation arm", prompt)
+            if name == "L1-05":
+                self.assertIn("observation arm", prompt)
+            else:
+                self.assertEqual(prompt, config.instruction)
             self.assertNotIn("keep the other arm still", prompt)

@@ -8,7 +8,7 @@ def require_lab_assets():
     return verified_shared("lab")
 
 
-def configure_stage(stage, camera_profile=None):
+def configure_stage(stage, camera_profile=None, robot_profile=None):
     """Only session-layer overrides; original lab coordinates remain authoritative."""
     from pxr import UsdGeom, UsdPhysics
 
@@ -18,7 +18,7 @@ def configure_stage(stage, camera_profile=None):
     scenes = [str(p.GetPath()) for p in stage.Traverse() if p.IsA(UsdPhysics.Scene)]
     if scenes != ["/World/PhysicsScene"]:
         raise ValueError(f"Unexpected laboratory physics scenes: {scenes}")
-    camera_overrides = apply_camera_mounts(stage, camera_profile) if camera_profile else {}
+    camera_overrides = apply_camera_mounts(stage, camera_profile, robot_profile) if camera_profile else {}
     # Decorative props are not benchmark task objects. Task adapters add their
     # own physical objects and scoring without changing the source delivery.
     disabled = []
@@ -82,7 +82,7 @@ def apply_l2_finger_collisions(stage, profile):
     return overrides
 
 
-def apply_camera_mounts(stage, profile):
+def apply_camera_mounts(stage, profile, robot_profile=None):
     """Apply requested extrinsics to optics AND housings, only in the session layer.
 
     Wrist sensors remain children of link6. The overview's configured pose
@@ -110,9 +110,11 @@ def apply_camera_mounts(stage, profile):
         xform.ClearXformOpOrder()
         xform.AddTransformOp().Set(Gf.Matrix4d((np.linalg.inv(parent) @ transform).T.tolist()))
 
+    mounts = ({m.name: m.prim_path for m in robot_profile.mounts} if robot_profile else
+              {name: f"/World/Robots/R5_{name.title()}" for name in ("left", "right")})
     changes = {}
     for spec in profile.cameras:
-        parent = "/World" if spec.parent == "world" else f"/World/Robots/R5_{spec.parent.title()}/link6"
+        parent = "/World" if spec.parent == "world" else mounts[spec.parent] + "/link6"
         expected = "/World/Cameras/ThirdPerson" if spec.parent == "world" else parent + "/WristSensor/Sensor/Camera"
         if spec.existing_prim_path != expected:
             raise ValueError(f"{spec.name}: unexpected laboratory camera binding")
@@ -172,10 +174,13 @@ def validate_robot_binding(stage, profile):
     from ..robots.transforms import pose_transform
 
     cache = UsdGeom.XformCache()
+    paths = [m.prim_path for m in profile.mounts]
+    if len(paths) != len(set(paths)):
+        raise ValueError("Laboratory arm bindings must be distinct")
     for mount in profile.mounts:
-        expected = f"/World/Robots/R5_{mount.name.title()}"
-        if mount.prim_path != expected:
-            raise ValueError("tuojing_lab_v4 requires configs/robots/r5_tuojing_lab.toml")
+        expected = mount.prim_path
+        if expected not in {"/World/Robots/R5_Left", "/World/Robots/R5_Right"}:
+            raise ValueError("tuojing_lab_v4 requires delivered laboratory arm prims")
         root = stage.GetPrimAtPath(expected)
         if not root:
             raise ValueError(f"Missing laboratory arm: {expected}")

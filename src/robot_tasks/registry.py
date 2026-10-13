@@ -56,6 +56,9 @@ def catalogue(directory: Path) -> dict[str, TaskSpec]:
                 # Loading resolves automatic roles and validates observer cameras.
                 resolved = load_config(path)
                 arms = len(resolved.arms)
+                from .tasks.bench.arm_selection import resolve_bench_spec
+
+                design = resolve_bench_spec(resolved.raw["task"], resolved.robot)
             elif tuple(data["robot"]["active_arms"]) != design.arms:
                 raise ValueError(
                     f"{task_id}: configured arms do not match physical task"

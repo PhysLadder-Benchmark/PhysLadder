@@ -111,7 +111,8 @@ class AssetLayoutTests(unittest.TestCase):
 
     def test_all_current_task_assets_are_mapped(self):
         from robot_tasks.paths import PROJECT_ROOT
-        from robot_tasks.tasks.bench.spec import build_spec
+        from robot_tasks.tasks.bench.arm_selection import resolve_bench_spec
+        from robot_tasks.config import load_config
         from robot_tasks.tasks.screw.nut import nut_spec
         import tomllib
 
@@ -120,8 +121,11 @@ class AssetLayoutTests(unittest.TestCase):
         for bundle in bundles(root):
             mapped.setdefault(bundle.destination.parent.name, set()).add(bundle.asset)
         for config in (PROJECT_ROOT / "configs/tasks").glob("*.toml"):
+            if config.name.endswith(".local.toml"):
+                continue  # Untracked personal diagnostics are not the task catalog.
             task = tomllib.loads(config.read_text(encoding="utf-8"))["task"]["id"]
-            spec = nut_spec() if task == "L3-05" else build_spec(task)
+            cfg = load_config(config)
+            spec = nut_spec() if task == "L3-05" else resolve_bench_spec(cfg.raw["task"], cfg.robot)
             assets = {a.asset.split(":", 1)[1] for a in spec.design.articles
                       if a.asset.startswith("tuojing:")}
             if spec.design.fixture_asset.startswith("tuojing:"):

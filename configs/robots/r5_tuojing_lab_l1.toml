@@ -1,3 +1,5 @@
+# L1 real-trial arm names: left = overview RIGHT; right = overview LEFT.
+# USD prim names are delivery identifiers, not the task-facing arm names.
 # L1-only zero-width thin-object grasp profile imported from master.
 # L2/L3 keep their existing common or small-part profiles and limits.
 # L20 lab 2026-10-05 v4: base poses from USD; all six arm joints start at zero.
@@ -40,12 +42,12 @@ width_limits_m = [0.0, 0.070]
 joint_scale = [0.5, 0.5]
 joint_offset_m = [0.0, 0.0]
 
-[arms.left]
+[arms.right]
 prim_path = "/World/Robots/R5_Left"
 base_pose_wxyz = [-0.02470371669496446, 1.5628988169384406, 0.79, 0.7071067811865476, 0.0, 0.0, -0.7071067811865475]
 home_positions_rad = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
-[arms.right]
+[arms.left]
 prim_path = "/World/Robots/R5_Right"
 base_pose_wxyz = [0.41600614770047356, 1.5628988169384406, 0.79, 0.7071067811865476, 0.0, 0.0, -0.7071067811865475]
 home_positions_rad = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]

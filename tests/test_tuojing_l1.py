@@ -27,33 +27,33 @@ class NativeTaskScoringTests(unittest.TestCase):
         spec = build_spec("L1-01")
         mug = pose_transform(spec.design.fixture_pose)
         pen = spec.design.articles[0]
-        self.assertEqual(spec.design.fixture_asset, "tuojing:black_ceramic_mug")
+        self.assertEqual(spec.design.fixture_asset, "tuojing:black_ceramic_mug_20261011")
         # From the table front, +X is image right and -Y points toward the viewer.
         self.assertGreater(pen.initial[0], mug[0, 3])
         self.assertAlmostEqual(pen.initial[1], mug[1, 3])
         np.testing.assert_allclose(mug[:3, 0], [0, -1, 0], atol=1e-8)
-        planes, floor, rim = cup_cavity('black_ceramic_mug')
+        planes, floor, rim = cup_cavity('black_ceramic_mug_20261011')
         self.assertAlmostEqual(floor, .007)
         self.assertAlmostEqual(rim, .090)
         # The mug bulges below its mouth. A single cylinder/frustum would lose this.
         bulge = np.array([.045, 0, .045])
         self.assertGreater(np.min(planes[:,3] - planes[:,:3] @ bulge), 0)
-        fit = lambda t: cavity_fit('whiteboard_marker', t, .001, receptacle='black_ceramic_mug')[0]
+        fit = lambda t: cavity_fit('capped_marker_20261011', t, .001, receptacle='black_ceramic_mug_20261011')[0]
         self.assertTrue(fit(pose_transform(pose(0, 0, floor))))
         # Fits this mug, but not the old paper cup. No enlargement of tolerance.
         near_rim = pose_transform(pose(.031, 0, .075))
         self.assertTrue(fit(near_rim))
-        self.assertFalse(cavity_fit('whiteboard_marker', near_rim, .001)[0])
+        self.assertFalse(cavity_fit('capped_marker_20261011', near_rim, .001)[0])
         for xyz in ((0, 0, .004), (0, 0, .10), (.045, 0, .075), (.06, 0, .007)):
             with self.subTest(xyz=xyz):
                 self.assertFalse(fit(pose_transform(pose(*xyz))))
 
     def test_rigid_rose_requires_release_support_and_native_stem_inside_cup(self):
         spec = build_spec("L1-09")
-        article, = spec.design.articles
-        self.assertEqual(article.asset, "tuojing:artificial_rose")
+        article, source_cup, source_guide = spec.design.articles
+        self.assertEqual(article.asset, "tuojing:cream_tulip_20261011")
         self.assertEqual(spec.joints, ())
-        self.assertEqual(spec.design.fixture_asset, "tuojing:ripple_paper_cup")
+        self.assertEqual(spec.design.fixture_asset, "tuojing:ripple_paper_cup_20261011")
         e = BenchEvaluator(spec, {article.name: article.initial})
         rows = measurement(spec)
         r = rows["rose"]
@@ -81,7 +81,7 @@ class NativeTaskScoringTests(unittest.TestCase):
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
         rows = measurement(spec)
         r = rows["rose"]
-        # The real 2.1-mm stem may rest near the inner wall; using its larger
+        # The new 3.8-mm stem may rest near the inner wall; using its larger
         # planner-clearance envelope for scoring would reject this placement.
         r["pose"] = list(pose(spec.parameters["vase_xy"][0] + .024,
                               spec.parameters["vase_xy"][1], spec.parameters["floor"] + .001,
@@ -138,8 +138,8 @@ class NativeTaskScoringTests(unittest.TestCase):
         np.testing.assert_allclose(charger.initial[:2], base.initial[:2])
         np.testing.assert_allclose(strip[:3, 1], [-1, 0, 0], atol=1e-8)
         np.testing.assert_allclose(pose_transform(charger.initial)[:3, 2], [0, 0, 1])
-        self.assertGreater(charger.initial[2] + .018, base.initial[2] + .020)
-        self.assertLess(charger.initial[2], base.initial[2] + .020)
+        self.assertGreater(charger.initial[2] + .018, base.initial[2] + .045)
+        self.assertLess(charger.initial[2], base.initial[2] + .045)
 
     def test_cup_rim_balancing_and_interpenetration_do_not_count_as_nesting(self):
         spec = build_spec("L1-08")

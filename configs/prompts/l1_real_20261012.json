@@ -1,0 +1,66 @@
+{
+  "document_url": "https://my.feishu.cn/docx/QK4EdOD3hotgp4x782ycgoyyn6g",
+  "document_revision": 69,
+  "spreadsheet_token": "Vhw6spSo1hC5MXtq2L1cLrSTnyb",
+  "sheet_id": "KnU45L",
+  "sheet_revision": 190,
+  "fetched_date": "2026-10-12",
+  "scope": "Verbatim real-trial instruction summaries and scene descriptions; not the full hardware prompt/history. User clarified L1-07 uses the earlier right-side box photo; L1-09 follows latest real setup.",
+  "tasks": {
+    "L1-01": {
+      "cell": "D3",
+      "instruction": "左臂拿起粗记号笔，放入宽口杯；松爪撤离后确认笔独立留杯、杯子稳定，再双臂回位。",
+      "scenario_cell": "C3",
+      "scenario": "白板笔入固定黑色陶瓷杯。带帽白板笔长约151 mm，竖直立在画面右侧桌面；黑色白内壁陶瓷杯位于左侧，杯口朝上、杯柄朝桌前，杯高约90 mm、内口直径约85 mm，两者中心相距约300 mm。笔可自由移动，杯固定。左臂操作，右臂提供补充视角。保持笔帽不拆，将笔任一端真正送入杯腔即可。",
+      "notes_cell": "K3",
+      "source_notes": "2026-10-07总第9轮；无场景人工介入。31.699秒静止录像缺口已标注；本轮不代表细笔小孔。 统计口径：仅本轮，非历史累计；调用数为资源窗口内按 response ID 去重的响应数，非动作数，未与仿真口径对齐；耗时含准备、观察与等待。",
+      "scene_context": "带帽白板笔竖立在画面右侧桌面，黑色白内壁宽口杯位于左侧、杯口朝上、杯柄朝桌前，两者约相距 30 cm。杯固定，笔可自由移动，保持笔帽不拆。左臂操作，右臂仅提供观察、不扶杯；允许右臂为补充视角移动，完成后双臂回位。任一笔端真正进入主杯腔即可，不要求精密深度；按本轮提示词还需松爪撤离，使笔独立留在杯内。"
+    },
+    "L1-03": {
+      "cell": "D5",
+      "instruction": "左臂拿起充电头，插入最靠近左臂的指定插位，松爪撤离后确认稳定；只做机械插接。",
+      "scenario_cell": "C5",
+      "scenario": "USB充电器插入固定插线板。白色充电器竖直放在画面右侧的黑色凹槽底座中，插脚朝下、塑料外壳上部露出；底座自由放置，不与充电器或桌面固定。白色插线板固定在左侧桌面，长边沿画面左右方向、孔口朝上，线缆盘在后方；两者中心相距约330 mm。左臂操作，右臂提供补充视角。先将充电器竖直拔离底座，再对准插线板中间蓝色双孔，使两片插脚分别真正进入对应孔。允许浅插和继续夹持，不要求完全落座、松手或通电；仅对准、碰到面板或只进入一片插脚不算成功。",
+      "notes_cell": "K5",
+      "source_notes": "2026-10-05第11轮；中途人工重摆并增加金属件。四次局部抓取仍计一轮；时长含准备，非仅保持阶段。 统计口径：仅本轮，非历史累计；调用数为资源窗口内按 response ID 去重的响应数，非动作数，未与仿真口径对齐；耗时含准备、观察与等待。",
+      "scene_context": "白色两脚充电头竖放右侧黑色凹槽托座，插脚朝下、上部外壳露出；托座自由放置。固定插线板位于左侧，长边横向，孔口朝上，线缆盘在后方。目标是中间蓝色双孔，左臂先将充电头拔离托座，再使两片插脚分别实际进入对应孔；只对准或仅进入一脚不算完成，不要求完全落座或通电。右臂仅用于补充观察、不接触物体。场景栏允许继续夹持，但本轮指令明确要求松爪撤离，因此本轮以释放并独立稳定为完成条件。"
+    },
+    "L1-07": {
+      "cell": "D9",
+      "instruction": "左臂抓帽子另一侧，将帽圈套到最低挂杆，松爪撤开并确认独立挂稳；双臂不得干涉。",
+      "scenario_cell": "C9",
+      "scenario": "黄色空顶遮阳帽挂架。初始放在画面左侧、木架旁的四个45 mm高被动支撑块上，以露出帽檐下方供夹取，帽子未固定。82 cm高木架固定在桌面，最低斜挂杆已转向左臂便于接近。左臂夹起整顶帽子，右臂观察；将椭圆头孔套过最低挂杆的圆头，并松手，使帽带由该挂杆承托。允许自然晃动，不要求额外稳定等待；仅搭在杆尖、挂到其他杆或靠夹爪托住不算成功。",
+      "notes_cell": "K9",
+      "source_notes": "2026-10-11第13轮；中途人工转帽。历史第4轮为人工预置和调整后的条件内成功，不计入本行。 统计口径：仅本轮，非历史累计；调用数为资源窗口内按 response ID 去重的响应数，非动作数，未与仿真口径对齐；耗时含准备、观察与等待。",
+      "scene_context": "按用户确认的真机照片：固定木架在左、黄色空顶帽在右侧蓝绿色盒面，帽子未固定。左臂拿整顶帽子，使头孔套过最低实际挂杆的圆头，松爪撤开，由该杆独立承托；允许自然晃动，不需要额外静止等待。右臂仅观察，双臂不得干涉。指令中的“另一侧”指上一轮抓点的对侧，但本次是独立初始化，未提供上一轮抓点；不能臆造抓点或据此加隐藏评分条件。应根据当前观测选择可抓且不妨碍穿杆的一侧。"
+    },
+    "L1-08": {
+      "cell": "D11",
+      "instruction": "左臂将第一杯放稳并回位；右臂拿起第二杯套叠，完全释放，确认独立稳定后回位。",
+      "scenario_cell": "C11",
+      "scenario": "两个相同波纹纸杯套叠。两只空杯初始均竖直、杯口朝上，均可自由移动，未固定。待搬杯位于画面左后侧、较靠左臂；接收杯位于右前侧、较靠相机。杯高约108 mm、外口直径约85 mm。左臂抓第一杯放到中央，释放回位；右臂再抓第二杯套入第一杯，释放撤离后确认稳定并回位，一次只动一臂。完成要求为上杯实际进入下杯、由下杯承托且已释放，套叠关系稳定。不要求指定绕竖轴朝向或严格居中；只张爪但杯子仍卡在指间不算完成。",
+      "notes_cell": "K11",
+      "source_notes": "2026-10-07第7轮；工作阶段无人工抓放。实际为双臂顺序操作，与仿真单臂搬杯设置不同；第6轮失败另存。 统计口径：仅本轮，非历史累计；调用数为资源窗口内按 response ID 去重的响应数，非动作数，未与仿真口径对齐；耗时含准备、观察与等待。",
+      "scene_context": "两只相同纸杯均直立且可自由移动。画面右前方的杯为第一杯（机器人左臂侧）、左后方的杯为第二杯（机器人右臂侧）。左臂先把第一杯朝第二杯方向搬近，放到两杯之间的中央交接区域，放稳、完全释放并回位；随后右臂拿第二杯套进已摆好的第一杯，释放并回位。一次只操作一臂。中央是宽泛交接区域，不要求精密落点、严格中心对齐、固定套叠深度或绕竖轴朝向；上杯实际进入下杯且独立承托稳定即可。原地提起后原地放回没有完成第一阶段的搬近要求。"
+    },
+    "L1-09": {
+      "cell": "D13",
+      "instruction": "从当前源杯自动取花，将花杆放入目标纸杯，松爪撤离后确认独立稳定，再双臂回位。",
+      "scenario_cell": "C13",
+      "scenario": "白色仿真花初始置于离左臂近的源纸杯（含白色充电头的源纸杯），左臂自主取花，插入另一离右臂近的纸杯（含玻璃弹珠和白色珍珠的纸杯）；执行中确认目标杯内有彩色填充物（玻璃弹珠，白色珍珠，白色充电头）。右臂辅助观察。要求释放后花和杯独立稳定。",
+      "notes_cell": "K13",
+      "source_notes": "2026-10-10第7轮；不是仿真中的桌面刚性玫瑰／固定杯。历史第5轮人工预置成功不计入本行。 统计口径：仅本轮，非历史累计；调用数为资源窗口内按 response ID 去重的响应数，非动作数，未与仿真口径对齐；耗时含准备、观察与等待。",
+      "scene_context": "按用户对真机画面的明确更正：以 overview 相机图像为准，白色仿真花和白色充电头初始在画面右侧源纸杯；画面左侧另一纸杯为目标。画面左右不等同于机械臂名称。左臂自主取花并转移到目标杯，右臂仅辅助观察；源杯和充电头留在原处。茎端实际入杯、花头留在杯沿上方，松爪撤离后花与杯独立稳定，再双臂回位，不要求精密插入深度。源杯内白色充电头 两根金属插脚朝上、USB 插孔朝下，花茎在其画面左侧，接近竖直。目标杯已加入飞书原生 16 mm 彩色玻璃弹珠，均可自由碰撞滚动；数量为用户确认的 10 颗，球径和质量仍为交付方估计值。白色珍珠的数量和尺寸仍未确认，未添加；布局坐标由照片估计。上述差异必须随结果报告，不能视为严格同条件完成率。"
+    }
+  },
+  "conflict_resolution": {
+    "L1-01": "Fixed cup confirmed in latest C3; explicit D3 release requirement takes precedence over C3 entry-only wording.",
+    "L1-03": "Use explicit C5 middle blue socket; D5 release takes precedence over C5 holding allowance. Right-arm observation matches C5; no contact allowed.",
+    "L1-07": "User chose earlier right-side box photo over latest C9 four-block layout. Prior grasp-side history unavailable; no fabricated side score. C9 permits natural sway and no extra dwell.",
+    "L1-09": "User explicitly corrected image coordinates: source with flower and charger on overview RIGHT, target on overview LEFT. This overrides interpreting C13 arm proximity as image-side placement. Keep left manipulation/right observation roles and verbatim D13. Conflicting target charger mention and unquantified marbles/pearls remain unresolved.",
+    "arm_identity_20261013": "Verified against real pen/cup wrist labels and overview motion in Q7StdW6q3oXDAkxMakScReukn2d: robot left is overview RIGHT, robot right is overview LEFT. L1 runtime mounts and camera bindings follow this convention. Original instruction/scenario source text retained; L1-08 scene_context corrects the inconsistent image-side interpretation."
+  },
+  "alignment_notes": {
+    "flower_layout_20261013": "User photo: source on overview right, two metal pins up and USB port down, flower stem to left of charger; destination on overview left with glass marbles. Native 16-mm spheres downloaded from asset sheet I9RXyJ row 9; count 10 confirmed by user on 2026-10-13; diameter/mass remain delivery estimates. Original instruction and quoted source text unchanged."
+  }
+}

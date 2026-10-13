@@ -2,7 +2,7 @@
   "schema_version": 1,
   "repository": "TuojingAI/GPT_Benchmark",
   "tag": "assets-20261008-local-v1",
-  "source_lock_sha256": "84c236a78597a8b702c4ee2a4aa8633963ac8cb5dbc94ed381ae9167d2438a95",
+  "source_lock_sha256": "7535cde8eb314e8f0476aec1cf56eb70a58383f14d2f0692472eeaa18ce8d2cd",
   "packages": [
     {
       "id": "lab_v4",
@@ -29,7 +29,16 @@
     "physical_props_20261008",
     "oriental_leaf_335ml",
     "anchor_removable_nut_20261008",
-    "desktop_additions_20261009"
+    "desktop_additions_20261009",
+    "l1_mug_marker_20261011",
+    "l1_charger_20261010",
+    "l1_strip_20261010",
+    "l1_rack_20261011",
+    "l1_visor_20261011",
+    "l1_box_20261011",
+    "l1_cup_20261011",
+    "l1_tulip_20261011",
+    "glass_marbles_20261011"
   ],
   "coverage": "Three unchanged archives from assets-20261008-local-v1, verified against the current source lock. All other locked packages are omitted; this is not a complete L1/L2/L3 asset release."
 }

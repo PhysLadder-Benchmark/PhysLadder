@@ -135,12 +135,12 @@ class NativeOutcomeTests(unittest.TestCase):
 
     def test_hat_is_native_and_planner_keeps_opening_unfilled(self):
         spec=build_spec('L1-07');a=spec.design.articles[0]
-        self.assertEqual(a.asset,'tuojing:yellow_visor')
+        self.assertEqual(a.asset,'tuojing:yellow_visor_20261011')
         self.assertEqual(len(shapes('yellow_visor')),208)
         samples=article_surface(a)
-        near_plane=samples[np.abs(samples[:,2]-.035)<.002]
+        near_plane=samples[np.abs(samples[:,2]-spec.parameters['band_plane_z'])<.002]
         self.assertGreater(len(near_plane),0)
-        self.assertTrue(np.all(np.linalg.norm(near_plane[:,:2],axis=1)>.080))
+        self.assertTrue(np.all(np.linalg.norm(near_plane[:,:2],axis=1)>.064))
         self.assertEqual(spec.parameters['hold_s'],0.)
 
     def test_hat_round_tip_balancing_and_wrong_support_are_rejected(self):
@@ -151,7 +151,7 @@ class NativeOutcomeTests(unittest.TestCase):
         r['target_hook_vertical_force_n']=.64
         # Move the plane to the peg's rounded endpoint: contact is insufficient.
         t=pose_transform(r['pose']);end=np.asarray(spec.parameters['hook_end'])
-        t[:3,3]=end-t[:3,:3]@np.array([0,.088,.035]);r['pose']=list(transform_pose(t))
+        t[:3,3]=end-t[:3,:3]@np.array([0,.088*.8,spec.parameters['band_plane_z']]);r['pose']=list(transform_pose(t))
         self.assertFalse(hat(e,rows)[1]['hook_through_head_opening'])
 
     def test_native_cup_spin_can_pass_but_tumbling_cannot(self):
@@ -195,18 +195,17 @@ class NativeOutcomeTests(unittest.TestCase):
         # This pose was rejected by the former straight-centreline criterion.
         self.assertGreater(.0251+.00105,.025*np.cos(np.pi/48)+.001)
 
-    def test_hat_pickup_pads_use_fixture_local_coordinates(self):
-        from robot_tasks.robots.transforms import origin_transform
-
-        spec=build_spec('L1-07');rack=pose_transform(spec.design.fixture_pose)
-        positions=[]
-        for pad in spec.design.fixtures:
-            world=rack@origin_transform(pad.position,pad.rotation)
-            self.assertAlmostEqual(world[2,3]+pad.size[2]/2,.825)
-            np.testing.assert_allclose(world[:3,:3],np.eye(3),atol=1e-9)
-            positions.append(world[:2,3])
-        self.assertEqual(len(positions),4)
-        np.testing.assert_allclose(np.mean(positions,axis=0),spec.design.articles[0].initial[:2])
+    def test_hat_source_box_is_free_standing_and_photo_layout_is_not_initial_success(self):
+        spec=build_spec('L1-07');hat_article,box=spec.design.articles
+        self.assertEqual(spec.design.fixtures, ())
+        self.assertEqual(box.asset,'tuojing:green_support_box_20261011')
+        self.assertGreater(hat_article.initial[0],spec.design.fixture_pose[0])
+        self.assertAlmostEqual(box.asset_bounds[1][2],.1)
+        self.assertGreater(hat_article.initial[2],box.initial[2]+.095)
+        rows=measurement(spec)
+        e=BenchEvaluator(spec,{a.name:a.initial for a in spec.design.articles})
+        rows['hat']['pair_forces']['source_box']=.65
+        self.assertFalse(hat(e,rows)[0])
 
     def test_cached_colliders_are_from_exact_locked_source_usds(self):
         import json

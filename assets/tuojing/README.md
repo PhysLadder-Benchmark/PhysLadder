@@ -1,5 +1,9 @@
 # 拓境实验室交付资产
 
+2026-10-11：L1-01/03/07/08/09 已接入飞书新交付，原始文件按版本单独锁定。
+安装来源、适配边界和布局见 [本轮记录](../../docs/l1_assets_20261011.md)。
+旧 GitHub Release 尚未包含这 8 个包；仅 pull 代码不足以取得新资产。
+
 ## 按任务查找资产
 
 正式任务从 `source/<任务编号>/<物品名>/` 加载资产。同一物品用于不同任务时，
@@ -12,9 +16,9 @@ source/
   L1-01/marker/  mug/
   L1-03/plug/  power_strip/  plug_base/
   L1-05/key_and_lock/          # README：运行时生成，没有交付 USD
-  L1-07/hat/  rack/
+  L1-07/hat/  rack/  source_box/
   L1-08/cup/
-  L1-09/rose/  cup/
+  L1-09/flower/  cup/  source_charger/  marble_*/
   L2-01/marker/
   L2-03/book/
   L2-04/cup/  pearl/
@@ -335,3 +339,12 @@ L3-14 改为原生蓝色三角块和项目绿色大三角目标线；L3-15 固�
 `anchor_removable_nut_20261008.zip` 含原生 USD、说明、验证记录、预览和夹具复现脚本。登记道具 `anchor_removable_nut`，根下有独立 `AnchorBody`/`Nut`；两个真实 SDF 螺纹，没有螺旋关节。当前 L3-05 保留原尺寸，初始化将螺母预松十圈 / 12.5 mm、剩约两圈，双臂拿起和旋下。源文件不改。交付夹具验证采用 1920 Hz；它不是 R5 双臂成功证据。
 
 2026-10-09 新增 `desktop_additions_20261009.zip`，原样保存圆柱承台、陶瓷杯和插头底座。`cylindrical_pedestal` 接入 L2-06，`black_ceramic_mug` 接入 L1-01，`plug_storage_base` 接入 L1-03。在会话层将承台固定，保留原生几何；原始中文名 ZIP 也可按资产锁校验并安装。
+
+
+### 2026-10-13 L1-09 玻璃珠补齐
+
+已通过飞书 CLI 从 [GPT6评测任务及资产管理](https://my.feishu.cn/docx/QK4EdOD3hotgp4x782ycgoyyn6g) 的资产表 `I9RXyJ` 第 9 行下载 `玻璃小弹珠_16mm_五种配色_仅资产_20261011.zip`。附件 token：`B4qFb7tx1owHtfxqDyDc0vajn5c`。
+
+包 ID 为 `glass_marbles_20261011`，五色原始 USD 分别安装到 `source/L1-09/marble_*/`；注册、文件哈希与依赖按现有资产交付规则管理。球心为原点，原生半径 8 mm、独立动态刚体，质量约 5.36 g；材质、弹性与摩擦参数保留交付值（不是实测标定）。用户于 2026-10-13 确认目标杯含 10 颗，任务使用 10 颗而非资产演示的 11 颗。未添加未量化的白色珍珠。
+
+本包尚未发布至 GitHub asset release，`release.json` 将其标为 omitted，不能仅 pull 代码就认为下载完成。

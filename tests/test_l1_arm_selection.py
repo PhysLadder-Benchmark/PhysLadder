@@ -2,6 +2,7 @@
 
 from dataclasses import replace
 import unittest
+from copy import deepcopy
 from unittest.mock import patch
 
 from robot_tasks.registry import resolve_task
@@ -13,38 +14,43 @@ from robot_tasks.tasks.bench.spec import build_spec
 
 class ArmSelectionTests(unittest.TestCase):
     def setUp(self):
-        self.binding, self.config = resolve_task("L1-01")
+        self.binding, config = resolve_task("L1-01")
+        raw = deepcopy(config.raw)
+        raw["task"].update(arm_selection="nearest_initial_object", manipulation_object="marker")
+        raw["robot"].update(active_arms=["left"], observation_arms=["right"])
+        self.config = replace(config, raw=raw, arms=("left",), observation_arms=("right",))
 
-    def test_current_layout_selects_right_and_updates_model_roles(self):
+    def test_current_layout_selects_left_and_updates_model_roles(self):
         config = self.config
         spec = resolve_bench_spec(config.raw["task"], config.robot)
-        self.assertEqual(config.arms, ("right",))
-        self.assertEqual(config.observation_arms, ("left",))
-        self.assertEqual(config.raw["robot"]["active_arms"], ["right"])
+        self.assertEqual(config.arms, ("left",))
+        self.assertEqual(config.observation_arms, ("right",))
+        self.assertEqual(config.raw["robot"]["active_arms"], ["left"])
         self.assertEqual(spec.arms, config.arms)
         self.assertEqual(spec.observers, config.observation_arms)
         audit = spec.parameters["arm_selection"]
-        self.assertAlmostEqual(audit["distances_m"]["right"], .16035, places=4)
-        self.assertAlmostEqual(audit["distances_m"]["left"], .39108, places=4)
+        self.assertAlmostEqual(audit["distances_m"]["left"], .16042, places=4)
+        self.assertAlmostEqual(audit["distances_m"]["right"], .39108, places=4)
         self.assertTrue(audit["roles_fixed_for_episode"])
         prepared = self.binding.factory.prepare_config(config)
-        self.assertIn("use the RIGHT arm for manipulation", prepared.instruction)
-        self.assertIn("LEFT arm for observation only", prepared.instruction)
-        self.assertNotIn(str(audit["distances_m"]["left"]), prepared.instruction)
+        self.assertIn("use the LEFT arm for manipulation", prepared.instruction)
+        self.assertIn("RIGHT arm for observation only", prepared.instruction)
+        self.assertNotIn(str(audit["distances_m"]["right"]), prepared.instruction)
 
-    def test_moving_initial_marker_near_left_changes_config_and_prompt(self):
+    def test_moving_initial_marker_near_right_changes_config_and_prompt(self):
         spec = build_spec("L1-01")
-        tcp = R5Kinematics(self.config.robot).forward((0.,) * 6, "left")
+        tcp = R5Kinematics(self.config.robot).forward((0.,) * 6, "right")
         marker = spec.design.articles[0]
         moved = replace(marker, initial=(*tcp[:3], *marker.initial[3:]))
         spec = replace(spec, design=replace(spec.design, articles=(moved,)))
         with patch("robot_tasks.tasks.bench.arm_selection.build_spec", return_value=spec):
-            binding, config = resolve_task("L1-01")
-            prepared = binding.factory.prepare_config(config)
-        self.assertEqual(config.arms, ("left",))
-        self.assertEqual(config.observation_arms, ("right",))
-        self.assertIn("use the LEFT arm for manipulation", prepared.instruction)
-        self.assertIn("RIGHT arm for observation only", prepared.instruction)
+            spec = resolve_bench_spec(self.config.raw["task"], self.config.robot)
+            config = replace(self.config, arms=spec.arms, observation_arms=spec.observers)
+            prepared = self.binding.factory.prepare_config(config)
+        self.assertEqual(config.arms, ("right",))
+        self.assertEqual(config.observation_arms, ("left",))
+        self.assertIn("use the RIGHT arm for manipulation", prepared.instruction)
+        self.assertIn("LEFT arm for observation only", prepared.instruction)
 
     def test_equal_distance_is_deterministic_even_if_mount_order_changes(self):
         robot = replace(self.config.robot, mounts=tuple(reversed(self.config.robot.mounts)))
@@ -54,10 +60,10 @@ class ArmSelectionTests(unittest.TestCase):
         self.assertEqual(spec.observers, ("right",))
 
     def test_only_selected_arm_can_receive_gripper_commands(self):
-        validate_role_command(self.config, "right", "gripper")
-        validate_role_command(self.config, "left", "cartesian")
-        with self.assertRaisesRegex(ValueError, "Observation arm left"):
-            validate_role_command(self.config, "left", "gripper")
+        validate_role_command(self.config, "left", "gripper")
+        validate_role_command(self.config, "right", "cartesian")
+        with self.assertRaisesRegex(ValueError, "Observation arm right"):
+            validate_role_command(self.config, "right", "gripper")
 
     def test_invalid_initial_geometry_cannot_silently_choose_an_arm(self):
         with patch.object(R5Kinematics, "forward", return_value=(float("nan"), 0., 1.)):
@@ -72,20 +78,20 @@ class ArmSelectionTests(unittest.TestCase):
                 resolve_bench_spec({**self.config.raw["task"], **update}, self.config.robot)
 
     def test_fixed_tasks_keep_existing_roles(self):
-        for task_id in ("L1-05", "L1-07", "L1-08", "L1-09"):
+        for task_id in ("L1-05",):
             with self.subTest(task=task_id):
                 binding, config = resolve_task(task_id)
                 prepared = binding.factory.prepare_config(config)
                 self.assertEqual(prepared.arms, ("left",))
                 self.assertEqual(prepared.observation_arms, ("right",))
 
-    def test_charger_photo_layout_selects_nearby_right_arm(self):
+    def test_charger_real_prompt_overrides_previous_nearest_arm(self):
         binding, config = resolve_task("L1-03")
         prepared = binding.factory.prepare_config(config)
-        self.assertEqual(config.raw["task"]["manipulation_object"], "plug")
-        self.assertEqual(prepared.arms, ("right",))
-        self.assertEqual(prepared.observation_arms, ("left",))
-        self.assertIn("standing upright in the black storage base", prepared.instruction)
+        self.assertEqual(config.raw["task"]["arm_selection"], "real_prompt")
+        self.assertEqual(prepared.arms, ("left",))
+        self.assertEqual(prepared.observation_arms, ("right",))
+        self.assertEqual(prepared.instruction, config.instruction)
 
 
 if __name__ == "__main__":

@@ -246,6 +246,104 @@
       "path": "assets/plug_storage_base/plug_storage_base.usda",
       "role": "prop",
       "notes": "L1-03 native free-standing pickup holder; 20.8 g, hollow pocket and central through-hole; not the electrical target socket."
+    },
+    {
+      "id": "capped_marker_20261011",
+      "package": "l1_mug_marker_20261011",
+      "path": "assets/pullable_marker/asset.usda",
+      "role": "prop",
+      "notes": "Feishu L1 delivery 2026-10-11; native dimensions, task overrides reported by importer."
+    },
+    {
+      "id": "black_ceramic_mug_20261011",
+      "package": "l1_mug_marker_20261011",
+      "path": "assets/black_ceramic_mug/black_ceramic_mug.usda",
+      "role": "prop",
+      "notes": "Feishu L1 delivery 2026-10-11; native dimensions, task overrides reported by importer."
+    },
+    {
+      "id": "usb_charger_20261010",
+      "package": "l1_charger_20261010",
+      "path": "usb_charger/usb_charger.usda",
+      "role": "prop",
+      "notes": "Feishu L1 delivery 2026-10-11; native dimensions, task overrides reported by importer."
+    },
+    {
+      "id": "power_strip_20261010",
+      "package": "l1_strip_20261010",
+      "path": "power_strip/power_strip.usda",
+      "role": "prop",
+      "notes": "Feishu L1 delivery 2026-10-11; native dimensions, task overrides reported by importer."
+    },
+    {
+      "id": "wooden_rack_20261011",
+      "package": "l1_rack_20261011",
+      "path": "assets/wooden_rack/wooden_rack.usda",
+      "role": "prop",
+      "notes": "Feishu L1 delivery 2026-10-11; native dimensions, task overrides reported by importer."
+    },
+    {
+      "id": "yellow_visor_20261011",
+      "package": "l1_visor_20261011",
+      "path": "assets/yellow_visor/yellow_visor.usda",
+      "role": "prop",
+      "notes": "Feishu L1 delivery 2026-10-11; native dimensions, task overrides reported by importer."
+    },
+    {
+      "id": "green_support_box_20261011",
+      "package": "l1_box_20261011",
+      "path": "assets/green_support_box/green_support_box.usda",
+      "role": "prop",
+      "notes": "Feishu L1 delivery 2026-10-11; native dimensions, task overrides reported by importer."
+    },
+    {
+      "id": "ripple_paper_cup_20261011",
+      "package": "l1_cup_20261011",
+      "path": "assets/ripple_paper_cup/ripple_paper_cup.usda",
+      "role": "prop",
+      "notes": "Feishu L1 delivery 2026-10-11; native dimensions, task overrides reported by importer."
+    },
+    {
+      "id": "cream_tulip_20261011",
+      "package": "l1_tulip_20261011",
+      "path": "assets/cream_tulip/cream_tulip.usda",
+      "role": "prop",
+      "notes": "Feishu L1 delivery 2026-10-11; native dimensions, task overrides reported by importer."
+    },
+    {
+      "id": "marble_yellow_green_20261011",
+      "package": "glass_marbles_20261011",
+      "path": "assets/marble_yellow_green/marble_yellow_green.usda",
+      "role": "prop",
+      "notes": "Feishu delivered 16-mm glass sphere; independent dynamic body, native material and analytic sphere collision; diameter/mass are asset estimates."
+    },
+    {
+      "id": "marble_red_white_20261011",
+      "package": "glass_marbles_20261011",
+      "path": "assets/marble_red_white/marble_red_white.usda",
+      "role": "prop",
+      "notes": "Feishu delivered 16-mm glass sphere; independent dynamic body, native material and analytic sphere collision; diameter/mass are asset estimates."
+    },
+    {
+      "id": "marble_aqua_blue_20261011",
+      "package": "glass_marbles_20261011",
+      "path": "assets/marble_aqua_blue/marble_aqua_blue.usda",
+      "role": "prop",
+      "notes": "Feishu delivered 16-mm glass sphere; independent dynamic body, native material and analytic sphere collision; diameter/mass are asset estimates."
+    },
+    {
+      "id": "marble_emerald_green_20261011",
+      "package": "glass_marbles_20261011",
+      "path": "assets/marble_emerald_green/marble_emerald_green.usda",
+      "role": "prop",
+      "notes": "Feishu delivered 16-mm glass sphere; independent dynamic body, native material and analytic sphere collision; diameter/mass are asset estimates."
+    },
+    {
+      "id": "marble_clear_mint_20261011",
+      "package": "glass_marbles_20261011",
+      "path": "assets/marble_clear_mint/marble_clear_mint.usda",
+      "role": "prop",
+      "notes": "Feishu delivered 16-mm glass sphere; independent dynamic body, native material and analytic sphere collision; diameter/mass are asset estimates."
     }
   ]
 }

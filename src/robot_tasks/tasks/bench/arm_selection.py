@@ -18,6 +18,10 @@ from .spec import build_spec
 def resolve_bench_spec(task, robot):
     spec = build_spec(task["id"])
     mode = task.get("arm_selection", "fixed")
+    if mode == "real_prompt":
+        from .real_l1 import configure
+
+        return configure(spec, robot)
     if mode == "fixed":
         return spec
     if mode != "nearest_initial_object":

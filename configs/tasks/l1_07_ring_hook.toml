@@ -34,46 +34,14 @@ execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
 implementation = "household"
-simulation_limitations = "Native rigid yellow visor with 208 open band/brim convex pieces and fixed 82-cm wooden rack. No cloth deformation or scaling. Four passive pickup pads expose the brim underside."
+arm_selection = "real_prompt"
+prompt_source = "../prompts/l1_real_20261012.json"
+simulation_limitations = "Photo-proportion variant: yellow visor uniformly resized to 80% (about 188 x 238 x 69 mm), with all 208 open band/brim convex pieces, visual meshes, COM/inertia and scoring geometry updated together. Estimated size, not hardware calibration. Fixed 82-cm wooden rack and dimensioned 190 x 200 x 100 mm box unchanged; no cloth deformation. A native free-standing teal box supports the visor on the right; rack on the left."
 launch_command = "python tools/launch.py run L1-07 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L1-07 --gui"
-instruction = """
-Use the LEFT R5 arm for manipulation. The RIGHT arm is an observation arm:
-it may move its wrist camera when a grasp, opening or contact is obscured, but
-must not touch or support the props. Keep the left arm steady while changing
-view. Choose grasp points, poses and motion from current images and available
-robot feedback; no object coordinates or successful action sequence is supplied.
-Pick up the yellow OPEN-TOP VISOR and hang its oval HEAD OPENING on the LOWEST
-sloping peg of the fixed wooden rack. Higher pegs and the trunk are not targets.
-The native rack is 0.82 m tall; the peg is 20 mm thick with a rounded tip.
-The visor is one rigid prop about 232 x 295 x 85 mm, with an open head band about
-176 x 196 mm. Do not assume a cup or a small ring. The band and brim alone are
-only 2-3 mm thick. The nominal gripper range is now 0-70 mm. Passive source
-pads leave clearance under the brim. You may pinch the upper edge of the band
-from ABOVE, with vertical distal fingers, one just inside and one outside; or
-pinch an exposed brim edge. Avoid driving the bulky finger body sideways through
-the curved band. Keep the peg insertion region of the oval opening free.
-Verify a short lift and use current images to check that the whole hat follows.
-Rotate the opening toward the lowest peg, keeping the wide brim and both fingers
-clear of the trunk and higher pegs. Pass the rounded tip fully through the band,
-move slightly inward and lower so the rear inner band bears on the selected peg.
-Open separately and withdraw. Balancing on a tip, laying on the rack, or hanging
-on another peg is insufficient. Completion requires release and measured support
-from the LOWEST peg with the whole hat above the table. Passive sway is allowed;
-there is no stability waiting period.
+instruction = "左臂抓帽子另一侧，将帽圈套到最低挂杆，松爪撤开并确认独立挂稳；双臂不得干涉。"
 
-Inspect the actual released or completed state before requesting stop. A
-commanded pose, blocked gripper, or completion claim is not evidence of success.
-If a grasp is lost, use new observations and reassess rather
-than continuing with stale object positions. Do not invent force measurements
-or assume a force-control tool that the interface does not expose.
-"""
+scene_context = "按用户确认的真机照片：固定木架在左、黄色空顶帽在右侧蓝绿色盒面，帽子未固定。左臂拿整顶帽子，使头孔套过最低实际挂杆的圆头，松爪撤开，由该杆独立承托；允许自然晃动，不需要额外静止等待。右臂仅观察，双臂不得干涉。指令中的“另一侧”指上一轮抓点的对侧，但本次是独立初始化，未提供上一轮抓点；不能臆造抓点或据此加隐藏评分条件。应根据当前观测选择可抓且不妨碍穿杆的一侧。"
 
 # Chinese setup/props description; keep this the final task attribute.
-description = """
-道具：交付原生黄色空顶帽（约 232×295×85 mm、65 g，帽圈开口约 176×196 mm）和木质挂架（高 82 cm，最低杆直径 20 mm）。
-布置：挂架向左臂方向移近，最低斜挂杆朝向左臂操作区；帽子放在挂架左侧，帽檐转向远离立柱的空旷侧。四个 45 mm 高被动支撑垫托住帽圈，帽檐下方留出约 25 mm 抓取空间。
-操作：左臂从上方轻夹帽圈上沿（夹指一内一外），或夹住露出的帽檐，并验证抬升，留出帽圈开口；转向最低挂杆圆头，套入并放低到后部内圈承重；右臂仅观察。
-完成：指定最低杆穿过原生帽圈，帽子已释放并由该杆提供向上承托，整帽离开桌面；不要求等待静止。
-边界：不缩放帽子或挂架，不封闭帽圈，不模拟布料形变；夹爪名义开口为 0–70 mm，可轻夹帽檐，须通过短距离提起确认抓持。
-"""
+description = "对齐飞书 2026-10-12 场景说明与当轮指令摘要，非完整真机系统提示词。按用户确认的真机照片：固定木架在左、黄色空顶帽在右侧蓝绿色盒面，帽子未固定。左臂拿整顶帽子，使头孔套过最低实际挂杆的圆头，松爪撤开，由该杆独立承托；允许自然晃动，不需要额外静止等待。右臂仅观察，双臂不得干涉。指令中的“另一侧”指上一轮抓点的对侧，但本次是独立初始化，未提供上一轮抓点；不能臆造抓点或据此加隐藏评分条件。应根据当前观测选择可抓且不妨碍穿杆的一侧。 评分依据实际进入、释放承托及指令要求的回位；除挂帽不额外等待外，稳定验证 1 s，允许 5 mm 位移、5 度倾斜变化，回位容差 0.05 rad / 0.05 rad/s。不要求最低抬升高度或额外 TCP 包络间距。这些是仿真验证容差，不是真机操作精度。"

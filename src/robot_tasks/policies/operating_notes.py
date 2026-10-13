@@ -117,11 +117,21 @@ def operating_notes(config) -> dict:
         "manipulation_guidance": manipulation_guidance(config),
         "task_execution_guidance": task_execution_guidance(include_depth=config.include_depth),
     }
+    if config.task_id.startswith("L1-"):
+        notes["arm_identity"] = {
+            "prim_by_arm": {m.name: m.prim_path for m in profile.mounts},
+            "convention": "Arm names follow the real-trial robot, not image left/right. "
+                          "In the standard front overview, left arm has the RIGHT base; "
+                          "right arm has the LEFT base. left_wrist/right_wrist follow "
+                          "their named arm. Keep these identities when a camera moves.",
+        }
+    if config.raw["task"].get("arm_selection") == "real_prompt":
+        notes["home_joint_positions_rad"] = {m.name: m.home_positions_rad for m in profile.mounts}
     camera_path = config.raw.get("simulation", {}).get("camera_profile")
     if camera_path:
         from ..cameras.profile import load_camera_rig
         notes["camera_roles"] = {c.name: {"model": c.model, "parent": c.parent}
-                                 for c in load_camera_rig(config.source.parent / camera_path).select(config.cameras)}
+                                 for c in load_camera_rig(config.source.parent / camera_path, robot_profile=profile).select(config.cameras)}
     notes["motion_backend"] = "curobo_trajectory"
     notes["startup_preparation"] = (
         "Before your first observation the arms settle at their configured joint home. "
