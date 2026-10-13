@@ -10,15 +10,16 @@ from ...types import Assessment, InvalidSimulationState
 from ..bench.geometry import design
 from ..bench.spec import BenchSpec
 from ..l1.specs import Article, pose
+from ..bench.native_l2_specs import BOX_TOP, BOX_CENTER, support_box
 
 
 def nut_spec():
-    # The assembled 94 mm span is centred between the two R5 bases.
+    # The assembled 148 mm span is centred between the two R5 bases.
     # Native +Z points along world +X: body image-left, nut image-right.
-    base = pose(0.19565 - 0.047, 1.30, 0.790, pitch=math.pi / 2)
-    lift = 0.0125  # Ten whole RH turns; 2.5 mm / two turns remain below the tip.
+    base = pose(BOX_CENTER[0] - 0.074, BOX_CENTER[1], BOX_TOP + 0.0145, pitch=math.pi / 2)
+    lift = 0.014  # Seven whole RH turns; 5 mm / 2.5 turns remain below the tip.
     nut_pose = transform_pose(
-        pose_transform(base) @ pose_transform(pose(0, 0, 0.075 + lift))
+        pose_transform(base) @ pose_transform(pose(0, 0, 0.121 + lift))
     )
     articles = (
         Article(
@@ -26,48 +27,48 @@ def nut_spec():
             (),
             base,
             base,
-            0.0563,
+            0.1856324,
             asset="tuojing:anchor_removable_nut",
-            asset_bounds=((-0.009, -0.009, 0), (0.009, 0.009, 0.09)),
+            asset_bounds=((-0.0095, -0.0095, 0), (0.0095, 0.0095, 0.14)),
         ),
         Article(
             "nut",
             (),
             nut_pose,
             nut_pose,
-            0.0065,
+            0.0320911,
             asset="tuojing:anchor_removable_nut",
-            asset_bounds=((-0.0065, -0.007506, 0), (0.0065, 0.007506, 0.0065)),
+            asset_bounds=((-0.012, -0.0138564, 0), (0.012, 0.0138564, 0.013)),
         ),
     )
     return BenchSpec(
         replace(
             design("L3-05", "双臂旋下预松螺母", articles),
-            version="l3-05-native-horizontal-loose-nut-v2",
-            release=False,
-            provenance="2026-10-08 delivered independent anchor/nut with SDF thread contact",
+            version="l3-05-native-stud-right-nut-v4",
+            release=True,
+            provenance="2026-10-11 Feishu independent conical stud/nut with SDF thread contact",
         ),
         arms=("left", "right"),
         mechanism="native_bimanual_sdf_nut_removal",
-        limitations="Native 90 mm anchor and 13 mm across-flats / 6.5 mm tall nut. Photo-estimated M8-like 1.25 mm RH pitch, no tight preload or seal, no material damage. Preloosened ten turns / 12.5 mm, about two turns remain. CPU PhysX at 1920 Hz; no guide or fixed body in the task. Small-grasp profile allows 10 mm closure within existing joint limits; session-layer convex-decomposed R5 finger collisions preserve the pinch recess. Not hardware calibration.",
-        facts="Both hands manipulate. LEFT picks up and holds the lower 12 mm diameter sleeve; RIGHT grips the opposite FLAT faces of the 13 mm hex nut (6.5 mm high), not the exposed 8 mm shaft. Native anchor length is 90 mm. The nut is loose but still threaded, about two turns remain: counterclockwise viewed from the exposed threaded end moves it outward with 1.25 mm rise per revolution. Start lying horizontally at the centre between both arms, body toward overview-image LEFT and nut toward RIGHT; lift and establish clearance between both hands and wrist cameras before turning. Regrasp as needed; never pull a still-engaged nut straight off. Fixed drives, no torque-control API. Actual detachment after bimanual turning completes the task; you may keep both pieces in the hands. No prescribed parking pose, release, extra waiting time or exact turn quota is required.",
+        limitations="2026-10-11 native 140 mm conical stud, 24 mm hex nut, 2 mm RH pitch. Native SDF contacts, estimated mass/friction. Nut pre-loosened 7 turns/14 mm leaving 5 mm engagement; not real preload calibration. No thread joint or scripted motion.",
+        facts="The 140 mm silver stud lies horizontally on the green box centre between both arms, body toward image-left and 24 mm hex nut toward image-right. LEFT picks and holds the 14 mm smooth shaft; RIGHT pinches the nut flats and unscrews counterclockwise viewed from the exposed threaded end. Lift clear of the box before bringing the second hand in. Nut thickness 13 mm, 2 mm pitch, approximately 2.5 turns remain. Use actual relative movement, not whole-assembly rotation, to check progress. Once fully detached, place both parts safely on the box or table and release.",
         parameters={
-            "table_z": 0.78,
-            "thread_pitch_m": 0.00125,
-            "shaft_tip_z": 0.09,
-            "initial_nut_bottom_z": 0.0875,
-            "nut_height_m": 0.0065,
+            "table_z": 0.78, "support_z": BOX_TOP,
+            "thread_pitch_m": 0.002,
+            "shaft_tip_z": 0.14,
+            "initial_nut_bottom_z": 0.135,
+            "nut_height_m": 0.013,
             "body_arm": "left",
             "nut_arm": "right",
             "hold_s": 0.0,
-            "native_instances": [
+            "native_instances": [support_box(),
                 {
                     "name": "anchor_assembly",
                     "asset": "anchor_removable_nut",
                     "pose": base,
                     "tracked": {"anchor": "AnchorBody", "nut": "Nut"},
                     "initial_body_transforms": {
-                        "Nut": pose(0, 0, lift, yaw=20 * math.pi)
+                        "Nut": pose(0, 0, lift, yaw=14 * math.pi)
                     },
                 }
             ],
@@ -129,17 +130,22 @@ class NutEvaluator:
         bt, nt = pose_transform(body["pose"]), pose_transform(nut["pose"])
         relative = np.linalg.inv(bt) @ nt
         local = (np.asarray(nut["corners"]) - bt[:3, 3]) @ bt[:3, :3]
-        body_held, nut_held = gripped(body, "left"), gripped(nut, "right")
+        body_held, nut_held = gripped(body, self.spec.parameters["body_arm"]), gripped(nut, self.spec.parameters["nut_arm"])
         if (
             body_held
             and min(c[2] for c in body["corners"])
-            > self.spec.parameters["table_z"] + 0.005
+            > self.spec.parameters["support_z"] + 0.005
         ):
             self.pickup_seen = True
         # Nut's entire bound must clear the shaft end, in the CURRENT body frame.
         gap = float(local[:, 2].min() - self.spec.parameters["shaft_tip_z"])
         contact = float(nut["pair_forces"].get("anchor", 0.0))
-        detached = gap > 0.0003 and contact < 0.005
+        # After removal, either part can be rotated or placed beside the other.
+        # Do not require the final placement to retain the extraction axis.
+        center = local.mean(axis=0)
+        radius = np.linalg.norm(local[:, :2] - center[:2], axis=1).max()
+        beside = np.linalg.norm(center[:2]) - radius > 0.0095 + 0.0003
+        detached = bool((gap > 0.0003 or beside) and contact < 0.005)
         yaw = math.atan2(relative[1, 0], relative[0, 0])
         self.progress.update(
             yaw, float(relative[2, 3]), body_held and nut_held and self.pickup_seen
@@ -149,9 +155,12 @@ class NutEvaluator:
             self.progress.net_turn > math.radians(2)
             and self.progress.net_rise > 0.00005
         )
-        if detached and body_held and nut_held and self.pickup_seen and turned:
+        if gap > 0.0003 and detached and body_held and nut_held and self.pickup_seen and turned:
             self.removal_seen = True
-        complete = detached and self.removal_seen and body_held and nut_held
+        from ..bench.evaluation import released
+        placed = all(released(r) and r["bench_force_n"] + r["fixture_force_n"] > 0.02
+                     for r in (body, nut))
+        complete = detached and self.removal_seen and placed
         fallen = [
             n
             for n, r in rows.items()
@@ -173,7 +182,8 @@ class NutEvaluator:
                 "thread_contact_n": contact,
                 "nut_detached": detached,
                 "bimanual_removal_observed": self.removal_seen,
-                "release_required": False,
+                "release_required": True,
+                "parts_released_supported": placed,
                 "timed_hold_s": 0,
             },
             "goal_complete": bool(complete),
@@ -186,7 +196,7 @@ class NutEvaluator:
         return Assessment(
             "succeeded" if complete else "running",
             (
-                "Nut removed while both hands hold the separated parts"
+                "Nut removed and both parts released onto a support"
                 if complete
                 else "Waiting for bimanual pickup and nut removal"
             ),
@@ -203,20 +213,26 @@ class NutTask:
             )
         if config.physics_dt_s > 1 / 1920 + 1e-12:
             raise ValueError("Native fine threads require physics_dt_s <= 1/1920")
-        if config.robot.gripper.width_limits_m[0] > 0.010:
-            raise ValueError("Native 12 mm sleeve needs the small-grasp profile")
+        if config.robot.gripper.width_limits_m[0] >= 0.014:
+            raise ValueError("Native 14 mm stud needs a smaller minimum opening")
         if config.raw.get("simulation", {}).get("environment") != "tuojing_lab_v4":
             raise ValueError("Native nut task requires the Tuojing laboratory scene")
+        from ..completion import completion_instruction
+
+        facts = nut_spec().facts
         return replace(
             config,
-            instruction=config.instruction + "\n" + nut_spec().facts,
+            instruction=config.instruction + (
+                "" if facts in config.instruction else "\n" + facts
+            ) + completion_instruction(config),
             grasp_check_mode="contact_inspection",
-            initial_state_description="Both hands start empty; the assembly lies horizontally at the centre between the arms, body on overview-image LEFT and nut on RIGHT; nut pre-loosened but still threaded. No robot attachments or fixed prop bodies.",
+            initial_state_description="Both hands start empty; the assembly lies horizontally at the centre between the arms, on the green support box, body on overview-image LEFT and nut on RIGHT; nut pre-loosened but still threaded. No robot attachments.",
         )
 
     def build_scene(self, backend, config):
         from ..bench.native_l2 import NativeL2Scene
 
+        self.config = config
         self.scene = NativeL2Scene(backend, config, nut_spec())
 
     def reset(self, backend, seed):
@@ -227,6 +243,9 @@ class NutTask:
     def evaluate(self, state, feedback):
         now = state.values["simulation_time_s"]
         if now != self._last_time:
-            self._assessment = self.evaluator.update(now, self.scene.measure())
+            from ..completion import require_home
+
+            self._assessment = require_home(self.evaluator.update(now, self.scene.measure()),
+                                            state.values["robot"], self.config)
             self._last_time = now
         return self._assessment

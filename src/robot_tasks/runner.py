@@ -380,6 +380,10 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                 tick()
                 if assessment.status in {"succeeded", "failed", "invalid"}:
                     break
+                if feedback.status == "collision_blocked":
+                    recorder.event({"event": "collision_blocked", "step": step,
+                                    "collision": getattr(robot, "collision_stop", None)})
+                    break  # The controller held the measured pose; ask the model for recovery.
                 stable = stable + 1 if feedback.status == "completed" else 0
                 if action.commands and stable >= options.completion_samples:
                     completed = True

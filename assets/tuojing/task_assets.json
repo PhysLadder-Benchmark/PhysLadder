@@ -56,13 +56,15 @@
     "L2-01": {
       "name": "双臂拔笔帽",
       "props": {
-        "marker": "pullable_marker"
+        "marker": "pullable_marker",
+        "support_box": "green_support_box"
       }
     },
     "L2-03": {
       "name": "中层书本抽取",
       "props": {
-        "book": "closed_book"
+        "book": "closed_book",
+        "support_box": "green_support_box"
       }
     },
     "L2-04": {
@@ -73,10 +75,10 @@
       }
     },
     "L2-06": {
-      "name": "承台夹起橘子瓣",
+      "name": "橘子抬升并放回绿盒",
       "props": {
         "orange": "orange_segment",
-        "pedestal": "cylindrical_pedestal"
+        "support_box": "green_support_box"
       }
     },
     "L2-07": {
@@ -94,7 +96,8 @@
     "L3-05": {
       "name": "双臂旋出螺母",
       "props": {
-        "bolt": "anchor_removable_nut"
+        "bolt": "anchor_removable_nut",
+        "support_box": "green_support_box"
       }
     },
     "L3-11": {
@@ -105,9 +108,9 @@
       }
     },
     "L3-14": {
-      "name": "推三角块入目标区",
+      "name": "夹爪推板擦入目标区",
       "props": {
-        "triangle": "blue_triangle"
+        "eraser": "board_eraser"
       }
     },
     "L3-15": {
@@ -115,7 +118,8 @@
       "props": {
         "brush": "hand_brush",
         "dustpan": "dustpan",
-        "block": "blue_square"
+        "block": "blue_square",
+        "support_box": "green_support_box"
       }
     }
   },
@@ -156,13 +160,13 @@
     "pullable_marker": {
       "root": "assets",
       "include": [
-        "assets/pullable_marker",
         "assets/marker_body",
-        "assets/marker_cap"
+        "assets/marker_cap",
+        "assets/pullable_marker"
       ]
     },
     "closed_book": {
-      "root": "assets/closed_book"
+      "root": "."
     },
     "pearl_8mm": {
       "root": "assets/pearl_8mm"
@@ -174,23 +178,19 @@
       "root": "assets/cylindrical_pedestal"
     },
     "desk_organizer": {
-      "root": "assets/desk_organizer"
+      "root": "."
     },
     "oriental_leaf_335ml": {
-      "root": ".",
-      "include": [
-        "assets",
-        "textures"
-      ]
+      "root": "."
     },
     "anchor_removable_nut": {
-      "root": "assets/expansion_anchor"
+      "root": "assets"
     },
     "green_board_20261008": {
-      "root": "assets/green_board"
+      "root": "."
     },
     "board_eraser": {
-      "root": "assets/board_eraser"
+      "root": "assets/blue_board_eraser"
     },
     "blue_triangle": {
       "root": "assets/blue_triangle"
@@ -202,7 +202,7 @@
       "root": "assets/dustpan"
     },
     "blue_square": {
-      "root": "assets/blue_square"
+      "root": "assets/blue_cube"
     },
     "capped_marker_20261011": {
       "root": "assets",
@@ -250,6 +250,9 @@
     },
     "marble_clear_mint_20261011": {
       "root": "assets/marble_clear_mint"
+    },
+    "green_support_box": {
+      "root": "assets/green_support_box"
     }
   }
 }

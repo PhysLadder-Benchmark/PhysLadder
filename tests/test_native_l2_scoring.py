@@ -31,7 +31,7 @@ def soft_row(spec, *, at_goal=False, lifted=False, strain=0.0, touching=False):
             "centroid": [p[0], p[1], z + 0.0085],
             "collision_bounds_min": [p[0] - 0.025, p[1] - 0.013, z],
             "collision_bounds_max": [p[0] + 0.025, p[1] + 0.013, z + 0.017],
-            "finger_distances_m": [0.001, 0.001, 0.10, 0.10] if touching else [0.1] * 4,
+            "finger_distances_m": [0.10, 0.10, 0.001, 0.001] if touching else [0.1] * 4,
             "speed_m_s": 0.0,
             "centroid_speed_m_s": 0.0,
             "shape_speed_p95_m_s": 0.0,
@@ -47,62 +47,61 @@ class NativeL2ScoringTests(unittest.TestCase):
 
 
 
-    def test_drawer_release_near_threshold_can_finish_after_passive_travel(self):
+    def test_drawer_passive_final_millimetres_do_not_erase_pull_but_need_return(self):
         spec = build_spec("L2-07")
         rows = measurement(spec)
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
         row = rows["drawer"]
+        axis = np.asarray(spec.parameters["outward_axis_world"])
         row["fingers"]["right"] = [1, 1]
         e.update(.1, rows)
-        row["pose"][1] += .074 - spec.parameters["initial_open_m"]
+        row["pose"][:3] = (np.asarray(row["pose"][:3]) + .044 * axis).tolist()
         e.update(.2, rows)
         row["fingers"]["right"] = [0, 0]
-        row["pose"][1] += .006
-        e.update(.3, rows)
-        self.assertEqual(e.update(.9, rows).status, "succeeded")
+        row["pose"][:3] = (np.asarray(row["pose"][:3]) + .006 * axis).tolist()
+        self.assertEqual(e.update(.3, rows).status, "running")
+        self.assertIn("opening_reached", e.flags)
+        row["pose"] = list(spec.design.articles[0].initial)
+        self.assertEqual(e.update(.4, rows).status, "succeeded")
 
     def test_drawer_touch_or_small_oscillations_do_not_fake_a_grasped_pull(self):
         spec = build_spec("L2-07")
+        axis = np.asarray(spec.parameters["outward_axis_world"])
         for oscillate in (False, True):
             rows = measurement(spec)
             row = rows["drawer"]
-            row["pose"][1] += .08 - spec.parameters["initial_open_m"]
-            start = row["pose"][1]
+            start = np.asarray(row["pose"][:3]) + .05 * axis
             e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
             row["fingers"]["right"] = [1, 1]
             for i in range(1, 15):
-                row["pose"][1] = start + (.001 * (i % 2) if oscillate else 0)
+                row["pose"][:3] = (start + (.001 * (i % 2) if oscillate else 0) * axis).tolist()
                 e.update(i * .1, rows)
             row["fingers"]["right"] = [0, 0]
-            e.update(1.5, rows)
-            self.assertEqual(e.update(2.2, rows).status, "running")
+            row["pose"] = list(spec.design.articles[0].initial)
+            self.assertEqual(e.update(1.5, rows).status, "running")
+            self.assertNotIn("pulled_while_held", e.flags)
 
-    def test_drawer_preopened_layout_scores_absolute_opening_and_native_stop(self):
+    def test_drawer_preopened_layout_scores_absolute_opening_return_and_native_stop(self):
         spec = build_spec("L2-07")
         rows = measurement(spec)
         row = rows["drawer"]
+        axis = np.asarray(spec.parameters["outward_axis_world"])
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
-        initial = e.update(.1, rows)
-        self.assertAlmostEqual(initial.metrics["criteria"]["opening_m"], .03)
-        self.assertEqual(initial.status, "running")
-        # Only another 50 mm is needed for 80 mm total opening.
+        self.assertAlmostEqual(e.update(.1, rows).metrics["criteria"]["opening_m"], .03)
         row["fingers"]["right"] = [1, 1]
         e.update(.2, rows)
-        row["pose"][1] += .05
-        e.update(.3, rows)
-        row["fingers"]["right"] = [0, 0]
-        e.update(.4, rows)
-        result = e.update(1., rows)
-        self.assertEqual(result.status, "succeeded")
+        row["pose"][:3] = (np.asarray(row["pose"][:3]) + .05 * axis).tolist()
+        result = e.update(.3, rows)
+        self.assertEqual(result.status, "running")
         self.assertAlmostEqual(result.metrics["criteria"]["opening_m"], .08)
-        self.assertAlmostEqual(result.metrics["criteria"]["travel_since_start_m"], .05)
-        # Closing to the original zero is legal; preopening cannot shift limits.
+        row["fingers"]["right"] = [0, 0]
+        row["pose"] = list(spec.design.articles[0].initial)
+        self.assertEqual(e.update(.4, rows).status, "succeeded")
         row["pose"] = list(spec.parameters["closed_pose"])
-        self.assertEqual(e.update(1.1, rows).status, "running")
-        self.assertEqual(e.update(1.5, rows).status, "running")
-        row["pose"][1] += .10
-        e.update(1.6, rows)
-        self.assertEqual(e.update(2., rows).status, "invalid")
+        self.assertEqual(e.update(.5, rows).status, "running")
+        row["pose"][:3] = (np.asarray(row["pose"][:3]) + .1 * axis).tolist()
+        e.update(.6, rows)
+        self.assertEqual(e.update(1., rows).status, "invalid")
 
 
     def test_initial_resting_objects_do_not_count_as_completed_placement_stages(self):
@@ -110,7 +109,10 @@ class NativeL2ScoringTests(unittest.TestCase):
         evaluator = BenchEvaluator(
             spec, {a.name: a.initial for a in spec.design.articles}
         )
-        criteria = evaluator.update(0.1, measurement(spec)).metrics["criteria"]
+        rows = measurement(spec)
+        for a in spec.design.articles:
+            rows[a.name]["fixture_force_n"] = a.mass * 9.81
+        criteria = evaluator.update(0.1, rows).metrics["criteria"]
         self.assertTrue(all(criteria["placed"].values()))
         self.assertFalse(criteria["stages"]["barrel_placed"])
         self.assertFalse(criteria["stages"]["cap_placed"])
@@ -152,7 +154,7 @@ class NativeL2ScoringTests(unittest.TestCase):
             evaluator.update(0.1, rows).metrics["criteria"]["assembly_lifted"]
         )
 
-    def test_cap_mass_based_support_and_own_axis_spin_can_finish(self):
+    def test_held_cap_separation_finishes_before_placement_or_release(self):
         s = build_spec("L2-01")
         rows = measurement(s)
         e = BenchEvaluator(s, {a.name: a.initial for a in s.design.articles})
@@ -165,7 +167,10 @@ class NativeL2ScoringTests(unittest.TestCase):
         e.update(0.2, rows)
         rows["cap"]["pose"][0] += 0.05
         rows["cap"]["fingers"]["right"] = [1, 1]
-        e.update(0.3, rows)
+        separated = e.update(0.3, rows)
+        self.assertEqual(separated.status, "succeeded")
+        self.assertFalse(separated.metrics["criteria"]["placement_required"])
+        self.assertFalse(separated.metrics["criteria"]["release_required"])
         self.assertIn("separated_while_held", e.flags)
         for name, r in rows.items():
             r["pose"][2] -= 0.08
@@ -180,10 +185,10 @@ class NativeL2ScoringTests(unittest.TestCase):
         e.update(0.4, rows)
         result = e.update(1.0, rows)
         self.assertEqual(result.status, "succeeded")
-        # Cap's 0.049 N support used to fail a hardcoded 0.05 N threshold.
+        # Later support readings do not add a placement gate to uncapping.
         self.assertLess(rows["cap"]["bench_force_n"], 0.05)
         rows["cap"]["bench_force_n"] = 0.0
-        self.assertEqual(e.update(1.1, rows).status, "running")
+        self.assertEqual(e.update(1.1, rows).status, "succeeded")
 
     def test_element_strain_ignores_rigid_motion_but_detects_compression(self):
         rest = np.array(

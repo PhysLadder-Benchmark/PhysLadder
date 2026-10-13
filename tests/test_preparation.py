@@ -75,7 +75,8 @@ class PreparationTests(unittest.TestCase):
         notes = operating_notes(config)
         self.assertIn("No scripted downward movement", notes["startup_preparation"])
         self.assertIn("move an observation arm", notes["startup_preparation"])
-        self.assertEqual(config.arm_roles["left"], "observation")
+        self.assertEqual(config.arm_roles["right"], "observation")
+        self.assertEqual(config.arm_roles["left"], "manipulation")
 
     def test_preparation_uses_shared_executor_without_task_switches(self):
         self.assertEqual(workflow_metadata()["startup_preparation"], "hold_joint_home_v1")

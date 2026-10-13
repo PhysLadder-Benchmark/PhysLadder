@@ -5,8 +5,8 @@ workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
 profile = "../robots/r5_tuojing_lab.toml"
-active_arms = ["left"]
-observation_arms = ["right"]
+active_arms = ["right"]
+observation_arms = ["left"]
 
 [simulation]
 environment = "tuojing_lab_v4"
@@ -39,54 +39,31 @@ model_config = "../models/gpt.toml"
 [runtime]
 physics_dt_s = 0.004166666666666667 # 240 Hz, checked in the complete metre-scale laboratory.
 
+[completion]
+return_home = true
+home_tolerance_rad = 0.05
+
 [task]
 # Guided visual execution; common information boundaries are appended by BenchTask.
 prompt_protocol = "guided_visual_l2_v3"
-scoring_protocol = "soft_pedestal_lift_v6"
+scoring_protocol = "soft_box_lift_return_v7"
 id = "L2-06"
-name = "从圆柱承台夹起橘子瓣 5 厘米"
+name = "绿盒橘子抬升并放回"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented_proxy"
 implementation = "household"
-simulation_limitations = "Native GPU FEM orange on a fixed native cylindrical pedestal. Engineering Young modulus 100 kPa and dynamic friction 2.0, not real tissue calibration. Goal: held 50 mm centroid rise from initial rest; no transfer/release/dwell or damage threshold. No attachment or automatic lift."
+simulation_limitations = "Native 19.2 g GPU FEM orange, 50 x 32.7 x 25.3 mm. Material overrides are engineering estimates. No tissue damage claim. Support and release are measured geometrically for FEM; no grasp attachment."
 launch_command = "python tools/launch.py run L2-06 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-06 --gui"
 instruction = """
-Use the LEFT R5 arm to grasp the orange segment resting on top of the fixed
-round pedestal centred between both arms and lift the segment at least 5 cm above its initial position.
-Keep it held there and request stop. There is no transport destination or
-placement stage: do not put it down, release it, or wait for an extra interval.
-The RIGHT arm may move its wrist camera to observe, but must not touch or support
-the orange or pedestal.
+The rounded orange lies flat, long axis across the image (world X), centred on the recessed green box top. RIGHT grasps its fuller middle and lifts the ORANGE 5-20 cm relative to its original rest. Firm squeezing is allowed. Then lower it back onto the SAME box, release and withdraw. No lateral transfer destination or exact original point is required; anywhere safely on the original box is acceptable. LEFT observes only.
 
-The pedestal is 13 cm high with a flat top about 6.8 cm across. The orange is
-about 50 mm long, 26 mm wide and 17 mm thick, about 9 g. It lies flat with its
-long axis pointing front/back in the overview (world Y), not across the image.
-Choose a balanced grasp
-across the fuller middle, not the pointed ends. Use RGB and complementary views
-to put the orange between the inner finger pads, with adequate overlap on both
-sides; avoid hitting the pedestal. The TCP is not the lowest point of the fingers.
-
-Close firmly. Elastic squeezing is allowed, and you may use the full 12-70 mm
-opening range. Do not stop closing merely because the pads touch or the orange
-deforms. There is no direct force command: a smaller target opening increases
-closure. If it slips during a short test lift, let the pedestal support it, close
-further and retry; correct the grasp if the pads miss the sides. Reopening fully
-is only needed to reposition. No soft-body damage threshold is imposed.
-
-Confirm that the ORANGE follows the hand. Raise it about 7 cm to comfortably
-clear the 5 cm goal despite small settling within the grip. Judge height relative
-to its original position on the pedestal, not relative to the tabletop; moving
-an empty gripper does not count. Once the held orange has risen at least 5 cm,
-stop without an additional transfer, release or stabilization action.
+Use current RGB views and measured robot feedback. First identify the objects and make a short plan, then execute and verify each physical subgoal. If an object did not follow the gripper, correct the grasp before continuing. Reobserve after contact; do not infer success from a commanded pose. There is no automatic grasp, reset, release or return-home action. The common completion instructions appended below are mandatory.
 """
 
 # 中文布置和道具说明。
 description = """
-道具：原生 GPU FEM 橘子瓣，约 50×26×17 mm、质量约 8.855 g；2026-10-09 新圆柱承台，高 130 mm、平顶直径约 68 mm，原生质量 313.9 g。承台固定在双臂中间的桌面，中心为实验室坐标 (0.19565, 1.25) m；整套道具相对原位置朝第三视角相机方向前移 5 cm。橘子置于顶面中部，绕竖直轴旋转90°，长轴沿世界Y、第三视角画面纵向；仍保持宽面平放，不把薄边立起。取消绿色目标区。
-任务：双手空手开始，左臂抓住橘子并向上提起，右臂可观察但不参与操作。相对本回合初始静置位置，橘子整体中心上升至少 50 mm，已离开承台且仍位于左夹爪双指之间即成功。初始垫高的 130 mm 不计入抬升；只抬空爪或弹飞不算抓起。
-完成后保持拿着即可，不搬运、不松手、不要求额外等待、指定方向、速度或形变阈值。允许用力夹持、弹性挤压以及夹持不稳后继续收紧；掉到桌面可以重抓，无自动复位。
-物性：保持原网格、尺寸、质量与 100 kPa 弹性模量；动摩擦由上一版 0.9 提高到 2.0（原资产为 0.45）。接触/静止余量 3/1.5 mm，240 Hz。仅覆盖运行场景并记录，不修改源资产，不声称这些是实测橘子物性。
-评价版本：soft_pedestal_lift_v6，和旧绿色区域搬运任务分别统计。形变及局部网格反转只作诊断；非有限读数属于仿真故障，不当作模型任务失败。物体不绑定夹爪，运动由真实 FEM 接触产生。
+新版三瓣连体软橘子约50×32.7×25.3 mm、19.2 g；横置在固定绿盒凹面中央，长轴沿第三视角左右方向，果肉宽面平放。盒子中心(0.19565,1.30)m、外缘高100 mm、中央凹面高93.5 mm。右臂抓起，物体中心相对初态上升50—200 mm；再放回同一绿盒顶面并完全释放，左臂只观察。无需精确原点、额外持稳计时或组织损伤阈值；允许弹性挤压。FEM使用100 kPa和动摩擦2.0的既有工程覆盖，未做实物材料标定。
+所有道具按要求释放，并且双臂回到初始关节位置，才算完成；关节回位容差0.05 rad。不自动执行回位。资产来源：飞书《GPT6评测任务及资产管理》2026-10-11下载包。
 """

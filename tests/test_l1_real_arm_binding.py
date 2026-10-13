@@ -10,6 +10,7 @@ from robot_tasks.backends.settings import SimulationSettings
 from robot_tasks.robots.kinematics import R5Kinematics
 from robot_tasks.policies.operating_notes import operating_notes
 from robot_tasks.tasks.bench.arm_selection import resolve_bench_spec
+from robot_tasks.robot_roles import arm_identities
 
 
 class RealArmBindingTests(unittest.TestCase):
@@ -36,6 +37,16 @@ class RealArmBindingTests(unittest.TestCase):
                     self.assertTrue(camera.existing_prim_path.startswith(mounts[name].prim_path + '/link6/'))
                 notes = operating_notes(c)
                 self.assertEqual(notes['arm_identity']['prim_by_arm']['left'], mounts['left'].prim_path)
+                identities = arm_identities(c)
+                for arm, side, key in (('left', 'right', 'gemini'),
+                                       ('right', 'left', 'gemini_right')):
+                    self.assertEqual(identities[arm]['overview_base_side'], side)
+                    self.assertEqual(identities[arm]['real_arm'], arm)
+                    self.assertEqual(identities[arm]['real_wrist_camera_key'], key)
+                    self.assertEqual(identities[arm]['wrist_camera'], arm + '_wrist')
+                    self.assertEqual(notes['arm_naming']['by_command_arm'][arm], identities[arm])
+                    self.assertIn('overview-image ' + side.upper(),
+                                  notes['arm_naming']['simulation_' + arm])
 
     def test_common_l2_and_l3_profiles_and_cameras_keep_original_bindings(self):
         for task in ('L2-01', 'L2-03', 'L3-03', 'L3-14'):

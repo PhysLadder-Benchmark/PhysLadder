@@ -107,12 +107,13 @@ class OptimizationTests(unittest.TestCase):
         self.assertNotIn("uniform cylindrical peg", policy.instructions)
         prepared = TASKS["L1-01"].factory.prepare_config(insertion)
         self.assertNotIn("Insert at least 0.04 m", prepared.instruction)
-        self.assertIn("Either end may enter", prepared.instruction)
-        self.assertIn("no automatic reset", prepared.instruction)
-        self.assertIn("You may keep holding the marker after entry", prepared.instruction)
-        self.assertIn("NOT completion requirements", prepared.instruction)
+        # The real-trial instruction is verbatim, including independent release
+        # and return. Do not reintroduce the old entry-only simulation recipe.
+        self.assertEqual(prepared.instruction, insertion.instruction)
+        self.assertIn("松爪撤离", prepared.instruction)
+        self.assertIn("双臂回位", prepared.instruction)
+        self.assertNotIn("You may keep holding the marker after entry", prepared.instruction)
         self.assertNotIn("one simulation second of released cup support", prepared.instruction)
-        self.assertIn("Keep the cap on", prepared.instruction)
         self.assertNotIn("Both flat ends are equivalent", prepared.instruction)
         self.assertNotIn("0.36", prepared.instruction)
         self.assertNotIn("BEFORE approaching", prepared.instruction)
@@ -223,7 +224,7 @@ class OptimizationTests(unittest.TestCase):
             robot.targets = targets
         action = Action((ArmCommand("left", "joint_position", home), ArmCommand("left", "gripper", (.06,))), self.config.control_dt_s)
         robot.state = Mock(return_value={"left": ArmState(joint_positions_rad=home, finger_positions_m=fingers)})
-        robot.backend = Mock()
+        robot.backend = Mock(collision_monitor=None)
         robot.planner = Mock()
         robot.planner.plan.return_value = {"paths": {"left": {"positions": [home,home], "times_s": [0., .001]}}, "diagnostics": {}}
         ready = Feedback("executing", metrics={"arms": {"left": {"motion_reached": False}}})

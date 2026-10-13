@@ -31,6 +31,8 @@ class IsaacSimBackend:
         self.lab_asset = None
         self.planning_environment_paths = ()
         self.planning_legacy_bench = True
+        self.wrist_geometry = {}
+        self.collision_monitor = None
 
     def open(self, config: TaskConfig) -> None:
         if self.app is not None:
@@ -80,12 +82,15 @@ class IsaacSimBackend:
                     raise RuntimeError(f"Could not open laboratory: {self.lab_asset}")
                 stage = omni.usd.get_context().get_stage()
                 self.environment_report = configure_stage(stage, self.camera_profile, config.robot)
-                if config.task_id.startswith("L2-") or config.raw.get("task", {}).get("implementation") == "loose_nut":
+                from ..robots.wrist_collision import configure_wrist_collisions
+                self.wrist_geometry, wrist_report = configure_wrist_collisions(stage, config.robot)
+                self.environment_report["wrist_collision"] = wrist_report
+                if config.task_id.startswith(("L2-", "L3-")):
                     from .tuojing_lab import apply_l2_finger_collisions
                     self.environment_report["finger_collision_overrides"] = apply_l2_finger_collisions(stage, config.robot)
                 elif config.task_id.startswith("L1-"):
                     # Thin-object tuning is specific to L1. Keep the existing
-                    # L2/nut overrides and other L3 collision geometry intact.
+                    # L2/L3 overrides intact.
                     from ..robots.finger_collision import configure_finger_collisions
                     self.environment_report["finger_collision_by_arm"] = {
                         mount.name: configure_finger_collisions(stage, mount.prim_path)
@@ -254,6 +259,10 @@ class IsaacSimBackend:
 
                 self.scene_report["gui_viewport"] = initialize_overview_view(
                     self.world.stage, self.camera_rig.paths["overview"])
+        if self.lab_asset is not None:
+            from ..robots.collision_feedback import CollisionMonitor
+            self.collision_monitor = CollisionMonitor(self.world.stage, profile)
+            self.scene_report["collision_feedback"] = self.collision_monitor.metadata()
         return dict(self.articulations)
 
     def reset(self, seed: int) -> None:
@@ -261,6 +270,8 @@ class IsaacSimBackend:
             raise RuntimeError("Backend is not open")
         import numpy as np
         np.random.seed(seed)
+        if self.collision_monitor is not None:
+            self.collision_monitor.reset()
         self.world.reset()
         for view in self.ee_views.values():
             view.initialize()
@@ -291,6 +302,8 @@ class IsaacSimBackend:
             if self.before_physics_step is not None:
                 self.before_physics_step(self._physics_dt)
             self.world.step(render=False)
+            if self.collision_monitor is not None:
+                self.collision_monitor.after_step(self._physics_dt)
             after = self.time_s()
             if not math.isfinite(after) or after <= before:
                 raise RuntimeError(
@@ -379,6 +392,8 @@ class IsaacSimBackend:
     def close(self) -> None:
         app, self.app = self.app, None
         try:
+            if self.collision_monitor is not None:
+                self.collision_monitor.close()
             if self.camera_rig is not None:
                 self.camera_rig.close()
             if self._rgb is not None and self._render_product is not None:
@@ -399,6 +414,8 @@ class IsaacSimBackend:
             self.lab_asset = None
             self.planning_environment_paths = ()
             self.planning_legacy_bench = True
+            self.wrist_geometry = {}
+            self.collision_monitor = None
             self.__dict__.pop("_planner_static_scene", None)
             if app is not None:
                 app.close()

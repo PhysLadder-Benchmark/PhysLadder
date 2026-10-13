@@ -2,7 +2,8 @@
 
 2026-10-11：L1-01/03/07/08/09 已接入飞书新交付，原始文件按版本单独锁定。
 安装来源、适配边界和布局见 [本轮记录](../../docs/l1_assets_20261011.md)。
-旧 GitHub Release 尚未包含这 8 个包；仅 pull 代码不足以取得新资产。
+10 月 13 日另补齐玻璃珠包。旧 GitHub Release 尚未包含这些新包；仅 pull 代码不足以取得新资产。
+L1 当前布局、臂命名及判定以 [真机对齐记录](../../docs/l1_real_alignment_20261012.md) 和任务配置为准；下文早期迁移记录描述的是历史版本。
 
 ## 按任务查找资产
 
@@ -19,21 +20,21 @@ source/
   L1-07/hat/  rack/  source_box/
   L1-08/cup/
   L1-09/flower/  cup/  source_charger/  marble_*/
-  L2-01/marker/
-  L2-03/book/
+  L2-01/marker/  support_box/
+  L2-03/book/  support_box/
   L2-04/cup/  pearl/
-  L2-06/orange/  pedestal/
+  L2-06/orange/  support_box/
   L2-07/drawer/
   L3-03/bottle/
-  L3-05/bolt/
+  L3-05/bolt/  support_box/
   L3-11/board/  eraser/
-  L3-14/triangle/
-  L3-15/brush/  dustpan/  block/
+  L3-14/eraser/
+  L3-15/brush/  dustpan/  block/  support_box/
 ```
 
 `task_assets.json` 登记每个目录及其原始资产。普通物品的 USD 直接位于物品目录；
 拔帽马克笔保留 `marker/pullable_marker/asset.usda` 与旁边的笔身、笔帽目录；
-瓶子保留 `bottle/assets/oriental_leaf.usda` 和 `bottle/textures/`，确保原相对引用不变。
+瓶子保留 `bottle/assets/oriental_leaf.usdc` 和 `bottle/textures/`，确保原相对引用不变。
 `packages/<交付包名>/` 保存完整原始交付，供来源追溯、安装和校验，不作为任务副本的回退路径。
 副本缺失或文件被修改会明确报错；更改任务物性仍应通过场景覆盖，而非直接修改锁定文件。
 
@@ -303,43 +304,29 @@ python tools/tuojing_assets.py --usd --report build/tuojing_assets/usd.json
 
 L1 几何评分使用 [碰撞体摘要](l1_scoring_geometry.json)，由 `tools/build_l1_scoring_geometry.py` 从锁定 USD 提取。白板笔摘要包含已有平底笔身适配，其余尺寸/分段形状保留；运行时核对导入后的几何。L1-07 已接入黄色空顶帽原生资产（208 个凸体），最低挂杆单独采样向上承托力，且保留帽圈在规划器中的开口。
 
-## L2 原生资产适配
+## 2026-10-11 飞书交付替换（当前）
 
-新增 `tabletop_interactions_20261006.zip` 和 `book_physx_20261006.zip`，与已有实验室、照片资产、橘子包共同由 `source.lock.json` 校验。按原目录安装，不能只复制单个 USD 而遗漏材质、子层或贴图。
+来源：[GPT6评测任务及资产管理](https://my.feishu.cn/docx/QK4EdOD3hotgp4x782ycgoyyn6g) 中的附件。11 个 ZIP 已下载，资产引用和贴图按完整目录保留；`source.lock.json` 记录来源链接、ZIP 和每个文件的哈希。`source/<task>/` 的旧物品副本已替换，旧三角块／橘子承台不再被这轮任务引用。旧包仍可能用于其他任务或历史追溯。
 
-| 任务 | 原生资产 | 显式适配 |
+| 任务 | 新包／道具 | 当前适配 |
 |---|---|---|
-| L2-01 | 可拔帽马克笔 | 保留笔身、笔帽、四个被动径向弹簧垫；从横放桌面起步，1920 Hz |
-| L2-03 | 原尺寸闭合书本 | 上下书固定，中层突出 90 mm；支撑架高 140 mm，夹 20 mm 厚度，不缩小书本 |
-| L2-04 | 两只原生纸杯、200 颗 8 mm 珍珠 | 画面右侧源杯自由、左侧接收杯固定；右臂倾倒、左臂观察；不加抓持片 |
-| L2-06 | 原生橘子瓣 GPU FEM＋圆柱承台 | 固定 130 mm 承台，夹起 50 mm 即完成；240 Hz，100 kPa，动摩擦 2.0，接触/静止余量 3/1.5 mm；不接入破裂和流汁 |
-| L2-07 | 双抽屉收纳盒 | 放在画面右臂前方；固定柜体与下层，上层原把手不加抓持片；初始开 30 mm，原生 90 mm 滑轨，最终总开度至少 75 mm |
+| L2-01 | `feishu_marker_20261011`、`feishu_box_20261011` | 马克笔横置绿盒中心，左手笔身、右手笔帽；独立原生接触，不绑定机器人。 |
+| L2-03 | `feishu_book_20261011`、绿盒 | 盒子居中向前移 100 mm，三书动态叠放且偏盒面右侧，中层向右突出 40 mm；右抽至少 20 mm（量化真机放宽标准）、左扶。 |
+| L2-06 | `feishu_orange_20261011`、绿盒 | 19.2 g 原生 GPU FEM；抬高 5–20 cm 放回释放。100 kPa、动摩擦 2.0 为显式工程覆盖。 |
+| L2-07 | `feishu_drawer_20261011` | 整盒向画面右侧再移 70 mm（允许局部出画），保留向桌前移 100 mm 的间距；原生上层滑轨开口仍朝机械臂、5 个松散蓝方块；初始 30 mm 开度，再拉约 50 mm 后推回。 |
+| L3-03 | `feishu_bottle_20261011` | 新版方形空瓶外观，瓶身固定；盖预松 7.5 mm/300°。瓶身原质量仍 358 g，未作为空瓶真值。 |
+| L3-05 | `feishu_bolt_20261011`、绿盒 | 140 mm 杆、24 mm 螺母、2 mm 螺距；预松七圈后剩约 2.5 圈，左杆右母。 |
+| L3-11 | `feishu_board_20261011`、`feishu_eraser_20261011` | 原生红字按 mask 转为 1 mm 接触擦除单元；原板与擦具不改。 |
+| L3-14 | 同版板擦 | 取代旧三角块，推入大三角目标区域。 |
+| L3-15 | `feishu_brush_20261011`、`feishu_pan_20261011`、绿盒、收纳盒包中的蓝块 | 原生刷子斜靠右绿盒，左簸箕固定，两块在中间。 |
 
-以上保留原文件，覆盖仅在会话层。原生物性大多是估算值；橘子形变仅记录，不作为任务失败阈值或真实损伤率。源资产供应方的 Sharpa 或压板验收不等同于 R5/GPT 完整任务验收。
+上述任务中的 L2-01、L3-03、L3-11 达成物理目标即结束；其余要求按任务释放及双臂回位。L2-04 沿用原资产并增加回位条件。L1 的独立真机对齐规则见本轮 L1 文档。所有完成条件与限制见根目录 README 和各任务 TOML。
 
-本机检查入口及范围见 `src/robot_tasks/integrationtest/README.md`；本轮结果位于 `reports/l2_asset_validation/`。
+橘子在 RTX 软体渲染路径中需要显式绑定原生 FrontPhoto 作为网格默认材质，并停用仅用于语义分瓣的重叠 GeomSubset；保留正反照片材质分组、UV、物理网格和源文件。该会话适配记录在 `scene.json`。
 
+大多数尺寸、摩擦、材料和螺纹参数仍为估计；擦除为接触覆盖代理，刷毛为刚性，软组织破裂未接入。这些不等于真机物性完全还原。原包 Sharpa 夹具结果、旧资产任务录像、初态 smoke check 均不能作为新版 GPT 完整成功率。
 
-## 2026-10-08 七类道具
-
-本地交付 `physical_props_20261008.zip` 保持 `physical_props_20261008/assets/<名称>/<名称>.usda` 层级，由 `source.lock.json` 校验。目录含蓝色方块、三角块、板擦、簸箕、手刷、绿板、整体膨胀螺栓；绿板登记为 `green_board_20261008`，避免覆盖旧绿板。
-
-L3-11、L3-15 保留原尺寸/质量；固定绿板，给扫具薄柄设置被动初始支座。早期 L3-05 曾从 Stud/HexNut 派生短粗螺丝，现已由下述独立螺母版本替代。此适配不改变源 USD；原膨胀螺栓仍是一整块，不能据此宣称套管膨胀或原生螺母旋开。
-
-## 东方树叶 335 ml 与 L3 最终搭配
-
-`oriental_leaf_335ml.zip` 包含 `oriental_leaf_335ml/assets/oriental_leaf.usda` 和完整 `textures/`；三个源文件原样导入并锁定哈希。源资产有独立 Body/Cap、原生 SDF 接触与估算的三头螺纹；刚体液体只用于显示。L3-03 的 Body 自由运动，由左臂扶持、右臂旋盖；在初态将 Cap 预松 7.5 mm、300°，之后仅靠接触运动，没有旋转驱动平移的脚本。
-
-L3-14 改为原生蓝色三角块和项目绿色大三角目标线；L3-15 固定原生簸箕，仅手刷有被动初始支座。字迹擦除仍是明确记录的代理机制；不将派生机制描述为原生资产自带功能。
-
-当前布置按公共第三视角：L3-14 块在目标右上、尖端同向；L3-15 左簸箕右手刷，中间仅两块，由右臂扫入；L3-11 绿板在桌面内转 180°，使用倒置黑字 GPT6，板擦在右侧由右臂抓取。源资产文件不变，初始变换与字迹由任务场景设置。
-
-## 可旋出螺母的膨胀螺栓
-
-`anchor_removable_nut_20261008.zip` 含原生 USD、说明、验证记录、预览和夹具复现脚本。登记道具 `anchor_removable_nut`，根下有独立 `AnchorBody`/`Nut`；两个真实 SDF 螺纹，没有螺旋关节。当前 L3-05 保留原尺寸，初始化将螺母预松十圈 / 12.5 mm、剩约两圈，双臂拿起和旋下。源文件不改。交付夹具验证采用 1920 Hz；它不是 R5 双臂成功证据。
-
-2026-10-09 新增 `desktop_additions_20261009.zip`，原样保存圆柱承台、陶瓷杯和插头底座。`cylindrical_pedestal` 接入 L2-06，`black_ceramic_mug` 接入 L1-01，`plug_storage_base` 接入 L1-03。在会话层将承台固定，保留原生几何；原始中文名 ZIP 也可按资产锁校验并安装。
-
+`release.json` 仍指向已有的**部分** GitHub 资产 Release，新增飞书包未上传该 Release；`omitted_packages` 明确列出它们。不能声称仅下载现有 Release 就能运行全部新版任务。
 
 ### 2026-10-13 L1-09 玻璃珠补齐
 

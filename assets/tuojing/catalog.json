@@ -80,10 +80,11 @@
     },
     {
       "id": "desk_organizer",
-      "package": "photo_props",
-      "path": "assets/desk_organizer/desk_organizer.usda",
+      "package": "feishu_drawer_20261011",
+      "path": "organizer_with_contents.usda",
       "role": "prop",
-      "notes": "Sliding drawers; push-to-open latch is not established by this delivery."
+      "notes": "2026-10-11 original upper rail plus five loose 20 mm blue cubes; no push-to-open latch.",
+      "delivery": "2026-10-11"
     },
     {
       "id": "all_props",
@@ -99,9 +100,11 @@
     },
     {
       "id": "orange_segment",
-      "package": "orange_soft",
+      "package": "feishu_orange_20261011",
       "path": "assets/orange_segment/asset.usda",
-      "role": "prop"
+      "role": "prop",
+      "delivery": "2026-10-11",
+      "notes": "2026-10-11 native GPU FEM, 19.2 g, rounded three-lobe shape, front/back photos. Task material overrides remain explicit; no rupture script."
     },
     {
       "id": "orange_left_fragment",
@@ -129,9 +132,10 @@
     },
     {
       "id": "pullable_marker",
-      "package": "tabletop_interactions",
+      "package": "feishu_marker_20261011",
       "path": "assets/pullable_marker/asset.usda",
-      "role": "prop"
+      "role": "prop",
+      "delivery": "2026-10-11"
     },
     {
       "id": "open_bowl",
@@ -141,9 +145,10 @@
     },
     {
       "id": "closed_book",
-      "package": "book",
-      "path": "assets/closed_book/closed_book.usda",
-      "role": "prop"
+      "package": "feishu_book_20261011",
+      "path": "closed_book.usda",
+      "role": "prop",
+      "delivery": "2026-10-11"
     },
     {
       "id": "pearl_4mm",
@@ -165,10 +170,11 @@
     },
     {
       "id": "blue_square",
-      "package": "physical_props_20261008",
-      "path": "assets/blue_square/blue_square.usda",
+      "package": "feishu_drawer_20261011",
+      "path": "assets/blue_cube/blue_cube.usda",
       "role": "prop",
-      "notes": "2026-10-08 native rigid prop; dimensions/friction partly estimated. Task-specific adaptations are recorded separately."
+      "notes": "2026-10-11 native 20 mm cube, 2.6 g; copied from the organizer contents package.",
+      "delivery": "2026-10-11"
     },
     {
       "id": "blue_triangle",
@@ -179,17 +185,19 @@
     },
     {
       "id": "board_eraser",
-      "package": "physical_props_20261008",
-      "path": "assets/board_eraser/board_eraser.usda",
+      "package": "feishu_eraser_20261011",
+      "path": "assets/blue_board_eraser/blue_board_eraser.usda",
       "role": "prop",
-      "notes": "2026-10-08 native rigid prop; dimensions/friction partly estimated. Task-specific adaptations are recorded separately."
+      "notes": "2026-10-11 native 120 x 60 x 20 mm rigid eraser, 15.4 g; cloth face local +Z.",
+      "delivery": "2026-10-11"
     },
     {
       "id": "dustpan",
-      "package": "physical_props_20261008",
+      "package": "feishu_pan_20261011",
       "path": "assets/dustpan/dustpan.usda",
       "role": "prop",
-      "notes": "2026-10-08 native rigid prop; dimensions/friction partly estimated. Task-specific adaptations are recorded separately."
+      "notes": "2026-10-11 native shallow round-backed pan with thin +Y lip, 23.2 g; fixed in task.",
+      "delivery": "2026-10-11"
     },
     {
       "id": "expansion_anchor",
@@ -200,31 +208,35 @@
     },
     {
       "id": "green_board_20261008",
-      "package": "physical_props_20261008",
-      "path": "assets/green_board/green_board.usda",
+      "package": "feishu_board_20261011",
+      "path": "green_board.usda",
       "role": "prop",
-      "notes": "2026-10-08 native rigid prop; dimensions/friction partly estimated. Task-specific adaptations are recorded separately."
+      "notes": "Legacy ID; current 2026-10-11 board has photo-derived red GPT6 writing and ink_mask.png. Runtime adapts the writing to a contact-removal proxy.",
+      "delivery": "2026-10-11"
     },
     {
       "id": "hand_brush",
-      "package": "physical_props_20261008",
+      "package": "feishu_brush_20261011",
       "path": "assets/hand_brush/hand_brush.usda",
       "role": "prop",
-      "notes": "2026-10-08 native rigid prop; dimensions/friction partly estimated. Task-specific adaptations are recorded separately."
+      "notes": "2026-10-11 native thin fan-shaped hand brush, 36.5 g; rigid bristles.",
+      "delivery": "2026-10-11"
     },
     {
       "id": "oriental_leaf_335ml",
-      "package": "oriental_leaf_335ml",
-      "path": "assets/oriental_leaf.usda",
+      "package": "feishu_bottle_20261011",
+      "path": "assets/oriental_leaf.usdc",
       "role": "prop",
-      "notes": "Separate native body and cap; estimated photo geometry/threads, uncalibrated seal; task fixes body and pre-loosens cap."
+      "notes": "2026-10-11 square empty-bottle appearance, separate cap; native body mass still 358 g. Body fixed in this task, cap pre-loosened 7.5 mm/300 degrees; uncalibrated thread/friction.",
+      "delivery": "2026-10-11"
     },
     {
       "id": "anchor_removable_nut",
-      "package": "anchor_removable_nut_20261008",
-      "path": "assets/expansion_anchor/expansion_anchor.usda",
+      "package": "feishu_bolt_20261011",
+      "path": "assets/stud_and_nut.usda",
       "role": "prop",
-      "notes": "Independent native AnchorBody and Nut; actual SDF threads. Task preloosens nut by 10 turns / 12.5 mm. No helical joint; fixture validation at 1920 Hz, not autonomous bimanual evidence."
+      "notes": "2026-10-11 independent 140 mm conical stud / 24 mm hex nut, 2 mm RH pitch. Runtime pre-loosens seven turns / 14 mm, leaving 5 mm engagement; no thread guide or motor.",
+      "delivery": "2026-10-11"
     },
     {
       "id": "cylindrical_pedestal",
@@ -344,6 +356,13 @@
       "path": "assets/marble_clear_mint/marble_clear_mint.usda",
       "role": "prop",
       "notes": "Feishu delivered 16-mm glass sphere; independent dynamic body, native material and analytic sphere collision; diameter/mass are asset estimates."
+    },
+    {
+      "id": "green_support_box",
+      "package": "feishu_box_20261011",
+      "path": "assets/green_support_box/green_support_box.usda",
+      "role": "prop",
+      "delivery": "2026-10-11"
     }
   ]
 }

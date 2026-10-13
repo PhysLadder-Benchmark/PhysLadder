@@ -5,7 +5,9 @@ workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
 profile = "../robots/r5_tuojing_lab.toml"
-active_arms = ["left", "right"]
+active_arms = ["right"] # Real skill LEFT (can0) is on overview RIGHT.
+
+observation_arms = ["left"]
 
 [simulation]
 environment = "tuojing_lab_v4"
@@ -26,9 +28,12 @@ solver_velocity_iterations = 0
 [policy]
 model_config = "../models/gpt.toml"
 
+[completion]
+return_home = false
+
 [task]
 id = "L3-03"
-name = "双臂扶东方树叶瓶旋下松盖"
+name = "固定瓶身旋下瓶盖"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented_proxy"
@@ -36,46 +41,13 @@ implementation = "household"
 launch_command = "python tools/launch.py run L3-03 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L3-03 --gui"
 instruction = """
-Use BOTH R5 arms: LEFT steadies the bottle body, RIGHT removes its loosened cap.
-Left/right arm labels also correspond to the shared overview image. The bottle
-stands freely at the centre of the table workspace between the arms: it is NOT fixed or attached.
-Neither hand is observation-only. Use all camera views while maintaining support.
+The square Oriental Leaf bottle stands at the centre between both arms and is FIXED to the table. RIGHT unscrews the loose cap counterclockwise as seen from above; LEFT only observes. No support-hand grasp is needed. Body width approximately 52 mm, cap diameter 42 mm. The cap is pre-loosened but still threaded, with 9 mm lead per turn. Complete the task as soon as the cap is fully detached from the neck. Keeping it held is allowed; no additional lift height, placement, release or return home is required. Do not try to move the fixed bottle.
 
-First identify the body and cap. Grip the lower straight section of the bottle body with LEFT,
-preferably leaving its base supported on the table. The body is about 62 x 46 mm
-wide; the narrower parallel faces are easier to grasp than its shoulder or neck.
-Confirm that this grasp prevents the body from turning with the cap. Keep this
-support while RIGHT operates the cap. Use vertically separated grasp regions;
-check clearance between both fingers, wrists and camera housings. Keep the
-supporting wrist to the side of the bottle; do not drive its TCP all the way
-to the bottle centre if that puts its camera bracket under the cap hand.
-
-The transparent cap is about 42 mm wide and 16 mm tall. It is already loosened,
-with only the last partial thread engagement; there is no tight seal to break.
-RIGHT should grasp its upper sidewall across its diameter, keeping finger tips
-above the shoulder. Leave room for the tips below TCP; do not centre the entire
-finger length at cap mid-height and pinch the neck. A blocked close is not
-proof of a secure grasp; verify actual cap motion relative to the held body.
-
-Turn counterclockwise as viewed from above and allow axial rise. Use short
-increments and reobserve. If still engaged, continue turning with rise rather
-than pulling through the thread. If free, lift clear instead of rotating more.
-The photo-derived thread lead is about 9 mm per revolution, not a commanded
-trajectory or turn quota. Regrasp the cap as needed while LEFT maintains body
-support. Reposition cameras only when it does not abandon a necessary grasp.
-
-After full separation, place the cap on any clear tabletop area and release
-RIGHT. LEFT may keep holding the bottle upright, or leave it upright on the
-table and release it. Completion requires actual two-arm supported cap removal,
-a fully detached cap released on the table, and a supported bottle. No minimum
-turn count, exact parking point, additional timed wait or mandatory bottle
-release is required. Observe this result before requesting stop.
+Use current RGB views and measured robot feedback. First identify the objects and make a short plan, then execute and verify each physical subgoal. If an object did not follow the gripper, correct the grasp before continuing. Reobserve after contact; do not infer success from a commanded pose. There is no automatic grasp, reset, release or return-home action.
 """
 
 # Chinese setup/props description; final task attribute.
 description = """
-道具：东方树叶 335 ml 原生瓶身、透明瓶盖及贴图；保留尺寸、碰撞和质量。
-布置：瓶子中心位于两臂中间的实验室坐标 (0.19565, 1.30) m，瓶身可自由运动，不再固定。盖预松 7.5 mm／300°，保留末段啮合；双手空手。公共第三视角的左臂扶瓶身下部，右臂抓上方瓶盖旋下，两臂都参与操作。
-完成：有左臂扶瓶、右臂取盖的实际双臂过程；瓶盖完全脱离并放到桌面松手。瓶身可以继续由左臂扶住，也可以直立放回桌上；不强制松开瓶身、不规定圈数、固定摆放点或额外等待。
-边界：预松盖，不测试紧盖开启力矩或防盗环；物性和螺纹为照片估算，未实测标定。程序不会自动扶瓶或绑定抓持。
+更新为方形东方树叶空瓶外观资产，竖直放两臂中间，瓶身按本轮要求固定；这是相对真机双臂扶瓶的明确简化。第三视角右臂（对应真机左臂）旋下预松瓶盖，第三视角左臂只观察；确认瓶盖完全脱离瓶口即成功，允许继续夹持，不额外要求提离30 mm或放桌。保持原7.5 mm/300°预松条件，不测试紧盖启动力矩。资产虽是空瓶外观，原生瓶身质量仍358 g，未认作实测空瓶质量。
+确认完全分离即结束，不要求放下、释放或双臂回位。资产来源：飞书《GPT6评测任务及资产管理》2026-10-11下载包。
 """

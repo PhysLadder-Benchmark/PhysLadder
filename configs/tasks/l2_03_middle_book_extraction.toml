@@ -5,8 +5,8 @@ workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
 profile = "../robots/r5_tuojing_lab.toml"
-active_arms = ["right"]
-observation_arms = ["left"]
+active_arms = ["left", "right"]
+observation_arms = []
 
 [simulation]
 environment = "tuojing_lab_v4"
@@ -27,61 +27,31 @@ solver_velocity_iterations = 0
 [policy]
 model_config = "../models/gpt.toml"
 
+[completion]
+return_home = true
+home_tolerance_rad = 0.05
+
 [task]
 # Guided visual execution; common information boundaries are appended by BenchTask.
 prompt_protocol = "guided_visual_l2_v3"
 scoring_protocol = "native_l2_validity_v2"
 id = "L2-03"
-name = "固定上下层的单臂侧向抽书"
+name = "双臂支撑并抽取中层书"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
 implementation = "household"
-simulation_limitations = "Native 220 x 140 x 20 mm rigid books; measured-photo mass 378.9 g. Fixed neighbours, 5 mm upper clearance, thickness grasp. Friction and thickness estimated."
+simulation_limitations = "Native rigid closed books, 378.9 g each; no page flex. All books are dynamic. Support box anchored as a passive fixture. Friction uncalibrated."
 launch_command = "python tools/launch.py run L2-03 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-03 --gui"
 instruction = """
-Use the RIGHT R5 arm to extract ONLY the middle book. The LEFT arm may
-move its wrist camera for a clearer view, but must not touch the books.
-The stack and its support box are centred between both arms.
-The three books are stacked horizontally. Upper and lower books are fixed;
-there is no need to support them. On a blue support box, the middle book
-protrudes about 40 mm from the RIGHT side in the overview image, along world
-+X. This is a sideways extraction, not a pull toward the robots along +Y.
-Do not rotate or stand up the stack.
+Three 220 x 140 x 19.6 mm books lie flat on a green box centred between both arms, farther forward on the table. The stack is offset 35 mm toward overview-image RIGHT and 20 mm toward the arms relative to the box centre, exposing box top on the left and front. The middle book protrudes another 40 mm to image-right (world +X). All books can move. RIGHT pinches the exposed middle book across its thickness, LEFT steadies the upper book. Pull the middle book visibly farther toward image-right; 20 mm of measured displacement operationalizes the real task's relaxed pull-out-a-little goal. Complete extraction is not required. Slight neighbouring-book movement is allowed, but they must remain supported on the stack/box. Release the books after the pull; do not let them drop off the support.
 
-Inspect the exposed right-side edge and the space above and below it. Each book
-is 220 mm long, 140 mm wide and 20 mm thick. The R5 opens at most 70 mm:
-it CANNOT grasp across the 140 mm width. Orient the gripper so its pads close
-across the 20 mm thickness, one above and one below the projecting middle
-book. Place both pads entirely ahead of the upper/lower books, with enough
-pad overlap to carry the 378.9 g book. Avoid the edges and the fixed neighbours.
-
-Approach from the +X side toward the exposed edge with an open gripper; inspect complementary views
-before closing in a separate decision. Verify actual pad contact and book
-motion using a small outward pull, not a vertical lift against the upper book.
-Pull sideways along world +X, maintaining the book height and orientation
-while it remains between the fixed neighbours. Reobserve if blocked or slipping;
-do not continue an empty grasp or increase off-axis motion.
-
-Continue until the entire rear edge has cleared the fixed stack, approximately
-110 mm of travel from the initial pose. Seeing just the front end move is not
-completion. Once the book is fully extracted by grasping and pulling, it may
-remain in the gripper OR rest on the tabletop. Either final state is sufficient;
-no continued grasp, timed hold, release or target placement is required.
-Do not regrasp a fully extracted book already supported by the table merely
-to prove retention. Request stop after verifying complete extraction and
-support by the hand or table; a book still falling unsupported is not complete.
-Use available feedback; do not invent object poses or force measurements.
-The fixed upper book leaves about 5 mm clearance above the settled middle
-book; its weight is not applied to the middle book. This tests guided extraction,
-not supporting or balancing the upper stack. There is no automatic scene reset.
+Use current RGB views and measured robot feedback. First identify the objects and make a short plan, then execute and verify each physical subgoal. If an object did not follow the gripper, correct the grasp before continuing. Reobserve after contact; do not infer success from a commanded pose. There is no automatic grasp, reset, release or return-home action. The common completion instructions appended below are mandatory.
 """
 
 # 中文布置和道具说明。
 description = """
-道具：三份原生《神雕侠侣》闭合书本资产，220×140×20 mm，单本质量 378.9 g；一个固定蓝色支撑盒，140×220×70 mm。支撑盒为视频布置的尺寸估计，不是实物扫描。
-布置：蓝色支撑盒与书堆放在双臂中间，中心为实验室坐标 (0.19565, 1.30) m；书本平放在蓝色盒上，上下书本固定，中层向第三视角画面右侧（世界 +X）突出 40 mm；不是向机械臂正面（+Y）突出。书堆居中，朝右突出的一侧由右臂接近和抽取。中层落稳后与固定上层留 5 mm 净空，上层重量不压在中层上。
-抓法：右臂从突出侧接近，一指在上、一指在下，夹住 20 mm 厚度，避开上下固定书；不能夹 140 mm 宽度。左臂按需观察，不扶书。
-完成：夹持后沿 +X 侧向抽取约 110 mm，直到整个后缘离开固定书堆；最终由手或桌面承托均可，不要求持续静止或额外等待，不需为验证重新抓起。悬空掉落中或掉桌不算完成。保留原生尺寸、质量和材质；不模拟翻页或书本弯曲。本次只对齐初态布置，未将目标改成真机视频中的仅抽出 5 cm。
+参照真机图片：绿盒居中、较上一版向桌前移100 mm，中心(0.19565,1.20)m；三本书平叠，整体相对盒心向画面右侧偏35 mm、向机械臂侧偏20 mm，左侧和前侧露出盒面。每本220×140×19.6 mm、378.9 g。中层再向画面右侧突出40 mm，右臂夹突出边向右抽，左臂扶上书。盒子固定，三本书均可动；向右再抽至少20 mm，允许相邻书轻微随动，不要求完全抽离。抽后书本仍有书堆/盒面承托，全部松手。
+所有道具按要求释放，并且双臂回到初始关节位置，才算完成；关节回位容差0.05 rad。不自动执行回位。资产来源：飞书《GPT6评测任务及资产管理》2026-10-11下载包。
 """

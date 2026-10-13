@@ -134,6 +134,13 @@ def check(task_id, output, *, prepare=True, prop_probe=False, capture_hook=None,
             raise RuntimeError(
                 "Invalid initial task assessment: " + str(asdict(assessment))
             )
+        monitor = getattr(backend, "collision_monitor", None)
+        if monitor is not None:
+            result["initial_rigid_collision"] = {
+                "blocked": monitor.blocked, "peak_contact": monitor.peak,
+                "physics_steps": monitor.steps, "events": monitor.events}
+            if monitor.blocked is not None:
+                raise RuntimeError("Unexpected arm/attachment contact in initial scene: " + str(monitor.blocked))
         result.update(
             passed=True,
             initial_assessment=asdict(assessment),

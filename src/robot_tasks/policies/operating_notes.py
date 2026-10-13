@@ -3,6 +3,7 @@
 from ..config import ExecutionSettings
 from ..robots.kinematics import R5Kinematics
 from ..backends.scene_geometry import bench_geometry
+from ..robot_roles import ARM_IDENTITY_PROTOCOL, REAL_SKILL_REVISION, arm_identities
 
 
 def task_execution_guidance(*, include_depth=False) -> str:
@@ -127,6 +128,38 @@ def operating_notes(config) -> dict:
         }
     if config.raw["task"].get("arm_selection") == "real_prompt":
         notes["home_joint_positions_rad"] = {m.name: m.home_positions_rad for m in profile.mounts}
+    if config.raw.get("simulation", {}).get("environment") == "tuojing_lab_v4":
+        notes["rigid_collision_feedback"] = (
+            "collision_blocked means the current action was stopped after measured contact "
+            "by a non-finger arm part/camera/mount, or contact with the other robot. "
+            "Normal finger-object contact is allowed. Use RGB and measured pose to decide "
+            "a clear retreat or another approach; there is no automatic recovery. This binary "
+            "simulation contact flag is not a calibrated force sensor or a task-success verdict."
+        )
+        identities = arm_identities(config)
+        notes["arm_naming"] = {
+            "protocol": ARM_IDENTITY_PROTOCOL,
+            "real_skill_revision": REAL_SKILL_REVISION,
+            "reference": "Fixed overview camera, facing the two robots. Arm IDs refer to base locations, not current TCP positions.",
+            **{f"simulation_{arm}": (
+                f"Robot on overview-image {row['overview_base_side'].upper()}; "
+                f"corresponds to the real setup's {row['real_arm'].upper()} arm."
+            ) for arm, row in identities.items()},
+            "commands_and_cameras": "Use simulation IDs in commands. left_wrist belongs to simulation left; right_wrist belongs to simulation right. Wrist image orientation does not rename arms. Task instructions already use simulation IDs; do not swap them again.",
+            "by_command_arm": identities,
+            "coordinate_rule": "Converting real arm names does not mirror object positions or motion coordinates. Both simulation arms use the same absolute world frame; the real robot's two base frames and historical CAN labels are not command frames here. An arm crossing the image centre retains its ID, role and wrist camera.",
+        }
+        notes["real_skill_observation_guidance"] = (
+            "Use the overview to identify robot bases and the entire approach corridor, "
+            "then wrist views to inspect fingers and contact. Include the camera housing, "
+            "mount and held object when checking clearance. To resolve uncertain object motion, "
+            "compare it with a stationary support or background in a view held still across the move; "
+            "a camera moving with the hand can hide slip or make a stationary object seem to move. "
+            "Reframing by rotating a wrist does not itself add a translational viewing baseline. "
+            "Keep the working arm holding while an allowed observation arm repositions, inspect "
+            "the new images, then resume work. A support/grasp role requires manipulation permission. "
+            "Only the current task defines required release, return-home and success conditions."
+        )
     camera_path = config.raw.get("simulation", {}).get("camera_profile")
     if camera_path:
         from ..cameras.profile import load_camera_rig

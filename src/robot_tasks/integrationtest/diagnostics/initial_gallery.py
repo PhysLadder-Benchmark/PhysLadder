@@ -121,7 +121,7 @@ def write_index(output, results):
 section{background:white;border:1px solid #ddd;padding:20px;margin:24px 0;border-radius:10px}
 .photos{display:flex;gap:16px}figure{flex:1;min-width:0;margin:0}img{width:100%;border-radius:6px}
 pre{white-space:pre-wrap;font:inherit}a{color:#135abc}@media(max-width:700px){.photos{display:block}}</style>
-<h1>L1–L3 任务初始场景</h1><p>机器人零关节初态，道具经过物理落稳；未调用 GPT、未执行任务。
+<h1>任务初始场景</h1><p>机器人零关节初态，道具经过物理落稳；未调用 GPT、未执行任务。
 初态通过不等于模型能完成任务。第三视角是实际输入画面；近景是独立展示相机。</p>"""
     document += (
         "<nav>"

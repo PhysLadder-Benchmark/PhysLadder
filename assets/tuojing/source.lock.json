@@ -2655,6 +2655,419 @@
           "sha256": "af373dad759ce82c52f082bb6d0ec93c509566bddfbad027bd9c83e3b3bea659"
         }
       }
+    },
+    {
+      "id": "feishu_marker_20261011",
+      "delivery": "2026-10-11",
+      "directory": "feishu_marker_20261011",
+      "archive": "杯子与可开合马克笔_仅资产_20261011.zip",
+      "archive_root": "mug_and_pullable_marker_20261011",
+      "archive_sha256": "ebeaf1343fe51ec689567ef5a6a31078206589901b5e10fb1095f71f806d806f",
+      "source_url": "https://my.feishu.cn/space/api/box/stream/download/all/Lj3nbeBotodxpQxPwSKcrjM7nSe/",
+      "files": {
+        "README_入口与状态.txt": {
+          "bytes": 1669,
+          "sha256": "d9296ffa61a3968cd65195d16e7692714526943907ce1350eedb68738289ec5f"
+        },
+        "assets/black_ceramic_mug/black_ceramic_mug.usda": {
+          "bytes": 1732951,
+          "sha256": "1234361a239d04308ed5ea78a83cecf80b89948ecf92dc934cc10f42c8bfb931"
+        },
+        "assets/black_ceramic_mug/exterior_normal.png": {
+          "bytes": 1039068,
+          "sha256": "edf7a4fe03b22daa7ae0c97c996b832650041ff13f0f954713efd8f0392efb77"
+        },
+        "assets/black_ceramic_mug/exterior_roughness.png": {
+          "bytes": 348784,
+          "sha256": "331f60adced46c0c266d87a7627c1473b8f0d5fa287f7c443134f8352f80aba8"
+        },
+        "assets/black_ceramic_mug/properties.json": {
+          "bytes": 549,
+          "sha256": "3f90e246fcbbaa2dad23ce957ef29ce93861a99d2293c93abfff12409775c80c"
+        },
+        "assets/marker_body/label.png": {
+          "bytes": 62284,
+          "sha256": "ae414077e57b68715b4109fda5bedbb675abe0c83ea454e65be155bb1a061f82"
+        },
+        "assets/marker_body/marker_body.usda": {
+          "bytes": 245542,
+          "sha256": "481985e5f8702bc8a54d17cadeb4331d95b1276c99477ea38c01ac01236226bd"
+        },
+        "assets/marker_cap/marker_cap.usda": {
+          "bytes": 553752,
+          "sha256": "e84fb30a2e873c47133c4df0e8013ec26b425fe436028a1d7fc8bf76cdca91db"
+        },
+        "assets/pullable_marker/asset.usda": {
+          "bytes": 6933,
+          "sha256": "f864739919d11717ea40ecf1bc60f623fbdba6d404703aa34adc5dcb3c560870"
+        },
+        "assets/pullable_marker/fit_parameters.json": {
+          "bytes": 1857,
+          "sha256": "04e1fb52a8a2450330d69e7eb30b8f6f2a32478b9b5257c24a48e534a1e3d0e1"
+        },
+        "manifest.json": {
+          "bytes": 2742,
+          "sha256": "6bdc3524a8a38b461deca3d2d6add2cdb9607529e9cc74d46c775bb0da2d5ec6"
+        },
+        "marker_test_result.json": {
+          "bytes": 5634,
+          "sha256": "6313aad9f04f3fb360496ffd26a8c0d43615d7ba7882665e0b890f4d9f9a70ef"
+        },
+        "mug_validation.json": {
+          "bytes": 538,
+          "sha256": "6a848cccd7e769461b0082d3a350e182ab00fdc1b642215b8428ba5560d4ea46"
+        },
+        "real_measurement_template.csv": {
+          "bytes": 99,
+          "sha256": "5a6f4e7647c727bbabe0ef1afb3ea528a377916b7cde448ac2f3c47bea706de2"
+        },
+        "阻力设计与实物标定.md": {
+          "bytes": 9155,
+          "sha256": "64d4e682efec563d59c1bd36019c0e04ab3023308bbe80e9dc2631f8c8c304f3"
+        }
+      }
+    },
+    {
+      "id": "feishu_box_20261011",
+      "delivery": "2026-10-11",
+      "directory": "feishu_box_20261011",
+      "archive": "绿盒子_资产_20261011_高度10cm.zip",
+      "archive_root": "绿盒子",
+      "archive_sha256": "b5c88710232122b86126efc2879cdcfeef72379c9b52ddd612c20401a2ab796d",
+      "source_url": "https://my.feishu.cn/space/api/box/stream/download/all/O22tbc2Thoj4QsxCtdyckXCQnph/",
+      "files": {
+        "assets/green_support_box/green_support_box.usda": {
+          "bytes": 519891,
+          "sha256": "1308310ccf4a08acfe6727579416b4b7bde29af3b693f5ac64265275adeb6701"
+        },
+        "assets/green_support_box/molded_plastic_base.png": {
+          "bytes": 22059,
+          "sha256": "e018d2722bcd811382718e7f3dc5ca5225d3b2e0a7c37b09a03a9e9423ba0ab5"
+        },
+        "assets/green_support_box/molded_plastic_normal.png": {
+          "bytes": 3230393,
+          "sha256": "89dc699a50c2e098c8d5b90e661b901863b81c5ed31c171369b7bb6869823ec9"
+        },
+        "assets/green_support_box/molded_plastic_roughness.png": {
+          "bytes": 1260060,
+          "sha256": "5a88ed9a4d8cf9963a4018a9b6a80d687f408d8607a5293a3b58c6215404a8e6"
+        },
+        "assets/green_support_box/properties.json": {
+          "bytes": 1151,
+          "sha256": "29c361bd2d536125ee6cf4620d3633ee99aa78c40cda7cddbc93f5019870357d"
+        },
+        "使用说明.txt": {
+          "bytes": 371,
+          "sha256": "8d7032498c24e94aa7f8e13868d869a12ed95a6a3a8c91ad343c343ba0ebe339"
+        },
+        "原包说明_供参考.txt": {
+          "bytes": 2733,
+          "sha256": "599e103e1cf9e61e2bac06748df3f11909074b8efbaabd24ab4fc0037476a727"
+        }
+      }
+    },
+    {
+      "id": "feishu_book_20261011",
+      "delivery": "2026-10-11",
+      "directory": "feishu_book_20261011",
+      "archive": "书本_纸质外观_刚体_仅资产_20261011.zip",
+      "archive_root": "closed_book",
+      "archive_sha256": "57fc684f89ff9043c39c8010b9cc523eec67bf3f885f347cbdbdf3034c79b453",
+      "source_url": "https://my.feishu.cn/space/api/box/stream/download/all/EjUtbN4HvoLOSox5Hdcc6PI8nFg/",
+      "files": {
+        "closed_book.usda": {
+          "bytes": 3755061,
+          "sha256": "60fcc3c7ee7c47f1773da5eefb52ccf72d7ed34414fc81cc02f6a67fe22034ce"
+        },
+        "textures/cover_albedo.png": {
+          "bytes": 1990125,
+          "sha256": "41e71f3e107c7f80d91fdce69f177d92adc40de1666e723d87eab6294ee78209"
+        },
+        "textures/paper_fiber_normal.png": {
+          "bytes": 3110728,
+          "sha256": "b3540c526a9dfc8a9a7277e42d03e946618dcb8452ed0cbe093e3599eeddb4e9"
+        },
+        "textures/texture_provenance.txt": {
+          "bytes": 716,
+          "sha256": "5f6e9e78e1df1b24d4f5ba8f69ba2c339b553d2f0f32810cd7b76e5c987e118c"
+        },
+        "说明.txt": {
+          "bytes": 976,
+          "sha256": "362eb8b62ffcdfb00e43a9d2f6940572a7ef181358408edb7569496e3e28cbdb"
+        }
+      }
+    },
+    {
+      "id": "feishu_orange_20261011",
+      "delivery": "2026-10-11",
+      "directory": "feishu_orange_20261011",
+      "archive": "橘子瓣_圆润饱满版_仅资产_20261011.zip",
+      "archive_root": "orange_rounded",
+      "archive_sha256": "4059028efdf33918268853c3aea5d58294759c0936655459e4beb6101139eacb",
+      "source_url": "https://my.feishu.cn/space/api/box/stream/download/all/LedgbrsBioVAOwxEzPicOnCrnce/",
+      "files": {
+        "README.txt": {
+          "bytes": 1464,
+          "sha256": "6668963397cd375a0946874211e3bea32c68c98439c4a005a1c45ce791bb470a"
+        },
+        "assets/orange_segment/asset.usda": {
+          "bytes": 9042079,
+          "sha256": "52ed80e261c6caa86fe0f10952e84a9d760b0457a1f482b42ad11c03458f0c65"
+        },
+        "assets/orange_segment/photo_front.png": {
+          "bytes": 11828278,
+          "sha256": "16f3242f001e369b0a9727db3ad2e0a4ebe731c4359b57c57684bb76a664bd62"
+        },
+        "assets/orange_segment/photo_reverse.jpg": {
+          "bytes": 2159804,
+          "sha256": "7b273c9362eea351e75e0dc1b024342f0fae39ab9c401d7f60bb25cac6a09f21"
+        },
+        "assets/orange_segment/visual.usdc": {
+          "bytes": 1871479,
+          "sha256": "71ccdbc163f2307bfbf91d7fcad94644dc9d78051ccfb9299c2f174ac9d0ab0c"
+        },
+        "orange_three_connected_spherical.usda": {
+          "bytes": 147,
+          "sha256": "babe8236f09ed664b33cf8b94e05aceb93c43b095b848f9cd176c90b04a3f68d"
+        }
+      }
+    },
+    {
+      "id": "feishu_drawer_20261011",
+      "delivery": "2026-10-11",
+      "directory": "feishu_drawer_20261011",
+      "archive": "白色双抽屉收纳盒_上层5蓝方块_仅资产_20261011.zip",
+      "archive_root": "drawer_contents",
+      "archive_sha256": "ae40941abf12a3ae82e64698dd50f6548eaa3f0536bbb4e068709e65194a01a1",
+      "source_url": "https://my.feishu.cn/space/api/box/stream/download/all/ONW6bFZXSo33FsxgkLrc8uTnn6Z/",
+      "files": {
+        "README.txt": {
+          "bytes": 1744,
+          "sha256": "8bb433bab138a5b8e0cad643842282cdd889a6652bbd0d422173c68c1c037271"
+        },
+        "assets/blue_cube/blue_cube.usda": {
+          "bytes": 32812,
+          "sha256": "90093f8bb4962d143c444dd0a5213a308d87033810b0ad4705cba2890e76460f"
+        },
+        "assets/desk_organizer/desk_organizer.usda": {
+          "bytes": 2773,
+          "sha256": "4f328b3c6aa81fc7f594ee9cd1ca1cddd323577e53d25c0449614e417dacf5f4"
+        },
+        "assets/desk_organizer/resources/body.usda": {
+          "bytes": 2221548,
+          "sha256": "040f99c339399650a6a692c0dc996a8f931a47fdbb66731d5589c6c3c566dbbd"
+        },
+        "assets/desk_organizer/resources/drawer0.usda": {
+          "bytes": 202043,
+          "sha256": "68c8cf08972557e974fa3c5306fab5f3230011ad4c6c12f9cfdc0cfcf9ea24b7"
+        },
+        "assets/desk_organizer/resources/drawer1.usda": {
+          "bytes": 202043,
+          "sha256": "68c8cf08972557e974fa3c5306fab5f3230011ad4c6c12f9cfdc0cfcf9ea24b7"
+        },
+        "organizer_with_contents.usda": {
+          "bytes": 2049,
+          "sha256": "5b034ecb2475d0112a5c093d5d43b00f798704a5f7d3182b4a3a80ebde7647e9"
+        }
+      }
+    },
+    {
+      "id": "feishu_bottle_20261011",
+      "delivery": "2026-10-11",
+      "directory": "feishu_bottle_20261011",
+      "archive": "东方树叶空瓶_方形修正版_仅资产_20261011.zip",
+      "archive_root": "oriental_leaf_empty_square",
+      "archive_sha256": "5ffcf6ffff9e4c9a5f2c0c90af2fb4e3da5b86127ad4f63783a7fe27ca6c32f6",
+      "source_url": "https://my.feishu.cn/space/api/box/stream/download/all/XOnDbcvRLoWItqxro9icmZv8n8d/",
+      "files": {
+        "assets/oriental_leaf.usdc": {
+          "bytes": 2656168,
+          "sha256": "e3fbc458c906b7f22e1ff513f37af4ed1bb0386041bef7410eae95b8b861b413"
+        },
+        "textures/back_reference.JPG": {
+          "bytes": 2614775,
+          "sha256": "5a4ae9dadf5c87f5e3bf5d8409c12884adcf9ce594f71cc869ef4141be45a1df"
+        },
+        "textures/front_reference.JPG": {
+          "bytes": 3056565,
+          "sha256": "517732c3dd23172af27e9169f40d704a8f6df525c1418371204c52db43059c6e"
+        }
+      }
+    },
+    {
+      "id": "feishu_bolt_20261011",
+      "delivery": "2026-10-11",
+      "directory": "feishu_bolt_20261011",
+      "archive": "锥尾螺杆与独立螺母_照片对照版_仅资产_20261011.zip",
+      "archive_root": "",
+      "archive_sha256": "23539dd4094329ad9f6bfdcc1bb485bae664c7124978af5daf045e8a363c5c00",
+      "source_url": "https://my.feishu.cn/space/api/box/stream/download/all/Xt8UbfspVoLZNOx5qYfcUkpKnHd/",
+      "files": {
+        "assets/conical_threaded_stud/conical_threaded_stud.usda": {
+          "bytes": 35749847,
+          "sha256": "cf9c43ad22a976f8ea27caa60c43413b5a6d1effa018264536d0688a96b597d2"
+        },
+        "assets/conical_threaded_stud/zinc_roughness.png": {
+          "bytes": 108768,
+          "sha256": "d5ff33929a361ad11a076f4bc1c0b3791b5748e768eea0e45dedb930c64c31b5"
+        },
+        "assets/matching_hex_nut/matching_hex_nut.usda": {
+          "bytes": 8624576,
+          "sha256": "2a4ae21a065f92d32f7e21cb2e2c4619c4be9ae6f7262b1d1bd44b8574aedee4"
+        },
+        "assets/matching_hex_nut/zinc_roughness.png": {
+          "bytes": 108768,
+          "sha256": "d5ff33929a361ad11a076f4bc1c0b3791b5748e768eea0e45dedb930c64c31b5"
+        },
+        "assets/stud_and_nut.usda": {
+          "bytes": 588,
+          "sha256": "1f8f2f16ef848357f55f78d9fadaabb94483e7fc78975506d727ba944df2c2e8"
+        },
+        "parameters.json": {
+          "bytes": 591,
+          "sha256": "b1d8703cfc025a7336732d85f309cfc4fde52b5b5787362b9db94fbd228ac8f5"
+        },
+        "使用说明.txt": {
+          "bytes": 1953,
+          "sha256": "92b20ce1ff2c8e7e2a108c9e93fdf07db888dfa34914ed66552fa718c18ec7e1"
+        }
+      }
+    },
+    {
+      "id": "feishu_eraser_20261011",
+      "delivery": "2026-10-11",
+      "directory": "feishu_eraser_20261011",
+      "archive": "板擦_资产_20261011.zip",
+      "archive_root": "板擦",
+      "archive_sha256": "e374bc8bacca7fd7e2cf2073666ebfd2ccb6e5b9147aaeb7146dd7b8a9706571",
+      "source_url": "https://my.feishu.cn/space/api/box/stream/download/all/ROnRbY1t6o5HDKx3Ugucp5Wynqb/",
+      "files": {
+        "assets/blue_board_eraser/blue_board_eraser.usda": {
+          "bytes": 173865,
+          "sha256": "f1e81eefef0c3e9ec393ed63b7598c3927981417db9985601aec3a889fa2cf8e"
+        },
+        "assets/blue_board_eraser/properties.json": {
+          "bytes": 1231,
+          "sha256": "6c06e57bf11baf34961e1562cf92e7cda15509aef17fa7be13e6445f5f7c7bfa"
+        },
+        "assets/blue_board_eraser/woven_base.png": {
+          "bytes": 2107808,
+          "sha256": "5106e3ee8f0f7a11020529f15a9c0a677803e5c748bd16d0620a0e86cd606ba8"
+        },
+        "assets/blue_board_eraser/woven_normal.png": {
+          "bytes": 5446413,
+          "sha256": "60f5ebc3486a51d4ecd402b774645c288e5365ff4e42b793dc0b5bb4381b0a76"
+        },
+        "assets/blue_board_eraser/woven_roughness.png": {
+          "bytes": 45037,
+          "sha256": "f885ed18188caaed5f9e9c2954dd1f892b326024c0baa782e45d01e0f5b9c0f2"
+        },
+        "使用说明.txt": {
+          "bytes": 383,
+          "sha256": "8cf0197e516663fca0da6b1f11a23fdea596040eb0f8d8e2de4290fbc3190f0c"
+        },
+        "原包说明_供参考.txt": {
+          "bytes": 2733,
+          "sha256": "599e103e1cf9e61e2bac06748df3f11909074b8efbaabd24ab4fc0037476a727"
+        }
+      }
+    },
+    {
+      "id": "feishu_board_20261011",
+      "delivery": "2026-10-11",
+      "directory": "feishu_board_20261011",
+      "archive": "小黑板_仅资产_20261011.zip",
+      "archive_root": "green_board",
+      "archive_sha256": "cb5697c5936ce5ac701ffdc78771d87d22c29c0f83f5a422af33e271809a3c3a",
+      "source_url": "https://my.feishu.cn/space/api/box/stream/download/all/LTVFbi8iwo9YecxgmLrc7WLZnAe/",
+      "files": {
+        "README_说明.txt": {
+          "bytes": 469,
+          "sha256": "da6be6f3c18b4c6523a04ae7ce259fe616eaf854302f0e827add7fbada243e53"
+        },
+        "green_board.usda": {
+          "bytes": 318110,
+          "sha256": "147b016de9a2badc3ea0c42f25cb401dfeadfe2a665222bcc265b822c4df5673"
+        },
+        "ink_mask.png": {
+          "bytes": 18448,
+          "sha256": "eebf21ae57120211dbca04b7ce2dc4484ebe64227affdc5fc70e0a5562f4425b"
+        },
+        "metrics.json": {
+          "bytes": 1056,
+          "sha256": "1f4ca6266b8da6e8dc2477081894a02efc1c6d2c80d1d6c77e9aafd8cb1eb49a"
+        },
+        "properties.json": {
+          "bytes": 2614,
+          "sha256": "1bc36388c9ea13bf21d198bac0bed15eef0ec8f0d6a5376e63176a5fbd9f76a6"
+        },
+        "strokes.json": {
+          "bytes": 109722,
+          "sha256": "7459b4e3380dcd3c2d8f44bf6c332f07220d82d28c01cd4ee91f06c33b61189a"
+        },
+        "writing.png": {
+          "bytes": 29969,
+          "sha256": "889ca57b194f833825f74c29f21136784f950528ba87754ee66ca03f8163f113"
+        }
+      }
+    },
+    {
+      "id": "feishu_pan_20261011",
+      "delivery": "2026-10-11",
+      "directory": "feishu_pan_20261011",
+      "archive": "簸箕_独立资产_20261011.zip",
+      "archive_root": "",
+      "archive_sha256": "f324ce8dad7c2196ac54fdb781db1cd6c894170d0597df2012658525492cc57d",
+      "source_url": "https://my.feishu.cn/space/api/box/stream/download/all/KFxkbGRIUoCaUlxWQRjc5u2Qnbd/",
+      "files": {
+        "README_资产.txt": {
+          "bytes": 456,
+          "sha256": "41540697393ebb47238880f967cbb73360dcebe4c5dbff61a69625733afb6ee8"
+        },
+        "SHA256SUMS": {
+          "bytes": 298,
+          "sha256": "4077a487e9e151010169e2b0dcc5fe5cf4e8d65ca991e3696ab44619adf89b96"
+        },
+        "assets/dustpan/dustpan.usda": {
+          "bytes": 2014175,
+          "sha256": "561226fa0f5589abb8a383b48a1a1e8a1c6e5885dc917b134f1fe89aa557c747"
+        },
+        "assets/dustpan/label_source_original.jpg": {
+          "bytes": 3347947,
+          "sha256": "29315569a6ed137579e7266a0925423f191e17a912573f3b0b034ac12858300a"
+        },
+        "assets/dustpan/properties.json": {
+          "bytes": 1282,
+          "sha256": "24a0ffb88f29d744fd9c534b9bca833ec541e1abd6e2dd20b8704742542edf25"
+        }
+      }
+    },
+    {
+      "id": "feishu_brush_20261011",
+      "delivery": "2026-10-11",
+      "directory": "feishu_brush_20261011",
+      "archive": "扫帚_独立资产_20261011.zip",
+      "archive_root": "",
+      "archive_sha256": "115ad5efba4d92fc71abce0ed00191f05bb44dee957d8ec2d93b47856b5ce5a6",
+      "source_url": "https://my.feishu.cn/space/api/box/stream/download/all/POYDbr9Cwo003Sx29nucTOnWnjb/",
+      "files": {
+        "README_资产.txt": {
+          "bytes": 492,
+          "sha256": "40d5fb25c75319e8eb3b7d44b1b4ffc5c880b47567db01ceef3e9b61f775aa69"
+        },
+        "SHA256SUMS": {
+          "bytes": 200,
+          "sha256": "adb31b9a27c7fcade1ad748a4c8c17957523093f9407f45d0f41da1536ffee7a"
+        },
+        "assets/hand_brush/hand_brush.usda": {
+          "bytes": 22268951,
+          "sha256": "18eb06b3850d3d5b709f922044c507d9d2f513615ef580c4fffd1a2c4f7081e8"
+        },
+        "assets/hand_brush/properties.json": {
+          "bytes": 1325,
+          "sha256": "38e21b51d1a8209d4338188e8075b9328fb9ca41294742c34b1fe29e4fe5445c"
+        }
+      }
     }
   ]
 }

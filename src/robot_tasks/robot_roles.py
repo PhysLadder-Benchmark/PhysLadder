@@ -6,6 +6,33 @@ from .config import TaskConfig
 from .types import Assessment, ArmState
 
 
+ARM_IDENTITY_PROTOCOL = "tuojing_profile_arm_ids_v3"
+REAL_SKILL_REVISION = "2a722748fa2adedd096c8fd7f9461d2b2ba48af6"
+
+
+def arm_identities(config: TaskConfig) -> dict[str, dict[str, str]]:
+    """Fixed base identities, not a transform of live TCPs or task instructions.
+
+    The real skill names arms from the robot's perspective. L1 uses those names
+    directly; common L2/L3 profiles retain overview-based command names. Derive
+    identity from the bound physical base, never from the command name alone.
+    Do not swap task roles again when decoding actions.
+    Other robot layouts do not inherit this lab-specific correspondence.
+    """
+    if config.raw.get("simulation", {}).get("environment") != "tuojing_lab_v4":
+        return {}
+    base_sides = {"/World/Robots/R5_Left": "left", "/World/Robots/R5_Right": "right"}
+    sides = {mount.name: base_sides[mount.prim_path] for mount in config.robot.mounts}
+    real_arm = {"left": "right", "right": "left"}
+    real_camera = {"left": "gemini_right", "right": "gemini"}
+    return {
+        arm: {"command_arm": arm, "overview_base_side": sides[arm],
+              "real_arm": real_arm[sides[arm]], "wrist_camera": arm + "_wrist",
+              "real_wrist_camera_key": real_camera[sides[arm]], "role": role}
+        for arm, role in config.arm_roles.items()
+    }
+
+
 def validate_role_command(config: TaskConfig, arm: str, kind: str) -> None:
     if arm not in config.command_arms:
         raise ValueError(f"Unknown arm: {arm}; no motion permission")

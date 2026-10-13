@@ -2,7 +2,7 @@
   "schema_version": 1,
   "repository": "TuojingAI/GPT_Benchmark",
   "tag": "assets-20261008-local-v1",
-  "source_lock_sha256": "7535cde8eb314e8f0476aec1cf56eb70a58383f14d2f0692472eeaa18ce8d2cd",
+  "source_lock_sha256": "2dade5bd84663cf2b9283739e158e391e764ae308db1847e59b9a62e8e29a84f",
   "packages": [
     {
       "id": "lab_v4",
@@ -38,7 +38,18 @@
     "l1_box_20261011",
     "l1_cup_20261011",
     "l1_tulip_20261011",
-    "glass_marbles_20261011"
+    "glass_marbles_20261011",
+    "feishu_marker_20261011",
+    "feishu_box_20261011",
+    "feishu_book_20261011",
+    "feishu_orange_20261011",
+    "feishu_drawer_20261011",
+    "feishu_bottle_20261011",
+    "feishu_bolt_20261011",
+    "feishu_eraser_20261011",
+    "feishu_board_20261011",
+    "feishu_pan_20261011",
+    "feishu_brush_20261011"
   ],
   "coverage": "Three unchanged archives from assets-20261008-local-v1, verified against the current source lock. All other locked packages are omitted; this is not a complete L1/L2/L3 asset release."
 }

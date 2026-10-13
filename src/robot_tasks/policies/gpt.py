@@ -18,6 +18,7 @@ from .reasoning import DecisionProgress
 from ..workflow import validate_gpt_workflow, workflow_metadata
 from .sparse_action import sparse_schema, decode_sparse_action, orientation_degrees
 from ..cameras.geometry import resized_intrinsics
+from ..robot_roles import ARM_IDENTITY_PROTOCOL, arm_identities
 
 
 def prepare_frame(frame: RGBFrame, max_edge: int, *, robot=None, bench=None):
@@ -42,11 +43,13 @@ def prepare_frame(frame: RGBFrame, max_edge: int, *, robot=None, bench=None):
 class GPTPolicy:
     def __init__(self, config: TaskConfig, settings: GPTSettings, *, client=None):
         self.config, self.settings = config, settings
+        self.arm_identities = arm_identities(config)
         from ..backends.scene_geometry import bench_geometry
         self.bench = bench_geometry(config)
         self.client = client if client is not None else ResponsesClient(settings)
         validate_gpt_workflow(config)
-        self.schema = sparse_schema(config.command_arms)
+        joint_targets = config.raw.get("completion", {}).get("return_home", False)
+        self.schema = sparse_schema(config.command_arms, joint_targets=joint_targets)
         if config.include_depth:
             from .depth_query import with_depth_queries
             self.schema = with_depth_queries(self.schema, config.cameras)
@@ -76,6 +79,14 @@ class GPTPolicy:
             f"Schema: {json.dumps(self.schema)}"
         )
         from ..config import ExecutionSettings
+        if joint_targets:
+            self.instructions += (
+                " joint_positions_rad is an optional six-joint absolute target in radians. "
+                "For ordinary Cartesian or gripper commands set it to null. To return home, "
+                "set it to the prescribed home joints and set all six TCP fields to null. "
+                "Joint and Cartesian targets cannot coexist in one command. Joint targets use "
+                "the same trajectory planner, limits and execution feedback; they are not teleports."
+            )
         self.instructions += f" Combined motion/gripper timing: {ExecutionSettings.from_config(config).gripper_timing}."
         self.instructions += f" Arm roles: {json.dumps(config.arm_roles)}. Only manipulation arms may manipulate task objects. Fixed arms must remain still."
         if config.task_id == "L1-08" and config.raw["task"].get("arm_selection") == "real_prompt":
@@ -210,6 +221,8 @@ class GPTPolicy:
                              **client_metadata}, "instructions": self.instructions,
                 "action_schema": self.schema, "workflow": workflow_metadata(self.config),
                 "arm_roles": self.config.arm_roles,
+                "arm_identity_protocol": ARM_IDENTITY_PROTOCOL if self.arm_identities else None,
+                "arm_identities": self.arm_identities,
                 "task_initial_state": self.config.initial_state_description,
                 "grasp_check_mode": self.config.grasp_check_mode,
                 "observation_modalities": workflow_metadata(self.config)["observation_modalities"],
@@ -259,6 +272,14 @@ class GPTPolicy:
                                                        robot=observation.robot, bench=self.bench)
             label = {"camera": frame.camera, "timestamp_s": frame.timestamp_s,
                      "modality": "rgb", "rgb_image_size": list(size)}
+            owner = next((row for row in self.arm_identities.values()
+                          if row["wrist_camera"] == frame.camera), None)
+            if owner is not None:
+                label["owner_arm"] = owner["command_arm"]
+                label["owner_role"] = owner["role"]
+                label["real_wrist_camera_key"] = owner["real_wrist_camera_key"]
+            elif self.arm_identities and frame.camera == "overview":
+                label["view_reference"] = "Fixed overview; left/right refer to robot bases, not current hands"
             image_sizes[frame.camera] = size
             if calibration is None:
                 raise ValueError("Calibration disclosure requested but RGB has no camera metadata")
@@ -273,6 +294,9 @@ class GPTPolicy:
                 from ..cameras.depth import depth_metadata, encode_depth_preview
                 depth_png, preview = encode_depth_preview(frame, size)
                 depth_info = {"camera": frame.camera, "modality": "depth", **depth_metadata(frame), **preview}
+                if owner is not None:
+                    depth_info["owner_arm"] = owner["command_arm"]
+                    depth_info["owner_role"] = owner["role"]
                 content.append({"type": "input_text", "text": json.dumps(depth_info, allow_nan=False)})
                 content.append({"type": "input_image", "detail": "high", "image_url":
                                 "data:image/png;base64," + base64.b64encode(depth_png).decode("ascii")})

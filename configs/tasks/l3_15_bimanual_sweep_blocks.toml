@@ -27,9 +27,13 @@ solver_velocity_iterations = 0
 [policy]
 model_config = "../models/gpt.toml"
 
+[completion]
+return_home = true
+home_tolerance_rad = 0.05
+
 [task]
 id = "L3-15"
-name = "单臂持手刷扫方块入固定簸箕"
+name = "持刷扫两块入固定簸箕"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented_proxy"
@@ -37,37 +41,13 @@ implementation = "household"
 launch_command = "python tools/launch.py run L3-15 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L3-15 --gui"
 instruction = """
-Use the RIGHT arm to grasp the small hand brush and sweep the TWO blue blocks
-into the FIXED dustpan. The LEFT arm may move for observation but must not
-manipulate anything. The dustpan is anchored with its entry lip at tabletop
-level; do not grasp it, move it, or try to hold it with the other hand.
-In the shared OVERVIEW IMAGE, the fixed pan is on the LEFT, the brush starts
-on the RIGHT, and TWO blocks lie between them. The pan mouth faces right
-toward the blocks and brush. Sweep from image-right toward image-left.
+From overview: gray dustpan on LEFT, green box on RIGHT, brush leaning against the box's LEFT side with handle high and bristles down, TWO blue 20 mm cubes between pan and brush. The pan mouth faces RIGHT and is fixed. RIGHT picks the brush near its narrow upper handle, brings bristles to table height and sweeps both cubes through the thin lip. LEFT observes only and must not touch the pan. Do not move cubes with the gripper itself. Once both cubes rest inside the pan, put down the brush on the table or against the box and release.
 
-The blocks are 20 x 20 x 10 mm. The brush initially rests freely on a 25 mm
-passive support that exposes its handle. Pinch ACROSS the handle's roughly
-28 mm width rather than its 8 mm thickness. The wide brush head does not fit
-the gripper. Verify the brush follows the hand before sweeping. Its bristles
-extend forward in the handle plane; use them against the table and blocks.
-
-Identify the pan's open straight lip and sweep toward and across it. Use short
-strokes, inspect leftovers, and change brush contact and direction to bring
-scattered blocks to the fixed opening. Keep the fingers and brush clear of the
-pan side walls. Do not pick up or directly transport blocks with the grippers.
-
-Success is both blocks inside the pan basket and supported by it after
-actual brush use. A block on the handle, outside the lip or flying above it
-does not count. The brush may remain held or be released safely; there is no
-extra waiting period, required brush parking location or final orientation.
-Check the collected state before requesting stop. Bristles are rigid contact
-proxies, not elastic fibers.
+Use current RGB views and measured robot feedback. First identify the objects and make a short plan, then execute and verify each physical subgoal. If an object did not follow the gripper, correct the grasp before continuing. Reobserve after contact; do not infer success from a commanded pose. There is no automatic grasp, reset, release or return-home action. The common completion instructions appended below are mandatory.
 """
 
 # Chinese setup/props description; final task attribute.
 description = """
-道具：原尺寸手刷、簸箕与 2 个 20×20×10 mm 蓝色方块；保留原几何和质量。
-布置：簸箕固定在桌面，入口薄唇贴桌；不再需要第二只手扶簸箕。按第三视角，左边簸箕开口朝右，右边手刷朝向簸箕，两块位于两者之间；手刷放在 25 mm 被动支座上便于夹持，右臂持刷，左臂观察。
-完成：实际持刷扫入后，2 块都位于簸箕篮内并由其承托。不要求最后放下刷子、精确朝向或额外等待；不能用夹爪搬块代替扫入。
-边界：原生刷毛为刚性胶囊束，不模拟柔性刷毛、细尘或材料损坏；摩擦等物性仍为估计值。
+按第二张图：灰色簸箕在画面左侧、口朝右；绿色盒在右侧，手刷自由斜靠盒左侧、柄高刷毛低；两颗20 mm蓝方块在两者之间错开。簸箕及绿盒固定。右臂自主拿刷将两块扫进簸箕，左臂只观察；两块受簸箕承托后，把刷子放到桌面或靠回盒边并释放。沿用原生刚性刷毛和簸箕碰撞，未模拟弹性刷毛。
+所有道具按要求释放，并且双臂回到初始关节位置，才算完成；关节回位容差0.05 rad。不自动执行回位。资产来源：飞书《GPT6评测任务及资产管理》2026-10-11下载包。
 """

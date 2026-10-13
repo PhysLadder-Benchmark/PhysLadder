@@ -28,14 +28,17 @@ solver_velocity_iterations = 0
 model_config = "../models/gpt.toml"
 
 [runtime]
-physics_dt_s = 0.0005208333333333333 # 1920 Hz for the delivered tiny passive spring shoes.
+physics_dt_s = 0.0005208333333333333 # 1920 Hz; marker/box contact regression uses this step.
+
+[completion]
+return_home = false
 
 [task]
 # Guided visual execution; common information boundaries are appended by BenchTask.
 prompt_protocol = "guided_visual_l2_v3"
 scoring_protocol = "native_l2_validity_v2"
 id = "L2-01"
-name = "双臂拔马克笔帽（桌面横放起步）"
+name = "绿盒横置马克笔双臂拔帽"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
@@ -43,55 +46,13 @@ implementation = "household"
 launch_command = "python tools/launch.py run L2-01 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-01 --gui"
 instruction = """
-Use complementary grasp approaches: the left hand may pick the barrel from
-above, while the right hand can approach the exposed cap from the front/side
-with one pad above and one below it. Two downward wrists packed along this
-short pen can collide. After pickup, lift and position the pen in clear shared
-workspace, roughly 10-15 cm above the table, before bringing the right hand in.
-Keep the right wrist/camera outside the left hand and clear of the table.
-Estimate the actual pen pose after the left grasp: its axis can be below the
-left TCP, so do not copy that TCP height as the cap centre.
+The capped marker is horizontal at the centre of the recessed green box top. Barrel points image-left; cap image-right. LEFT picks up and holds the barrel; RIGHT pulls the cap axially toward image-right. Native length 151 mm, barrel 16.4 mm, cap 17.6 mm. Both arms manipulate. Lift clear of the 10 cm box before bringing the cap hand in. Complete the task as soon as the cap is fully separated from the barrel. Keep holding the two parts; placement, release and return home are not required. No prescribed final yaw or minimum force.
 
-Use BOTH R5 arms: LEFT holds the marker barrel, RIGHT removes its cap.
-Neither arm is observation-only; move for a clearer view when it is safe, without
-losing the other hand's support. The capped black marker initially lies on the
-table. It is about 151 mm long, with a 16.2 mm barrel and 17.4 mm cap diameter.
-
-Identify the barrel, seam, cap and its closed end from current RGB images.
-Grip the lower/middle barrel with the left hand, away from the cap seam. The
-barrel is narrow but wider than the 12 mm minimum opening: centre it between
-opposing pads. Close separately, make a small test lift and verify that the
-whole capped marker follows. Do not continue if the barrel remains on the table.
-A blocked close is not sufficient proof. Keep the initial pickup gentle.
-
-Hold the barrel steady above the table. Bring the open right gripper to the
-cap's closed-end region, sufficiently far from the left fingers and both wrist
-cameras. Inspect the actual gap between hands before closing. Both opposing
-right pads must contact the cap, not the exposed barrel or empty space.
-Choose wrist orientations that keep the two camera housings apart.
-
-Pull the cap outward along the current marker axis, away from the barrel.
-The cap is a friction/detent fit with passive spring contacts, not a screw.
-Keep axial alignment and use short pull increments, checking actual relative
-motion after each. If the cap slips inside the fingers, regrasp; if the whole
-marker moves together, restore left-hand support. Do not apply large side loads
-or continue with a lost grip. Never infer separation from TCP motion alone.
-Continue until the cap's open rim has visibly cleared the nib and neck.
-
-After separation, place the barrel and cap separately anywhere safely on the
-table. Bring each close to the surface before releasing; no precise target
-patch, final yaw, gripper opening or hand retreat distance is required.
-Keep the parts uncapped and stop once both are supported by the table and
-released. Slight spinning about a round part's own axis does not invalidate
-placement. Check the physical result for about half a simulation second.
-Use measured robot feedback and images; no force sensor or force-control API
-is implied. No automatic reset or hidden grasp attachment is used.
+Use current RGB views and measured robot feedback. First identify the objects and make a short plan, then execute and verify each physical subgoal. If an object did not follow the gripper, correct the grasp before continuing. Reobserve after contact; do not infer success from a commanded pose. There is no automatic grasp, reset, release or return-home action.
 """
 
 # 中文布置和道具说明。
 description = """
-道具：L20 新版可拔帽马克笔，原生笔身、空心笔帽及四个径向弹簧接触件；总长约 151 mm，笔身直径约 16.2 mm，笔帽外径约 17.4 mm，总质量约 22 g。
-布置：拓境实验室桌上水平放置，双手初始为空；左臂拿笔身并抬起，右臂夹帽沿轴拔出，需避开两侧夹指及腕部相机。
-完成：确认拿起完整笔、双手持握分离，再将笔身和笔帽分别放到桌面松手；无需精确落点。支撑门槛按各部件质量设定，轴向自转不阻止判定。
-物理：保留原生独立刚体、弹簧、碰撞和摩擦，无轴向吸附或脚本脱帽；采用 1920 Hz 物理步长，GPT 控制周期不因此提速。尺寸及拔出阻力未实物标定。
+新版可拔帽马克笔横放在绿盒凹面中央；绿盒190×200×100 mm固定在两臂中间，中心(0.19565,1.30)m。笔身朝第三视角左侧、笔帽朝右侧；左臂先拿笔身、右臂沿轴向画面右侧拔帽。笔长151 mm，帽径17.6 mm。双臂自主操作，笔帽完全拔离笔身即成功，允许继续夹持两部分。使用原生径向弹簧，不绑定物体；物理步长1920 Hz。绿盒采用保留外轮廓、凹面高度与开口宽度的五块实体碰撞体；仅笔帽与绿盒的接触使用圆柱包络，避免细碎碰撞面导致嵌入。外观、原生质量、摩擦及笔身—笔帽配合机构保持不变，实物拔帽力尚未标定。
+确认完全分离即结束，不要求放下、释放或双臂回位。资产来源：飞书《GPT6评测任务及资产管理》2026-10-11下载包。
 """
