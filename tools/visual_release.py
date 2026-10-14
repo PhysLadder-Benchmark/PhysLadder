@@ -18,7 +18,7 @@ def verify(root):
 def main():
  ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('--root',type=Path,default=REPO/'.cache/visual_alignment_r3_20261014')
  sp=ap.add_subparsers(dest='command',required=True)
- f=sp.add_parser('fetch');f.add_argument('--archive',type=Path);f.add_argument('--ssh',help='SSH host or configured alias with shared-disk access');f.add_argument('--port',type=int,default=22)
+ f=sp.add_parser('fetch');f.add_argument('--archive',type=Path);f.add_argument('--ssh',help='SSH host or configured alias with shared-disk access');f.add_argument('--port',type=int,help='Optional port override; omit to honor SSH alias config')
  sp.add_parser('verify');sp.add_parser('list')
  p=sp.add_parser('scene');p.add_argument('task');p.add_argument('--kind',choices=['static','video','environment','task_objects'],default='static')
  a=ap.parse_args();meta=json.loads(META.read_text());root=a.root.resolve()
@@ -30,7 +30,7 @@ def main():
    if not archive.is_file():
     if not a.ssh:ap.error('Archive not on this machine. Pass --archive FILE or --ssh USER@HOST --port PORT.')
     archive=tmp/'bundle.tar.gz'
-    subprocess.run(['scp','-P',str(a.port),f"{a.ssh}:{meta['archive']['shared_path']}",str(archive)],check=True)
+    subprocess.run(['scp',*(['-P',str(a.port)] if a.port is not None else []),f"{a.ssh}:{meta['archive']['shared_path']}",str(archive)],check=True)
    if sha(archive)!=meta['archive']['sha256']:raise RuntimeError('Archive SHA-256 mismatch')
    staging=tmp/'unpacked';staging.mkdir()
    with tarfile.open(archive,'r:gz') as tar:

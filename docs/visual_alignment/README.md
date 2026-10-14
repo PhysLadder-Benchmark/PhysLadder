@@ -15,13 +15,13 @@ python3 tools/visual_release.py scene L1-01
 `fetch` 在已挂载共享盘的服务器直接读取资源包。自己的电脑或其他服务器使用有共享盘访问权限的 SSH 账号：
 
 ```bash
-python3 tools/visual_release.py fetch --ssh YOUR_SSH_ALIAS --port 22
+python3 tools/visual_release.py fetch --ssh YOUR_SSH_ALIAS
 # 或已拿到离线包：
 python3 tools/visual_release.py fetch --archive /path/to/bowen_visual_r3_20261014.tar.gz
 python3 tools/visual_release.py verify
 ```
 
-该工具校验归档和解压后的每个文件，不覆盖已经存在的安装目录。资源包下载需要团队已有的共享盘/SSH 权限；GitHub 分支本身不包含这个大包。安装到仓库 `.cache/visual_alignment_r3_20261014/`，可用全局 `--root /path/to/release` 换位置。资源包内无绝对贴图依赖、无指向旧目录的符号链接；内置 MDL 材质由 **Isaac Sim 5.1** 提供。
+SSH 别名沿用本机 SSH 配置；使用普通主机名时可显式添加 `--port PORT`。该工具校验归档和解压后的每个文件，不覆盖已经存在的安装目录。资源包下载需要团队已有的共享盘/SSH 权限；GitHub 分支本身不包含这个大包。安装到仓库 `.cache/visual_alignment_r3_20261014/`，可用全局 `--root /path/to/release` 换位置。资源包内无绝对贴图依赖、无指向旧目录的符号链接；内置 MDL 材质由 **Isaac Sim 5.1** 提供。
 
 ## 三个入口怎么选
 
