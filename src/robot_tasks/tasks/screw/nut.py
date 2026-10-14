@@ -222,9 +222,9 @@ class NutTask:
         facts = nut_spec().facts
         return replace(
             config,
-            instruction=config.instruction + (
+            instruction=(config.instruction if config.raw["task"].get("verbatim_instruction") else config.instruction + (
                 "" if facts in config.instruction else "\n" + facts
-            ) + completion_instruction(config),
+            ) + completion_instruction(config)),
             grasp_check_mode="contact_inspection",
             initial_state_description="Both hands start empty; the assembly lies horizontally at the centre between the arms, on the green support box, body on overview-image LEFT and nut on RIGHT; nut pre-loosened but still threaded. No robot attachments.",
         )

@@ -32,6 +32,8 @@ return_home = true
 home_tolerance_rad = 0.05
 
 [task]
+verbatim_instruction = true
+prompt_source = "../prompts/feishu_english_20261014.json"
 # Guided visual execution; common information boundaries are appended by BenchTask.
 prompt_protocol = "guided_visual_l2_v3"
 scoring_protocol = "native_l2_validity_v2"
@@ -44,11 +46,7 @@ implementation = "household"
 simulation_limitations = "Native rigid closed books, 378.9 g each; no page flex. All books are dynamic. Support box anchored as a passive fixture. Friction uncalibrated."
 launch_command = "python tools/launch.py run L2-03 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-03 --gui"
-instruction = """
-Three 220 x 140 x 19.6 mm books lie flat on a green box centred between both arms, farther forward on the table. The stack is offset 35 mm toward overview-image RIGHT and 20 mm toward the arms relative to the box centre, exposing box top on the left and front. The middle book protrudes another 40 mm to image-right (world +X). All books can move. RIGHT pinches the exposed middle book across its thickness, LEFT steadies the upper book. Pull the middle book visibly farther toward image-right; 20 mm of measured displacement operationalizes the real task's relaxed pull-out-a-little goal. Complete extraction is not required. Slight neighbouring-book movement is allowed, but they must remain supported on the stack/box. Release the books after the pull; do not let them drop off the support.
-
-Use current RGB views and measured robot feedback. First identify the objects and make a short plan, then execute and verify each physical subgoal. If an object did not follow the gripper, correct the grasp before continuing. Reobserve after contact; do not infer success from a commanded pose. There is no automatic grasp, reset, release or return-home action. The common completion instructions appended below are mandatory.
-"""
+instruction = "Hold the top book steady with the right arm, then pull the middle book out 5 cm with the left arm and release it."
 
 # 中文布置和道具说明。
 description = """

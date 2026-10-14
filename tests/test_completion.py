@@ -29,13 +29,15 @@ class CompletionTests(unittest.TestCase):
                      for m in self.config.robot.mounts}
         self.done = Assessment("succeeded", "physical goal and release", {"goal_complete": True})
 
-    def test_all_updated_tasks_instruct_release_and_measured_home(self):
+    def test_nonverbatim_tasks_instruct_release_and_measured_home(self):
         from types import SimpleNamespace
         from robot_tasks.policies.gpt import GPTPolicy
 
         for task_id in IDS:
             with self.subTest(task=task_id):
                 entry, config = resolve_task(task_id)
+                config = replace(config, raw={**config.raw, "task": {
+                    **config.raw["task"], "verbatim_instruction": False}})
                 prepared = entry.factory.prepare_config(config)
                 prompt = prepared.instruction
                 self.assertTrue(config.raw["completion"]["return_home"])

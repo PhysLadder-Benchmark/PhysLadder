@@ -32,6 +32,8 @@ solver_velocity_iterations = 4
 model_config = "../models/gpt.toml"
 
 [task]
+verbatim_instruction = true
+prompt_source = "../prompts/feishu_english_20261014.json"
 id = "L1-09"
 name = "奶白郁金香从画面右源杯移入左目标杯"
 execution_target = "simulation_and_real"
@@ -39,11 +41,10 @@ simulation_enabled = true
 status = "implemented"
 implementation = "household"
 arm_selection = "real_prompt"
-prompt_source = "../prompts/l1_real_20261012.json"
 simulation_limitations = "Native rigid tulip; movable right source cup with metal-pins-up / USB-down charger and near-vertical flower on its overview-left side. Left target cup has native 16-mm glass marbles; count 10 confirmed by user; dimensions/mass are delivery estimates. Pearl quantity/dimensions and exact poses unmeasured. No attachment or forced pose; not yet a strict same-condition comparison."
 launch_command = "python tools/launch.py run L1-09 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L1-09 --gui"
-instruction = "从当前源杯自动取花，将花杆放入目标纸杯，松爪撤离后确认独立稳定，再双臂回位。"
+instruction = "Pick up the flower from the left cup, insert its stem into the right cup, and release it."
 
 scene_context = "按用户对真机画面的明确更正：以 overview 相机图像为准，白色仿真花和白色充电头初始在画面右侧源纸杯；画面左侧另一纸杯为目标。画面左右不等同于机械臂名称。左臂自主取花并转移到目标杯，右臂仅辅助观察；源杯和充电头留在原处。茎端实际入杯、花头留在杯沿上方，松爪撤离后花与杯独立稳定，再双臂回位，不要求精密插入深度。源杯内白色充电头 两根金属插脚朝上、USB 插孔朝下，花茎在其画面左侧，接近竖直。目标杯已加入飞书原生 16 mm 彩色玻璃弹珠，均可自由碰撞滚动；数量为用户确认的 10 颗，球径和质量仍为交付方估计值。白色珍珠的数量和尺寸仍未确认，未添加；布局坐标由照片估计。上述差异必须随结果报告，不能视为严格同条件完成率。"
 

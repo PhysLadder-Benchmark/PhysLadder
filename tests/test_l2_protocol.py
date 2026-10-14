@@ -79,12 +79,15 @@ class ObserverTests(unittest.TestCase):
         # A new episode cannot inherit the cached result or previous lift.
         self.assertEqual(task.evaluate(state, Feedback("completed")).status, "running")
 
-    def test_all_l2_runtime_prompts_disclose_information_and_control_scope(self):
+    def test_nonverbatim_l2_prompts_retain_information_and_control_scope(self):
+        from dataclasses import replace
         from robot_tasks.registry import resolve_task
         from robot_tasks.tasks.bench.l2_protocol import OPERATING_NOTES
 
         for task_id in ("L2-01", "L2-03", "L2-04", "L2-06", "L2-07"):
             spec, config = resolve_task(task_id)
+            config = replace(config, raw={**config.raw, "task": {
+                **config.raw["task"], "verbatim_instruction": False}})
             config = spec.factory.prepare_config(config)
             self.assertEqual(config.instruction.count(OPERATING_NOTES), 1)
             self.assertEqual(config.raw["task"]["prompt_protocol"], "guided_visual_l2_v3")

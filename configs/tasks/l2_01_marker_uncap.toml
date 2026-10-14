@@ -34,6 +34,8 @@ physics_dt_s = 0.0005208333333333333 # 1920 Hz; marker/box contact regression us
 return_home = false
 
 [task]
+verbatim_instruction = true
+prompt_source = "../prompts/feishu_english_20261014.json"
 # Guided visual execution; common information boundaries are appended by BenchTask.
 prompt_protocol = "guided_visual_l2_v3"
 scoring_protocol = "native_l2_validity_v2"
@@ -45,11 +47,7 @@ status = "implemented"
 implementation = "household"
 launch_command = "python tools/launch.py run L2-01 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-01 --gui"
-instruction = """
-The capped marker is horizontal at the centre of the recessed green box top. Barrel points image-left; cap image-right. LEFT picks up and holds the barrel; RIGHT pulls the cap axially toward image-right. Native length 151 mm, barrel 16.4 mm, cap 17.6 mm. Both arms manipulate. Lift clear of the 10 cm box before bringing the cap hand in. Complete the task as soon as the cap is fully separated from the barrel. Keep holding the two parts; placement, release and return home are not required. No prescribed final yaw or minimum force.
-
-Use current RGB views and measured robot feedback. First identify the objects and make a short plan, then execute and verify each physical subgoal. If an object did not follow the gripper, correct the grasp before continuing. Reobserve after contact; do not infer success from a commanded pose. There is no automatic grasp, reset, release or return-home action.
-"""
+instruction = "Pick up the black pen with the right arm, then grasp the cap with the left arm and pull it off along the pen’s axis."
 
 # 中文布置和道具说明。
 description = """

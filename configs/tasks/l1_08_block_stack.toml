@@ -32,6 +32,8 @@ solver_velocity_iterations = 4
 model_config = "../models/gpt.toml"
 
 [task]
+verbatim_instruction = true
+prompt_source = "../prompts/feishu_english_20261014.json"
 id = "L1-08"
 name = "两个波纹纸杯套叠"
 execution_target = "simulation_and_real"
@@ -39,11 +41,10 @@ simulation_enabled = true
 status = "implemented"
 implementation = "household"
 arm_selection = "real_prompt"
-prompt_source = "../prompts/l1_real_20261012.json"
 simulation_limitations = "2026-10-11 colour-corrected native cups; dimensions/colliders unchanged. Photo-proportional left-source/right-receiver layout, receiver slightly toward the table front; not calibrated. Native rigid paper cups, identical taper and size; no paper crushing. Native hollow cups retain their dimensions; corrected 0-70 mm nominal finger gap permits thin-wall or lower-body grasp."
 launch_command = "python tools/launch.py run L1-08 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L1-08 --gui"
-instruction = "左臂将第一杯放稳并回位；右臂拿起第二杯套叠，完全释放，确认独立稳定后回位。"
+instruction = "Use the left arm to place the left cup at the center and release it, then use the right arm to nest the right cup inside it and release it."
 
 scene_context = "两只相同纸杯均直立且可自由移动。画面右前方的杯为第一杯（机器人左臂侧）、左后方的杯为第二杯（机器人右臂侧）。左臂先把第一杯朝第二杯方向搬近，放到两杯之间的中央交接区域，放稳、完全释放并回位；随后右臂拿第二杯套进已摆好的第一杯，释放并回位。一次只操作一臂。中央是宽泛交接区域，不要求精密落点、严格中心对齐、固定套叠深度或绕竖轴朝向；上杯实际进入下杯且独立承托稳定即可。原地提起后原地放回没有完成第一阶段的搬近要求。"
 

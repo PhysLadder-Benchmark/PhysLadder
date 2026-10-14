@@ -32,6 +32,8 @@ model_config = "../models/gpt.toml"
 return_home = false
 
 [task]
+verbatim_instruction = true
+prompt_source = "../prompts/feishu_english_20261014.json"
 id = "L3-03"
 name = "固定瓶身旋下瓶盖"
 execution_target = "simulation_and_real"
@@ -40,11 +42,7 @@ status = "implemented_proxy"
 implementation = "household"
 launch_command = "python tools/launch.py run L3-03 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L3-03 --gui"
-instruction = """
-The square Oriental Leaf bottle stands at the centre between both arms and is FIXED to the table. RIGHT unscrews the loose cap counterclockwise as seen from above; LEFT only observes. No support-hand grasp is needed. Body width approximately 52 mm, cap diameter 42 mm. The cap is pre-loosened but still threaded, with 9 mm lead per turn. Complete the task as soon as the cap is fully detached from the neck. Keeping it held is allowed; no additional lift height, placement, release or return home is required. Do not try to move the fixed bottle.
-
-Use current RGB views and measured robot feedback. First identify the objects and make a short plan, then execute and verify each physical subgoal. If an object did not follow the gripper, correct the grasp before continuing. Reobserve after contact; do not infer success from a commanded pose. There is no automatic grasp, reset, release or return-home action.
-"""
+instruction = "Hold the bottle steady with the left arm, unscrew the cap with the right arm, then lift the cap 3–5 cm away from the bottle opening."
 
 # Chinese setup/props description; final task attribute.
 description = """

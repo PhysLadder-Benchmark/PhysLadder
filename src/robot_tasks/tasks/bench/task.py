@@ -47,7 +47,8 @@ class BenchTask:
         }
         return replace(
             config,
-            instruction=(config.instruction if spec.parameters.get("real_prompt_protocol") else
+            instruction=(config.instruction if (config.raw["task"].get("verbatim_instruction")
+                                                or spec.parameters.get("real_prompt_protocol")) else
                          config.instruction + (
                 "" if spec.facts in config.instruction
                 else "\nDeclared prop facts and guidance:\n" + spec.facts
@@ -58,7 +59,9 @@ class BenchTask:
                 "No task object is pre-attached to a gripper."
                 + ("\nDocumented task setup (complements the verbatim trial instruction):\n"
                    + config.raw["task"]["scene_context"]
-                   if spec.parameters.get("real_prompt_protocol") and config.raw["task"].get("scene_context") else "")),
+                   if spec.parameters.get("real_prompt_protocol")
+                   and not config.raw["task"].get("verbatim_instruction")
+                   and config.raw["task"].get("scene_context") else "")),
         )
 
     def build_scene(self, backend, config):

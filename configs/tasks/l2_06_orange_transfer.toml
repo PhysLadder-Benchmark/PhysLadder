@@ -44,6 +44,8 @@ return_home = true
 home_tolerance_rad = 0.05
 
 [task]
+verbatim_instruction = true
+prompt_source = "../prompts/feishu_english_20261014.json"
 # Guided visual execution; common information boundaries are appended by BenchTask.
 prompt_protocol = "guided_visual_l2_v3"
 scoring_protocol = "soft_box_lift_return_v7"
@@ -56,11 +58,7 @@ implementation = "household"
 simulation_limitations = "Native 19.2 g GPU FEM orange, 50 x 32.7 x 25.3 mm. Material overrides are engineering estimates. No tissue damage claim. Support and release are measured geometrically for FEM; no grasp attachment."
 launch_command = "python tools/launch.py run L2-06 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-06 --gui"
-instruction = """
-The rounded orange lies flat, long axis across the image (world X), centred on the recessed green box top. RIGHT grasps its fuller middle and lifts the ORANGE 5-20 cm relative to its original rest. Firm squeezing is allowed. Then lower it back onto the SAME box, release and withdraw. No lateral transfer destination or exact original point is required; anywhere safely on the original box is acceptable. LEFT observes only.
-
-Use current RGB views and measured robot feedback. First identify the objects and make a short plan, then execute and verify each physical subgoal. If an object did not follow the gripper, correct the grasp before continuing. Reobserve after contact; do not infer success from a commanded pose. There is no automatic grasp, reset, release or return-home action. The common completion instructions appended below are mandatory.
-"""
+instruction = "Pick up the orange segment with the left arm, lift it 5–20 cm, then place it back on the box and release it."
 
 # 中文布置和道具说明。
 description = """

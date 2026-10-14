@@ -32,6 +32,8 @@ return_home = true
 home_tolerance_rad = 0.05
 
 [task]
+verbatim_instruction = true
+prompt_source = "../prompts/feishu_english_20261014.json"
 id = "L3-15"
 name = "持刷扫两块入固定簸箕"
 execution_target = "simulation_and_real"
@@ -40,11 +42,7 @@ status = "implemented_proxy"
 implementation = "household"
 launch_command = "python tools/launch.py run L3-15 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L3-15 --gui"
-instruction = """
-From overview: gray dustpan on LEFT, green box on RIGHT, brush leaning against the box's LEFT side with handle high and bristles down, TWO blue 20 mm cubes between pan and brush. The pan mouth faces RIGHT and is fixed. RIGHT picks the brush near its narrow upper handle, brings bristles to table height and sweeps both cubes through the thin lip. LEFT observes only and must not touch the pan. Do not move cubes with the gripper itself. Once both cubes rest inside the pan, put down the brush on the table or against the box and release.
-
-Use current RGB views and measured robot feedback. First identify the objects and make a short plan, then execute and verify each physical subgoal. If an object did not follow the gripper, correct the grasp before continuing. Reobserve after contact; do not infer success from a commanded pose. There is no automatic grasp, reset, release or return-home action. The common completion instructions appended below are mandatory.
-"""
+instruction = "Pick up the brush next to the green box with the left arm, sweep both blue blocks into the dustpan, then set the brush down."
 
 # Chinese setup/props description; final task attribute.
 description = """

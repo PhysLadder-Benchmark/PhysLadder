@@ -29,6 +29,8 @@ solver_velocity_iterations = 4
 model_config = "../models/gpt.toml"
 
 [task]
+verbatim_instruction = true
+prompt_source = "../prompts/feishu_english_20261014.json"
 id = "L1-01"
 name = "白板笔入固定黑色陶瓷杯"
 execution_target = "simulation_and_real"
@@ -36,11 +38,10 @@ simulation_enabled = true
 status = "implemented"
 implementation = "household"
 arm_selection = "real_prompt"
-prompt_source = "../prompts/l1_real_20261012.json"
 simulation_limitations = "Feishu 2026-10-11 marker and black ceramic mug; front-view mug-left/marker-right photo-proportional layout. Mug stays fixed, with delivered friction and hollow segmented wall colliders; native marker body and cap colliders combined into one closed rigid L1 prop; internal cap springs disabled, 0.2 mm contact margin and four velocity solver iterations. Dimensions/layout are estimates, not hardware calibrated."
 launch_command = "python tools/launch.py run L1-01 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L1-01 --gui"
-instruction = "左臂拿起粗记号笔，放入宽口杯；松爪撤离后确认笔独立留杯、杯子稳定，再双臂回位。"
+instruction = "Pick up the thick marker with the left arm and place it in the wide-mouth cup, then release it."
 
 scene_context = "带帽白板笔竖立在画面右侧桌面，黑色白内壁宽口杯位于左侧、杯口朝上、杯柄朝桌前，两者约相距 30 cm。杯固定，笔可自由移动，保持笔帽不拆。左臂操作，右臂仅提供观察、不扶杯；允许右臂为补充视角移动，完成后双臂回位。任一笔端真正进入主杯腔即可，不要求精密深度；按本轮提示词还需松爪撤离，使笔独立留在杯内。"
 

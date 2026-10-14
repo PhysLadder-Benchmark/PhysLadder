@@ -31,6 +31,8 @@ model_config = "../models/gpt.toml"
 return_home = false
 
 [task]
+verbatim_instruction = true
+prompt_source = "../prompts/feishu_english_20261014.json"
 id = "L3-11"
 name = "抓板擦擦除原生字迹"
 execution_target = "simulation_and_real"
@@ -39,11 +41,7 @@ status = "implemented_proxy"
 implementation = "household"
 launch_command = "python tools/launch.py run L3-11 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L3-11 --gui"
-instruction = """
-The board lies flat, fixed, in front of the arms; its original red GPT6 writing is upside-down from overview. The loose blue eraser lies pad-down to image-right of the board in the overview camera. RIGHT must pick it up; LEFT observes only. Eraser dimensions 120 x 60 x 20 mm: pinch the 60 mm width with the cleaning pad unobstructed below. Its cloth face is opposite the blue plastic back. Contact and sweep the cloth over the writing; each covered mark disappears on the first genuine wipe, no repeated scrubbing or exact force required. The task succeeds as soon as a genuine contact wipe removes any part of the original writing. No percentage target, further wiping, placement, release or return home is required.
-
-Use current RGB views and measured robot feedback. First identify the objects and make a short plan, then execute and verify each physical subgoal. If an object did not follow the gripper, correct the grasp before continuing. Reobserve after contact; do not infer success from a commanded pose. There is no automatic grasp, reset, release or return-home action.
-"""
+instruction = "Pick up the board eraser with the left arm and erase the writing on the whiteboard."
 
 # Chinese setup and props; final task attribute.
 description = """

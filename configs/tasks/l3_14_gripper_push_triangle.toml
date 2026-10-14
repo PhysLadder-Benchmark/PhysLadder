@@ -32,6 +32,8 @@ return_home = true
 home_tolerance_rad = 0.05
 
 [task]
+verbatim_instruction = true
+prompt_source = "../prompts/feishu_english_20261014.json"
 id = "L3-14"
 name = "夹爪推板擦入三角区"
 execution_target = "simulation_and_real"
@@ -40,11 +42,7 @@ status = "implemented_proxy"
 implementation = "household"
 launch_command = "python tools/launch.py run L3-14 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L3-14 --gui"
-instruction = """
-Use RIGHT gripper exterior to PUSH the loose blue board eraser into the large triangular outline. LEFT observes. The eraser starts above-right of the outline in overview; target is below-left. Eraser 120 x 60 x 20 mm; target 320 x 280 mm. Do not grasp, lift or carry. The complete footprint must enter the outline on the tabletop; any in-plane orientation is allowed. Withdraw without moving it back out.
-
-Use current RGB views and measured robot feedback. First identify the objects and make a short plan, then execute and verify each physical subgoal. If an object did not follow the gripper, correct the grasp before continuing. Reobserve after contact; do not infer success from a commanded pose. There is no automatic grasp, reset, release or return-home action. The common completion instructions appended below are mandatory.
-"""
+instruction = "Use the edge of the left gripper to push the board eraser into the red region without grasping it."
 
 # Chinese setup/props description; final task attribute.
 description = """

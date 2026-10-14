@@ -36,6 +36,8 @@ return_home = true
 home_tolerance_rad = 0.05
 
 [task]
+verbatim_instruction = true
+prompt_source = "../prompts/feishu_english_20261014.json"
 id = "L3-05"
 name = "绿盒横置螺杆双臂旋下螺母"
 execution_target = "simulation_and_real"
@@ -44,11 +46,7 @@ status = "implemented_proxy"
 implementation = "loose_nut"
 launch_command = "python tools/launch.py run L3-05 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L3-05 --gui"
-instruction = """
-The 140 mm silver stud lies horizontally on the green box centre between both arms, body toward image-left and 24 mm hex nut toward image-right. LEFT picks and holds the 14 mm smooth shaft; RIGHT pinches the nut flats and unscrews counterclockwise viewed from the exposed threaded end. Lift clear of the box before bringing the second hand in. Nut thickness 13 mm, 2 mm pitch, approximately 2.5 turns remain. Use actual relative movement, not whole-assembly rotation, to check progress. Once fully detached, place both parts safely on the box or table and release.
-
-Use current RGB views and measured robot feedback. First identify the objects and make a short plan, then execute and verify each physical subgoal. If an object did not follow the gripper, correct the grasp before continuing. Reobserve after contact; do not infer success from a commanded pose. There is no automatic grasp, reset, release or return-home action. The common completion instructions appended below are mandatory.
-"""
+instruction = "Pick up and hold the threaded rod steady with the right arm, then unscrew the hex nut counterclockwise with the left arm until it comes off."
 
 # Chinese setup and props; final task attribute.
 description = """

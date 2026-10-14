@@ -32,6 +32,8 @@ return_home = true
 home_tolerance_rad = 0.05
 
 [task]
+verbatim_instruction = true
+prompt_source = "../prompts/feishu_english_20261014.json"
 # Guided visual execution; common information boundaries are appended by BenchTask.
 prompt_protocol = "guided_visual_l2_v3"
 scoring_protocol = "drawer_pull_return_v5"
@@ -44,11 +46,7 @@ implementation = "household"
 simulation_limitations = "Delivered cabinet fixed, lower drawer fixed; original upper rail and passive resistance retained. Five dynamic 20 mm cubes remain loose in the upper drawer. Friction and cabinet dimensions uncalibrated."
 launch_command = "python tools/launch.py run L2-07 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-07 --gui"
-instruction = """
-The white organizer is at the far RIGHT of the overview image, diagonal to the camera as in the real setup. Its centre is 70 mm farther right than the previous layout and retains the 100 mm table-front clearance shift. Part of the cabinet may be outside the overview frame; use wrist views when necessary. Its upper drawer starts 30 mm open, original grip edge facing diagonally toward the robots (world -X/+Y), away from the overview camera. Pulling moves the drawer toward the arms; pushing returns it away from the arms. The cabinet and lower drawer are fixed. RIGHT grips the existing edge/handle, pulls the upper drawer about 50 mm FURTHER along its rail, then pushes it back to its INITIAL 30 mm opening and releases. It should not finish fully closed. LEFT observes. Five blue cubes are loose inside; no object-removal task and no added handle.
-
-Use current RGB views and measured robot feedback. First identify the objects and make a short plan, then execute and verify each physical subgoal. If an object did not follow the gripper, correct the grasp before continuing. Reobserve after contact; do not infer success from a commanded pose. There is no automatic grasp, reset, release or return-home action. The common completion instructions appended below are mandatory.
-"""
+instruction = "Use the left arm to pull the partially open top drawer out another 5 cm, then push it back to its original position."
 
 # 中文布置和道具说明。
 description = """

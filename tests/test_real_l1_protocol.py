@@ -53,7 +53,7 @@ def at_goal(spec, rows, name):
 
 class RealPromptTests(unittest.TestCase):
     def test_all_five_runtime_instructions_equal_source_summaries_exactly(self):
-        source = json.loads((ROOT/'configs/prompts/l1_real_20261012.json').read_text())
+        source = json.loads((ROOT/'configs/prompts/feishu_english_20261014.json').read_text())
         for task in TASKS:
             binding, config = resolve_task(task)
             self.assertEqual(binding.factory.prepare_config(config).instruction, source['tasks'][task]['instruction'])
@@ -203,12 +203,12 @@ class RealPromptTests(unittest.TestCase):
         robot['right']=replace(robot['right'],joint_positions_rad=s.parameters['home_positions']['right'])
         self.assertEqual(e.update(1.6,r,robot=robot).status,'succeeded')
 
-    def test_runtime_and_frozen_config_include_scene_context_without_changing_prompt(self):
+    def test_runtime_and_frozen_config_exclude_old_scene_instructions(self):
         import tempfile
         from robot_tasks.batch import freeze_config
         from robot_tasks.config import load_config
         from robot_tasks.policies.operating_notes import operating_notes
-        source=json.loads((ROOT/'configs/prompts/l1_real_20261012.json').read_text())
+        source=json.loads((ROOT/'configs/prompts/feishu_english_20261014.json').read_text())
         with tempfile.TemporaryDirectory() as temp:
             for task in TASKS:
                 binding,c=resolve_task(task)
@@ -217,7 +217,7 @@ class RealPromptTests(unittest.TestCase):
                               dict(reasoning_effort='xhigh',seed=0,wall_time_s=3600,max_calls=100))
                 frozen=binding.factory.prepare_config(load_config(path))
                 self.assertEqual(frozen.instruction,source['tasks'][task]['instruction'])
-                self.assertIn(source['tasks'][task]['scene_context'],operating_notes(frozen)['startup_preparation'])
+                self.assertNotIn(c.raw['task']['scene_context'],operating_notes(frozen)['startup_preparation'])
 
     def test_flower_source_and_movable_target_match_latest_scene(self):
         _,s,r,robot,e=case('L1-09')
