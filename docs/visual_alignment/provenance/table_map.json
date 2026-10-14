@@ -1,0 +1,14 @@
+{
+  "min_xy": [
+    -0.7514503915423708,
+    0.847650417122201
+  ],
+  "max_xy": [
+    0.8385496084576293,
+    1.637650417122201
+  ],
+  "reference": "L2-07 unobstructed wood",
+  "masked": "No object-region inpainting; outer unseen regions mirrored from clean observed wood",
+  "camera_unchanged": true,
+  "limitation": "Grain outside observed patch reconstructed, not metrically registered"
+}

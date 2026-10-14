@@ -101,7 +101,7 @@ class L1Scene:
             # The new strip's spring contacts and fine blade colliders carry
             # measured-in-metres contact skins and their own friction bindings.
             # Replacing these with a generic zero-friction fixture breaks them.
-            if (self.design.fixture_asset == "tuojing:power_strip_20261010"
+            if (self.design.fixture_asset in {"tuojing:power_strip_20261010", "tuojing:power_strip_measured_20261014"}
                     and (path.startswith(self.root + "/Fixture/")
                          or path.startswith(self.root + "/plug/"))):
                 continue

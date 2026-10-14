@@ -1,0 +1,65 @@
+{
+  "revision": "visual_alignment_r3_20261014",
+  "lights": {
+    "Fill": {
+      "intensity": 1350,
+      "color": [
+        0.88,
+        0.94,
+        1.0
+      ]
+    },
+    "Area0": {
+      "intensity": 5500,
+      "color": [
+        0.94,
+        0.97,
+        1
+      ]
+    },
+    "Area1": {
+      "intensity": 4200,
+      "color": [
+        0.94,
+        0.97,
+        1
+      ]
+    },
+    "L1VideoFrontFill": {
+      "intensity": 1700,
+      "color": [
+        0.84,
+        0.92,
+        1.0
+      ]
+    },
+    "WindowFill": {
+      "intensity": 1500,
+      "color": [
+        0.58,
+        0.84,
+        1.0
+      ]
+    }
+  },
+  "table": {
+    "roughness": 0.57,
+    "gain": [
+      1.09,
+      1.04,
+      0.98
+    ]
+  },
+  "box": {
+    "texture_scale": [
+      0.16,
+      0.92,
+      1.25
+    ],
+    "seam": [
+      0.008,
+      0.11,
+      0.16
+    ]
+  }
+}

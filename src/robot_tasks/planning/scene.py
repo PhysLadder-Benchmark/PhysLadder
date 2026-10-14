@@ -204,7 +204,7 @@ def article_surface(article):
     from ..robots.transforms import origin_transform
 
     if article.asset in {"tuojing:artificial_rose", "tuojing:cream_tulip_20261011",
-                         "tuojing:capped_marker_20261011", "tuojing:yellow_visor_20261011"}:
+                         "tuojing:capped_marker_20261011", "tuojing:yellow_visor_20261011", "tuojing:yellow_visor_20261014_measured"}:
         return _native_surface(article.asset.split(":",1)[1])
     if article.asset == "tuojing:yellow_visor":
         from ..tasks.bench.native_geometry import shapes, transformed_poly

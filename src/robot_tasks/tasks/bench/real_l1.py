@@ -36,8 +36,6 @@ def configure(spec, robot):
         p["hold_s"] = 0.0
     if task == "L1-09":
         from .l1 import plug
-        from ..l1.specs import Article
-        from ..l1.assets import MARBLE_PROPS
 
         articles = {a.name: a for a in design.articles}
         cup = articles['source_cup']
@@ -47,49 +45,36 @@ def configure(spec, robot):
         source_pose = pose(*source_xy, p['table_z'] + .001)
         target_pose = pose(*target_xy, p['table_z'] + .001)
         charger = next(a for a in plug().design.articles if a.name == 'plug')
-        # The native charger has pins at local z=0 and USB port at z=70 mm:
-        # User clarified: the TWO METAL PINS face up, USB faces down, so local
-        # -Z must remain upward. Flower sits on the overview-left side
-        # of it, between the long housing side and the cup wall, as in the photo.
-        # Start the inverted housing above its natural contact with the tapered
-        # cup wall. Photo-estimated reset only; physics settles it without welds
-        # or subsequent pose writes. Flower seed retains its natural lean.
+        # Measured charger body: local z=17..67 mm; two metal pins at z=0.
+        # Pins face UP; rotate the wide (40 mm) side along cup Y so the
+        # overview-left channel can contain the flower without crossing the wall.
+        # Initial geometry validated against the measured 70/50/80-mm cup.
+        # Small positive contact clearances; free bodies, no weld or pose servo.
         source_frame = pose_transform(source_pose)
-        charger_pose = transform_pose(source_frame @ pose_transform(pose(.012, 0., .101, roll=math.pi, pitch=math.radians(10))))
-        flower_pose = transform_pose(source_frame @ pose_transform((
-            -.022505, .000699, .003328, .566952153, -.051372685, -.046304426, .820842252)))
-        # User confirmed ten marbles on 2026-10-13; the delivery demo has eleven.
-        # Two separated layers settle under gravity; all spheres remain free.
-        sites = [(0., 0.)] + [(.0168*math.cos(a*math.pi/3), .0168*math.sin(a*math.pi/3)) for a in range(6)]
-        fillers = []
-        for i in range(10):
-            x, y = sites[i % 7]
-            initial = pose(target_xy[0]+x, target_xy[1]+y, target_pose[2]+.0125+.017*(i//7))
-            fillers.append(Article(f'target_marble_{i:02d}', (), initial, initial,
-                                   mass=.00536165146212658, asset='tuojing:'+MARBLE_PROPS[i % 5],
-                                   asset_bounds=((- .008,)*3, (.008,)*3)))
+        charger_pose = transform_pose(source_frame @ pose_transform(pose(.003, 0., .076, roll=math.pi, yaw=math.pi/2)))
+        flower_pose = transform_pose(source_frame @ pose_transform(pose(-.0095, 0., .0042, pitch=math.radians(-9))) @ pose_transform(pose(0., 0., 0., yaw=math.radians(110))))
+        # User correction 2026-10-14: flower transfer has an EMPTY destination cup.
         design = replace(design, name='奶白郁金香从画面右源杯移入左目标杯',
-                         version=spec.design.version + '-real-scene-v5-charger-pins-up',
+                         version=spec.design.version + '-real-scene-v7-empty-flower-target',
                          fixture_asset='', articles=(
             replace(articles['rose'], initial=flower_pose, goal=pose(*target_xy,p['table_z']+.004)),
             replace(cup, initial=source_pose, goal=source_pose),
             replace(cup, name='target_cup', initial=target_pose, goal=target_pose),
-            replace(charger, name='source_charger', initial=charger_pose, goal=charger_pose), *fillers))
+            replace(charger, name='source_charger', initial=charger_pose, goal=charger_pose)))
         limitations = ('Native rigid tulip and two movable paper cups. Overview-right source contains the native charger; '
                         'two metal pins up and USB port down; flower near vertical on the charger\'s overview-left side. No inferred guide or attachment. '
-                        'Overview-left target contains ten native 16-mm glass marbles (count confirmed by user); '
-                        'sphere diameter/mass, pearl count/dimensions and exact positions remain uncalibrated.')
+                        'Overview-left target is empty initially; no marbles or pearls in the flower-transfer task.')
         p.update(target_article='target_cup', source_max_tilt_rad=math.radians(12), source_charger_pins_min_up=math.cos(math.radians(20)),
                  source_ignore_axial_spin=False,
                  source_support_vertical=True,
                  source_support_articles=('source_cup','source_charger'),
-                 target_fillers=tuple(a.name for a in fillers), target_filler_radius_m=.008,
+                 target_fillers=(),
                  source_rest_tolerances=dict(position_tolerance_m=.003, tilt_tolerance_rad=math.radians(3),
                                              linear_speed_m_s=.01, angular_speed_rad_s=.15),
                  source_guide_status='native charger inside source cup; no inferred stem guide',
-                 vase_xy=target_xy, target_filler_status='10 native 16-mm glass marbles; count confirmed by user 2026-10-13; pearls not reproduced',
-                 alignment_gaps=('marble dimensions/mass estimated by supplier; pearl dimensions/counts unspecified; no exact same-condition claim',
-                                 'source positions and near-vertical flower pose are photo estimates'))
+                 vase_xy=target_xy, target_filler_status='empty target cup; user correction 2026-10-14',
+                 alignment_gaps=('camera intrinsics and unmeasured initial positions remain estimates',
+                                 'initial pose checked for visual and collision-mesh intersections; dynamics and support stability not yet verified'))
     if task == "L1-03":
         # The three native matching parallel-blade pairs, in strip coordinates.
         # Outer sockets also have angled holes; those do not match this charger.

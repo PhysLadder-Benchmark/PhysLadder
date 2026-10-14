@@ -1,0 +1,17 @@
+{
+  "version": "visual_alignment_r3_20261014",
+  "archive": {
+    "shared_path": "/vepfs-C区/bowenjing/Sunday/releases/bowen_visual_r3_20261014.tar.gz",
+    "sha256": "20608d2ef57d7f9a1b78e0f3bd8c3358cd3d1d59fccc396c908ff8dbf2727f21",
+    "bytes": 343374105,
+    "root_directory": "bowen_visual_r3_20261014"
+  },
+  "website": {
+    "url": "https://dex-l1-l3-task-atlas-20261014.arthur12137.chatgpt.site/",
+    "source_commit": "48180f596afcf6d800e4f6628139eea18abb9cb2",
+    "archive_path": "/vepfs-C区/bowenjing/Sunday/releases/website-r3-20261014.tar",
+    "sha256": "fda78da2bc76b30a0d04b3a59257abb8b4e0954c37c4a4880a6abfb101c39584"
+  },
+  "physics_rerun": false,
+  "source_branch": "bowen"
+}

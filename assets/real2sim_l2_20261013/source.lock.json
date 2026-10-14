@@ -1,0 +1,50 @@
+{
+  "books": {
+    "archive_sha256": "57fc684f89ff9043c39c8010b9cc523eec67bf3f885f347cbdbdf3034c79b453",
+    "files": {
+      "closed_book/closed_book.usda": "60fcc3c7ee7c47f1773da5eefb52ccf72d7ed34414fc81cc02f6a67fe22034ce",
+      "closed_book/\u8bf4\u660e.txt": "362eb8b62ffcdfb00e43a9d2f6940572a7ef181358408edb7569496e3e28cbdb",
+      "closed_book/textures/paper_fiber_normal.png": "b3540c526a9dfc8a9a7277e42d03e946618dcb8452ed0cbe093e3599eeddb4e9",
+      "closed_book/textures/texture_provenance.txt": "5f6e9e78e1df1b24d4f5ba8f69ba2c339b553d2f0f32810cd7b76e5c987e118c",
+      "closed_book/textures/cover_albedo.png": "41e71f3e107c7f80d91fdce69f177d92adc40de1666e723d87eab6294ee78209"
+    }
+  },
+  "marbles": {
+    "archive_sha256": "811abd996b8d67d0807969818d43a0ef96be5ae68eb27252795658917156794e",
+    "files": {
+      "\u4f7f\u7528\u8bf4\u660e.txt": "af373dad759ce82c52f082bb6d0ec93c509566bddfbad027bd9c83e3b3bea659",
+      "SHA256.json": "11df9f61cc97337c4e9752bcf463dfb3cfecc9d50e6fec291282ea327b4c147b",
+      "parameters.json": "699a272c741e6a5461b193799ea5b024849799a9b6455b25ecfffa542cbdbbba",
+      "assets/glass_marble_16mm.usda": "a62802839ce3e1e2e818c6c2d795d368b6e40d859165ea603092470d11df3865",
+      "assets/marbles_11.usda": "c8ef178ac9ffe1d629d18c13f68e093418f249e3320348d28571af1f720f03d6",
+      "assets/marble_clear_mint/marble_clear_mint.usda": "bf317136f7dacad0a14056bab4c6a697b435819382e5e60656ae323006ed413f",
+      "assets/marble_emerald_green/marble_emerald_green.usda": "570d537e0700e56820f6ef0cd9edd3529198dd474e68d99a91f404e9145810cf",
+      "assets/marble_aqua_blue/marble_aqua_blue.usda": "12c60e8ac8eea48071415f8714192ccce503652491d33827d1a7f1d1634d93c6",
+      "assets/marble_red_white/marble_red_white.usda": "bb81840c2304099122a370ac7090e7a1ad96de7f114c9caa90486ffb60fffa16",
+      "assets/marble_yellow_green/marble_yellow_green.usda": "fffe7d88f07e88be241a8ecb24ba5f5e05e0502ba51be0ec79ba22e19010c409"
+    }
+  },
+  "orange": {
+    "archive_sha256": "4059028efdf33918268853c3aea5d58294759c0936655459e4beb6101139eacb",
+    "files": {
+      "orange_rounded/README.txt": "6668963397cd375a0946874211e3bea32c68c98439c4a005a1c45ce791bb470a",
+      "orange_rounded/orange_three_connected_spherical.usda": "babe8236f09ed664b33cf8b94e05aceb93c43b095b848f9cd176c90b04a3f68d",
+      "orange_rounded/assets/orange_segment/visual.usdc": "71ccdbc163f2307bfbf91d7fcad94644dc9d78051ccfb9299c2f174ac9d0ab0c",
+      "orange_rounded/assets/orange_segment/photo_reverse.jpg": "7b273c9362eea351e75e0dc1b024342f0fae39ab9c401d7f60bb25cac6a09f21",
+      "orange_rounded/assets/orange_segment/photo_front.png": "16f3242f001e369b0a9727db3ad2e0a4ebe731c4359b57c57684bb76a664bd62",
+      "orange_rounded/assets/orange_segment/asset.usda": "52ed80e261c6caa86fe0f10952e84a9d760b0457a1f482b42ad11c03458f0c65"
+    }
+  },
+  "drawer": {
+    "archive_sha256": "ae40941abf12a3ae82e64698dd50f6548eaa3f0536bbb4e068709e65194a01a1",
+    "files": {
+      "drawer_contents/README.txt": "8bb433bab138a5b8e0cad643842282cdd889a6652bbd0d422173c68c1c037271",
+      "drawer_contents/organizer_with_contents.usda": "5b034ecb2475d0112a5c093d5d43b00f798704a5f7d3182b4a3a80ebde7647e9",
+      "drawer_contents/assets/desk_organizer/desk_organizer.usda": "4f328b3c6aa81fc7f594ee9cd1ca1cddd323577e53d25c0449614e417dacf5f4",
+      "drawer_contents/assets/desk_organizer/resources/drawer1.usda": "68c8cf08972557e974fa3c5306fab5f3230011ad4c6c12f9cfdc0cfcf9ea24b7",
+      "drawer_contents/assets/desk_organizer/resources/drawer0.usda": "68c8cf08972557e974fa3c5306fab5f3230011ad4c6c12f9cfdc0cfcf9ea24b7",
+      "drawer_contents/assets/desk_organizer/resources/body.usda": "040f99c339399650a6a692c0dc996a8f931a47fdbb66731d5589c6c3c566dbbd",
+      "drawer_contents/assets/blue_cube/blue_cube.usda": "90093f8bb4962d143c444dd0a5213a308d87033810b0ad4705cba2890e76460f"
+    }
+  }
+}

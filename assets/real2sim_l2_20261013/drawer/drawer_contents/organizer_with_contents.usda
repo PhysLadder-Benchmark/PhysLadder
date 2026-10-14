@@ -1,0 +1,74 @@
+#usda 1.0
+(
+    defaultPrim = "Asset"
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "Asset" (
+    customData = {
+        int contents_count = 5
+        string contents_layout = "all 5 in upper drawer as requested; front row 3, rear row 2"
+    }
+    prepend references = @./assets/desk_organizer/desk_organizer.usda@
+)
+{
+    def "Contents"
+    {
+        def Xform "Cube01" (
+            customData = {
+                int drawer_index = 1
+            }
+            prepend references = @./assets/blue_cube/blue_cube.usda@
+        )
+        {
+            double3 xformOp:translate = (-0.1133, -0.034, 0.0551)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "Cube02" (
+            customData = {
+                int drawer_index = 1
+            }
+            prepend references = @./assets/blue_cube/blue_cube.usda@
+        )
+        {
+            double3 xformOp:translate = (-0.0833, -0.034, 0.0551)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "Cube03" (
+            customData = {
+                int drawer_index = 1
+            }
+            prepend references = @./assets/blue_cube/blue_cube.usda@
+        )
+        {
+            double3 xformOp:translate = (-0.0533, -0.034, 0.0551)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "Cube04" (
+            customData = {
+                int drawer_index = 1
+            }
+            prepend references = @./assets/blue_cube/blue_cube.usda@
+        )
+        {
+            double3 xformOp:translate = (-0.1003, -0.004, 0.0551)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def Xform "Cube05" (
+            customData = {
+                int drawer_index = 1
+            }
+            prepend references = @./assets/blue_cube/blue_cube.usda@
+        )
+        {
+            double3 xformOp:translate = (-0.0663, -0.004, 0.0551)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+    }
+}
+

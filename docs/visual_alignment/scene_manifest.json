@@ -1,0 +1,435 @@
+{
+  "version": "visual_alignment_r3_20261014",
+  "physics_rerun": false,
+  "runtime": "Isaac Sim 5.1 with NVIDIA built-in MDL materials",
+  "builtin_materials": [
+    "OmniGlass.mdl",
+    "OmniPBR.mdl",
+    "OmniSurface.mdl"
+  ],
+  "tasks": {
+    "L1-01": {
+      "environment": "L1-01/environment.usdc",
+      "task_objects": "L1-01/task_objects.usdc",
+      "object_roots": [
+        "/World/Household"
+      ],
+      "static": "L1-01/static/scene.usdc",
+      "static_source_sha256": "47f526b99b42aa4a96fe9e161e84a088c4372a3e6902f242681c939b81cec744",
+      "video": "L1-01/video/scene.usdc",
+      "video_source_sha256": "3e6b40235e0de6f2f5abca1f9bb728469d59a7d7085c7e17a79c7404f1963d8c"
+    },
+    "L1-03": {
+      "environment": "L1-03/environment.usdc",
+      "task_objects": "L1-03/task_objects.usdc",
+      "object_roots": [
+        "/World/Household"
+      ],
+      "static": "L1-03/static/scene.usdc",
+      "static_source_sha256": "13af1fdf5ba8d183a4c78b9e5bb923f91dfecd0fd8b2161a0802440ad7e52959",
+      "video": "L1-03/video/scene.usdc",
+      "video_source_sha256": "465f68256a8200760137a3c376a2ca3b39cd519efe1c3d4e173239cf02187f92"
+    },
+    "L1-07": {
+      "environment": "L1-07/environment.usdc",
+      "task_objects": "L1-07/task_objects.usdc",
+      "object_roots": [
+        "/World/Household"
+      ],
+      "static": "L1-07/static/scene.usdc",
+      "static_source_sha256": "67f4d2a5af07d57cf1e323352b602ec36afb909cc573c90af082a5b20678270e",
+      "video": "L1-07/video/scene.usdc",
+      "video_source_sha256": "974f5076ee3f1a9bf1cb87974c0a03fe91b8d53c8fa5674e747e4eb8e56c93cd"
+    },
+    "L1-08": {
+      "environment": "L1-08/environment.usdc",
+      "task_objects": "L1-08/task_objects.usdc",
+      "object_roots": [
+        "/World/Household"
+      ],
+      "static": "L1-08/static/scene.usdc",
+      "static_source_sha256": "cebb705e7a34cad401cbebbbe25c5756f5414c099872809a4f83f315e66d443b",
+      "video": "L1-08/video/scene.usdc",
+      "video_source_sha256": "29be312dae7566f7b250465b0e5babac61436f83927d888333524381d35cb3e8"
+    },
+    "L1-09": {
+      "environment": "L1-09/environment.usdc",
+      "task_objects": "L1-09/task_objects.usdc",
+      "object_roots": [
+        "/World/Household"
+      ],
+      "static": "L1-09/static/scene.usdc",
+      "static_source_sha256": "d75b4d71364756c43933c4c63ce19d571a162fe74f3986c675329efd2a19e719",
+      "video": "L1-09/video/scene.usdc",
+      "video_source_sha256": "bd1ac86c59d401922b2a76859337727a69da4cf55f33d7bfc43813b961e50381"
+    },
+    "L2-01": {
+      "environment": "L2-01/environment.usdc",
+      "task_objects": "L2-01/task_objects.usdc",
+      "object_roots": [
+        "/World/L2",
+        "/World/ReviewAssets"
+      ],
+      "static": "L2-01/static/scene.usdc",
+      "static_source_sha256": "78b6d28617be0dc6b6277b26a0d353b37ecc96d2270fc6863942eefc2239365c",
+      "video": "L2-01/video/scene.usdc",
+      "video_source_sha256": "e7e24ef43febfb8d0cf0074398615f73c44d5ff99ca15829d7b5e56e2b129338"
+    },
+    "L2-03": {
+      "environment": "L2-03/environment.usdc",
+      "task_objects": "L2-03/task_objects.usdc",
+      "object_roots": [
+        "/World/L2",
+        "/World/ReviewAssets"
+      ],
+      "static": "L2-03/static/scene.usdc",
+      "static_source_sha256": "919545b1a4017c61c124fe748bba5243583093fcf212184017a799f2d9fe3c27",
+      "video": "L2-03/video/scene.usdc",
+      "video_source_sha256": "36fae4d9a2ea83eb5aa726637c451a4c23a6582b0e72a96311739c99cab90cb8"
+    },
+    "L2-04": {
+      "environment": "L2-04/environment.usdc",
+      "task_objects": "L2-04/task_objects.usdc",
+      "object_roots": [
+        "/World/L2"
+      ],
+      "static": "L2-04/static/scene.usdc",
+      "static_source_sha256": "40e2be159f0f422bbefeacca098c5489040da49ac0bc342d2e8d5ae5454f8f53",
+      "video": "L2-04/video/scene.usdc",
+      "video_source_sha256": "0cc8af05f3c199c646f5521f0042a763c5c2165a62e20026df7b3d18518a30fd"
+    },
+    "L2-06": {
+      "environment": "L2-06/environment.usdc",
+      "task_objects": "L2-06/task_objects.usdc",
+      "object_roots": [
+        "/World/L2",
+        "/World/ReviewAssets"
+      ],
+      "static": "L2-06/static/scene.usdc",
+      "static_source_sha256": "5442e0c892ec5091b326b05ee2bc5dc9eb5482fd5c623b005b01c8eee011875b",
+      "video": "L2-06/video/scene.usdc",
+      "video_source_sha256": "e8d5e2172ae74f9e8dc37a2826653fe281699af53eea62700c1ba0c1418f0578"
+    },
+    "L2-07": {
+      "environment": "L2-07/environment.usdc",
+      "task_objects": "L2-07/task_objects.usdc",
+      "object_roots": [
+        "/World/L2",
+        "/World/ReviewAssets"
+      ],
+      "static": "L2-07/static/scene.usdc",
+      "static_source_sha256": "f1cdf555ef6a9adcb2a3a7187905fdeebf6c6d937bed1dd1dd8ab725e1a5c871",
+      "video": "L2-07/video/scene.usdc",
+      "video_source_sha256": "8fa422b77fd6271e9f27af37184dbb3db16a8f30af6425db09226fae97137466"
+    },
+    "L3-03": {
+      "environment": "L3-03/environment.usdc",
+      "task_objects": "L3-03/task_objects.usdc",
+      "object_roots": [
+        "/World/L2"
+      ],
+      "static": "L3-03/static/scene.usdc",
+      "static_source_sha256": "b7c3239efa9f1de0866d082a70e4186dc8c3032b3177779032a7c998dec5a463",
+      "video": "L3-03/video/scene.usdc",
+      "video_source_sha256": "8b7f371f15f2e8ddec8a8c3dcae74814d8811ffee51b783a5dce5ba10d53072e"
+    },
+    "L3-05": {
+      "environment": "L3-05/environment.usdc",
+      "task_objects": "L3-05/task_objects.usdc",
+      "object_roots": [
+        "/World/L2",
+        "/World/ReviewAssets"
+      ],
+      "static": "L3-05/static/scene.usdc",
+      "static_source_sha256": "589e5cde55296220bfe0b82dd1e0957f7e93a657d030e342c656fb64245de800",
+      "video": "L3-05/video/scene.usdc",
+      "video_source_sha256": "0299ff89ac3f8c9afe38c03e259d035f53fd956387ba9108595800976e8dec8f"
+    },
+    "L3-14": {
+      "environment": "L3-14/environment.usdc",
+      "task_objects": "L3-14/task_objects.usdc",
+      "object_roots": [
+        "/World/L2"
+      ],
+      "static": "L3-14/static/scene.usdc",
+      "static_source_sha256": "359423edc7a0fbb9d8334bec423a7712a20910bd433d12e26cf277aa74bc072e",
+      "video": "L3-14/video/scene.usdc",
+      "video_source_sha256": "09dc132ac14a687fe961b1707ab089400fc5829659d85fa9e10e85fa37455f3e"
+    },
+    "L3-15": {
+      "environment": "L3-15/environment.usdc",
+      "task_objects": "L3-15/task_objects.usdc",
+      "object_roots": [
+        "/World/L2",
+        "/World/ReviewAssets"
+      ],
+      "static": "L3-15/static/scene.usdc",
+      "static_source_sha256": "bd13e9aa1aba680492f642cb44104ef334bc8e6c14bb439a02abce0b44c92a1f",
+      "video": "L3-15/video/scene.usdc",
+      "video_source_sha256": "98897c1d26d641fd6bc5eaa166c43eed29d801a5ed41f6673d62bcf3f4b9af61"
+    },
+    "L3-11": {
+      "static": "L3-11/static/scene.usdc",
+      "status": "unchanged baseline, excluded from r3",
+      "source_sha256": "ff25ee57cc8c9550ec0fc2917d8b454263513acb2fa2b511af6419fc1fcd0bad"
+    }
+  },
+  "dependencies": {
+    "/vepfs-C区/bowenjing/Sunday/reports/visual_alignment_r3_20261014/textures/table_L1-01.png": {
+      "path": "textures/a7addb552f396d1dfda2.png",
+      "sha256": "a7addb552f396d1dfda2b9fffb6de156e39f3fb0be500a86b2ab5ba2b1214b6a"
+    },
+    "/vepfs-C区/bowenjing/Sunday/GPT_Benchmark/assets/tuojing/source/common/lab/textures/cork_photo.jpg": {
+      "path": "textures/677afb0930a0f296ab45.jpg",
+      "sha256": "677afb0930a0f296ab45789b83848ea05ab5f99de1acbdd96b19d0f338eb4a3d"
+    },
+    "/vepfs-C区/bowenjing/Sunday/GPT_Benchmark/assets/tuojing/source/common/lab/textures/table_photo.jpg": {
+      "path": "textures/07841347afeb29595fe8.jpg",
+      "sha256": "07841347afeb29595fe8a8d1ca3c3d6a157f2eaca27827043d15364260cbb222"
+    },
+    "/vepfs-C区/bowenjing/Sunday/L1_marker_measured_20261013/package/assets/l1_marker/label.png": {
+      "path": "textures/2df8f4f9a94a46a978b6.png",
+      "sha256": "2df8f4f9a94a46a978b687ccce7693351fe97bdffb7cbf61623d6f1688a0cdae"
+    },
+    "/vepfs-C区/bowenjing/Sunday/GPT_Benchmark/assets/tuojing/source/L1-01/mug_reference_v3_20261013/exterior_roughness.png": {
+      "path": "textures/331f60adced46c0c266d.png",
+      "sha256": "331f60adced46c0c266d87a7627c1473b8f0d5fa287f7c443134f8352f80aba8"
+    },
+    "/vepfs-C区/bowenjing/Sunday/GPT_Benchmark/assets/tuojing/source/L1-01/mug_reference_v3_20261013/exterior_normal.png": {
+      "path": "textures/edf7a4fe03b22daa7ae0.png",
+      "sha256": "edf7a4fe03b22daa7ae0c97c996b832650041ff13f0f954713efd8f0392efb77"
+    },
+    "/vepfs-C区/bowenjing/Sunday/reports/visual_alignment_r3_20261014/textures/table_L1-03.png": {
+      "path": "textures/a7addb552f396d1dfda2.png",
+      "sha256": "a7addb552f396d1dfda2b9fffb6de156e39f3fb0be500a86b2ab5ba2b1214b6a"
+    },
+    "/vepfs-C区/bowenjing/Sunday/L1_03_validated_20261014/GPT_Benchmark/assets/tuojing/source/common/lab/textures/cork_photo.jpg": {
+      "path": "textures/677afb0930a0f296ab45.jpg",
+      "sha256": "677afb0930a0f296ab45789b83848ea05ab5f99de1acbdd96b19d0f338eb4a3d"
+    },
+    "/vepfs-C区/bowenjing/Sunday/L1_03_validated_20261014/GPT_Benchmark/assets/tuojing/source/common/lab/textures/table_photo.jpg": {
+      "path": "textures/07841347afeb29595fe8.jpg",
+      "sha256": "07841347afeb29595fe8a8d1ca3c3d6a157f2eaca27827043d15364260cbb222"
+    },
+    "/vepfs-C区/bowenjing/Sunday/L1_03_validated_20261014/GPT_Benchmark/assets/tuojing/source/L1-03/plug/logo.png": {
+      "path": "textures/89122c48b924f00eb275.png",
+      "sha256": "89122c48b924f00eb27591ec39d8cc21b70588b4b5e1ab63d188f4bb5427211d"
+    },
+    "/vepfs-C区/bowenjing/Sunday/reports/l103_sharpa_insertion_20261014/assets/usb_charger/logo.png": {
+      "path": "textures/89122c48b924f00eb275.png",
+      "sha256": "89122c48b924f00eb27591ec39d8cc21b70588b4b5e1ab63d188f4bb5427211d"
+    },
+    "/vepfs-C区/bowenjing/Sunday/reports/visual_alignment_r3_20261014/textures/table_L1-07.png": {
+      "path": "textures/a7addb552f396d1dfda2.png",
+      "sha256": "a7addb552f396d1dfda2b9fffb6de156e39f3fb0be500a86b2ab5ba2b1214b6a"
+    },
+    "/vepfs-C区/bowenjing/Sunday/reports/visual_alignment_r3_20261014/textures/plastic_roughness.png": {
+      "path": "textures/e558519f1a3436c7cccc.png",
+      "sha256": "e558519f1a3436c7cccc3fcf339cc0b3e407e734d41a781890eb4e2831960880"
+    },
+    "/vepfs-C区/bowenjing/Sunday/GPT_Benchmark/assets/tuojing/source/L1-07/green_support_box_measured_20261014/molded_plastic_normal.png": {
+      "path": "textures/89dc699a50c2e098c8d5.png",
+      "sha256": "89dc699a50c2e098c8d5b90e661b901863b81c5ed31c171369b7bb6869823ec9"
+    },
+    "/vepfs-C区/bowenjing/Sunday/GPT_Benchmark/assets/tuojing/source/L1-07/green_support_box_measured_20261014/molded_plastic_base.png": {
+      "path": "textures/e018d2722bcd81138271.png",
+      "sha256": "e018d2722bcd811382718e7f3dc5ca5225d3b2e0a7c37b09a03a9e9423ba0ab5"
+    },
+    "/vepfs-C区/bowenjing/Sunday/reports/visual_alignment_r3_20261014/textures/hat_band_wrapped.png": {
+      "path": "textures/572cd02008fdd452d756.png",
+      "sha256": "572cd02008fdd452d7560302f384dcd34f2fc3f06472b7949382398e3e56d99f"
+    },
+    "/vepfs-C区/bowenjing/Sunday/GPT_Benchmark/assets/tuojing/source/L1-07/yellow_visor_measured_20261014/cloth.png": {
+      "path": "textures/d89a8fa45ac8ae90323d.png",
+      "sha256": "d89a8fa45ac8ae90323d189635eaac244a9c84a2459ba2b013802839e5eb539a"
+    },
+    "/vepfs-C区/bowenjing/Sunday/GPT_Benchmark/assets/tuojing/source/L1-07/rack_measured_20261014/wood.png": {
+      "path": "textures/9757a96e5b70af3e7311.png",
+      "sha256": "9757a96e5b70af3e731112cada04aaf528aa338de60dd0a3e4d1ae9dce12364a"
+    },
+    "/vepfs-C区/bowenjing/Sunday/reports/visual_alignment_r3_20261014/textures/table_L1-08.png": {
+      "path": "textures/a7addb552f396d1dfda2.png",
+      "sha256": "a7addb552f396d1dfda2b9fffb6de156e39f3fb0be500a86b2ab5ba2b1214b6a"
+    },
+    "/vepfs-C区/bowenjing/Sunday/reports/visual_alignment_r3_20261014/textures/table_L1-09.png": {
+      "path": "textures/a7addb552f396d1dfda2.png",
+      "sha256": "a7addb552f396d1dfda2b9fffb6de156e39f3fb0be500a86b2ab5ba2b1214b6a"
+    },
+    "/vepfs-C区/bowenjing/Sunday/GPT_Benchmark/assets/tuojing/source/L1-09/source_charger_measured_20261014/logo.png": {
+      "path": "textures/89122c48b924f00eb275.png",
+      "sha256": "89122c48b924f00eb27591ec39d8cc21b70588b4b5e1ab63d188f4bb5427211d"
+    },
+    "/vepfs-C区/bowenjing/Sunday/reports/visual_alignment_r3_20261014/textures/table_L2-01.png": {
+      "path": "textures/a7addb552f396d1dfda2.png",
+      "sha256": "a7addb552f396d1dfda2b9fffb6de156e39f3fb0be500a86b2ab5ba2b1214b6a"
+    },
+    "/vepfs-C区/bowenjing/Sunday/GPT_Benchmark/assets/tuojing/source/L2-01/marker/marker_body/label.png": {
+      "path": "textures/ae414077e57b68715b41.png",
+      "sha256": "ae414077e57b68715b4109fda5bedbb675abe0c83ea454e65be155bb1a061f82"
+    },
+    "/vepfs-C区/bowenjing/Sunday/GPT_Benchmark/assets/tuojing/source/L2-01/support_box/molded_plastic_normal.png": {
+      "path": "textures/89dc699a50c2e098c8d5.png",
+      "sha256": "89dc699a50c2e098c8d5b90e661b901863b81c5ed31c171369b7bb6869823ec9"
+    },
+    "/vepfs-C区/bowenjing/Sunday/GPT_Benchmark/assets/tuojing/source/L2-01/support_box/molded_plastic_base.png": {
+      "path": "textures/e018d2722bcd81138271.png",
+      "sha256": "e018d2722bcd811382718e7f3dc5ca5225d3b2e0a7c37b09a03a9e9423ba0ab5"
+    },
+    "/vepfs-C区/bowenjing/Sunday/reports/visual_alignment_r3_20261014/textures/table_L2-03.png": {
+      "path": "textures/a7addb552f396d1dfda2.png",
+      "sha256": "a7addb552f396d1dfda2b9fffb6de156e39f3fb0be500a86b2ab5ba2b1214b6a"
+    },
+    "/vepfs-C区/bowenjing/Sunday/GPT_Benchmark/assets/real2sim_l2_20261013/books/closed_book/textures/paper_fiber_normal.png": {
+      "path": "textures/b3540c526a9dfc8a9a72.png",
+      "sha256": "b3540c526a9dfc8a9a7277e42d03e946618dcb8452ed0cbe093e3599eeddb4e9"
+    },
+    "/vepfs-C区/bowenjing/Sunday/GPT_Benchmark/assets/real2sim_l2_20261013/books/closed_book/textures/cover_albedo.png": {
+      "path": "textures/41e71f3e107c7f80d91f.png",
+      "sha256": "41e71f3e107c7f80d91fdce69f177d92adc40de1666e723d87eab6294ee78209"
+    },
+    "/vepfs-C区/bowenjing/Sunday/GPT_Benchmark/assets/tuojing/source/L2-03/support_box/molded_plastic_normal.png": {
+      "path": "textures/89dc699a50c2e098c8d5.png",
+      "sha256": "89dc699a50c2e098c8d5b90e661b901863b81c5ed31c171369b7bb6869823ec9"
+    },
+    "/vepfs-C区/bowenjing/Sunday/GPT_Benchmark/assets/tuojing/source/L2-03/support_box/molded_plastic_base.png": {
+      "path": "textures/e018d2722bcd81138271.png",
+      "sha256": "e018d2722bcd811382718e7f3dc5ca5225d3b2e0a7c37b09a03a9e9423ba0ab5"
+    },
+    "/vepfs-C区/bowenjing/Sunday/reports/visual_alignment_r3_20261014/textures/table_L2-04.png": {
+      "path": "textures/a7addb552f396d1dfda2.png",
+      "sha256": "a7addb552f396d1dfda2b9fffb6de156e39f3fb0be500a86b2ab5ba2b1214b6a"
+    },
+    "/vepfs-C区/bowenjing/Sunday/reports/visual_alignment_r3_20261014/textures/table_L2-06.png": {
+      "path": "textures/a7addb552f396d1dfda2.png",
+      "sha256": "a7addb552f396d1dfda2b9fffb6de156e39f3fb0be500a86b2ab5ba2b1214b6a"
+    },
+    "/vepfs-C区/bowenjing/Sunday/GPT_Benchmark/assets/tuojing/source/L2-06/support_box/molded_plastic_normal.png": {
+      "path": "textures/89dc699a50c2e098c8d5.png",
+      "sha256": "89dc699a50c2e098c8d5b90e661b901863b81c5ed31c171369b7bb6869823ec9"
+    },
+    "/vepfs-C区/bowenjing/Sunday/GPT_Benchmark/assets/tuojing/source/L2-06/support_box/molded_plastic_base.png": {
+      "path": "textures/e018d2722bcd81138271.png",
+      "sha256": "e018d2722bcd811382718e7f3dc5ca5225d3b2e0a7c37b09a03a9e9423ba0ab5"
+    },
+    "/vepfs-C区/bowenjing/Sunday/GPT_Benchmark/assets/real2sim_l2_20261013/orange/orange_rounded/assets/orange_segment/photo_reverse.jpg": {
+      "path": "textures/7b273c9362eea351e75e.jpg",
+      "sha256": "7b273c9362eea351e75e0dc1b024342f0fae39ab9c401d7f60bb25cac6a09f21"
+    },
+    "/vepfs-C区/bowenjing/Sunday/GPT_Benchmark/assets/real2sim_l2_20261013/orange/orange_rounded/assets/orange_segment/photo_front.png": {
+      "path": "textures/16f3242f001e369b0a97.png",
+      "sha256": "16f3242f001e369b0a9727db3ad2e0a4ebe731c4359b57c57684bb76a664bd62"
+    },
+    "/vepfs-C区/bowenjing/Sunday/reports/visual_alignment_r3_20261014/textures/table_L2-07.png": {
+      "path": "textures/a7addb552f396d1dfda2.png",
+      "sha256": "a7addb552f396d1dfda2b9fffb6de156e39f3fb0be500a86b2ab5ba2b1214b6a"
+    },
+    "/vepfs-C区/bowenjing/Sunday/GPT_Benchmark/assets/real2sim_l2_20261013/reference_appearance/l207_initial_reference.png": {
+      "path": "textures/f8e5fde889de4b637db6.png",
+      "sha256": "f8e5fde889de4b637db6904409e9eefe2cb4a2ab4fe932d08cbe4d5933e3e6bb"
+    },
+    "/vepfs-C区/bowenjing/Sunday/reports/visual_alignment_r3_20261014/textures/table_L3-03.png": {
+      "path": "textures/a7addb552f396d1dfda2.png",
+      "sha256": "a7addb552f396d1dfda2b9fffb6de156e39f3fb0be500a86b2ab5ba2b1214b6a"
+    },
+    "/vepfs-C区/bowenjing/Sunday/L3_alignment_20261013/GPT_Benchmark/assets/real2sim_l3_20261013/table_visual_20261014/textures/table_old.png": {
+      "path": "textures/99601db72e198af67ecf.png",
+      "sha256": "99601db72e198af67ecf37cc1d40fdb53659c2198f024ec9bab4271b3da59e1b"
+    },
+    "/vepfs-C区/bowenjing/Sunday/L3_alignment_20261013/GPT_Benchmark/assets/tuojing/source/common/lab/textures/cork_photo.jpg": {
+      "path": "textures/677afb0930a0f296ab45.jpg",
+      "sha256": "677afb0930a0f296ab45789b83848ea05ab5f99de1acbdd96b19d0f338eb4a3d"
+    },
+    "/vepfs-C区/bowenjing/Sunday/L3_alignment_20261013/GPT_Benchmark/assets/tuojing/source/common/lab/textures/table_photo.jpg": {
+      "path": "textures/07841347afeb29595fe8.jpg",
+      "sha256": "07841347afeb29595fe8a8d1ca3c3d6a157f2eaca27827043d15364260cbb222"
+    },
+    "/vepfs-C区/bowenjing/Sunday/L3_alignment_20261013/GPT_Benchmark/assets/real2sim_l3_20261013/bottle/东方树叶空瓶_70mm标定版_Mac_20261013/textures/front_reference.JPG": {
+      "path": "textures/517732c3dd23172af27e.jpg",
+      "sha256": "517732c3dd23172af27e9169f40d704a8f6df525c1418371204c52db43059c6e"
+    },
+    "/vepfs-C区/bowenjing/Sunday/L3_alignment_20261013/GPT_Benchmark/assets/real2sim_l3_20261013/bottle/东方树叶空瓶_70mm标定版_Mac_20261013/textures/back_reference.JPG": {
+      "path": "textures/5a4ae9dadf5c87f5e3bf.jpg",
+      "sha256": "5a4ae9dadf5c87f5e3bf5d8409c12884adcf9ce594f71cc869ef4141be45a1df"
+    },
+    "/vepfs-C区/bowenjing/Sunday/reports/l3_finger_twist_20261014/assets/textures/bottle_front_reference.JPG": {
+      "path": "textures/517732c3dd23172af27e.jpg",
+      "sha256": "517732c3dd23172af27e9169f40d704a8f6df525c1418371204c52db43059c6e"
+    },
+    "/vepfs-C区/bowenjing/Sunday/reports/l3_finger_twist_20261014/assets/textures/bottle_back_reference.JPG": {
+      "path": "textures/5a4ae9dadf5c87f5e3bf.jpg",
+      "sha256": "5a4ae9dadf5c87f5e3bf5d8409c12884adcf9ce594f71cc869ef4141be45a1df"
+    },
+    "/vepfs-C区/bowenjing/Sunday/reports/visual_alignment_r3_20261014/textures/table_L3-05.png": {
+      "path": "textures/a7addb552f396d1dfda2.png",
+      "sha256": "a7addb552f396d1dfda2b9fffb6de156e39f3fb0be500a86b2ab5ba2b1214b6a"
+    },
+    "/vepfs-C区/bowenjing/Sunday/L3_alignment_20261013/GPT_Benchmark/assets/real2sim_l3_20261013/table_visual_20261014/textures/table_new.png": {
+      "path": "textures/c9956f9ad1a4a774b328.png",
+      "sha256": "c9956f9ad1a4a774b32897c414d05dbaa39f409ee53c5287f41eac15bcd51475"
+    },
+    "/vepfs-C区/bowenjing/Sunday/L3_alignment_20261013/GPT_Benchmark/assets/real2sim_l3_20261013/stud_measured_20261014/assets/matching_hex_nut/zinc_roughness.png": {
+      "path": "textures/d5ff33929a361ad11a07.png",
+      "sha256": "d5ff33929a361ad11a076f4bc1c0b3791b5748e768eea0e45dedb930c64c31b5"
+    },
+    "/vepfs-C区/bowenjing/Sunday/L3_alignment_20261013/GPT_Benchmark/assets/real2sim_l3_20261013/stud_measured_20261014/assets/conical_threaded_stud/zinc_roughness.png": {
+      "path": "textures/d5ff33929a361ad11a07.png",
+      "sha256": "d5ff33929a361ad11a076f4bc1c0b3791b5748e768eea0e45dedb930c64c31b5"
+    },
+    "/vepfs-C区/bowenjing/Sunday/L3_alignment_20261013/GPT_Benchmark/assets/tuojing/source/L3-05/support_box/molded_plastic_normal.png": {
+      "path": "textures/89dc699a50c2e098c8d5.png",
+      "sha256": "89dc699a50c2e098c8d5b90e661b901863b81c5ed31c171369b7bb6869823ec9"
+    },
+    "/vepfs-C区/bowenjing/Sunday/L3_alignment_20261013/GPT_Benchmark/assets/tuojing/source/L3-05/support_box/molded_plastic_base.png": {
+      "path": "textures/e018d2722bcd81138271.png",
+      "sha256": "e018d2722bcd811382718e7f3dc5ca5225d3b2e0a7c37b09a03a9e9423ba0ab5"
+    },
+    "/vepfs-C区/bowenjing/Sunday/reports/l3_finger_twist_20261014/assets/textures/stud_zinc_roughness.png": {
+      "path": "textures/d5ff33929a361ad11a07.png",
+      "sha256": "d5ff33929a361ad11a076f4bc1c0b3791b5748e768eea0e45dedb930c64c31b5"
+    },
+    "/vepfs-C区/bowenjing/Sunday/reports/visual_alignment_r3_20261014/textures/table_L3-14.png": {
+      "path": "textures/a7addb552f396d1dfda2.png",
+      "sha256": "a7addb552f396d1dfda2b9fffb6de156e39f3fb0be500a86b2ab5ba2b1214b6a"
+    },
+    "/vepfs-C区/bowenjing/Sunday/L3_alignment_20261013/GPT_Benchmark/assets/real2sim_l3_20261013/whiteboard_eraser_20261014/assets/blue_board_eraser/woven_roughness.png": {
+      "path": "textures/f885ed18188caaed5f9e.png",
+      "sha256": "f885ed18188caaed5f9e9c2954dd1f892b326024c0baa782e45d01e0f5b9c0f2"
+    },
+    "/vepfs-C区/bowenjing/Sunday/L3_alignment_20261013/GPT_Benchmark/assets/real2sim_l3_20261013/whiteboard_eraser_20261014/assets/blue_board_eraser/woven_normal.png": {
+      "path": "textures/60f5ebc3486a51d4ecd4.png",
+      "sha256": "60f5ebc3486a51d4ecd402b774645c288e5365ff4e42b793dc0b5bb4381b0a76"
+    },
+    "/vepfs-C区/bowenjing/Sunday/L3_alignment_20261013/GPT_Benchmark/assets/real2sim_l3_20261013/whiteboard_eraser_20261014/assets/blue_board_eraser/woven_base.png": {
+      "path": "textures/5106e3ee8f0f7a110205.png",
+      "sha256": "5106e3ee8f0f7a11020529f15a9c0a677803e5c748bd16d0620a0e86cd606ba8"
+    },
+    "/vepfs-C区/bowenjing/Sunday/reports/visual_alignment_r3_20261014/textures/table_L3-15.png": {
+      "path": "textures/a7addb552f396d1dfda2.png",
+      "sha256": "a7addb552f396d1dfda2b9fffb6de156e39f3fb0be500a86b2ab5ba2b1214b6a"
+    },
+    "/vepfs-C区/bowenjing/Sunday/L3_alignment_20261013/GPT_Benchmark/assets/tuojing/source/L3-15/support_box/molded_plastic_normal.png": {
+      "path": "textures/89dc699a50c2e098c8d5.png",
+      "sha256": "89dc699a50c2e098c8d5b90e661b901863b81c5ed31c171369b7bb6869823ec9"
+    },
+    "/vepfs-C区/bowenjing/Sunday/L3_alignment_20261013/GPT_Benchmark/assets/tuojing/source/L3-15/support_box/molded_plastic_base.png": {
+      "path": "textures/e018d2722bcd81138271.png",
+      "sha256": "e018d2722bcd811382718e7f3dc5ca5225d3b2e0a7c37b09a03a9e9423ba0ab5"
+    },
+    "/vepfs-C区/bowenjing/Sunday/L3_alignment_20261013/GPT_Benchmark/assets/real2sim_l3_20261013/pan/assets/dustpan/label_source_original.jpg": {
+      "path": "textures/29315569a6ed137579e7.jpg",
+      "sha256": "29315569a6ed137579e7266a0925423f191e17a912573f3b0b034ac12858300a"
+    },
+    "/vepfs-C区/bowenjing/Sunday/L3_visual_20261014/aligned/L3-11/ink_textures/ink_000000.png": {
+      "path": "textures/2591bb9ee6b964e7c1b5.png",
+      "sha256": "2591bb9ee6b964e7c1b5540d42913093eb7b131d70b29395fe7f879ba286625f"
+    },
+    "/vepfs-C区/bowenjing/Sunday/L3_alignment_20261013/GPT_Benchmark/assets/real2sim_l3_20261013/whiteboard_eraser_20261014/assets/whiteboard/ink_mask.png": {
+      "path": "textures/eebf21ae57120211dbca.png",
+      "sha256": "eebf21ae57120211dbca04b7ce2dc4484ebe64227affdc5fc70e0a5562f4425b"
+    },
+    "/vepfs-C区/bowenjing/Sunday/L3_alignment_20261013/GPT_Benchmark/assets/real2sim_l3_20261013/whiteboard_eraser_20261014/assets/whiteboard/writing.png": {
+      "path": "textures/889ca57b194f833825f7.png",
+      "sha256": "889ca57b194f833825f74c29f21136784f950528ba87754ee66ca03f8163f113"
+    }
+  }
+}

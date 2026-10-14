@@ -1,0 +1,110 @@
+#usda 1.0
+(
+    defaultPrim = "Marbles"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "Marbles"
+{
+    def Xform "Marble00" (
+        prepend references = @./marble_aqua_blue/marble_aqua_blue.usda@
+    )
+    {
+        float3 xformOp:rotateXYZ = (0, 0, 0)
+        double3 xformOp:translate = (-0.017, 0.015, 0.008)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def Xform "Marble01" (
+        prepend references = @./marble_clear_mint/marble_clear_mint.usda@
+    )
+    {
+        float3 xformOp:rotateXYZ = (23, 47, 71)
+        double3 xformOp:translate = (0, 0.015, 0.008)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def Xform "Marble02" (
+        prepend references = @./marble_emerald_green/marble_emerald_green.usda@
+    )
+    {
+        float3 xformOp:rotateXYZ = (46, 94, 142)
+        double3 xformOp:translate = (0.017, 0.015, 0.008)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def Xform "Marble03" (
+        prepend references = @./marble_emerald_green/marble_emerald_green.usda@
+    )
+    {
+        float3 xformOp:rotateXYZ = (69, 21, 213)
+        double3 xformOp:translate = (-0.025500000000000002, 0, 0.008)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def Xform "Marble04" (
+        prepend references = @./marble_yellow_green/marble_yellow_green.usda@
+    )
+    {
+        float3 xformOp:rotateXYZ = (2, 68, 284)
+        double3 xformOp:translate = (-0.0085, 0, 0.008)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def Xform "Marble05" (
+        prepend references = @./marble_yellow_green/marble_yellow_green.usda@
+    )
+    {
+        float3 xformOp:rotateXYZ = (25, 115, 355)
+        double3 xformOp:translate = (0.0085, 0, 0.008)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def Xform "Marble06" (
+        prepend references = @./marble_aqua_blue/marble_aqua_blue.usda@
+    )
+    {
+        float3 xformOp:rotateXYZ = (48, 42, 66)
+        double3 xformOp:translate = (0.025500000000000002, 0, 0.008)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def Xform "Marble07" (
+        prepend references = @./marble_yellow_green/marble_yellow_green.usda@
+    )
+    {
+        float3 xformOp:rotateXYZ = (71, 89, 137)
+        double3 xformOp:translate = (-0.017, -0.015, 0.008)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def Xform "Marble08" (
+        prepend references = @./marble_emerald_green/marble_emerald_green.usda@
+    )
+    {
+        float3 xformOp:rotateXYZ = (4, 16, 208)
+        double3 xformOp:translate = (0, -0.015, 0.008)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def Xform "Marble09" (
+        prepend references = @./marble_red_white/marble_red_white.usda@
+    )
+    {
+        float3 xformOp:rotateXYZ = (27, 63, 279)
+        double3 xformOp:translate = (0.017, -0.015, 0.008)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+
+    def Xform "Marble10" (
+        prepend references = @./marble_clear_mint/marble_clear_mint.usda@
+    )
+    {
+        float3 xformOp:rotateXYZ = (50, 110, 350)
+        double3 xformOp:translate = (0, -0.03, 0.008)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateXYZ"]
+    }
+}
+

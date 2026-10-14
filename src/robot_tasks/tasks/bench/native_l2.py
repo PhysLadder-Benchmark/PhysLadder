@@ -40,11 +40,14 @@ class NativeL2Scene:
         for item in spec.parameters["native_instances"]:
             parent = self.root + "/" + item["name"]
             if item["asset"] not in self.deliveries:
-                self.deliveries[item["asset"]] = verified_prop(item["asset"], task_id=config.task_id)
+                from .l2_alignment import verified_asset
+                self.deliveries[item["asset"]] = verified_asset(item["asset"], config)
             path, evidence = self.deliveries[item["asset"]]
             prim = self.stage.DefinePrim(parent)
             prim.GetReferences().AddReference(str(path))
             self.set_pose(parent, item["pose"])
+            if "scale" in item:
+                UsdGeom.Xformable(prim).AddScaleOp().Set(Gf.Vec3f(*item["scale"]))
             # Compose a declared initial rigid transform once (e.g. a cap
             # pre-loosened along its helix). Never couple motion during play.
             for relative, initial in item.get("initial_body_transforms", {}).items():
@@ -65,6 +68,9 @@ class NativeL2Scene:
                 transform = xform.GetLocalTransformation()
                 transform.SetTranslateOnly(transform.ExtractTranslation() + Gf.Vec3d(*offset))
                 xform.MakeMatrixXform().Set(transform)
+            if item["name"] == "organizer":
+                from .l2_alignment import configure_drawer_blocks
+                configure_drawer_blocks(self.stage, parent, config)
             self.evidence.append(
                 {
                     **evidence,
@@ -73,7 +79,7 @@ class NativeL2Scene:
                     "initial_body_offsets": item.get("initial_body_offsets", {}),
                     "initial_body_transforms": item.get("initial_body_transforms", {}),
                     "native_dimensions": True,
-                    "native_materials": not item["name"].startswith("load_"),
+                    "native_materials": not (item["name"].startswith("load_") and "ball_friction" in spec.parameters),
                 }
             )
             for relative in item.get("static", []):
@@ -149,9 +155,10 @@ class NativeL2Scene:
         if spec.parameters.get("native_cup_names"):
             from .native_geometry import catalog, verify_stage
 
-            if self.deliveries["ripple_paper_cup"][1]["sha256"] != catalog()["ripple_paper_cup"]["sha256"]:
+            cup_asset = spec.parameters.get("cup_asset", "ripple_paper_cup")
+            if self.deliveries[cup_asset][1]["sha256"] != catalog()[cup_asset]["sha256"]:
                 raise ValueError("Cup scoring geometry is from a different locked asset")
-            verify_stage(self.stage, [("ripple_paper_cup", self.paths[name])
+            verify_stage(self.stage, [(cup_asset, self.paths[name])
                                       for name in spec.parameters["native_cup_names"]])
 
         for part in self.design.fixtures:

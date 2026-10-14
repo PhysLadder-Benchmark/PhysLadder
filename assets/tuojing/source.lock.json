@@ -3068,6 +3068,184 @@
           "sha256": "38e21b51d1a8209d4338188e8075b9328fb9ca41294742c34b1fe29e4fe5445c"
         }
       }
+    },
+    {
+      "id": "l1_mug_measured_20261013",
+      "delivery": "2026-10-13",
+      "directory": "l1_mug_measured_20261013",
+      "source": "user IMG_3491.MOV, two ruler photos, measured height 85 mm and mass 271.7 g",
+      "original_prop": "black_ceramic_mug_20261011",
+      "files": {
+        "assets/black_ceramic_mug/black_ceramic_mug.usda": {
+          "bytes": 4277437,
+          "sha256": "1eb1ae5f92ad53fb68290ebb85eec2a63925d19fcea06c924cd7cb4228347512"
+        },
+        "assets/black_ceramic_mug/exterior_normal.png": {
+          "bytes": 1039068,
+          "sha256": "edf7a4fe03b22daa7ae0c97c996b832650041ff13f0f954713efd8f0392efb77"
+        },
+        "assets/black_ceramic_mug/exterior_roughness.png": {
+          "bytes": 348784,
+          "sha256": "331f60adced46c0c266d87a7627c1473b8f0d5fa287f7c443134f8352f80aba8"
+        },
+        "assets/black_ceramic_mug/properties.json": {
+          "bytes": 1003,
+          "sha256": "0e8014ec256771222fa8df1b886996de49a1a6bde17638e122d50c903559e385"
+        }
+      }
+    },
+    {
+      "id": "l1_mug_bulged_v2_20261013",
+      "delivery": "2026-10-13",
+      "directory": "l1_mug_bulged_v2_20261013",
+      "source": "user IMG_3491.MOV, two ruler photos, measured height 85 mm and mass 271.7 g",
+      "original_prop": "black_ceramic_mug_20261013",
+      "files": {
+        "assets/black_ceramic_mug/black_ceramic_mug.usda": {
+          "bytes": 4271352,
+          "sha256": "07fef680917e0694bcb2ee672e1e72eacb62167363280c8e9a4849f265a6194d"
+        },
+        "assets/black_ceramic_mug/exterior_normal.png": {
+          "bytes": 1039068,
+          "sha256": "edf7a4fe03b22daa7ae0c97c996b832650041ff13f0f954713efd8f0392efb77"
+        },
+        "assets/black_ceramic_mug/exterior_roughness.png": {
+          "bytes": 348784,
+          "sha256": "331f60adced46c0c266d87a7627c1473b8f0d5fa287f7c443134f8352f80aba8"
+        },
+        "assets/black_ceramic_mug/properties.json": {
+          "bytes": 1049,
+          "sha256": "d70d8e0c0c756e43a629c3a67fafcfa867015ebae0ce85ca68c36b9768e00ad5"
+        }
+      }
+    },
+    {
+      "id": "l1_mug_reference_v3_20261013",
+      "delivery": "2026-10-13",
+      "directory": "l1_mug_reference_v3_20261013",
+      "source": "user IMG_3491.MOV, two ruler photos, measured height 85 mm and mass 271.7 g",
+      "original_prop": "black_ceramic_mug_20261013_bulged_v2",
+      "files": {
+        "assets/black_ceramic_mug/black_ceramic_mug.usda": {
+          "bytes": 1733371,
+          "sha256": "4966e07efc007d6df12adb58fe442e224812ff28736a418681fe32eb70be5715"
+        },
+        "assets/black_ceramic_mug/exterior_normal.png": {
+          "bytes": 1039068,
+          "sha256": "edf7a4fe03b22daa7ae0c97c996b832650041ff13f0f954713efd8f0392efb77"
+        },
+        "assets/black_ceramic_mug/exterior_roughness.png": {
+          "bytes": 348784,
+          "sha256": "331f60adced46c0c266d87a7627c1473b8f0d5fa287f7c443134f8352f80aba8"
+        },
+        "assets/black_ceramic_mug/properties.json": {
+          "bytes": 973,
+          "sha256": "95952f9030d968e8b582e60f501d79103e998e55229db347d5de1ab1df76c472"
+        }
+      }
+    },
+    {
+      "id": "paper_cup_70_50_80_20261013",
+      "directory": "paper_cup_70_50_80_20261013",
+      "delivery": "2026-10-13",
+      "source": "User IMG_3507.JPG, IMG_3508.JPG and IMG_3509.MOV; measured 70/50/80 mm",
+      "files": {
+        "assets/ripple_paper_cup/ripple_paper_cup.usda": {
+          "bytes": 3969477,
+          "sha256": "f334eafe0be2a5c496d69fb527c18ce0b90e8e2358225489d7b538d0807e0200"
+        },
+        "assets/ripple_paper_cup/properties.json": {
+          "bytes": 15377,
+          "sha256": "bec29e03f71da290c891f5a9156e519e571bb83e7f36b8a32568273991ceccd8"
+        }
+      }
+    },
+    {
+      "id": "visor_box_measured_20261014",
+      "directory": "visor_box_measured_20261014",
+      "delivery": "2026-10-14",
+      "source": "User 190x240 mm visor and 205x195x75 mm green box; IMG_3506.MOV; original meshes retained",
+      "files": {
+        "assets/green_support_box/molded_plastic_roughness.png": {
+          "bytes": 1260060,
+          "sha256": "5a88ed9a4d8cf9963a4018a9b6a80d687f408d8607a5293a3b58c6215404a8e6"
+        },
+        "assets/green_support_box/green_support_box.usda": {
+          "bytes": 532909,
+          "sha256": "07eb2a77c3c56c351a6d1e84702a91eab5eb6fac150600c797193c468db4af92"
+        },
+        "assets/green_support_box/molded_plastic_base.png": {
+          "bytes": 22059,
+          "sha256": "e018d2722bcd811382718e7f3dc5ca5225d3b2e0a7c37b09a03a9e9423ba0ab5"
+        },
+        "assets/green_support_box/properties.json": {
+          "bytes": 1325,
+          "sha256": "0d268ae87840cd9c6e0ab51563cdcd455e7f08f4cb2629ec1f9657a51b5a4df9"
+        },
+        "assets/green_support_box/molded_plastic_normal.png": {
+          "bytes": 3230393,
+          "sha256": "89dc699a50c2e098c8d5b90e661b901863b81c5ed31c171369b7bb6869823ec9"
+        },
+        "assets/yellow_visor/properties.json": {
+          "bytes": 40936,
+          "sha256": "6ecd81912e1ea47a8a4ab7ee525207f3eee9b89c925b0c7d07288071b059dbbd"
+        },
+        "assets/yellow_visor/cloth.png": {
+          "bytes": 493935,
+          "sha256": "d89a8fa45ac8ae90323d189635eaac244a9c84a2459ba2b013802839e5eb539a"
+        },
+        "assets/yellow_visor/yellow_visor.usda": {
+          "bytes": 2205071,
+          "sha256": "e3c06de174454a976914caa7274ddfe2347fc3f5c2df16c943defde7e8613745"
+        },
+        "assets/yellow_visor/band.png": {
+          "bytes": 488344,
+          "sha256": "09ea27b874b6d8c3f6d6e25498f1f8c942f441c53b019e72033506b7e7e6c625"
+        }
+      }
+    },
+    {
+      "id": "rack_740_90_20261014",
+      "directory": "rack_740_90_20261014",
+      "delivery": "2026-10-14",
+      "source": "User 740 mm total height and 90 mm hook rods; existing mesh revised",
+      "files": {
+        "assets/wooden_rack/wooden_rack.usda": {
+          "bytes": 480770,
+          "sha256": "bc3dd99cbae6e12080d36a04d0cac227f1c81b95b0f4ba6c082fc1ebbaa75097"
+        },
+        "assets/wooden_rack/wood.png": {
+          "bytes": 474080,
+          "sha256": "9757a96e5b70af3e731112cada04aaf528aa338de60dd0a3e4d1ae9dce12364a"
+        },
+        "assets/wooden_rack/properties.json": {
+          "bytes": 2221,
+          "sha256": "4e633148e3d668d13392bf913edac4042d939021a03484cba003ad189828c1d7"
+        }
+      }
+    },
+    {
+      "id": "l1_03_measured_20261014",
+      "directory": "l1_03_measured_20261014",
+      "delivery": "2026-10-14 measured envelopes",
+      "files": {
+        "usb_charger/usb_charger.usda": {
+          "bytes": 150092,
+          "sha256": "af7f40eae3a1d70697fa09b08afc3ef5dc6f71013d63b7de9d2bf47b735fd2f1"
+        },
+        "usb_charger/logo.png": {
+          "bytes": 1590,
+          "sha256": "89122c48b924f00eb27591ec39d8cc21b70588b4b5e1ab63d188f4bb5427211d"
+        },
+        "power_strip/housing.usda": {
+          "bytes": 2927370,
+          "sha256": "4331cb0efaea15186bc6d1fe6d0d8fc5ca82e12296702b9d1a5e9181e84927de"
+        },
+        "power_strip/power_strip.usda": {
+          "bytes": 35024,
+          "sha256": "eb955c5608fe4820162f96452fbec5facba2f6c171ebc2f1b70a2c9a4aa32fa5"
+        }
+      }
     }
   ]
 }

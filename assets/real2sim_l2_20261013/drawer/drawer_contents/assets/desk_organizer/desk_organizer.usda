@@ -1,0 +1,89 @@
+#usda 1.0
+(
+    defaultPrim = "Asset"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "Asset" (
+    customData = {
+        string mass_status = "estimated_not_measured"
+    }
+    kind = "component"
+)
+{
+    def Xform "Body" (
+        prepend references = @./resources/body.usda@
+    )
+    {
+    }
+
+    def Xform "Drawer0" (
+        prepend references = @./resources/drawer0.usda@
+    )
+    {
+        double3 xformOp:translate = (-0.08330000000000001, 0, 0.006)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def "Joints"
+    {
+        def PhysicsPrismaticJoint "Drawer0" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+            customData = {
+                string drag_status = "estimated viscous guide drag; not measured drawer friction; no positional motor"
+            }
+        )
+        {
+            float drive:linear:physics:damping = 0.7
+            float drive:linear:physics:maxForce = 0.7
+            float drive:linear:physics:stiffness = 0
+            float drive:linear:physics:targetVelocity = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </Asset/Body>
+            rel physics:body1 = </Asset/Drawer0>
+            bool physics:collisionEnabled = 1
+            point3f physics:localPos0 = (-0.0833, 0, 0.006)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.09
+            float physics:upperLimit = 0
+        }
+
+        def PhysicsPrismaticJoint "Drawer1" (
+            prepend apiSchemas = ["PhysicsDriveAPI:linear"]
+            customData = {
+                string drag_status = "estimated viscous guide drag; not measured drawer friction; no positional motor"
+            }
+        )
+        {
+            float drive:linear:physics:damping = 0.7
+            float drive:linear:physics:maxForce = 0.7
+            float drive:linear:physics:stiffness = 0
+            float drive:linear:physics:targetVelocity = 0
+            uniform token drive:linear:physics:type = "force"
+            uniform token physics:axis = "Y"
+            rel physics:body0 = </Asset/Body>
+            rel physics:body1 = </Asset/Drawer1>
+            bool physics:collisionEnabled = 1
+            point3f physics:localPos0 = (-0.0833, 0, 0.053)
+            point3f physics:localPos1 = (0, 0, 0)
+            float physics:lowerLimit = -0.09
+            float physics:upperLimit = 0
+        }
+    }
+
+    def Xform "Drawer1" (
+        prepend references = @./resources/drawer1.usda@
+    )
+    {
+        double3 xformOp:translate = (-0.08330000000000001, 0, 0.053)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Xform "Frames"
+    {
+    }
+}
+

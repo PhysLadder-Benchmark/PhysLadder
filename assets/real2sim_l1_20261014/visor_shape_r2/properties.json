@@ -1,0 +1,2104 @@
+{
+  "asset": "yellow_visor_20261014_measured",
+  "measured_width_m": 0.19,
+  "measured_length_m": 0.24,
+  "height_status": "retained photo estimate, not measured",
+  "dimensions_m": [
+    0.1899999976158142,
+    0.24000000208616257,
+    0.06871999765280634
+  ],
+  "bounds": [
+    [
+      -0.0949999988079071,
+      -0.15838883817195892,
+      0.0019200000679120421
+    ],
+    [
+      0.0949999988079071,
+      0.08161116391420364,
+      0.07063999772071838
+    ]
+  ],
+  "scale_from_source": [
+    0.8086591368791123,
+    0.8056400439652093,
+    0.8
+  ],
+  "scale_from_previous_scene": [
+    1.0108239210988903,
+    1.0070500549565116,
+    1.0
+  ],
+  "previous_scene_dimensions_m": [
+    0.18796547651290896,
+    0.23831983208656313,
+    0.06871999762952329
+  ],
+  "mass_kg": 0.06499999761581421,
+  "mass_status": "original estimate retained",
+  "source_sha256": {
+    "cloth.png": "d89a8fa45ac8ae90323d189635eaac244a9c84a2459ba2b013802839e5eb539a",
+    "yellow_visor.usda": "42dda043d68f7b7a52adbe02f8d304a442c9d6f41f5a96c85b5ae668e6c3e3a4",
+    "band.png": "09ea27b874b6d8c3f6d6e25498f1f8c942f441c53b019e72033506b7e7e6c625"
+  },
+  "mesh_topology": "unchanged; no remeshing",
+  "visual_change": "Brim outer edge red to original yellow Fabric; band lower red piping retained",
+  "print_status": "original approximate print retained, not exact photo reproduction",
+  "cloth_model": "rigid; no fabric deformation",
+  "physics_steps": 0,
+  "meshes": [
+    {
+      "path": "/Asset/Visuals/BandOuter",
+      "vertices": 386,
+      "faces": 384
+    },
+    {
+      "path": "/Asset/Visuals/BandInner",
+      "vertices": 386,
+      "faces": 384
+    },
+    {
+      "path": "/Asset/Visuals/BandPiping0",
+      "vertices": 1544,
+      "faces": 3072
+    },
+    {
+      "path": "/Asset/Visuals/BandPiping1",
+      "vertices": 1544,
+      "faces": 3072
+    },
+    {
+      "path": "/Asset/Visuals/BrimTop",
+      "vertices": 2709,
+      "faces": 5120
+    },
+    {
+      "path": "/Asset/Visuals/BrimUnderside",
+      "vertices": 2709,
+      "faces": 5120
+    },
+    {
+      "path": "/Asset/Visuals/BrimRedEdge",
+      "vertices": 1544,
+      "faces": 3072
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_0",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_1",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_2",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_3",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_4",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_5",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_6",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_7",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_8",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_9",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_10",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_11",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_12",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_13",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_14",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_15",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_16",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_17",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_18",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_19",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_20",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_21",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_22",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_23",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_24",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_25",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_26",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_27",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_28",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_29",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_30",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_31",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_32",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_33",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_34",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_35",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_36",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_37",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_38",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_39",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_40",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_41",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_42",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_43",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_44",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_45",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_46",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_47",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_48",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_49",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_50",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_51",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_52",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_53",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_54",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_55",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_56",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_57",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_58",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_59",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_60",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_61",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_62",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_63",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_64",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_65",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_66",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_67",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_68",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_69",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_70",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_71",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_72",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_73",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_74",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_75",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_76",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_77",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_78",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_79",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_80",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_81",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_82",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_83",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_84",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_85",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_86",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_87",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_88",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_89",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_90",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_91",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_92",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_93",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_94",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch81_95",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_0",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_1",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_2",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_3",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_4",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_5",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_6",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_7",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_8",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_9",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_10",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_11",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_12",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_13",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_14",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_15",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_16",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_17",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_18",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_19",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_20",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_21",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_22",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_23",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_24",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_25",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_26",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_27",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_28",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_29",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_30",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_31",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_32",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_33",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_34",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_35",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_36",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_37",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_38",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_39",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_40",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_41",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_42",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_43",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_44",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_45",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_46",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_47",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_48",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_49",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_50",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_51",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_52",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_53",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_54",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_55",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_56",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_57",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_58",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_59",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_60",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_61",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_62",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_63",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_64",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_65",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_66",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_67",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_68",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_69",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_70",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_71",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_72",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_73",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_74",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_75",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_76",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_77",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_78",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_79",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_80",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_81",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_82",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_83",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_84",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_85",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_86",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_87",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_88",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_89",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_90",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_91",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_92",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_93",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_94",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Visuals/Stitch91_95",
+      "vertices": 24,
+      "faces": 32
+    },
+    {
+      "path": "/Asset/Colliders/Band_00",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_01",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_02",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_03",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_04",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_05",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_06",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_07",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_08",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_09",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_10",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_11",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_12",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_13",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_14",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_15",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_16",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_17",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_18",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_19",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_20",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_21",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_22",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_23",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_24",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_25",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_26",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_27",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_28",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_29",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_30",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_31",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_32",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_33",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_34",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_35",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_36",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_37",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_38",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_39",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_40",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_41",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_42",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_43",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_44",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_45",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_46",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_47",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_48",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_49",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_50",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_51",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_52",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_53",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_54",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_55",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_56",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_57",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_58",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_59",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_60",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_61",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_62",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Band_63",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_00_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_00_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_00_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_01_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_01_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_01_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_02_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_02_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_02_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_03_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_03_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_03_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_04_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_04_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_04_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_05_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_05_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_05_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_06_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_06_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_06_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_07_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_07_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_07_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_08_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_08_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_08_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_09_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_09_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_09_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_10_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_10_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_10_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_11_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_11_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_11_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_12_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_12_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_12_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_13_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_13_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_13_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_14_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_14_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_14_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_15_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_15_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_15_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_16_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_16_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_16_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_17_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_17_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_17_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_18_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_18_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_18_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_19_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_19_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_19_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_20_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_20_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_20_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_21_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_21_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_21_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_22_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_22_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_22_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_23_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_23_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_23_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_24_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_24_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_24_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_25_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_25_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_25_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_26_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_26_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_26_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_27_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_27_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_27_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_28_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_28_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_28_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_29_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_29_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_29_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_30_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_30_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_30_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_31_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_31_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_31_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_32_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_32_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_32_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_33_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_33_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_33_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_34_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_34_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_34_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_35_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_35_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_35_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_36_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_36_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_36_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_37_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_37_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_37_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_38_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_38_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_38_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_39_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_39_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_39_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_40_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_40_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_40_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_41_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_41_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_41_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_42_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_42_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_42_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_43_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_43_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_43_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_44_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_44_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_44_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_45_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_45_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_45_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_46_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_46_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_46_2",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_47_0",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_47_1",
+      "vertices": 8,
+      "faces": 12
+    },
+    {
+      "path": "/Asset/Colliders/Brim_47_2",
+      "vertices": 8,
+      "faces": 12
+    }
+  ],
+  "inertia_transformed_kgm2": [
+    [
+      0.0002458763817261753,
+      -2.6350689742687695e-11,
+      -1.6504807906313258e-12
+    ],
+    [
+      -2.6350689742687695e-11,
+      0.0002019287937833622,
+      -3.084456926175177e-05
+    ],
+    [
+      -1.6504807906313254e-12,
+      -3.084456926175176e-05,
+      0.0004150181578644221
+    ]
+  ]
+}

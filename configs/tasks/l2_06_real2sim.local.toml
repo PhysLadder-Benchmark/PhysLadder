@@ -1,0 +1,66 @@
+# Run from the repository root in the Isaac Sim environment; uses the selected model provider.
+# launch_command / launch_command_conda below are documentation, not auto-executed shell code.
+schema_version = 2
+workflow_profile = "../workflows/gpt_default.toml"
+
+[robot]
+profile = "../robots/r5_tuojing_lab_table88.toml"
+active_arms = ["right"]
+observation_arms = ["left"]
+
+[simulation]
+camera_position = [0.08473841088630307, 0.3224941470862603, 1.4085685642168073]
+camera_target = [0.0799615301208277, 1.1759305583932784, 0.8873934753401892]
+environment = "tuojing_lab_v4"
+camera_profile = "../cameras/r5_tuojing_lab.toml"
+asset_directory = "../../build/tuojing_lab"
+headless = true
+gpu_dynamics = true # Native volume FEM requires GPU physics, not just GPU rendering.
+width = 1280
+height = 720
+fps = 12
+arm_stiffness = 1500.0
+arm_damping = 80.0
+finger_stiffness = 2000.0
+finger_damping = 40.0
+self_collision = false
+solver_position_iterations = 32
+solver_velocity_iterations = 0
+
+[orange_physics]
+# Engineering FEM contact qualification, not measured orange tissue properties.
+# Original asset: 35 kPa and dynamic friction 0.45. Mass and mesh stay native.
+youngs_modulus_pa = 35000.0
+dynamic_friction = 0.45
+contact_offset_m = 0.003
+rest_offset_m = 0.0015
+
+[policy]
+model_config = "../models/gpt.toml"
+
+[runtime]
+physics_dt_s = 0.004166666666666667 # 240 Hz, checked in the complete metre-scale laboratory.
+
+[completion]
+return_home = true
+home_tolerance_rad = 0.05
+
+[task]
+table_revision = "159x79x88_20261013"
+real2sim_profile = "feishu_l2_20261013"
+# Guided visual execution; common information boundaries are appended by BenchTask.
+prompt_protocol = "guided_visual_l2_v3"
+scoring_protocol = "soft_box_lift_return_v7"
+id = "L2-06"
+name = "绿盒橘子抬升并放回"
+execution_target = "simulation_and_real"
+simulation_enabled = true
+status = "implemented_proxy"
+implementation = "household"
+simulation_limitations = "Native supplied assets; measured and estimated values remain distinct. Static alignment only; no dynamic trial performed."
+launch_command = "python tools/launch.py run L2-06 --gui"
+launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-06 --gui"
+instruction = "The rounded orange lies flat, long axis world X, on the shared 205 x 195 x 75 mm teal box. RIGHT grasps its fuller middle and lifts the orange 5-20 cm from its resting position, then returns it to the SAME box, releases and withdraws. LEFT observes only. Use gradual closure and inspect deformation; gripper commands specify opening, not force. The material is uncalibrated and has no tissue damage model; lack of simulated tearing is not proof of real-world safety. Box dimensions are user-confirmed. Position is estimated from reference images; the box is fixed in simulation, with real fixation still unconfirmed."
+
+# 中文布置和道具说明。
+description = "The rounded orange lies flat, long axis world X, on the shared 205 x 195 x 75 mm teal box. RIGHT grasps its fuller middle and lifts the orange 5-20 cm from its resting position, then returns it to the SAME box, releases and withdraws. LEFT observes only. Use gradual closure and inspect deformation; gripper commands specify opening, not force. The material is uncalibrated and has no tissue damage model; lack of simulated tearing is not proof of real-world safety. Box dimensions are user-confirmed. Position is estimated from reference images; the box is fixed in simulation, with real fixation still unconfirmed."

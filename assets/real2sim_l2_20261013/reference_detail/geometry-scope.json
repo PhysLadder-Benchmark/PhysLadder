@@ -1,0 +1,8 @@
+{
+  "floor_collision_prisms": 1396,
+  "floor_thickness_m": 0.0018,
+  "contact_offset_m": 0.0002,
+  "mass_and_joints": "unchanged; source mass remains uncalibrated",
+  "verification": "Static geometry only. No simulation stepping or contact validation in this revision.",
+  "visible_apertures_measured": 41
+}

@@ -1,0 +1,30 @@
+{
+  "diameter_mm": 16,
+  "size_status": "user approved estimate, not measured",
+  "mass_kg": 0.00536165146212658,
+  "density_kg_m3": 2500,
+  "mass_status": "assumed density times sphere volume, not weighed",
+  "glass_ior": 1.52,
+  "ior_status": "engineering estimate",
+  "static_friction": 0.3,
+  "dynamic_friction": 0.22,
+  "restitution": 0.55,
+  "contact_status": "uncalibrated; depends on contacting surface",
+  "variants": [
+    "yellow_green",
+    "aqua_blue",
+    "emerald_green",
+    "clear_mint",
+    "red_white"
+  ],
+  "internal_pattern_status": "procedural approximation to video, not a volumetric scan",
+  "units": "m kg s",
+  "origin": "sphere center",
+  "renderer": "OmniGlass MDL for Isaac/RTX, UsdPreviewSurface fallback is not equivalent optical rendering",
+  "sources": [
+    "IMG_3472.MOV",
+    "IMG_3473.MOV",
+    "https://mcgillswarehouse.com/m82-16mm-green-yellow-cat-eye-glass-marbles-e13e",
+    "https://www.hobbylinc.com/mega-marbles-classic-marbles-cats-eye-marble-77658"
+  ]
+}

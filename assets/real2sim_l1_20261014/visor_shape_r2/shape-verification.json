@@ -1,0 +1,22 @@
+{
+  "dimensions_m": [
+    0.1899999976158142,
+    0.24000000208616257,
+    0.07462190091609955
+  ],
+  "mesh_count": 407,
+  "source": "/vepfs-C\u533a/bowenjing/Sunday/GPT_Benchmark/assets/tuojing/source/L1-07/yellow_visor_measured_20261014",
+  "asset": "/vepfs-C\u533a/bowenjing/Sunday/GPT_Benchmark/assets/real2sim_l1_20261014/visor_shape_r2/yellow_visor.usda",
+  "measured": [
+    "width190mm",
+    "length240mm"
+  ],
+  "estimated": [
+    "band proportions",
+    "rear closure height",
+    "brim curvature"
+  ],
+  "original_preserved": true,
+  "physics_validated": false,
+  "inertia_status": "original estimate retained; nonlinear deformation requires recalculation before dynamic use"
+}

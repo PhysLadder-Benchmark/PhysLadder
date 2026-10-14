@@ -47,7 +47,8 @@ class BenchTask:
         }
         return replace(
             config,
-            instruction=(config.instruction if spec.parameters.get("real_prompt_protocol") else
+            instruction=((spec.facts + notes + completion_instruction(config)) if spec.parameters.get("canonical_scene_instruction") else
+                         config.instruction if spec.parameters.get("real_prompt_protocol") else
                          config.instruction + (
                 "" if spec.facts in config.instruction
                 else "\nDeclared prop facts and guidance:\n" + spec.facts
@@ -82,6 +83,12 @@ class BenchTask:
             self.scene = NativeL2Scene(backend, config, self.spec)
         else:
             self.scene = BenchScene(backend, config, self.spec)
+        if config.raw["task"].get("visual_alignment_profile"):
+            from .l1_01_alignment import apply
+            backend.scene_report["visual_alignment"] = apply(backend, self)
+        if config.raw["task"].get("real2sim_profile"):
+            from .l2_alignment import apply as apply_l2
+            backend.scene_report["visual_alignment"] = apply_l2(backend, self)
         if config.task_id.startswith("L2-"):
             from .l2_protocol import PROTOCOL, protocol_metadata
 

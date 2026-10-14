@@ -135,7 +135,7 @@ class NativeOutcomeTests(unittest.TestCase):
 
     def test_hat_is_native_and_planner_keeps_opening_unfilled(self):
         spec=build_spec('L1-07');a=spec.design.articles[0]
-        self.assertEqual(a.asset,'tuojing:yellow_visor_20261011')
+        self.assertEqual(a.asset,'tuojing:yellow_visor_20261014_measured')
         self.assertEqual(len(shapes('yellow_visor')),208)
         samples=article_surface(a)
         near_plane=samples[np.abs(samples[:,2]-spec.parameters['band_plane_z'])<.002]
@@ -187,21 +187,22 @@ class NativeOutcomeTests(unittest.TestCase):
 
     def test_bent_rose_near_wall_is_not_rejected_as_a_straight_stem(self):
         spec,rows,e=goal('L1-09')
-        rows['rose']['pose']=list(pose(spec.parameters['vase_xy'][0]+.0251,
+        rows['rose']['pose']=list(pose(spec.parameters['vase_xy'][0]+.0205,
                                       spec.parameters['vase_xy'][1],
                                       spec.parameters['floor']+.0012,pitch=-.3))
         done,criteria,_=flower(e,rows)
         self.assertTrue(done,criteria)
-        # This pose was rejected by the former straight-centreline criterion.
-        self.assertGreater(.0251+.00105,.025*np.cos(np.pi/48)+.001)
+        # New measured cup is narrower: crossing its wall must still fail.
+        rows['rose']['pose'][0]+=.004
+        self.assertFalse(flower(e,rows)[1]['stem_end_inside'])
 
     def test_hat_source_box_is_free_standing_and_photo_layout_is_not_initial_success(self):
         spec=build_spec('L1-07');hat_article,box=spec.design.articles
         self.assertEqual(spec.design.fixtures, ())
-        self.assertEqual(box.asset,'tuojing:green_support_box_20261011')
+        self.assertEqual(box.asset,'tuojing:green_support_box_20261014_measured')
         self.assertGreater(hat_article.initial[0],spec.design.fixture_pose[0])
-        self.assertAlmostEqual(box.asset_bounds[1][2],.1)
-        self.assertGreater(hat_article.initial[2],box.initial[2]+.095)
+        self.assertAlmostEqual(box.asset_bounds[1][2],.075)
+        self.assertAlmostEqual(hat_article.initial[2]+hat_article.asset_bounds[0][2] - (box.initial[2]+box.asset_bounds[1][2]),.001,places=6)
         rows=measurement(spec)
         e=BenchEvaluator(spec,{a.name:a.initial for a in spec.design.articles})
         rows['hat']['pair_forces']['source_box']=.65

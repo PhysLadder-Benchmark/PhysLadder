@@ -18,9 +18,9 @@ COUNT = 200
 PROMPT_RECEIVED_TARGET = math.ceil(COUNT * 0.8)
 
 
-def cup_contains(point, radius=PEARL_RADIUS, tolerance=0.0003):
+def cup_contains(point, radius=PEARL_RADIUS, tolerance=0.0003, *, cup_asset="ripple_paper_cup"):
     """Whole sphere within the delivered cup's 48 inner planes and floor/rim."""
-    planes, floor, rim = cup_cavity()
+    planes, floor, rim = cup_cavity(cup_asset)
     point = np.asarray(point)
     return bool(
         floor - tolerance <= point[2] - radius
@@ -120,8 +120,8 @@ def score(e, rows):
               "outside_cups": 0, "airborne": 0}
     for i in range(p["count"]):
         row = rows[f"load_{i}"]
-        inside = cup_contains(relative(row, receiver)[:3, 3])
-        remaining = cup_contains(relative(row, source)[:3, 3])
+        inside = cup_contains(relative(row, receiver)[:3, 3], radius=p.get("ball_radius_m", PEARL_RADIUS), cup_asset=p.get("cup_asset", "ripple_paper_cup"))
+        remaining = cup_contains(relative(row, source)[:3, 3], radius=p.get("ball_radius_m", PEARL_RADIUS), cup_asset=p.get("cup_asset", "ripple_paper_cup"))
         slow = np.linalg.norm(row["linear_velocity"]) < 0.04
         counts["inside_receiver"] += int(inside)
         counts["received"] += int(inside and slow)
@@ -129,7 +129,7 @@ def score(e, rows):
         counts["outside_cups"] += int(not inside and not remaining)
         counts["airborne"] += int(not inside and not remaining and row["bench_force_n"] < 0.0001
                                   and row["pose"][2] > p["table_z"])
-        spilled = (row["bench_force_n"] > PEARL_MASS * 9.81 * 0.2
+        spilled = (row["bench_force_n"] > p.get("ball_mass_kg", PEARL_MASS) * 9.81 * 0.2
                    or row["pose"][2] < p["table_z"] - 0.02)
         if sustained(e, f"pearl_spill_{i}", spilled, seconds=0.15):
             e.flags.add(f"pearl_spilled_{i}")
@@ -150,7 +150,8 @@ def score(e, rows):
         atol=1e-5, rtol=0))
     placed = {"source": source_placed, "receiver": receiver_fixed and released(receiver)}
     complete = ("loaded_source_lifted" in e.flags
-                and counts["received"] >= p["required_received"] and all(placed.values()))
+                and counts["received"] >= p["required_received"]
+                and (receiver_fixed if p.get("finish_when_all_received") else all(placed.values())))
     details = {**counts, "total": p["count"], "required_received": p["required_received"],
                "received_fraction": counts["received"] / p["count"],
                "ever_spilled": sum(f"pearl_spilled_{i}" in e.flags for i in range(p["count"])),

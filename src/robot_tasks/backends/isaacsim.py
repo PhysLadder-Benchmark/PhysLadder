@@ -82,6 +82,8 @@ class IsaacSimBackend:
                     raise RuntimeError(f"Could not open laboratory: {self.lab_asset}")
                 stage = omni.usd.get_context().get_stage()
                 self.environment_report = configure_stage(stage, self.camera_profile, config.robot)
+                from .measured_table import apply as apply_measured_table
+                self.environment_report.update(apply_measured_table(stage, config))
                 from ..robots.wrist_collision import configure_wrist_collisions
                 self.wrist_geometry, wrist_report = configure_wrist_collisions(stage, config.robot)
                 self.environment_report["wrist_collision"] = wrist_report

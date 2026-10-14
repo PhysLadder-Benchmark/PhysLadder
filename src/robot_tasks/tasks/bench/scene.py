@@ -43,7 +43,7 @@ class BenchScene(L1Scene):
                 "primitive_surface_error_budget_m": 0.00005,
                 "geometry_does_not_enter_policy_input": True,
             }
-        if spec.design.task_id == "L1-03" and self.design.fixture_asset != "tuojing:power_strip_20261010":
+        if spec.design.task_id == "L1-03" and self.design.fixture_asset not in {"tuojing:power_strip_20261010", "tuojing:power_strip_measured_20261014"}:
             from pxr import PhysxSchema
 
             # A 1-mm contact margin exceeds the native 0.55-mm side clearance.

@@ -25,6 +25,10 @@ class BenchGeometry:
 def bench_geometry(config=None):
     """Public environment geometry, never task object or target coordinates."""
     if config is not None and config.raw.get("simulation", {}).get("environment") == "tuojing_lab_v4":
+        from .measured_table import enabled, CENTRE, SIZE
+        if enabled(config):
+            return BenchGeometry(CENTRE, SIZE, "/World/Furniture/Worktable/Top",
+                                 "+X windows, +Y desk wall, +Z up; origin on room floor")
         return BenchGeometry((0.04354960845762923, 1.187650417122201, 0.7675),
                              (1.7, 0.9, 0.025), "/World/Furniture/Worktable/Top",
                              "+X windows, +Y desk wall, +Z up; origin on room floor")

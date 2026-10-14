@@ -54,3 +54,10 @@ Desktop.ini
 *~
 
 /configs/runtime/local.toml
+
+# Reviewed task-only real2sim profiles for the Bowen handoff (no credentials).
+!/configs/tasks/l2_01_real2sim.local.toml
+!/configs/tasks/l2_03_real2sim.local.toml
+!/configs/tasks/l2_04_real2sim.local.toml
+!/configs/tasks/l2_06_real2sim.local.toml
+!/configs/tasks/l2_07_real2sim.local.toml

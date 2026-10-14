@@ -27,6 +27,13 @@ def axial_quiet(row):
 
 
 def marker(e, rows):
+    if e.spec.parameters.get("strict_manipulation_protocol"):
+        from .strict_l2 import marker as strict_marker
+        return strict_marker(e, rows, _marker_legacy(e, rows))
+    return _marker_legacy(e, rows)
+
+
+def _marker_legacy(e, rows):
     p = e.spec.parameters
     body, cap = rows["body"], rows["cap"]
     b, c = pose_transform(body["pose"]), pose_transform(cap["pose"])
@@ -101,6 +108,9 @@ def marker(e, rows):
 
 
 def books(e, rows):
+    if e.spec.parameters.get("strict_manipulation_protocol"):
+        from .strict_l2 import books as strict_books
+        return strict_books(e, rows)
     p = e.spec.parameters
     middle = rows["middle_book"]
     outward = np.asarray(p["outward_axis_world"])
@@ -191,7 +201,8 @@ def drawer(e, rows):
             "returned_to_initial_opening": returned,
             "released": released(row),
             "quiet": bool(quiet(row)),
-            "final_state": "pulled 50 mm, returned to initial opening, released",
+            "final_state": ("visibly pulled, returned to initial opening, released"
+                            if p.get("real2sim_profile") else "pulled 50 mm, returned to initial opening, released"),
             "stages": {"grasped": "drawer" in e.touched,
                        "opened": "opening_reached" in e.flags,
                        "returned_released": bool(complete)},

@@ -363,6 +363,69 @@
       "path": "assets/green_support_box/green_support_box.usda",
       "role": "prop",
       "delivery": "2026-10-11"
+    },
+    {
+      "id": "black_ceramic_mug_20261013",
+      "package": "l1_mug_measured_20261013",
+      "path": "assets/black_ceramic_mug/black_ceramic_mug.usda",
+      "role": "prop",
+      "notes": "Measured height 85 mm, mass 271.7 g. Other geometry photo-estimated; original revision retained."
+    },
+    {
+      "id": "black_ceramic_mug_20261013_bulged_v2",
+      "package": "l1_mug_bulged_v2_20261013",
+      "path": "assets/black_ceramic_mug/black_ceramic_mug.usda",
+      "role": "prop",
+      "notes": "Measured height 85 mm, mass 271.7 g. Other geometry photo-estimated; original revision retained."
+    },
+    {
+      "id": "black_ceramic_mug_20261013_reference_v3",
+      "package": "l1_mug_reference_v3_20261013",
+      "path": "assets/black_ceramic_mug/black_ceramic_mug.usda",
+      "role": "prop",
+      "notes": "Measured height 85 mm, mass 271.7 g. Other geometry photo-estimated; original revision retained."
+    },
+    {
+      "id": "ripple_paper_cup_20261013_measured",
+      "package": "paper_cup_70_50_80_20261013",
+      "path": "assets/ripple_paper_cup/ripple_paper_cup.usda",
+      "role": "prop",
+      "notes": "Original corrugated mesh resized to measured 70/50/80 mm; 14 g mass remains an estimate."
+    },
+    {
+      "id": "yellow_visor_20261014_measured",
+      "package": "visor_box_measured_20261014",
+      "path": "assets/yellow_visor/yellow_visor.usda",
+      "role": "prop",
+      "notes": "Measured footprint; original mesh and unmeasured mass retained"
+    },
+    {
+      "id": "green_support_box_20261014_measured",
+      "package": "visor_box_measured_20261014",
+      "path": "assets/green_support_box/green_support_box.usda",
+      "role": "prop",
+      "notes": "Measured footprint; original mesh and unmeasured mass retained"
+    },
+    {
+      "id": "wooden_rack_20261014_measured",
+      "package": "rack_740_90_20261014",
+      "path": "assets/wooden_rack/wooden_rack.usda",
+      "role": "prop",
+      "notes": "740 mm overall height; each complete rod 90 mm axial end to end"
+    },
+    {
+      "id": "usb_charger_measured_20261014",
+      "package": "l1_03_measured_20261014",
+      "path": "usb_charger/usb_charger.usda",
+      "role": "prop",
+      "notes": "Measured body envelope; spring/friction and charger mass remain estimates."
+    },
+    {
+      "id": "power_strip_measured_20261014",
+      "package": "l1_03_measured_20261014",
+      "path": "power_strip/power_strip.usda",
+      "role": "prop",
+      "notes": "Measured body envelope; spring/friction and charger mass remain estimates."
     }
   ]
 }

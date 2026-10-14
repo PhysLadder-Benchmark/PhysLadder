@@ -17,6 +17,12 @@ from .spec import build_spec
 
 def resolve_bench_spec(task, robot):
     spec = build_spec(task["id"])
+    if task.get("visual_alignment_profile"):
+        from .l1_01_alignment import align_spec
+        spec = align_spec(spec, task)
+    if task.get("real2sim_profile"):
+        from .l2_alignment import align_spec as align_l2
+        spec = align_l2(spec, task)
     mode = task.get("arm_selection", "fixed")
     if mode == "real_prompt":
         from .real_l1 import configure

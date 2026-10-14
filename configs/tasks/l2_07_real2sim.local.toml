@@ -1,0 +1,54 @@
+# Run from the repository root in the Isaac Sim environment; uses the selected model provider.
+# launch_command / launch_command_conda below are documentation, not auto-executed shell code.
+schema_version = 2
+workflow_profile = "../workflows/gpt_default.toml"
+
+[robot]
+profile = "../robots/r5_tuojing_lab_table88.toml"
+active_arms = ["right"]
+observation_arms = ["left"]
+
+[simulation]
+camera_position = [0.16117733356355707, 0.37886639507810066, 1.4856375511843223]
+camera_target = [0.15046617142948066, 1.210548989792652, 0.9304895234884573]
+environment = "tuojing_lab_v4"
+camera_profile = "../cameras/r5_tuojing_lab.toml"
+asset_directory = "../../build/tuojing_lab"
+headless = true
+width = 1280
+height = 720
+fps = 12
+arm_stiffness = 1500.0
+arm_damping = 80.0
+finger_stiffness = 2000.0
+finger_damping = 40.0
+self_collision = false
+solver_position_iterations = 32
+solver_velocity_iterations = 0
+
+[policy]
+model_config = "../models/gpt.toml"
+
+[completion]
+return_home = false
+home_tolerance_rad = 0.05
+
+[task]
+table_revision = "159x79x88_20261013"
+real2sim_profile = "feishu_l2_20261013"
+# Guided visual execution; common information boundaries are appended by BenchTask.
+prompt_protocol = "guided_visual_l2_v3"
+scoring_protocol = "drawer_visible_pull_then_return_v1"
+id = "L2-07"
+name = "预开抽屉拉出并推回"
+execution_target = "simulation_and_real"
+simulation_enabled = true
+status = "implemented"
+implementation = "household"
+simulation_limitations = "Native supplied assets; measured and estimated values remain distinct. Static alignment only; no dynamic trial performed."
+launch_command = "python tools/launch.py run L2-07 --gui"
+launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-07 --gui"
+instruction = "RIGHT grips the existing upper-drawer edge, pulls it visibly outward, then pushes it back to its initial opening and releases. There is no prescribed 50 mm stroke. A net held pull of 5 mm is the numerical motion-detection threshold, not a real-task travel requirement. The upper drawer starts 30 mm open; return tolerance is 3 mm. LEFT observes. Five separate free 30 x 30 x 24-32 mm blocks (three blue, two green) sit inside the upper drawer, two near the opening and three farther inside; the lower drawer is empty. Cabinet and lower drawer are fixed fixtures; native passive upper rail is preserved. No added handle or object attachment. The cabinet is diagonal at the far right, partly outside the overview, matching the reference framing. User revision: organizer rests on a teal-green support box (205 x 195 x 75 mm user measurement). All five blocks remain loose in the upper drawer; taller appearance is not measured calibration."
+
+# 中文布置和道具说明。
+description = "RIGHT grips the existing upper-drawer edge, pulls it visibly outward, then pushes it back to its initial opening and releases. There is no prescribed 50 mm stroke. A net held pull of 5 mm is the numerical motion-detection threshold, not a real-task travel requirement. The upper drawer starts 30 mm open; return tolerance is 3 mm. LEFT observes. Five separate free 30 x 30 x 24-32 mm blocks (three blue, two green) sit inside the upper drawer, two near the opening and three farther inside; the lower drawer is empty. Cabinet and lower drawer are fixed fixtures; native passive upper rail is preserved. No added handle or object attachment. The cabinet is diagonal at the far right, partly outside the overview, matching the reference framing. User revision: organizer rests on a teal-green support box (205 x 195 x 75 mm user measurement). All five blocks remain loose in the upper drawer; taller appearance is not measured calibration."

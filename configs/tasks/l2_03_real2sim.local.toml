@@ -1,0 +1,54 @@
+# Run from the repository root in the Isaac Sim environment; uses the selected model provider.
+# launch_command / launch_command_conda below are documentation, not auto-executed shell code.
+schema_version = 2
+workflow_profile = "../workflows/gpt_default.toml"
+
+[robot]
+profile = "../robots/r5_tuojing_lab_table88.toml"
+active_arms = ["left", "right"]
+observation_arms = []
+
+[simulation]
+camera_position = [0.16117733356355707, 0.37886639507810066, 1.4856375511843223]
+camera_target = [0.15046617142948066, 1.210548989792652, 0.9304895234884573]
+environment = "tuojing_lab_v4"
+camera_profile = "../cameras/r5_tuojing_lab.toml"
+asset_directory = "../../build/tuojing_lab"
+headless = true
+width = 1280
+height = 720
+fps = 12
+arm_stiffness = 1500.0
+arm_damping = 80.0
+finger_stiffness = 2000.0
+finger_damping = 40.0
+self_collision = false
+solver_position_iterations = 32
+solver_velocity_iterations = 0
+
+[policy]
+model_config = "../models/gpt.toml"
+
+[completion]
+return_home = true
+home_tolerance_rad = 0.05
+
+[task]
+table_revision = "159x79x88_20261013"
+real2sim_profile = "feishu_l2_20261013"
+# Guided visual execution; common information boundaries are appended by BenchTask.
+prompt_protocol = "guided_visual_l2_v3"
+scoring_protocol = "ordered_full_extraction_20261013_v1"
+id = "L2-03"
+name = "双臂支撑并抽取中层书"
+execution_target = "simulation_and_real"
+simulation_enabled = true
+status = "implemented"
+implementation = "household"
+simulation_limitations = "Native supplied assets; measured and estimated values remain distinct. Static alignment only; no dynamic trial performed."
+launch_command = "python tools/launch.py run L2-03 --gui"
+launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-03 --gui"
+instruction = "Three estimated 220 x 140 x 20 mm books lie flat on the shared 205 x 195 x 75 mm teal box. The stack is offset to overview-image RIGHT and toward the wall/arms; its latest revision moved all books 25 mm toward the wall with the box stationary. The middle book initially protrudes approximately 40 mm to image-right. RIGHT grips the middle book across its thickness; LEFT steadies the upper book. Fully extract the middle book toward image-right until it no longer overlaps or contacts either neighbouring book. A 20 mm tug is NOT completion. Keep the upper and lower books stable on the box, allowing the upper book to settle naturally onto the lower book. Then place the extracted book safely on the table or box outside the remaining stack, release all books and withdraw. Do not drop books off the support. Numerical verification uses 2 mm separation clearance and 0.5 s final stability. Book dimensions, initial offsets and placements remain image estimates, not measurements. Box dimensions are user-confirmed. Position is estimated from reference images; the box is fixed in simulation, with real fixation still unconfirmed."
+
+# 中文布置和道具说明。
+description = "Three estimated 220 x 140 x 20 mm books lie flat on the shared 205 x 195 x 75 mm teal box. The stack is offset to overview-image RIGHT and toward the wall/arms; its latest revision moved all books 25 mm toward the wall with the box stationary. The middle book initially protrudes approximately 40 mm to image-right. RIGHT grips the middle book across its thickness; LEFT steadies the upper book. Fully extract the middle book toward image-right until it no longer overlaps or contacts either neighbouring book. A 20 mm tug is NOT completion. Keep the upper and lower books stable on the box, allowing the upper book to settle naturally onto the lower book. Then place the extracted book safely on the table or box outside the remaining stack, release all books and withdraw. Do not drop books off the support. Numerical verification uses 2 mm separation clearance and 0.5 s final stability. Book dimensions, initial offsets and placements remain image estimates, not measurements. Box dimensions are user-confirmed. Position is estimated from reference images; the box is fixed in simulation, with real fixation still unconfirmed."

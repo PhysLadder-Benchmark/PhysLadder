@@ -24,6 +24,9 @@ self_collision = false
 solver_position_iterations = 32
 solver_velocity_iterations = 4
 
+[runtime]
+physics_dt_s = 0.00026041666666666666
+
 [policy]
 model_config = "../models/gpt.toml"
 
@@ -36,7 +39,7 @@ status = "implemented_proxy"
 implementation = "household"
 arm_selection = "real_prompt"
 prompt_source = "../prompts/l1_real_20261012.json"
-simulation_limitations = "Photo-proportional strip-left/charger-right layout; upright charger in native free-standing 20.8-g black storage base, no attachment; photo-estimated recess 10 mm deep with about 43 mm exposed housing, visual/collision geometry adapted together. Fixed native strip rotated horizontally, 0.55 mm minimum slot side clearance with native contact materials and 12 passive spring contact bodies from the 2026-10-10 correction. Housing fixed kinematically; no powered circuit or flexible cable; dimensions and layout are not calibrated."
+simulation_limitations = "Photo-proportional strip-left/charger-right layout; upright charger in native free-standing 20.8-g black storage base, no attachment; photo-estimated recess 10 mm deep with about 40 mm exposed housing, visual/collision geometry adapted together. Fixed native strip rotated horizontally, 0.55 mm minimum slot side clearance with native contact materials and 12 passive spring contact bodies from the 2026-10-10 correction. Housing fixed kinematically; no powered circuit or flexible cable; body dimensions 165 x 50 mm and 50 x 40 x 20 mm and strip total mass 280.4 g measured; other geometry and all force parameters uncalibrated."
 launch_command = "python tools/launch.py run L1-03 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L1-03 --gui"
 instruction = "左臂拿起充电头，插入最靠近左臂的指定插位，松爪撤离后确认稳定；只做机械插接。"

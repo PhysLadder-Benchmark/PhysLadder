@@ -11,7 +11,7 @@ from scipy.spatial import ConvexHull
 from pxr import Usd,UsdGeom,UsdPhysics
 result={'delivery':'2026-10-05 + 2026-10-09 + Feishu L1 2026-10-11','source':'authored enabled convex colliders, native metres; marker flat-barrel, shallow holder-pocket and 80-percent photo visor runtime overrides recorded explicitly','props':{}}
 from robot_tasks.tasks.l1.assets import MARBLE_PROPS
-for name in ['whiteboard_marker','ripple_paper_cup','black_ceramic_mug','usb_charger','plug_storage_base','artificial_rose','yellow_visor','wooden_rack', 'capped_marker_20261011','black_ceramic_mug_20261011','usb_charger_20261010','yellow_visor_20261011','wooden_rack_20261011','ripple_paper_cup_20261011','cream_tulip_20261011','green_support_box_20261011', *MARBLE_PROPS]:
+for name in ['whiteboard_marker','ripple_paper_cup','black_ceramic_mug','usb_charger','plug_storage_base','artificial_rose','yellow_visor','wooden_rack', 'capped_marker_20261011','black_ceramic_mug_20261011','black_ceramic_mug_20261013','black_ceramic_mug_20261013_bulged_v2','black_ceramic_mug_20261013_reference_v3','usb_charger_20261010','usb_charger_measured_20261014','yellow_visor_20261011','yellow_visor_20261014_measured','green_support_box_20261014_measured','wooden_rack_20261011','wooden_rack_20261014_measured','ripple_paper_cup_20261011','ripple_paper_cup_20261013_measured','cream_tulip_20261011','green_support_box_20261011', *MARBLE_PROPS]:
  from robot_tasks.asset_delivery import verified_prop
  path,_=verified_prop(name);s=Usd.Stage.Open(str(path)); cache=UsdGeom.XformCache(); shapes=[]
  if name=='plug_storage_base':

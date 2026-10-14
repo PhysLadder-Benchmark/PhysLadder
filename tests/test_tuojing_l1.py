@@ -27,21 +27,21 @@ class NativeTaskScoringTests(unittest.TestCase):
         spec = build_spec("L1-01")
         mug = pose_transform(spec.design.fixture_pose)
         pen = spec.design.articles[0]
-        self.assertEqual(spec.design.fixture_asset, "tuojing:black_ceramic_mug_20261011")
+        self.assertEqual(spec.design.fixture_asset, "tuojing:black_ceramic_mug_20261013_reference_v3")
         # From the table front, +X is image right and -Y points toward the viewer.
         self.assertGreater(pen.initial[0], mug[0, 3])
         self.assertAlmostEqual(pen.initial[1], mug[1, 3])
         np.testing.assert_allclose(mug[:3, 0], [0, -1, 0], atol=1e-8)
-        planes, floor, rim = cup_cavity('black_ceramic_mug_20261011')
-        self.assertAlmostEqual(floor, .007)
-        self.assertAlmostEqual(rim, .090)
+        planes, floor, rim = cup_cavity('black_ceramic_mug_20261013_reference_v3')
+        self.assertAlmostEqual(floor, .007 * 85 / 90)
+        self.assertAlmostEqual(rim, .085)
         # The mug bulges below its mouth. A single cylinder/frustum would lose this.
-        bulge = np.array([.045, 0, .045])
+        bulge = np.array([.038, 0, .044])
         self.assertGreater(np.min(planes[:,3] - planes[:,:3] @ bulge), 0)
-        fit = lambda t: cavity_fit('capped_marker_20261011', t, .001, receptacle='black_ceramic_mug_20261011')[0]
+        fit = lambda t: cavity_fit('capped_marker_20261011', t, .001, receptacle='black_ceramic_mug_20261013_reference_v3')[0]
         self.assertTrue(fit(pose_transform(pose(0, 0, floor))))
         # Fits this mug, but not the old paper cup. No enlargement of tolerance.
-        near_rim = pose_transform(pose(.031, 0, .075))
+        near_rim = pose_transform(pose(.028, 0, .075))
         self.assertTrue(fit(near_rim))
         self.assertFalse(cavity_fit('capped_marker_20261011', near_rim, .001)[0])
         for xyz in ((0, 0, .004), (0, 0, .10), (.045, 0, .075), (.06, 0, .007)):
@@ -53,7 +53,7 @@ class NativeTaskScoringTests(unittest.TestCase):
         article, source_cup, source_guide = spec.design.articles
         self.assertEqual(article.asset, "tuojing:cream_tulip_20261011")
         self.assertEqual(spec.joints, ())
-        self.assertEqual(spec.design.fixture_asset, "tuojing:ripple_paper_cup_20261011")
+        self.assertEqual(spec.design.fixture_asset, "tuojing:ripple_paper_cup_20261013_measured")
         e = BenchEvaluator(spec, {article.name: article.initial})
         rows = measurement(spec)
         r = rows["rose"]
@@ -83,7 +83,7 @@ class NativeTaskScoringTests(unittest.TestCase):
         r = rows["rose"]
         # The new 3.8-mm stem may rest near the inner wall; using its larger
         # planner-clearance envelope for scoring would reject this placement.
-        r["pose"] = list(pose(spec.parameters["vase_xy"][0] + .024,
+        r["pose"] = list(pose(spec.parameters["vase_xy"][0] + spec.parameters["radius"] - .004,
                               spec.parameters["vase_xy"][1], spec.parameters["floor"] + .001,
                               pitch=-np.pi / 6))
         r["fixture_force_n"], r["bench_force_n"] = .07848, 0.

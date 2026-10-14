@@ -31,7 +31,8 @@ class OrangeScene:
         self.stage = backend.world.stage
         self.colliders = []
         self.path = self.root + "/orange"
-        asset, evidence = verified_prop("orange_segment", task_id=config.task_id)
+        from .l2_alignment import verified_asset
+        asset, evidence = verified_asset("orange_segment", config)
         prim = self.stage.DefinePrim(self.path)
         prim.GetReferences().AddReference(str(asset))
         self.placement = self.design.articles[0].initial
@@ -43,13 +44,20 @@ class OrangeScene:
         pedestal = self.stage.DefinePrim(pedestal_path)
         pedestal.GetReferences().AddReference(str(pedestal_asset))
         self.set_pose(pedestal_path, spec.parameters["pedestal_pose"])
+        if "support_box_scale_z" in spec.parameters:
+            from pxr import Gf
+            UsdGeom.Xformable(pedestal).AddScaleOp().Set(Gf.Vec3f(*spec.parameters.get("support_box_scale", (1.,1.,spec.parameters["support_box_scale_z"]))))
         # Passive fixed support only; never attach or drive the orange.
         UsdPhysics.RigidBodyAPI(pedestal).CreateKinematicEnabledAttr(True)
         PhysxSchema.PhysxRigidBodyAPI.Apply(pedestal).CreateEnableCCDAttr(False)
+        support_contact_report = None
+        if spec.parameters.get("canonical_scene_instruction"):
+            from .soft_support import configure
+            support_contact_report = configure(self.stage, pedestal_path)
         pedestal_colliders = tuple(
             str(p.GetPath())
             for p in Usd.PrimRange(pedestal)
-            if p.HasAPI(UsdPhysics.CollisionAPI)
+            if p.HasAPI(UsdPhysics.CollisionAPI) and UsdPhysics.CollisionAPI(p).GetCollisionEnabledAttr().Get()
         )
         if not pedestal_colliders:
             raise ValueError("Native orange pedestal has no collision geometry")
@@ -112,6 +120,7 @@ class OrangeScene:
             "version": self.design.version,
             "mechanism": spec.mechanism,
             "assets": [evidence, pedestal_evidence],
+            "support_contact_adapter": support_contact_report,
             "pedestal": {
                 "pose": spec.parameters["pedestal_pose"],
                 "fixed": True,

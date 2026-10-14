@@ -222,9 +222,9 @@ def import_tuojing_asset(stage, parent, name, *, dynamic, task_id=None):
     from ...asset_delivery import verified_prop
 
     if name not in {"whiteboard_marker", "ripple_paper_cup", "black_ceramic_mug", "usb_charger", "plug_storage_base", "power_strip", "wooden_rack", "artificial_rose", "yellow_visor",
-                    "capped_marker_20261011", "black_ceramic_mug_20261011", "usb_charger_20261010",
-                    "power_strip_20261010", "wooden_rack_20261011", "yellow_visor_20261011",
-                    "green_support_box_20261011", "ripple_paper_cup_20261011", "cream_tulip_20261011", *MARBLE_PROPS}:
+                    "capped_marker_20261011", "black_ceramic_mug_20261011", "black_ceramic_mug_20261013", "black_ceramic_mug_20261013_bulged_v2", "black_ceramic_mug_20261013_reference_v3", "usb_charger_20261010",
+                    "usb_charger_measured_20261014", "power_strip_measured_20261014", "power_strip_20261010", "wooden_rack_20261011", "wooden_rack_20261014_measured", "yellow_visor_20261011", "yellow_visor_20261014_measured", "green_support_box_20261014_measured",
+                    "green_support_box_20261011", "ripple_paper_cup_20261011", "ripple_paper_cup_20261013_measured", "cream_tulip_20261011", *MARBLE_PROPS}:
         raise ValueError(f"Tuojing prop has no validated task adapter yet: {name}")
     path, evidence = verified_prop(name, task_id=task_id)
     prim = stage.GetPrimAtPath(parent)
@@ -254,7 +254,7 @@ def import_tuojing_asset(stage, parent, name, *, dynamic, task_id=None):
             if child.IsA(UsdPhysics.Joint) or child.GetName().startswith("Shoe"):
                 child.SetActive(False)
         overrides.append("L1 closed-cap variant: body and cap form one 22-g rigid compound; internal shoes/springs disabled; external native colliders unchanged")
-    if name == "power_strip_20261010" and not dynamic:
+    if name in {"power_strip_20261010", "power_strip_measured_20261014"} and not dynamic:
         from pxr import Sdf
 
         housing = stage.GetPrimAtPath(parent + "/Housing")

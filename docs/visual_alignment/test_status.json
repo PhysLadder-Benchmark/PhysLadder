@@ -1,0 +1,21 @@
+{
+  "suite": [
+    "test_l2_real2sim",
+    "test_measured_box_return",
+    "test_planner_finger_resolution",
+    "test_strict_l2",
+    "test_native_l1_outcomes",
+    "test_tuojing_l1"
+  ],
+  "run": 59,
+  "passed": 58,
+  "failed": 1,
+  "failure": "test_native_l1_outcomes.NativeOutcomeTests.test_only_one_blade_entering_is_incomplete",
+  "observed": "inside_slot blade count expected 1, observed 0",
+  "reproduced_in_original_worktree": true,
+  "baseline_meaning": "Original uncommitted GPT_Benchmark workspace, not a clean origin/master test run",
+  "action": "Preserved as an existing source-snapshot regression; no scoring behavior changed by release packaging",
+  "syntax_compile": "passed",
+  "git_diff_check": "passed with core.whitespace=-blank-at-eof; upstream generated USDA trailing blank lines preserved",
+  "dynamics_run": false
+}

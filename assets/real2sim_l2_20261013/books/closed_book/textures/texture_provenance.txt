@@ -1,0 +1,5 @@
+cover_albedo.png: 延续上一版，参考真机视频重建的书封印刷，不是实物扫描。
+paper_fiber_normal.png: built-in imagegen generated technical normal texture.
+Prompt:
+Produce a seamless tileable tangent-space NORMAL MAP for very fine clean uncoated book paper fibers, for PBR shading. This is technical texture data, NOT a photograph. Square 1024 by 1024. Dominant flat normal RGB(128,128,255), subtle short random cellulose fibers micrograin, low relief amplitude, fine isotropic, no hair, weave, wrinkles, broad bumps, letters, shadows, border, directional illumination or albedo.
+Normal intensity is attenuated in USD material. This map affects shading only; it creates no contact deformation.

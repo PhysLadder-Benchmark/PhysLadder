@@ -8,15 +8,18 @@
       "name": "白板笔入黑色陶瓷杯",
       "props": {
         "marker": "capped_marker_20261011",
-        "mug": "black_ceramic_mug_20261011"
+        "mug": "black_ceramic_mug_20261011",
+        "mug_measured_20261013": "black_ceramic_mug_20261013",
+        "mug_bulged_v2_20261013": "black_ceramic_mug_20261013_bulged_v2",
+        "mug_reference_v3_20261013": "black_ceramic_mug_20261013_reference_v3"
       }
     },
     "L1-03": {
       "name": "插头插接",
       "props": {
-        "plug": "usb_charger_20261010",
-        "power_strip": "power_strip_20261010",
-        "plug_base": "plug_storage_base"
+        "plug_base": "plug_storage_base",
+        "plug": "usb_charger_measured_20261014",
+        "power_strip": "power_strip_measured_20261014"
       }
     },
     "L1-05": {
@@ -31,13 +34,17 @@
       "props": {
         "hat": "yellow_visor_20261011",
         "rack": "wooden_rack_20261011",
-        "source_box": "green_support_box_20261011"
+        "source_box": "green_support_box_20261011",
+        "yellow_visor_measured_20261014": "yellow_visor_20261014_measured",
+        "green_support_box_measured_20261014": "green_support_box_20261014_measured",
+        "rack_measured_20261014": "wooden_rack_20261014_measured"
       }
     },
     "L1-08": {
       "name": "纸杯套叠",
       "props": {
-        "cup": "ripple_paper_cup_20261011"
+        "cup": "ripple_paper_cup_20261011",
+        "cup_measured_20261013": "ripple_paper_cup_20261013_measured"
       }
     },
     "L1-09": {
@@ -50,7 +57,9 @@
         "marble_red_white": "marble_red_white_20261011",
         "marble_aqua_blue": "marble_aqua_blue_20261011",
         "marble_emerald_green": "marble_emerald_green_20261011",
-        "marble_clear_mint": "marble_clear_mint_20261011"
+        "marble_clear_mint": "marble_clear_mint_20261011",
+        "cup_measured_20261013": "ripple_paper_cup_20261013_measured",
+        "source_charger_measured_20261014": "usb_charger_measured_20261014"
       }
     },
     "L2-01": {
@@ -71,7 +80,8 @@
       "name": "杯间倒珍珠",
       "props": {
         "cup": "ripple_paper_cup",
-        "pearl": "pearl_8mm"
+        "pearl": "pearl_8mm",
+        "cup_measured_20261013": "ripple_paper_cup_20261013_measured"
       }
     },
     "L2-06": {
@@ -253,6 +263,33 @@
     },
     "green_support_box": {
       "root": "assets/green_support_box"
+    },
+    "black_ceramic_mug_20261013": {
+      "root": "assets/black_ceramic_mug"
+    },
+    "black_ceramic_mug_20261013_bulged_v2": {
+      "root": "assets/black_ceramic_mug"
+    },
+    "black_ceramic_mug_20261013_reference_v3": {
+      "root": "assets/black_ceramic_mug"
+    },
+    "ripple_paper_cup_20261013_measured": {
+      "root": "assets/ripple_paper_cup"
+    },
+    "yellow_visor_20261014_measured": {
+      "root": "assets/yellow_visor"
+    },
+    "green_support_box_20261014_measured": {
+      "root": "assets/green_support_box"
+    },
+    "wooden_rack_20261014_measured": {
+      "root": "assets/wooden_rack"
+    },
+    "usb_charger_measured_20261014": {
+      "root": "usb_charger"
+    },
+    "power_strip_measured_20261014": {
+      "root": "power_strip"
     }
   }
 }

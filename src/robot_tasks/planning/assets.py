@@ -4,6 +4,7 @@ from copy import deepcopy
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import xml.etree.ElementTree as ET
 import numpy as np
@@ -16,16 +17,30 @@ TCP_FRAME = "robot_tasks_tcp"
 REVISION = "78fd485fa82d9b9a063fb4985e371814587e666a"
 
 
+def requested_finger_spheres():
+    """Opt-in contact-geometry refinement; legacy default remains 12 per finger."""
+    raw = os.environ.get("ROBOT_TASKS_PLANNER_FINGER_SPHERES", "12")
+    try:
+        count = int(raw)
+    except ValueError as exc:
+        raise ValueError("ROBOT_TASKS_PLANNER_FINGER_SPHERES must be an integer") from exc
+    if not 8 <= count <= 64:
+        raise ValueError("ROBOT_TASKS_PLANNER_FINGER_SPHERES must be within 8..64")
+    return count
+
+
 def build_assets(profile, directory, attachments=None):
     import trimesh
     from curobo.scene import Mesh
 
+    finger_spheres = requested_finger_spheres()
     kin = R5Kinematics(profile)
     identity = hashlib.sha256(
         profile.source.read_bytes()
         + profile.asset_lock.read_bytes()
         + Path(__file__).read_bytes()
         + json.dumps(attachments or {}, sort_keys=True).encode()
+        + f"finger_spheres={finger_spheres}".encode()
     ).hexdigest()[:16]
     output = directory.resolve() / identity
     output.mkdir(parents=True, exist_ok=True)
@@ -64,7 +79,7 @@ def build_assets(profile, directory, attachments=None):
                 faces=mesh.faces.tolist(),
                 pose=[0, 0, 0, 1, 0, 0, 0],
             )
-            fit = geometry.get_bounding_spheres(num_spheres=12, surface_radius=0.001)
+            fit = geometry.get_bounding_spheres(num_spheres=finger_spheres if name in ("link7", "link8") else 12, surface_radius=0.001)
             rows = [{"center": s.pose[:3], "radius": s.radius} for s in fit]
         if name in ("link7", "link8"):
             joint = next(
@@ -175,6 +190,7 @@ def build_assets(profile, directory, attachments=None):
             "self_collision": "nonadjacent links; immediate two neighbours excluded",
             "fixed_base_collision": "anchored base excluded from own motion checks; retained as other-arm obstacle",
             "finger_geometry": "updated from measured finger positions",
+            "requested_spheres_per_finger": finger_spheres,
             "wrist_geometry": "live mounted USD housing/lenses/CAD bracket, link6-frame fitted spheres" if wrist_spheres else "no attachments supplied",
             "wrist_sphere_count_per_arm": wrist_count,
             "fallback": None,
