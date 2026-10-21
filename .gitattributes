@@ -14,6 +14,8 @@
 *.STL binary
 # Vendor source hashes must remain byte-for-byte identical.
 assets/r5/R5a/** -text -whitespace
+# This upstream license is included in the immutable runtime asset inventory.
+assets/l1/LICENSE-APACHE-2.0.txt -text -whitespace
 # Pinned appearance downloads include the upstream LICENSE, not just binaries.
 assets/appearance/r5/** -text -whitespace
 assets/appearance/textures/** -text -whitespace
