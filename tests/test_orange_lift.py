@@ -12,7 +12,7 @@ from robot_tasks.types import InvalidSimulationState
 
 class OrangeLiftTests(unittest.TestCase):
     def setUp(self):
-        self.spec = build_spec("L2-06")
+        self.spec = build_spec("L2-04")
         self.evaluator = OrangeEvaluator(self.spec)
         self.initial = soft_row(self.spec)
         self.first = self.evaluator.update(0.0, self.initial)
@@ -124,7 +124,7 @@ class OrangeLiftTests(unittest.TestCase):
             self.evaluator.update(0.1, rows)
 
     def test_task_prompt_physics_and_goal_agree(self):
-        entry, cfg = resolve_task("L2-06")
+        entry, cfg = resolve_task("L2-04")
         cfg = entry.factory.prepare_config(cfg)
         self.assertNotIn("orange_physics", cfg.raw)  # Retain latest delivered FEM material.
         from robot_tasks.tasks.bench.arm_selection import resolve_bench_spec

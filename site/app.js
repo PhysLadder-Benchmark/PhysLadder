@@ -2,7 +2,7 @@
   "use strict";
   const tasks = window.BENCHMARK_TASKS;
   const $ = id => document.getElementById(id);
-  let selected = tasks.find(t => t.id === "L2-03"), view = "overview", setting = "original", level = "all";
+  let selected = tasks.find(t => t.id === "L2-02"), view = "overview", setting = "original", level = "all";
   const toast = message => { $("toast").textContent = message; $("toast").classList.add("show"); setTimeout(() => $("toast").classList.remove("show"), 2200); };
   async function copy(text) {
     try {

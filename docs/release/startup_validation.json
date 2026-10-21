@@ -8,10 +8,13 @@
   "camera_calibrations_equal": 32,
   "rigid_state_and_scoring_equal": 28,
   "numerical_variation_tasks": [
+    "L2-04",
+    "L2-04_variant01",
     "L2-06",
-    "L2-06_variant01",
-    "L2-08",
-    "L2-08_variant01"
+    "L2-06_variant01"
   ],
-  "note": "FEM numerical states and rendered pixels are not claimed to be bit-identical. No task parameters or asset bytes were changed. Startup checks do not prove model task success."
+  "note": "FEM numerical states and rendered pixels are not claimed to be bit-identical. No task parameters or asset bytes were changed. Startup checks do not prove model task success.",
+  "task_numbering": "sequential_20261021",
+  "evidence_revision": "6adaa49b8b7a2986b469df451716350f34de0aa8",
+  "numbering_map": "configs/benchmark/task_numbering.json"
 }

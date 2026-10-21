@@ -45,11 +45,11 @@ execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
 implementation = "household"
-simulation_limitations = "Latest complete 2026-10-15 scene. Latest prop geometry, materials and masses are retained. Robot joint homes and gripper openings use per-task video estimates. All camera mounts and lens parameters use the shared L3-03 rig; overview is fixed in world space and wrist cameras follow their own arms. Video-guided geometry and illumination remain uncalibrated; rigid flowers/cups/bristles and contact-driven wiping are explicit simulation approximations. Known per-task discrepancies are recorded in reports/reference_alignment_20261015.json."
+simulation_limitations = "Latest complete 2026-10-15 scene. Latest prop geometry, materials and masses are retained. Robot joint homes and gripper openings use per-task video estimates. All camera mounts and lens parameters use the shared L3-01 rig; overview is fixed in world space and wrist cameras follow their own arms. Video-guided geometry and illumination remain uncalibrated; rigid flowers/cups/bristles and contact-driven wiping are explicit simulation approximations. Known per-task discrepancies are recorded in reports/reference_alignment_20261015.json."
 instruction = """
 Pick up the thick marker with the left arm and place it in the wide-mouth cup, then release it.
 """
 
 description = """
-Complete 2026-10-15 assets: room, table, robot mounts, lighting and task props. Robot initial joints and gripper openings follow the per-task video-visible setup. All camera views use the shared L3-03 rig. Prop placements follow the delivered video reconstruction. Task left/right use the robot perspective; overview-image left/right are reversed. No older individual prop is imported. Physical parameters remain uncalibrated.
+Complete 2026-10-15 assets: room, table, robot mounts, lighting and task props. Robot initial joints and gripper openings follow the per-task video-visible setup. All camera views use the shared L3-01 rig. Prop placements follow the delivered video reconstruction. Task left/right use the robot perspective; overview-image left/right are reversed. No older individual prop is imported. Physical parameters remain uncalibrated.
 """

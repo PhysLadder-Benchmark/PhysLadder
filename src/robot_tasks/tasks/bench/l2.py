@@ -6,9 +6,9 @@ from .jelly import jelly
 
 BUILDERS = {
     "L2-01": marker,
-    "L2-03": books,
-    "L2-04": pouring,
-    "L2-06": orange,
-    "L2-07": drawer,
-    "L2-08": jelly,
+    "L2-02": books,
+    "L2-03": pouring,
+    "L2-04": orange,
+    "L2-05": drawer,
+    "L2-06": jelly,
 }

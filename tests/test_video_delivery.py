@@ -47,8 +47,9 @@ class VideoDeliveryTests(unittest.TestCase):
                 self.assertEqual(cfg.raw['task']['scene_delivery'], 'video_20261015')
                 self.assertEqual(cfg.robot.source.name, 'r5_video_20261015.toml')
                 # Jelly reuses the orange scene's room/support with a new prop.
-                source_tid = 'L2-06' if tid == 'L2-08' else tid.removesuffix('_v3')
-                self.assertEqual(row['path'], f'source/{source_tid}/scene.usdz')
+                source_tid = 'L2-04' if tid == 'L2-06' else tid.removesuffix('_v3')
+                from robot_tasks.task_numbering import to_legacy
+                self.assertEqual(row['path'], f'source/{to_legacy(source_tid)}/scene.usdz')
                 self.assertEqual(entry.factory.prepare_config(cfg).instruction.strip(), cfg.instruction.strip())
                 self.assertTrue(all('legacy' not in r['path'] for r in row['tracked'].values()))
         self.assertIn('LEFT arm is on overview-image RIGHT', PROMPT_FRAME)
@@ -82,7 +83,7 @@ class VideoDeliveryTests(unittest.TestCase):
         self.assertFalse(marker(evaluator,rows)[0])
 
     def test_flower_containment_uses_measured_target_cup_frame(self):
-        spec, rows, evaluator = scene('L1-09')
+        spec, rows, evaluator = scene('L1-05')
         self.assertEqual(spec.parameters['fixed_articles'], ('source_cup', 'target_cup'))
         self.assertGreater(rows['source_cup']['pose'][0], rows['target_cup']['pose'][0])
         target = pose_transform(rows['target_cup']['pose'])
@@ -97,7 +98,7 @@ class VideoDeliveryTests(unittest.TestCase):
         self.assertFalse(flower(evaluator,rows)[0])
 
     def test_fixed_flower_cup_still_requires_actual_flower_support(self):
-        spec, rows, evaluator = scene('L1-09')
+        spec, rows, evaluator = scene('L1-05')
         target=pose_transform(rows['target_cup']['pose'])
         rows['rose']['pose']=transform_pose(target @ pose_transform(pose(0,0,.01)))
         rows['rose']['bench_force_n']=0.
@@ -111,8 +112,8 @@ class VideoDeliveryTests(unittest.TestCase):
         self.assertFalse(flower(evaluator,rows)[0])
 
     def test_inherited_drawer_scale_and_video_camera_overrides(self):
-        row = scenes()['L2-07']
-        spec, _, _ = scene('L2-07')
+        row = scenes()['L2-05']
+        spec, _, _ = scene('L2-05')
         self.assertAlmostEqual(spec.parameters['initial_open_m'], .03*row['fixtures'][0]['inherited_scale'][1])
         from robot_tasks.cameras.profile import load_camera_rig
         _, cfg = resolve_task('L1-01')
@@ -124,7 +125,7 @@ class VideoDeliveryTests(unittest.TestCase):
         self.assertAlmostEqual(scenes()['L1-01']['cameras']['overview']['intrinsics'][2],738.,places=3)
 
     def test_current_push_measurements_keep_full_3d_footprint(self):
-        spec, rows, evaluator = scene('L3-14')
+        spec, rows, evaluator = scene('L3-04')
         from robot_tasks.tasks.bench.scoring_l3 import pushing
         for vertices in spec.parameters['book_vertices'].values():
             self.assertEqual(np.asarray(vertices).shape, (8, 3))
@@ -139,7 +140,7 @@ class VideoDeliveryTests(unittest.TestCase):
     def test_current_dustpan_basket_accepts_new_width_but_rejects_the_handle(self):
         from itertools import product
         from robot_tasks.tasks.bench.scoring_l3 import sweeping
-        spec,rows,evaluator=scene('L3-15')
+        spec,rows,evaluator=scene('L3-05')
         pan=pose_transform(rows['dustpan']['pose'])
         def place(name,centre):
             local=np.array(list(product([-.003,.003],repeat=3)))+centre
@@ -155,21 +156,21 @@ class VideoDeliveryTests(unittest.TestCase):
         self.assertFalse(sweeping(evaluator,rows)[0])
 
     def test_documented_counts_use_current_glass_and_filler_support_needs_the_cup(self):
-        for tid in ('L1-09','L2-04'):
+        for tid in ('L1-05','L2-03'):
             packing=scenes()[tid]['derived_contents']['packing_validation']
             self.assertGreaterEqual(packing['minimum_wall_clearance_m'],.0002)
             self.assertGreaterEqual(packing['minimum_floor_clearance_m'],.0002)
             self.assertGreaterEqual(packing['minimum_centre_distance_m'],.0164)
-        pouring, rows, _ = scene('L2-04')
+        pouring, rows, _ = scene('L2-03')
         self.assertEqual(pouring.parameters['count'],12)
         self.assertEqual(pouring.parameters['required_received'],6)
         self.assertEqual(pouring.parameters['minimum_loaded_lift_count'],12)
         self.assertEqual(sum(n.startswith('load_') for n in rows),12)
-        native=scenes()['L2-04']['tracked']
+        native=scenes()['L2-03']['tracked']
         self.assertAlmostEqual(pouring.parameters['ball_mass_kg'],native['load_0']['mass'])
         self.assertAlmostEqual(pouring.parameters['loaded_source_mass_kg'],
             native['source_cup']['mass']+sum(r['mass'] for n,r in native.items() if n.startswith('load_')))
-        spec, rows, evaluator = scene('L1-09')
+        spec, rows, evaluator = scene('L1-05')
         self.assertEqual(len(spec.parameters['target_filler_names']),10)
         target = pose_transform(rows['target_cup']['pose'])
         rows['rose']['pose'] = transform_pose(target @ pose_transform(pose(0,0,.01)))
@@ -186,7 +187,7 @@ class VideoDeliveryTests(unittest.TestCase):
 
     def test_sdf_tasks_reject_cpu_before_starting_kit(self):
         from robot_tasks.backends.isaacsim import IsaacSimBackend
-        for tid in ('L3-03','L3-05'):
+        for tid in ('L3-01','L3-02'):
             _, cfg = resolve_task(tid)
             self.assertTrue(cfg.raw['simulation']['gpu_dynamics'])
             raw = {**cfg.raw,'simulation':{**cfg.raw['simulation'],'gpu_dynamics':False}}

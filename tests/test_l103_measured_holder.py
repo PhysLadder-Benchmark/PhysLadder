@@ -1,4 +1,4 @@
-"""Measured dimensions and physical openings of the L1-03 moulded holder."""
+"""Measured dimensions and physical openings of the L1-02 moulded holder."""
 import unittest
 import numpy as np
 from scipy.spatial import ConvexHull

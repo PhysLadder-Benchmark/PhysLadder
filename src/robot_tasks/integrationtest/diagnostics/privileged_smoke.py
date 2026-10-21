@@ -337,7 +337,7 @@ def execute(c):
             target[:2,3]=cup[:2,3]-.5*depth*np.tan(angle)*toward_base[:2]
             c.move_object('marker',target)
         c.release("marker")
-    elif tid == "L1-03":
+    elif tid == "L1-02":
         c.pick("plug", right, (0,0,.048), close=.014, lift=.05,
                approach=(-1.,0.,0.),jaw=(0.,-1.,0.))
         c.phase("align_prongs_with_nearest_socket")
@@ -349,7 +349,7 @@ def execute(c):
         goal[:3,:3] = fixture[:3,:3] @ Rotation.from_euler("z",math.pi/2).as_matrix()
         goal[:3,3] = fixture[:3,:3] @ np.r_[centre, p["rim"]-fixture[2,3]+.015] + fixture[:3,3]
         c.move_object("plug", goal)
-    elif tid == "L1-08":
+    elif tid == "L1-04":
         centre = c.task.spec.parameters["centre_xy"]
         pick_cup('lower_cup',right)
         goal = initial["lower_cup"].copy();goal[:2,3]=centre
@@ -359,7 +359,7 @@ def execute(c):
         goal=c.object("lower_cup");goal[2,3]+=.060
         c.phase("nest_robot_right_cup")
         c.move_object("upper_cup",goal);c.release("upper_cup")
-    elif tid == "L1-09":
+    elif tid == "L1-05":
         from ...video_delivery import scenes
         c.phase("clear_observer_from_transfer_corridor")
         # Rotate the observer's base outward while preserving its folded
@@ -408,7 +408,7 @@ def execute(c):
         c.move_object("rose",goal);c.release("rose")
         c.phase("withdraw_gripper")
         retreat=c.tcp(right);retreat[1,3]+=.060;c.goto(right,retreat)
-    elif tid == "L1-07":
+    elif tid == "L1-03":
         from ...tasks.bench.native_geometry import shapes,polyhedron
         hat=c.object("hat")
         points=[polyhedron('video:yellow_visor',i)[0].mean(axis=0) for i,s in enumerate(shapes('video:yellow_visor')) if s['name'].startswith('Band_')]
@@ -432,14 +432,14 @@ def execute(c):
         c.pick("cap",right,(0,0,.133),jaw=jaw,width=.035,close=.010,lift=0.)
         c.phase("pull_cap_along_pen_axis")
         goal=c.object("cap");goal[:3,3]+=axis*.050;c.move_object("cap",goal)
-    elif tid == "L2-03":
+    elif tid == "L2-02":
         x=initial["upper_book"][:3,0]
         c.pick("upper_book",left,(-.063,0,0),jaw=(0,0,1.),approach=x,width=.040,close=.012,lift=0.)
         c.pick("middle_book",right,(.063,0,0),jaw=(0,0,1.),approach=-x,width=.040,close=.012,lift=0.)
         c.phase("pull_middle_book_50mm_hold_top_steady")
         goal=c.object("middle_book");goal[:3,3]+=np.asarray(c.task.spec.parameters["outward_axis_world"])*.052
         c.move_object("middle_book",goal)
-    elif tid == "L2-04":
+    elif tid == "L2-03":
         pick_cup('source_cup',right,lift=.10)
         c.phase("pour_all_balls_into_other_cup")
         receiver=c.object("receiver_cup")
@@ -452,7 +452,7 @@ def execute(c):
         c.phase("return_empty_cup_and_release")
         goal=initial["source_cup"].copy();goal[2,3]+=.13
         c.move_object("source_cup",goal);c.move_object("source_cup",initial["source_cup"]);c.release("source_cup")
-    elif tid == "L2-07":
+    elif tid == "L2-05":
         from pxr import UsdGeom
         path=c.task.scene.paths["drawer"]+"/Frames/Pull"
         position=np.asarray(UsdGeom.XformCache().GetLocalToWorldTransform(c.backend.world.stage.GetPrimAtPath(path))).T[:3,3]
@@ -465,7 +465,7 @@ def execute(c):
         c.phase("pull_additional_50mm")
         goal=c.object("drawer");goal[:3,3]+=outward*.051;c.move_object("drawer",goal)
         c.phase("return_to_initial_opening");c.move_object("drawer",initial["drawer"])
-    elif tid == "L3-03":
+    elif tid == "L3-01":
         if not c.task.spec.parameters.get("body_fixed", False):
             c.pick("bottle",right,(0,0,.075),jaw=(0,-1,0),approach=(-1,0,0),width=.070,close=.020,lift=0.)
         c.pick("cap",left,(0,0,.152),jaw=(1,0,0),width=.060,close=.015,lift=0.)
@@ -477,7 +477,7 @@ def execute(c):
             c.move_object("cap",goal)
         c.phase("lift_cap_40mm_clear_of_neck")
         goal=c.object("cap");goal[2,3]+= .045;c.move_object("cap",goal)
-    elif tid == "L3-05":
+    elif tid == "L3-02":
         axis=initial["anchor"][:3,2]
         jaw=np.cross(axis,[0,0,1.]);jaw/=np.linalg.norm(jaw)
         c.pick("anchor",left,(0,0,.025),jaw=jaw,width=.035,close=.008,lift=.060)
@@ -494,7 +494,7 @@ def execute(c):
             pos=c.tcp(right)[:3,3].copy();c.goto(right,matrix(pos,jaw=jaw));c.grip(right,.010)
             c.holds["nut"]=(right,np.linalg.inv(c.tcp(right))@c.object("nut"))
         goal=c.object("nut");goal[:3,3]+=axis*.015;c.move_object("nut",goal)
-    elif tid == "L3-11":
+    elif tid == "L3-03":
         jaw=initial["eraser"][:3,1]
         c.pick("eraser",right,(0,0,.023),jaw=jaw,width=.070,close=.035,lift=.08)
         c.phase("wipe_all_native_ink")
@@ -506,7 +506,7 @@ def execute(c):
             for x in np.linspace(*xs,12):
                 goal=board.copy();goal[:3,3]=board[:3,:3]@np.array([x,y,.01005])+board[:3,3]
                 c.move_object("eraser",goal)
-    elif tid == "L3-14":
+    elif tid == "L3-04":
         c.phase("push_eraser_with_gripper_edge")
         row=c.read()["eraser"];start=c.object("eraser")[:3,3]
         goal=np.asarray(c.task.spec.design.articles[0].goal[:3])
@@ -521,7 +521,7 @@ def execute(c):
         for d in np.linspace(0,distance+.018,16)[1:]:
             c.goto(right,matrix(contact+direction*d,approach,jaw),minimum_s=.25)
         retreat=c.tcp(right);retreat[2,3]+=.08;c.goto(right,retreat)
-    elif tid == "L3-15":
+    elif tid == "L3-05":
         c.pick("broom",right,(0,-.055,.003),width=.035,close=.010,lift=.10)
         pan=c.object("dustpan")
         c.phase("sweep_two_blocks_through_native_pan_lip")
@@ -538,7 +538,7 @@ def execute(c):
                 p=goal.copy();p[:2,3]+=(destination[:2]-block[:2])*u;c.move_object("broom",p)
         c.phase("set_brush_down")
         c.release("broom")
-    elif tid == "L2-06":
+    elif tid == "L2-04":
         row=c.read()["orange"]
         centre=np.array(row["centroid"])
         c.phase("grasp_native_fem_orange")
@@ -610,7 +610,7 @@ def run(task_id, output, metadata=None, *, wall_timeout=600., gui=False, keep_op
         result['initial_recording'] = 'First capture follows physical stepping; pre-reset renderer cache is not recorded.'
         result['video_layout'] = c.video_layout
         c.step(.75)
-        if task_id == 'L1-09':
+        if task_id == 'L1-05':
             task.initialize_episode(backend, robot, lambda **_: c.step(config.control_dt_s))
         result["initial_state"] = serial(task.scene.measure())
         displacements = {name:float(np.linalg.norm(np.asarray(row['pose'][:3])-

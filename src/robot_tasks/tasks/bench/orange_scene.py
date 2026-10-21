@@ -21,7 +21,7 @@ class OrangeScene:
 
         if not backend.settings.gpu_dynamics:
             raise ValueError(
-                "L2-06 native orange requires simulation.gpu_dynamics=true"
+                "L2-04 native orange requires simulation.gpu_dynamics=true"
             )
         self.backend, self.config, self.spec, self.design = (
             backend,

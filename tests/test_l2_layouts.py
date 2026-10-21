@@ -17,10 +17,10 @@ class L2LayoutTests(unittest.TestCase):
         from robot_tasks.tasks.bench.english_reference import apply_reference
 
         operators = {
-            "L2-01": ("left", "right"), "L2-03": ("left", "right"),
-            "L2-04": ("right",), "L2-06": ("right",), "L2-07": ("right",),
-            "L3-03": ("left", "right"), "L3-05": ("left", "right"),
-            "L3-11": ("right",), "L3-14": ("right", "left"), "L3-15": ("right",),
+            "L2-01": ("left", "right"), "L2-02": ("left", "right"),
+            "L2-03": ("right",), "L2-04": ("right",), "L2-05": ("right",),
+            "L3-01": ("left", "right"), "L3-02": ("left", "right"),
+            "L3-03": ("right",), "L3-04": ("right", "left"), "L3-05": ("right",),
         }
         for task_id, expected in operators.items():
             with self.subTest(task=task_id):
@@ -29,7 +29,7 @@ class L2LayoutTests(unittest.TestCase):
                 self.assertEqual(prepared.arms, expected)
                 self.assertEqual(prepared.observation_arms,
                                  tuple(a for a in ("left", "right") if a not in expected))
-                spec = (apply_reference(nut_spec(), cfg.raw['task']) if task_id == "L3-05"
+                spec = (apply_reference(nut_spec(), cfg.raw['task']) if task_id == "L3-02"
                         else resolve_bench_spec(cfg.raw['task'], cfg.robot))
                 self.assertEqual(spec.arms, expected)
                 names = operating_notes(prepared)["arm_naming"]
@@ -54,7 +54,7 @@ class L2LayoutTests(unittest.TestCase):
                 self.assertEqual(spec.parameters[key], "right")
 
     def test_roles_and_native_directions(self):
-        for task, roles in (("L2-03", ("left", "right")), ("L2-07", ("right",))):
+        for task, roles in (("L2-02", ("left", "right")), ("L2-05", ("right",))):
             with self.subTest(task=task):
                 entry, cfg = resolve_task(task)
                 entry.factory.prepare_config(cfg)
@@ -62,13 +62,13 @@ class L2LayoutTests(unittest.TestCase):
                 self.assertEqual(cfg.observation_arms, () if len(roles) == 2 else ("left",))
                 self.assertEqual(cfg.raw["simulation"]["environment"], "tuojing_lab_v4")
                 self.assertFalse(cfg.raw["completion"]["return_home"])
-        book = build_spec("L2-03")
+        book = build_spec("L2-02")
         np.testing.assert_allclose(book.parameters["outward_axis_world"], [1, 0, 0])
         self.assertEqual(book.parameters["manipulation_arm"], "right")
         self.assertEqual(book.parameters["support_arm"], "left")
 
     def test_native_books_are_dynamic_and_exposed_without_extra_gap(self):
-        spec = build_spec("L2-03")
+        spec = build_spec("L2-02")
         lower, middle, upper = spec.design.articles
         self.assertAlmostEqual(middle.mass, .3789)
         np.testing.assert_allclose(np.subtract(*middle.asset_bounds[::-1]), [.14, .22, .01958])
@@ -81,7 +81,7 @@ class L2LayoutTests(unittest.TestCase):
         self.assertTrue(all(not item.get("static") for item in items[1:]))
 
     def book_sample(self):
-        spec = build_spec("L2-03")
+        spec = build_spec("L2-02")
         rows = measurement(spec)
         rows["lower_book"]["fixture_force_n"] = 3.7
         rows["middle_book"]["pair_forces"]["lower_book"] = 3.7
@@ -124,14 +124,14 @@ class L2LayoutTests(unittest.TestCase):
         self.assertEqual(evaluator.update(.2, rows).status, "failed")
 
     def test_drawer_native_rail_and_contents_follow_initial_offset(self):
-        spec = build_spec("L2-07")
+        spec = build_spec("L2-05")
         p = spec.parameters
         item = p["native_instances"][0]
         np.testing.assert_allclose(item["pose"][:2], [.55, 1.12])
         axis = np.asarray(p["outward_axis_world"])
         # Opening must head toward the robot side, not toward the overview camera.
         self.assertGreater(axis[1], 0.0)
-        _, cfg = resolve_task("L2-07")
+        _, cfg = resolve_task("L2-05")
         arm = next(m for m in cfg.robot.mounts if m.name == p["manipulation_arm"])
         towards_arm = np.asarray(arm.base_pose_wxyz[:2]) - np.asarray(p["closed_pose"][:2])
         towards_arm /= np.linalg.norm(towards_arm)

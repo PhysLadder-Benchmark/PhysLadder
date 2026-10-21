@@ -50,7 +50,7 @@ def run(scene):
     compressed = min(span(r) for r in rows[1:3])
     ratio = compressed / span(initial)
     out = {
-        "task": "L2-06",
+        "task": "L2-04",
         "gpt_called": False,
         "scope": "Quasi-static platen compression/release; no robot grasp or task success",
         "samples": rows,

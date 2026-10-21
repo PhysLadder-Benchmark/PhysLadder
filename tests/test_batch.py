@@ -72,7 +72,7 @@ class BatchTests(unittest.TestCase):
         with patch.object(batch, "load_runtime", return_value=self.runtime), redirect_stdout(io.StringIO()):
             return batch.main(list(args))
 
-    def dry_batch(self, name="batch", tasks=("L1-01", "L3-11")):
+    def dry_batch(self, name="batch", tasks=("L1-01", "L3-03")):
         root = self.root / name
         self.assertEqual(self.main("--tasks", *tasks, "--output", str(root), "--model-config", str(self.model),
                                   "--dry-run", "--max-calls", "7", "--wall-time-s", "30"), 0)
@@ -123,13 +123,13 @@ class BatchTests(unittest.TestCase):
     def test_zero_call_cap_and_five_hours_are_frozen_for_each_task(self):
         root = self.root / "five-hours"
         with patch.object(batch, "run_job", wraps=batch.run_job) as run:
-            self.assertEqual(self.main("--tasks", "L2-01", "L2-07", "--output", str(root),
+            self.assertEqual(self.main("--tasks", "L2-01", "L2-05", "--output", str(root),
                 "--model-config", str(self.model), "--dry-run", "--max-calls", "0",
                 "--wall-time-s", "18000"), 0)
         self.assertEqual(run.call_count, 2)
         for call in run.call_args_list:
             self.assertEqual(call.args[3], 18300)  # Separate deadline plus startup grace for each task.
-        for task in ("L2-01", "L2-07"):
+        for task in ("L2-01", "L2-05"):
             config = load_config(root / f"configs/{task}.toml")
             self.assertEqual(config.max_wall_time_s, 18000)
             self.assertEqual(config.raw["execution"]["max_decisions"], 0)
@@ -148,8 +148,8 @@ class BatchTests(unittest.TestCase):
 
     def test_dry_batch_snapshots_overrides_and_skips_real_only(self):
         from dataclasses import replace
-        real_only = replace(batch.TASKS["L3-11"], implemented=False, evidence="real_only")
-        with patch.dict(batch.TASKS, {"L3-11": real_only}):
+        real_only = replace(batch.TASKS["L3-03"], implemented=False, evidence="real_only")
+        with patch.dict(batch.TASKS, {"L3-03": real_only}):
             root = self.dry_batch()
         config = load_config(root / "configs/L1-01.toml")
         self.assertEqual(config.max_wall_time_s, 30)
@@ -304,7 +304,7 @@ class BatchTests(unittest.TestCase):
         self.assertEqual(row['outcome'], 'infrastructure_error')
 
     def test_provider_quota_error_stops_before_next_job(self):
-        root = self.dry_batch(tasks=("L1-01", "L1-03"))
+        root = self.dry_batch(tasks=("L1-01", "L1-02"))
         manifest = json.loads((root / "batch.json").read_text(encoding="utf-8"))
         manifest["options"]["dry_run"] = False
         def failed_job(command, directory, environment, timeout, started):

@@ -41,7 +41,7 @@ def apply_reference(spec, task):
 
     if tid == "L1-01":
         p["require_marker_release"] = True
-    elif tid == "L1-03":
+    elif tid == "L1-02":
         # Only the native middle blue socket has a parallel, dimension-matched
         # pair for these blades. Other five-hole groups are not equivalent slots.
         # This explicit engineering disambiguation and near-face bound are not
@@ -49,7 +49,7 @@ def apply_reference(spec, task):
         p.update(alignment_only=True, alignment_max_gap_m=0.03)
         d = replace(d, name="USB 充电器插脚对齐")
         limitations += " English alignment proxy: native compatible middle two-slot pair; maximum blade-tip gap 30 mm. The source does not specify a numbered socket or metric alignment tolerance."
-    elif tid == "L1-08":
+    elif tid == "L1-04":
         centre = (0.19565, 1.20)
         articles = []
         for a in d.articles:
@@ -60,7 +60,7 @@ def apply_reference(spec, task):
         p.update(centre_xy=centre, centre_tolerance_m=0.04,
                  lower_cup_arm="right", upper_cup_arm="left")
         limitations += " Centre placement uses a declared 40 mm engineering region, not a source-specified precision target."
-    elif tid == "L1-09":
+    elif tid == "L1-05":
         from .geometry import cup_parts
 
         source_xy, target_xy = (0.04, 1.20), (0.34, 1.20)
@@ -74,9 +74,9 @@ def apply_reference(spec, task):
         d = replace(d, articles=(rose, cup), fixture_pose=pose(*target_xy, 0.78))
         p.update(vase_xy=target_xy, rose_source_cup=True, fixed_articles=("source_cup",))
         limitations += " Both source and target cups are fixed passive receptacles. Source anchoring prevents the unballasted light cup from toppling; this differs from the real filled cup and is an explicit setup proxy."
-    elif tid == "L2-03":
+    elif tid == "L2-02":
         p.update(release_required=False, require_top_book_hold=True)
-    elif tid == "L2-04":
+    elif tid == "L2-03":
         from .pearl_pouring import PEARL_MASS, PEARL_RADIUS, packing
 
         source_pose, receiver_pose = pose(0.10, 1.18, 0.781), pose(0.30, 1.18, 0.78)
@@ -98,25 +98,25 @@ def apply_reference(spec, task):
                  require_source_empty=True, minimum_loaded_lift_count=8,
                  initial_packing_top_m=max(v[2] for v in points) + PEARL_RADIUS,
                  loaded_source_mass_kg=0.014 + 10 * PEARL_MASS)
-    elif tid == "L2-06":
+    elif tid == "L2-04":
         limitations += " Physical tissue damage has no calibrated detector; it remains an unverified source constraint, not a claimed measured capability."
-    elif tid == "L2-07":
+    elif tid == "L2-05":
         p["release_required"] = False
-    elif tid == "L3-03":
+    elif tid == "L3-01":
         mechanism = "native_fixed_bottle_cap_contact"
         p.update(body_fixed=True, body_arm="right", cap_arm="left",
                  cap_lift_min_m=0.03, cap_lift_max_m=0.05)
         p["native_instances"] = [{**i, "static": ["Body"]} for i in p["native_instances"]]
         d = replace(d, name="固定瓶身旋下瓶盖并抬离瓶口")
         limitations += " User clarification: the bottle body is fixed to the table; the other hand need not hold it. The retained pre-loosened threads do not reproduce unmeasured real opening torque."
-    elif tid == "L3-05":
+    elif tid == "L3-02":
         p["release_required"] = False
         d = replace(d, release=False)
-    elif tid == "L3-11":
+    elif tid == "L3-03":
         p.update(whiteboard_surface=True, require_all_writing=True)
         d = replace(d, name="抓板擦擦除白板字迹")
         limitations += " Runtime whiteboard appearance uses the existing board geometry and removable ink mask; it is a cleaning proxy, not a newly calibrated whiteboard asset."
-    elif tid == "L3-14":
+    elif tid == "L3-04":
         target = ((-0.16, -0.14), (0.16, -0.14), (0.16, 0.14), (-0.16, 0.14))
         a = d.articles[0]
         outline = []
@@ -153,5 +153,5 @@ def initial_state_issue(spec, rows):
     _, floor, rim = cup_cavity(prefix + "ripple_paper_cup")
     if (source[2, 2] < .95 or not inside or tip[:, 2].min() >= rim - .001
             or tip[:, 2].max() <= floor - .001):
-        return "L1-09 initial flower must remain inside an upright source cup"
+        return "L1-05 initial flower must remain inside an upright source cup"
     return None

@@ -2,10 +2,10 @@
   "revision": "l2-book-slope-and-twelve-glass-balls-v1",
   "date": "2026-10-15",
   "tasks": {
-    "L2-04": {
-      "source_video": "real_videos/L2-04/real_L2-04.mp4",
+    "L2-03": {
+      "source_video": "real_videos/L2-03/real_L2-03.mp4",
       "source_video_sha256": "e5530e532b8901ee5dfbc18413cfe5a2a8052f342765cacd0bef9e9d253bd482",
-      "reference_image": "build/view_pose_alignment_20261015/L2-04/real_overview.png",
+      "reference_image": "build/view_pose_alignment_20261015/L2-03/real_overview.png",
       "reference_raster": [
         1280,
         960
@@ -73,9 +73,9 @@
       "annotation_uncertainty_px": 4,
       "glass_ball_count": 12
     },
-    "L2-03": {
+    "L2-02": {
       "revision": "l2-book-straight-rim-slope-v4",
-      "reference": "real_videos/L2-03/real_L2-03.mp4 at 0, 3, 10, 20 seconds, plus user detail screenshot on 2026-10-16",
+      "reference": "real_videos/L2-02/real_L2-02.mp4 at 0, 3, 10, 20 seconds, plus user detail screenshot on 2026-10-16",
       "source_video_sha256": "46fc15f896e36c2668e6d696de22be2b30bc444c109fb946125f3b6bce206c53",
       "box_pose": [
         0.10236941608572794,
@@ -179,11 +179,11 @@
       "lower_back_cover_half_depth_m": 0.10925,
       "lower_book_front_slope_deg": 2.5
     },
-    "L2-07": {
+    "L2-05": {
       "revision": "l2-drawer-fixed-camera-placement-v1",
-      "source_video": "real_videos/L2-07/real_L2-07.mp4",
+      "source_video": "real_videos/L2-05/real_L2-05.mp4",
       "source_video_sha256": "c73b4e57dcd4e41b64edaf2644c02647da6836833b355575851b9fbb5f61ce52",
-      "reference_image": "build/view_pose_alignment_20261015/L2-07/real_overview.png",
+      "reference_image": "build/view_pose_alignment_20261015/L2-05/real_overview.png",
       "reference_raster": [
         1280,
         960
@@ -270,7 +270,7 @@
       "annotation_uncertainty_px": 5,
       "shared_camera_changed": false
     },
-    "L2-06": {
+    "L2-04": {
       "revision": "l2-orange-original-horizontal-v2",
       "reference": "User correction 2026-10-16: restore the original position and horizontal orientation in the overview.",
       "yaw_delta_deg": 0.0,

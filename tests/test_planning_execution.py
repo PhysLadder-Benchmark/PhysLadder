@@ -250,7 +250,7 @@ class PlanningExecutionTests(unittest.TestCase):
     def test_timeout_float32_limit_noise_does_not_block_gripper_recovery(self):
         robot, states = self.robot()
         q = list(states["right"].joint_positions_rad)
-        q[1] = 2.5000014305114746  # Recorded L2-04 PhysX measurement under load.
+        q[1] = 2.5000014305114746  # Recorded L2-03 PhysX measurement under load.
         states["right"] = replace(states["right"], joint_positions_rad=tuple(q))
         robot.motion_arms = {"right"}
         def send(targets):

@@ -81,17 +81,17 @@ class ArmSelectionTests(unittest.TestCase):
                 resolve_bench_spec({**self.nearest_task, **update}, self.config.robot)
 
     def test_fixed_tasks_keep_existing_roles(self):
-        for task_id in ("L1-07", "L1-08", "L1-09"):
+        for task_id in ("L1-03", "L1-04", "L1-05"):
             with self.subTest(task=task_id):
                 binding, config = resolve_task(task_id)
                 prepared = binding.factory.prepare_config(config)
-                expected = {"L1-07": ("right",),
-                            "L1-08": ("left", "right"), "L1-09": ("right",)}[task_id]
+                expected = {"L1-03": ("right",),
+                            "L1-04": ("left", "right"), "L1-05": ("right",)}[task_id]
                 self.assertEqual(prepared.arms, expected)
                 self.assertEqual(prepared.observation_arms, tuple(a for a in ("left", "right") if a not in expected))
 
     def test_charger_photo_layout_selects_nearby_right_arm(self):
-        binding, config = resolve_task("L1-03")
+        binding, config = resolve_task("L1-02")
         prepared = binding.factory.prepare_config(config)
         self.assertNotIn("arm_selection", config.raw["task"])
         self.assertEqual(prepared.arms, ("right",))

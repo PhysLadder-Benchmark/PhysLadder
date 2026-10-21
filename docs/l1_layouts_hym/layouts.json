@@ -16,7 +16,7 @@
     "comparison_provenance": "Reviewed baseline/P03 comparison exported on 2026-10-18; reused unchanged."
   },
   {
-    "task": "L1-03",
+    "task": "L1-02",
     "name": "USB 充电器插脚对齐",
     "baseline_profile": "baseline",
     "perturbed_profile": "l1_xy_random_p03_20261018",
@@ -26,13 +26,13 @@
       "桌面插排：右 2.85 cm，后 2.00 cm（距离 3.48 cm）"
     ],
     "profile_sha256": "a21120a0eb95d7592f35694a5a7aa0732191e91a4701abe86f4b475d7715ee99",
-    "baseline_config": "configs/experiments/l1_baseline/l1_03_plug_insertion.toml",
-    "perturbed_config": "configs/experiments/l1_perturbed/l1_03_plug_insertion.toml",
-    "comparison_image": "docs/l1_layouts_hym/L1-03.png",
+    "baseline_config": "configs/experiments/l1_baseline/l1_02_plug_insertion.toml",
+    "perturbed_config": "configs/experiments/l1_perturbed/l1_02_plug_insertion.toml",
+    "comparison_image": "docs/l1_layouts_hym/L1-02.png",
     "comparison_provenance": "Reviewed baseline/P03 comparison exported on 2026-10-18; reused unchanged."
   },
   {
-    "task": "L1-07",
+    "task": "L1-03",
     "name": "黄色空顶帽挂上木质挂架",
     "baseline_profile": "baseline",
     "perturbed_profile": "l1_xy_random_p03_20261018",
@@ -43,13 +43,13 @@
       "帽子相对盒子旋转：俯视逆时针 16.25°"
     ],
     "profile_sha256": "a21120a0eb95d7592f35694a5a7aa0732191e91a4701abe86f4b475d7715ee99",
-    "baseline_config": "configs/experiments/l1_baseline/l1_07_ring_hook.toml",
-    "perturbed_config": "configs/experiments/l1_perturbed/l1_07_ring_hook.toml",
-    "comparison_image": "docs/l1_layouts_hym/L1-07.png",
+    "baseline_config": "configs/experiments/l1_baseline/l1_03_ring_hook.toml",
+    "perturbed_config": "configs/experiments/l1_perturbed/l1_03_ring_hook.toml",
+    "comparison_image": "docs/l1_layouts_hym/L1-03.png",
     "comparison_provenance": "Reviewed baseline/P03 comparison exported on 2026-10-18; reused unchanged."
   },
   {
-    "task": "L1-08",
+    "task": "L1-04",
     "name": "两个波纹纸杯套叠",
     "baseline_profile": "baseline",
     "perturbed_profile": "l1_xy_random_p03_20261018",
@@ -59,13 +59,13 @@
       "画面左杯：左 4.84 cm，前 1.34 cm（距离 5.02 cm）"
     ],
     "profile_sha256": "a21120a0eb95d7592f35694a5a7aa0732191e91a4701abe86f4b475d7715ee99",
-    "baseline_config": "configs/experiments/l1_baseline/l1_08_block_stack.toml",
-    "perturbed_config": "configs/experiments/l1_perturbed/l1_08_block_stack.toml",
-    "comparison_image": "docs/l1_layouts_hym/L1-08.png",
+    "baseline_config": "configs/experiments/l1_baseline/l1_04_block_stack.toml",
+    "perturbed_config": "configs/experiments/l1_perturbed/l1_04_block_stack.toml",
+    "comparison_image": "docs/l1_layouts_hym/L1-04.png",
     "comparison_provenance": "Reviewed baseline/P03 comparison exported on 2026-10-18; reused unchanged."
   },
   {
-    "task": "L1-09",
+    "task": "L1-05",
     "name": "刚体玫瑰插花",
     "baseline_profile": "baseline",
     "perturbed_profile": "l1_xy_random_p03_20261018",
@@ -75,9 +75,9 @@
       "目标杯和10颗玻璃珠：左 4.71 cm，前 1.08 cm（距离 4.83 cm）"
     ],
     "profile_sha256": "a21120a0eb95d7592f35694a5a7aa0732191e91a4701abe86f4b475d7715ee99",
-    "baseline_config": "configs/experiments/l1_baseline/l1_09_soft_stem_flower.toml",
-    "perturbed_config": "configs/experiments/l1_perturbed/l1_09_soft_stem_flower.toml",
-    "comparison_image": "docs/l1_layouts_hym/L1-09.png",
+    "baseline_config": "configs/experiments/l1_baseline/l1_05_soft_stem_flower.toml",
+    "perturbed_config": "configs/experiments/l1_perturbed/l1_05_soft_stem_flower.toml",
+    "comparison_image": "docs/l1_layouts_hym/L1-05.png",
     "comparison_provenance": "Reviewed baseline/P03 comparison exported on 2026-10-18; reused unchanged."
   }
 ]

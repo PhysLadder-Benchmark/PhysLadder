@@ -50,7 +50,11 @@ def _recorded_task_setup(task_id, recorded_digest):
     contents = path.read_bytes()
     if hashlib.sha256(contents).hexdigest() != recorded_digest:
         raise ValueError('Modified historical visual setup: ' + str(path))
-    return json.loads(contents).get('tasks', {}).get(task_id)
+    record = json.loads(contents)
+    from .task_numbering import SCHEME, historical_setup_record, to_legacy
+    if record.get('task_numbering') == SCHEME:
+        return record.get('tasks', {}).get(task_id)
+    return historical_setup_record(record.get('tasks', {}).get(to_legacy(task_id)))
 
 
 def setup_compatible(task_id, recorded_digest):
@@ -77,7 +81,7 @@ def planning_setup_compatible(task_id, recorded_digest):
 
 def video_layout(task_id):
     base = task_id.removesuffix('_v3')
-    reference_id = 'L2-06' if base == 'L2-08' else base
+    reference_id = 'L2-04' if base == 'L2-06' else base
     reference = json.loads((PROJECT_ROOT / 'configs/task_references/view_pose_landmarks_20261015.json').read_text(encoding='utf-8'))['tasks'][reference_id]
     return {'resolution': reference['source_resolution'], 'rois': reference['rois'],
             'layout_reference_task': reference_id,
@@ -191,7 +195,7 @@ def verified_scene(task_id):
 
 
 def camera_profile(profile, task_id):
-    """Bind the common L3-03 rig to each task's existing camera prims."""
+    """Bind the common L3-01 rig to each task's existing camera prims."""
     scene = scenes()[task_id]
     cameras = effective_cameras(task_id)
     result = []
@@ -206,7 +210,7 @@ def camera_profile(profile, task_id):
                               pose_source="Shared " + visual_setup()['camera_reference_task'] + " camera rig; " + visual_setup()['revision'],
                               intrinsics_source="Shared bottle-cap-task projection; video-derived estimate, not hardware calibration"))
     return replace(profile, cameras=tuple(result),
-                   notes="All current video tasks use the L3-03 camera rig: a fixed world overview and fixed link6-relative wrist mounts, with shared lens parameters. Initial robot poses remain task-specific. Image-derived estimates, not hardware calibration.")
+                   notes="All current video tasks use the L3-01 camera rig: a fixed world overview and fixed link6-relative wrist mounts, with shared lens parameters. Initial robot poses remain task-specific. Image-derived estimates, not hardware calibration.")
 
 
 def apply_visual_cameras(stage, task_id):
@@ -246,7 +250,7 @@ def apply_visual_background(stage, task_id):
         if not prim or value not in ('inherited', 'invisible'):
             raise ValueError('Invalid shared-view visibility: ' + path)
         UsdGeom.Imageable(prim).GetVisibilityAttr().Set(value)
-        changes[path] = 'shared L3-03 visibility: ' + value
+        changes[path] = 'shared L3-01 visibility: ' + value
     reference = setup.get('background_reference')
     if not reference:
         return changes
@@ -265,7 +269,7 @@ def apply_visual_background(stage, task_id):
         transform = UsdGeom.Xformable(prim)
         transform.ClearXformOpOrder()
         transform.AddTransformOp().Set(Gf.Matrix4d(local.T))
-        changes[path] = 'shared L3-03 wall reference on session layer'
+        changes[path] = 'shared L3-01 wall reference on session layer'
     return changes
 
 
@@ -299,12 +303,12 @@ def configure_stage(stage, task_id):
     background_changes = apply_visual_background(stage, task_id)
     from .video_appearance import apply as apply_appearance
     appearance_changes = apply_appearance(stage, setup_for(task_id).get('render_appearance'))
-    if base_task_id in ('L1-01','L1-09','L2-04','L3-03'):
+    if base_task_id in ('L1-01','L1-05','L2-03','L3-01'):
         import carb
         epsilon = .00001 if base_task_id == 'L1-01' else .0001
         carb.settings.get_settings().set_float('/rtx/translucency/worldEps',epsilon)
         report['translucency_world_epsilon_m'] = epsilon
-    if base_task_id == 'L3-03':
+    if base_task_id == 'L3-01':
         # The bottle has both inner and outer PET faces. RTX realtime's
         # transmission approximation makes its shoulder/neck look metallic.
         # Use bounded path tracing for this task's camera observations as well
@@ -320,11 +324,11 @@ def configure_stage(stage, task_id):
             'mode': 'PathTracing', 'samples_per_pixel': 16,
             'max_bounces': 12, 'max_specular_transmission_bounces': 16,
         }
-    if base_task_id == 'L3-15':
+    if base_task_id == 'L3-05':
         from .tasks.bench.l3_sweep_physics import apply as apply_sweep_box
-        report['l3_15_box_collision'] = apply_sweep_box(stage)
+        report['l3_05_box_collision'] = apply_sweep_box(stage)
         from .tasks.bench.l3_brush_handle import apply as apply_brush_handle
-        report['l3_15_handle_collision'] = apply_brush_handle(stage)
+        report['l3_05_handle_collision'] = apply_brush_handle(stage)
     report.update(profile='complete_scene_20261015',delivery=DELIVERY, task_id=base_task_id,
                   scene_id=task_id, table_surface_z_m=0.88,
                   arm_spacing_m=0.47, scene_sha256=scenes()[task_id]["sha256"],

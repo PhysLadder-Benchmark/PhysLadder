@@ -187,7 +187,7 @@ def build(output, initial_root=None):
             if prim and UsdGeom.Imageable(prim).ComputeVisibility() == 'invisible':
                 warnings.append(name + ': scoring body is invisible; visible review geometry may be separate')
         openings = '；'.join(f"控制 ID {a}：开度 {r['gripper_width_m']*1000:.1f} mm" for a,r in setup['arms'].items())
-        note = '机械臂初态按真机视频估计；三路相机统一采用 L3-03 配置。' + openings + '。腕部从合法关节状态生成。'
+        note = '机械臂初态按真机视频估计；三路相机统一采用 L3-01 配置。' + openings + '。腕部从合法关节状态生成。'
         projected_fit = {}
         for arm, arm_setup in setup['arms'].items():
             fit = arm_setup.get('visible_fit', {})
@@ -201,7 +201,7 @@ def build(output, initial_root=None):
                 residuals['object_name'] = fit.get('object_name')
                 residuals['object_bbox_max_edge_error_px'] = float(np.max(np.abs(np.asarray(target)-arm_prediction)))
             projected_fit[arm] = residuals
-        if tid == 'L1-09':
+        if tid == 'L1-05':
             note += '此任务只有真机全局录像，腕相机沿用同套装置的估计。'
         if warnings:
             note += '源资产可见几何与评分刚体存在分离，动作结果需结合该问题查看。'
@@ -258,7 +258,7 @@ def build(output, initial_root=None):
                "max_home_joint_drift_deg": max(max(abs(v) for v in r['joint_error_rad']) for r in robot_rows)*180/np.pi,
                "max_background_point_error_px": max(r['background_check']['max_error_px'] for r in records)}
     report = {"schema_version": 1, "summary": summary, "tasks": records,
-              "conclusion": "All current tasks share the fixed L3-03 overview and link6-relative wrist camera rig. Initial joints and openings remain task-specific and physically checked. Real-video panes are preserved; different original recording viewpoints are no longer fitted per task. Pixel-identical geometry/materials are not claimed.",
+              "conclusion": "All current tasks share the fixed L3-01 overview and link6-relative wrist camera rig. Initial joints and openings remain task-specific and physically checked. Real-video panes are preserved; different original recording viewpoints are no longer fitted per task. Pixel-identical geometry/materials are not claimed.",
               "user_scope": "Use the bottle-cap unscrewing task's camera rig for all current tasks; keep task-specific robot and object initial states.",
               "camera_reference_task": visual_setup()['camera_reference_task'],
               "camera_reference_image": visual_setup()['overview_reference_image_fit'],
@@ -273,7 +273,7 @@ def build(output, initial_root=None):
                   "new_recordings": "Rerun after the setup changes; first frame follows physical stepping, and all panes match the source layout.",
                   "comparison_player_start_frame": 0, "real_video_modified": False,
                   "future_recorder_requirement": "Record only after PhysX has propagated reset joint transforms to the renderer; preserve pre-step numeric object state separately."},
-              "display": "Uniform pane extraction and scaling, using the shared L3-03 camera rig for all simulations. No output-image warp or real-video rewriting. Original real recordings can have different viewpoints."}
+              "display": "Uniform pane extraction and scaling, using the shared L3-01 camera rig for all simulations. No output-image warp or real-video rewriting. Original real recordings can have different viewpoints."}
     dest = ROOT / 'reports/view_pose_alignment_20261015'
     dest.with_suffix('.json').write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     write_html(dest.with_suffix('.html'), summary, cards)
@@ -292,7 +292,7 @@ def write_html(path, summary, cards):
 <script id="data" type="application/json">CARDS</script><script>
 const cards=JSON.parse(document.querySelector('#data').textContent);
 const summary=SUMMARY;
-document.querySelector('#summary').textContent=`共用 L3-03 相机配置 ${summary.video_setups_applied}/${summary.tasks}；物理复位 ${summary.robot_resets_passed}/${summary.tasks} 通过；渲染相机与配置一致 ${summary.rendered_camera_checks_passed ?? 0}/${summary.tasks*3}。\n底座最大误差 ${(summary.max_base_error_m*1000).toFixed(6)} mm；末端与独立 FK 最大误差 ${(summary.max_tcp_fk_error_m*1000).toFixed(4)} mm。\n原始 USD 关节不闭合的任务：${summary.native_articulation_inconsistent_tasks.join('、')}。运行时已从合法关节状态生成初态。`;
+document.querySelector('#summary').textContent=`共用 L3-01 相机配置 ${summary.video_setups_applied}/${summary.tasks}；物理复位 ${summary.robot_resets_passed}/${summary.tasks} 通过；渲染相机与配置一致 ${summary.rendered_camera_checks_passed ?? 0}/${summary.tasks*3}。\n底座最大误差 ${(summary.max_base_error_m*1000).toFixed(6)} mm；末端与独立 FK 最大误差 ${(summary.max_tcp_fk_error_m*1000).toFixed(4)} mm。\n原始 USD 关节不闭合的任务：${summary.native_articulation_inconsistent_tasks.join('、')}。运行时已从合法关节状态生成初态。`;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function player(src,roi,poster,start=0){
  const box=document.createElement('div');box.innerHTML=`<canvas width="960" height="720"></canvas><video preload="none" muted playsinline></video><button>播放</button><input type="range" min="0" max="1" step=".001" value="0"><span>0.0 s</span>`;
@@ -304,7 +304,7 @@ function player(src,roi,poster,start=0){
 for(const c of cards){
  document.querySelector('#nav').insertAdjacentHTML('beforeend',`<a href="#${c.id}">${c.id}</a>　`);
  const section=document.createElement('section');section.id=c.id;const e=c.errors;
- section.innerHTML=`<h2>${c.id}</h2><p>${esc(c.findings)}</p>${(c.remaining_visible_differences||[]).map(n=>`<p class="bad">仍有差异：${esc(n)}</p>`).join('')}<p class="good">物理复位：${c.reset_pass?'通过':'失败'}。${esc(c.reset)}</p><p>墙面参考点偏差 ${e.max_error_px.toFixed(1)} px（仿真已统一 L3-03 视角，原真机录像构图可能不同；不代表整幅画面误差）。</p><select>${c.views.map(v=>`<option value="${v}">${({overview:'全局',right_wrist:'真机左腕 / 控制 ID right',left_wrist:'真机右腕 / 控制 ID left'})[v]}</option>`).join('')}</select><button class="toggle">切换叠图</button><label>仿真透明度 <input class="blend" type="range" min="0" max="1" step=".01" value=".5"></label><div class="pair frames"><div><p>真机首帧</p><img class="real"></div><div><p>当前仿真复位后</p><img class="sim"></div></div><div class="overlay hidden"><img class="real"><img class="sim" style="opacity:.5"></div><details><summary>拟合残差与仍待复核的大小 / 位置</summary><p>以下是历史机械臂初态拟合记录，使用当时的逐任务图像坐标：全局 1280×960，腕部 1280×720。当前已统一为用户参考图视角，这些历史数值不作为当前构图误差或独立验收结果。</p><pre>${esc(JSON.stringify(c.projected_fit||{},null,2))}</pre></details><details><summary>固定背景点标注</summary><div class="pair"><img loading="lazy" src="${c.prefix}real_anchors.png"><img loading="lazy" src="${c.prefix}sim_anchors.png"></div></details><details class="movies"><summary>按当前所选视角播放真机 / smoke 视频</summary><p>分别控制播放和进度；原视频播放倍率不同，不作为动作时间对齐证据。</p><div class="pair"></div></details>`;
+ section.innerHTML=`<h2>${c.id}</h2><p>${esc(c.findings)}</p>${(c.remaining_visible_differences||[]).map(n=>`<p class="bad">仍有差异：${esc(n)}</p>`).join('')}<p class="good">物理复位：${c.reset_pass?'通过':'失败'}。${esc(c.reset)}</p><p>墙面参考点偏差 ${e.max_error_px.toFixed(1)} px（仿真已统一 L3-01 视角，原真机录像构图可能不同；不代表整幅画面误差）。</p><select>${c.views.map(v=>`<option value="${v}">${({overview:'全局',right_wrist:'真机左腕 / 控制 ID right',left_wrist:'真机右腕 / 控制 ID left'})[v]}</option>`).join('')}</select><button class="toggle">切换叠图</button><label>仿真透明度 <input class="blend" type="range" min="0" max="1" step=".01" value=".5"></label><div class="pair frames"><div><p>真机首帧</p><img class="real"></div><div><p>当前仿真复位后</p><img class="sim"></div></div><div class="overlay hidden"><img class="real"><img class="sim" style="opacity:.5"></div><details><summary>拟合残差与仍待复核的大小 / 位置</summary><p>以下是历史机械臂初态拟合记录，使用当时的逐任务图像坐标：全局 1280×960，腕部 1280×720。当前已统一为用户参考图视角，这些历史数值不作为当前构图误差或独立验收结果。</p><pre>${esc(JSON.stringify(c.projected_fit||{},null,2))}</pre></details><details><summary>固定背景点标注</summary><div class="pair"><img loading="lazy" src="${c.prefix}real_anchors.png"><img loading="lazy" src="${c.prefix}sim_anchors.png"></div></details><details class="movies"><summary>按当前所选视角播放真机 / smoke 视频</summary><p>分别控制播放和进度；原视频播放倍率不同，不作为动作时间对齐证据。</p><div class="pair"></div></details>`;
  const update=()=>{const view=section.querySelector('select').value;section.querySelectorAll('img.real').forEach(i=>i.src=c.prefix+'real_'+view+'.png');section.querySelectorAll('img.sim').forEach(i=>i.src=c.prefix+'sim_'+view+'.png');if(section.players){section.players[0].setView(c.real_rois[view],c.prefix+'real_'+view+'.png');section.players[1].setView(c.sim_rois[view],c.prefix+'sim_'+view+'.png')}};section.querySelector('select').onchange=update;update();section.querySelector('.toggle').onclick=()=>{section.querySelector('.frames').classList.toggle('hidden');section.querySelector('.overlay').classList.toggle('hidden')};section.querySelector('.blend').oninput=x=>section.querySelector('.overlay img.sim').style.opacity=x.target.value;
  const movies=section.querySelector('.movies');movies.ontoggle=()=>{if(!movies.open||movies.dataset.loaded)return;movies.dataset.loaded='1';const p=movies.querySelector('.pair');const view=section.querySelector('select').value;section.players=[player(c.real_video,c.real_rois[view],c.prefix+'real_'+view+'.png'),player(c.sim_video,c.sim_rois[view],c.prefix+'sim_'+view+'.png',c.sim_start_s)];p.append(...section.players)};document.querySelector('main').append(section);
 }

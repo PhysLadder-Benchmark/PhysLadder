@@ -9,8 +9,8 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
-TASKS = {"L2-01": "拔笔帽", "L2-03": "抽取中间书本", "L2-04": "倒玻璃球",
-         "L2-06": "夹橘瓣", "L2-07": "开关抽屉", "L2-08": "夹果冻"}
+TASKS = {"L2-01": "拔笔帽", "L2-02": "抽取中间书本", "L2-03": "倒玻璃球",
+         "L2-04": "夹橘瓣", "L2-05": "开关抽屉", "L2-06": "夹果冻"}
 
 
 def compose(output, selected):

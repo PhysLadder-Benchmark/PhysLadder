@@ -69,16 +69,16 @@ for tid, row in manifest["tasks"].items():
             row['tracked']['plug_storage_base'] = tray
     from video_scene_repairs import apply as repair_bindings
     row['physical_repairs'] = repair_bindings(runtime, tid, row)
-    if tid == 'L1-09' and row.get('flower_collision_repair'):
-        from l1_09_flower_collision import apply as repair_flower
+    if tid == 'L1-05' and row.get('flower_collision_repair'):
+        from l1_05_flower_collision import apply as repair_flower
         row['flower_collision_repair'] = repair_flower(runtime)
-    if tid == 'L1-09' and row.get('flower_initial_support'):
-        from l1_09_supported_layout import apply as support_flower
+    if tid == 'L1-05' and row.get('flower_initial_support'):
+        from l1_05_supported_layout import apply as support_flower
         row['flower_initial_support'] = support_flower(runtime, row)
-    if tid == 'L1-09':
-        from l1_09_grip_dynamics import apply as flower_grip
+    if tid == 'L1-05':
+        from l1_05_grip_dynamics import apply as flower_grip
         row['physical_repairs']['flower_grip_dynamics'] = flower_grip(runtime)
-        from l1_09_passive_leaves import apply as flexible_leaves
+        from l1_05_passive_leaves import apply as flexible_leaves
         leaf_repair = flexible_leaves(runtime)
         row['physical_repairs']['flower_passive_leaves'] = leaf_repair
         row['physical_repairs']['flower_grip_dynamics'] = leaf_repair['root_grip_dynamics']

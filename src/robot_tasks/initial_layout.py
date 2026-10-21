@@ -98,7 +98,7 @@ def apply_spec(spec, task):
             goal=transform_pose(delta @ pose_transform(article.goal))))
     parameters = dict(spec.parameters)
     # These are coordinate frames derived from placement, not success thresholds.
-    anchor = "middle_book" if task["id"] == "L2-03" else "drawer"
+    anchor = "middle_book" if task["id"] == "L2-02" else "drawer"
     if anchor in records and "outward_axis_world" in parameters:
         delta = delta_for(records[anchor]["path"], selected)
         parameters["outward_axis_world"] = tuple(delta[:3, :3] @ parameters["outward_axis_world"])

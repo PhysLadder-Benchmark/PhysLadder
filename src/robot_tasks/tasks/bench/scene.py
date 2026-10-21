@@ -31,7 +31,7 @@ class BenchScene(L1Scene):
                 backend.planning_fixture_paths += tuple(path for path in self.colliders if path.startswith(prefix))
         if spec.design.task_id == "L1-01":
             self.configure_marker_contacts()
-        if spec.design.task_id in {"L1-01", "L1-03", "L1-07", "L1-08", "L1-09"}:
+        if spec.design.task_id in {"L1-01", "L1-02", "L1-03", "L1-04", "L1-05"}:
             from .native_geometry import catalog, verify_stage
 
             roots = [(a.asset.split(":", 1)[1], self.root + "/" + a.name)
@@ -50,7 +50,7 @@ class BenchScene(L1Scene):
                 "primitive_surface_error_budget_m": 0.00005,
                 "geometry_does_not_enter_policy_input": True,
             }
-        if spec.design.task_id == "L1-03":
+        if spec.design.task_id == "L1-02":
             from pxr import PhysxSchema
 
             # A 1-mm contact margin exceeds the native 0.55-mm side clearance.
@@ -222,11 +222,11 @@ class BenchScene(L1Scene):
                         map(float, np.linalg.norm(matrix[0], axis=1)),
                     )
                 )
-        if self.spec.design.task_id == "L1-07":
+        if self.spec.design.task_id == "L1-03":
             suffix = self.spec.parameters["target_hook_suffix"]
             indices = [i for i, path in enumerate(self.support_filters) if path.endswith(suffix)]
             if len(indices) != 1:
-                raise RuntimeError("L1-07 requires exactly one native Hook0 contact filter")
+                raise RuntimeError("L1-03 requires exactly one native Hook0 contact filter")
             force = np.asarray(self.supports["hat"].get_contact_force_matrix(dt=dt))[0, indices[0]]
             rows["hat"]["target_hook_force_n"] = float(np.linalg.norm(force))
             rows["hat"]["target_hook_vertical_force_n"] = float(max(0., force[2]))

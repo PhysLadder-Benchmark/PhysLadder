@@ -67,12 +67,12 @@ def samples_and_fixtures(task, spec):
     p, z = spec.parameters, spec.parameters["table_z"]
     samples, fixed = [], []
     down_left, down_right = (0.0, math.pi / 2, math.pi), (0.0, math.pi / 2, 0.0)
-    if task == "L2-07":
+    if task == "L2-05":
         raise ValueError(
             "No qualified R5 pinch fixture for the native 102 x 6 x 8 mm lip; "
             "the former added-handle clearance result is not applicable."
         )
-    elif task == "L2-03":
+    elif task == "L2-02":
         a = spec.design.articles[0]
         samples = [
             (
@@ -118,7 +118,7 @@ def samples_and_fixtures(task, spec):
             ("right", (x + 0.135, y + 0.10, z + 0.1252), cap_side, 0.0174),
             ("right", (x + 0.18, y + 0.10, z + 0.1252), cap_side, 0.0174),
         ]
-    elif task == "L2-04":
+    elif task == "L2-03":
         a = spec.design.articles[0]
         samples = [
             (
@@ -129,7 +129,7 @@ def samples_and_fixtures(task, spec):
             )
             for dz in (0.0, 0.04)
         ]
-    elif task == "L2-06":
+    elif task == "L2-04":
         a = spec.design.articles[0]
         support_z = spec.parameters["support_z"]
         orange_pose = pose_transform(a.initial)
@@ -188,7 +188,7 @@ def check(task):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "tasks", nargs="*", default=["L2-07", "L2-03", "L2-01", "L2-04", "L2-06"]
+        "tasks", nargs="*", default=["L2-05", "L2-02", "L2-01", "L2-03", "L2-04"]
     )
     parser.add_argument(
         "--output",

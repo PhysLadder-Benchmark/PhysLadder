@@ -57,7 +57,7 @@ class CleaningTests(unittest.TestCase):
         self.assertEqual(self.ledger.metrics()["remaining_cells"], 2)
 
     def test_one_removed_cell_succeeds_while_eraser_is_still_held(self):
-        spec = build_spec("L3-11")
+        spec = build_spec("L3-03")
         rows = measurement(spec)
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
         rows["eraser"]["fingers"]["right"] = [1, 1]
@@ -78,7 +78,7 @@ class CleaningTests(unittest.TestCase):
 
 class SweepingTests(unittest.TestCase):
     def setUp(self):
-        self.spec = build_spec("L3-15")
+        self.spec = build_spec("L3-05")
         self.rows = measurement(self.spec)
         self.e = BenchEvaluator(
             self.spec, {a.name: a.initial for a in self.spec.design.articles}
@@ -164,7 +164,7 @@ class PhotoLayoutTests(unittest.TestCase):
     def test_current_l314_has_two_stacked_books_and_two_active_arms(self):
         from robot_tasks.tasks.bench.arm_selection import resolve_bench_spec
 
-        entry, cfg = resolve_task("L3-14")
+        entry, cfg = resolve_task("L3-04")
         entry.factory.prepare_config(cfg)
         spec = resolve_bench_spec(cfg.raw["task"], cfg.robot)
         articles = {a.name: a for a in spec.design.articles}
@@ -175,7 +175,7 @@ class PhotoLayoutTests(unittest.TestCase):
         self.assertEqual(spec.parameters["boundary_reference"], "both_books")
 
     def test_pan_mouth_faces_two_blocks_and_brush_on_image_right(self):
-        entry, cfg = resolve_task("L3-15")
+        entry, cfg = resolve_task("L3-05")
         entry.factory.prepare_config(cfg)
         spec = build_spec(cfg.task_id)
         articles = {a.name: a for a in spec.design.articles}
@@ -197,7 +197,7 @@ class PhotoLayoutTests(unittest.TestCase):
     def test_ink_rotation_keeps_face_up_and_contact_map_on_visible_board(self):
         from robot_tasks.tasks.bench.wiping import INK_TEXT, INK_COLOR, ink_centers
 
-        entry, cfg = resolve_task("L3-11")
+        entry, cfg = resolve_task("L3-03")
         entry.factory.prepare_config(cfg)
         spec = build_spec(cfg.task_id)
         self.assertEqual(cfg.arms, ("right",))

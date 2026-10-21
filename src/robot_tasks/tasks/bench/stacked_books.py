@@ -1,4 +1,4 @@
-"""Streaming contact evidence for the real L3-14 stack-transfer/360-degree task."""
+"""Streaming contact evidence for the real L3-04 stack-transfer/360-degree task."""
 import math
 import numpy as np
 from ...robots.transforms import pose_transform
@@ -10,7 +10,7 @@ def grasp_contact(row, arm):
     """Opposing measured finger forces distinguish squeezing from same-face pushing."""
     forces = np.asarray(row['finger_force_vectors'][arm], dtype=float)
     if forces.shape != (2, 3) or not np.isfinite(forces).all():
-        raise ValueError('Invalid L3-14 finger force vectors')
+        raise ValueError('Invalid L3-04 finger force vectors')
     norms = np.linalg.norm(forces, axis=1)
     return bool(min(norms) > .05 and np.dot(forces[0], forces[1]) < -.5 * np.prod(norms))
 

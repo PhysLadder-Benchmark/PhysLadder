@@ -67,6 +67,9 @@ def bundles(root):
     groups = {"common": layout["shared"], **{
         task: data["props"] for task, data in layout["tasks"].items()}}
     for group, props in groups.items():
+        directory = layout["tasks"].get(group, {}).get("directory", group)
+        if len(relative_path(directory).parts) != 1:
+            raise ValueError(f"Expected one directory component: {directory}")
         if len(set(props.values())) != len(props):
             raise ValueError(f"Duplicate asset mapping in {group}")
         for folder, asset in props.items():
@@ -90,12 +93,13 @@ def bundles(root):
                 raise ValueError(f"Bundle entry is not pinned: {asset}")
             yield Bundle(asset, package["id"],
                          root / "packages" / relative_path(package["directory"]) / base,
-                         root / "source" / group / folder, local_entry, files)
+                         root / "source" / directory / folder, local_entry, files)
 
 
 def find_bundle(root, group, asset):
+    directory = read_layout(root)["tasks"].get(group, {}).get("directory", group)
     for item in bundles(root):
-        if item.asset == asset and item.destination.parent.name == group:
+        if item.asset == asset and item.destination.parent.name == directory:
             return item
     raise ValueError(f"Asset {asset} is not registered for {group}")
 
@@ -104,8 +108,11 @@ def install_layout(root, package_ids=None):
     """Make independent copies; never overwrite a changed existing bundle."""
     installed = []
     complete=current_scene_tasks(root)
+    groups = {data.get("directory", task): task
+              for task, data in read_layout(root)["tasks"].items()}
     for item in bundles(root):
-        group=item.destination.parent.name
+        directory = item.destination.parent.name
+        group = groups.get(directory, directory)
         if group in complete or (complete and group=='common'):
             continue  # Current configs load complete scenes; never restore older props over them.
         if package_ids is not None and item.package not in package_ids:
@@ -130,7 +137,7 @@ def install_layout(root, package_ids=None):
         if task in complete:
             continue
         for folder, implementation in data.get("generated", {}).items():
-            destination = root / "source" / relative_path(task) / relative_path(folder)
+            destination = root / "source" / relative_path(data.get("directory", task)) / relative_path(folder)
             destination.mkdir(parents=True, exist_ok=True)
             readme = destination / "README.md"
             if not readme.exists():

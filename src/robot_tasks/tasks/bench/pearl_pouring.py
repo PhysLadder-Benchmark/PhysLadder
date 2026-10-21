@@ -75,7 +75,7 @@ def pouring():
         instances.append({"name": name, "asset": "pearl_8mm", "pose": initial,
                           "tracked": {name: ""}})
     return BenchSpec(
-        replace(design("L2-04", "纸杯间倒珍珠", articles, []),
+        replace(design("L2-03", "纸杯间倒珍珠", articles, []),
                 version="l2-04-overview-right-to-left-v8",
                 provenance="Existing L20 ripple paper cups and 8 mm pearls; real-task reference: pearl-pouring.md"),
         arms=("right",),

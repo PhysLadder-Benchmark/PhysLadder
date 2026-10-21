@@ -8,20 +8,20 @@ from video_scene_metadata import record
 
 
 def apply(stage, tid, rows, assets_root):
-    if tid not in ('L1-09','L2-04'):
+    if tid not in ('L1-05','L2-03'):
         return None
-    source = rows['L2-04']
+    source = rows['L2-03']
     package = assets_root/source['path']
     original = Usd.Stage.Open(str(package))
     source_cup = pose_transform(source['tracked']['source_cup']['pose'])
     inverse = np.linalg.inv(source_cup)
-    target_name = 'target_cup' if tid == 'L1-09' else 'source_cup'
+    target_name = 'target_cup' if tid == 'L1-05' else 'source_cup'
     target_cup = pose_transform(rows[tid]['tracked'][target_name]['pose'])
-    root = '/World/Household' if tid == 'L1-09' else '/World/L2'
+    root = '/World/Household' if tid == 'L1-05' else '/World/L2'
     cache = UsdGeom.XformCache()
     result = {}
     positions=[]
-    count = 12 if tid == 'L2-04' else 10
+    count = 12 if tid == 'L2-03' else 10
     for i in range(count):
         template = source['tracked']['load_'+str(i%5)]
         relative = inverse @ pose_transform(template['pose'])
@@ -37,10 +37,10 @@ def apply(stage, tid, rows, assets_root):
             else:
                 relative[:3,3]=[0.,(i-10.5)*.0165*np.sqrt(3),z+.0165]
         positions.append(relative[:3,3].copy())
-        if tid == 'L2-04' and i < 5:
+        if tid == 'L2-03' and i < 5:
             continue  # Keep every original native initial pose.
         world = target_cup @ relative
-        name = ('filler_' if tid == 'L1-09' else 'load_')+str(i)
+        name = ('filler_' if tid == 'L1-05' else 'load_')+str(i)
         prim = stage.DefinePrim(root+'/'+name,'Xform')
         prim.GetReferences().AddReference(str(package.resolve()),Sdf.Path(template['path']))
         parent = np.asarray(cache.GetParentToWorldTransform(prim)).T
@@ -48,7 +48,7 @@ def apply(stage, tid, rows, assets_root):
         xform.ClearXformOpOrder()
         xform.AddTransformOp().Set(Gf.Matrix4d((np.linalg.inv(parent)@world).T.tolist()))
         result[name] = record(stage,str(prim.GetPath()))
-    if tid == 'L2-04':
+    if tid == 'L2-03':
         # Contact reporting disables sleeping. Resolve the loaded cup's contact
         # stack accurately instead of freezing the cup or any glass sphere.
         bodies = {**rows[tid]['tracked'], **result}
@@ -69,11 +69,11 @@ def apply(stage, tid, rows, assets_root):
             'packing_validation':{'minimum_wall_clearance_m':float(clearances.min()),
                 'minimum_floor_clearance_m':float(positions[:,2].min()-.008-floor),
                 'minimum_centre_distance_m':float(distances.min()),'physics_settling_required':True},
-            'source_task':'L2-04','source_path':source['path'],
+            'source_task':'L2-03','source_path':source['path'],
             'source_sha256':source['sha256'],'source_bytes':source['bytes'],
-            'evidence':('User confirmed 12 glass balls for L2-04, 2026-10-15.' if tid == 'L2-04' else 'PR #19 L1 real-alignment record confirms ten glass balls; L2-04 real video inspection shows at least ten. Native saved scenes omitted these counts.'),
+            'evidence':('User confirmed 12 glass balls for L2-03, 2026-10-15.' if tid == 'L2-03' else 'PR #19 L1 real-alignment record confirms ten glass balls; L2-03 real video inspection shows at least ten. Native saved scenes omitted these counts.'),
             'limits':'Native 16 mm size/mass retained; real size and hidden packing are not measured. No white pearls are invented.'}
-    if tid == 'L2-04':
+    if tid == 'L2-03':
         metadata['contact_solver'] = {'position_iterations':64, 'velocity_iterations':16,
                                       'mass_friction_restitution_unchanged':True,
                                       'source_cup_and_all_balls_remain_dynamic':True}

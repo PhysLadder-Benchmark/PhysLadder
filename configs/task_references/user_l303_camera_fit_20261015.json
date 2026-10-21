@@ -1,5 +1,5 @@
 {
-  "reference_image": "configs/task_references/images/user_L3-03_camera_reference_20261015.png",
+  "reference_image": "configs/task_references/images/user_L3-01_camera_reference_20261015.png",
   "reference_image_sha256": "ae7bb59e476cec162d1597e26bfb78ac87c45ce2e8b987cbf58c344ef71ae913",
   "reference_size": [
     594,

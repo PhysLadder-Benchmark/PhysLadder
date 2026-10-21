@@ -119,7 +119,7 @@ class IsaacSimBackend:
                     from ..robots.finger_collision import configure_finger_collisions
                     self.environment_report["finger_collision_by_arm"] = {
                         mount.name: configure_finger_collisions(stage, mount.prim_path,
-                            torsional_patch_radius=.004 if config.task_id == 'L1-09' else 0.)
+                            torsional_patch_radius=.004 if config.task_id == 'L1-05' else 0.)
                         for mount in config.robot.mounts
                     }
                 validate_robot_binding(stage, config.robot)

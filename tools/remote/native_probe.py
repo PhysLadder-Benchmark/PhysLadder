@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 ROOT=Path(__file__).resolve().parents[2]
-p=argparse.ArgumentParser();p.add_argument('--task',default='L2-03');a=p.parse_args()
+p=argparse.ArgumentParser();p.add_argument('--task',default='L2-02');a=p.parse_args()
 out=ROOT/'runs/remote_validation'/os.uname().nodename/a.task
 out.mkdir(parents=True,exist_ok=True)
 (out/'result.json').unlink(missing_ok=True)

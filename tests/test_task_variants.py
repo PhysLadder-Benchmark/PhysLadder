@@ -13,7 +13,7 @@ from robot_tasks.registry import TASKS, resolve_task
 from robot_tasks.tasks.bench.arm_selection import resolve_bench_spec
 
 
-BASES = ('L2-01', 'L2-03', 'L2-04', 'L2-06', 'L2-07', 'L2-08')
+BASES = ('L2-01', 'L2-02', 'L2-03', 'L2-04', 'L2-05', 'L2-06')
 
 
 class TaskVariantTests(unittest.TestCase):

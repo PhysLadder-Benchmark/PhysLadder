@@ -1,4 +1,4 @@
-"""L1-09 passive startup plus 30 seconds of free rest; no model or prop forcing."""
+"""L1-05 passive startup plus 30 seconds of free rest; no model or prop forcing."""
 
 import argparse
 import json
@@ -48,7 +48,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',type=Path,required=True)
     args = parser.parse_args()
-    return check('L1-09',args.output,prepare=False,capture_hook=probe)
+    return check('L1-05',args.output,prepare=False,capture_hook=probe)
 
 
 if __name__ == '__main__':

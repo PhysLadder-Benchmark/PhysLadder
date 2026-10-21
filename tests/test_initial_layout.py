@@ -47,8 +47,8 @@ class InitialLayoutTests(unittest.TestCase):
         self.assertEqual(manifest, scenes())
 
     def test_loaded_cup_preserves_all_twelve_ball_relative_positions(self):
-        task={'id':'L2-04','initial_layout':'l2_p01'}
-        old=scenes()['L2-04']['tracked'];new=scene_record(task)['tracked']
+        task={'id':'L2-03','initial_layout':'l2_p01'}
+        old=scenes()['L2-03']['tracked'];new=scene_record(task)['tracked']
         balls=[n for n in old if n.startswith('load_')]
         self.assertEqual(len(balls),12)
         for name in balls:
@@ -86,11 +86,11 @@ class InitialLayoutTests(unittest.TestCase):
 
     def test_drawer_closed_frame_and_books_extraction_axis_rotate_with_props(self):
         for before,after,_ in self.configs():
-            if before.task_id not in ('L2-03','L2-07'):
+            if before.task_id not in ('L2-02','L2-05'):
                 continue
             old=resolve_bench_spec(before.raw['task'],before.robot)
             new=resolve_bench_spec(after.raw['task'],after.robot)
-            name='drawer' if before.task_id=='L2-07' else 'middle_book'
+            name='drawer' if before.task_id=='L2-05' else 'middle_book'
             a=pose_transform(next(a.initial for a in old.design.articles if a.name==name))
             b=pose_transform(next(a.initial for a in new.design.articles if a.name==name))
             np.testing.assert_allclose(a[:3,:3].T @ old.parameters['outward_axis_world'],

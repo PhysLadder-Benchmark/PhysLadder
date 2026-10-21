@@ -53,7 +53,7 @@ def settle_rose(scene, tick, *, max_wait_s=120.):
                     'angular_speed_rad_s': float(np.linalg.norm(row['angular_velocity'])),
                     'bench_force_n': row['bench_force_n'],
                     'pose_or_velocity_forced': False}
-    raise RuntimeError('L1-09 rose did not reach supported rest before startup timeout; GPT was not called')
+    raise RuntimeError('L1-05 rose did not reach supported rest before startup timeout; GPT was not called')
 
 
 class SupportedCupFlowerRest:
@@ -114,10 +114,10 @@ def settle_cup_flower(scene, tick, *, max_wait_s=20.):
             angle = float(np.arccos(np.clip((np.trace(initial[:3,:3].T @ final[:3,:3])-1)/2,-1,1)))
             displacement = float(np.linalg.norm(final[:3,3]-initial[:3,3]))
             if angle > np.deg2rad(3.) or displacement > .005:
-                raise RuntimeError('L1-09 flower drifted from its supported initial layout; GPT was not called')
+                raise RuntimeError('L1-05 flower drifted from its supported initial layout; GPT was not called')
             return {'protocol':'passive_cup_flower_rest_v1', 'ready':True,
                     'wait_s':now-start, 'stable_window_s':monitor.duration_s,
                     'position_drift_m':displacement, 'rotation_drift_rad':angle,
                     'fixed_cups': sorted(monitor.fixed_names & {'source_cup', 'target_cup'}),
                     'pose_or_velocity_forced':False}
-    raise RuntimeError('L1-09 cup-supported flower did not settle before startup timeout; GPT was not called')
+    raise RuntimeError('L1-05 cup-supported flower did not settle before startup timeout; GPT was not called')

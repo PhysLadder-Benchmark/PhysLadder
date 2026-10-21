@@ -72,7 +72,7 @@ def compare_native(image_path, comparison_path, *, native_raster=True):
 
 
 if __name__ == '__main__':
-    report = compare_native(ROOT/'build/video_visual_fit_20261015/aligned_initial/L3-03/overview.png',
+    report = compare_native(ROOT/'build/video_visual_fit_20261015/aligned_initial/L3-01/overview.png',
                             ROOT/'reports/reference_image_camera_20261015.jpg')
     (ROOT/'reports/reference_image_camera_20261015.json').write_text(json.dumps(report, indent=2)+'\n')
     print(json.dumps(report, indent=2))

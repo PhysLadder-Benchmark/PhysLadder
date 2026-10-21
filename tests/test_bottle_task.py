@@ -12,7 +12,7 @@ from test_household_tasks import measurement
 
 class BottleTaskTests(unittest.TestCase):
     def setUp(self):
-        self.spec = build_spec("L3-03")
+        self.spec = build_spec("L3-01")
         self.rows = measurement(self.spec)
         self.e = BenchEvaluator(
             self.spec, {a.name: a.initial for a in self.spec.design.articles}
@@ -27,7 +27,7 @@ class BottleTaskTests(unittest.TestCase):
         return r
 
     def test_legacy_fixed_geometry_and_current_bimanual_permissions(self):
-        _, c = resolve_task("L3-03")
+        _, c = resolve_task("L3-01")
         self.assertLess(
             np.ptp(local_corners(self.cap)[:, 0]), c.robot.gripper.width_limits_m[1]
         )

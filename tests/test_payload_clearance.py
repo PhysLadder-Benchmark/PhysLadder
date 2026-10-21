@@ -108,7 +108,7 @@ class PayloadClearanceTests(unittest.TestCase):
 
     def delivered_flower_pickup(self, direction=1):
         from robot_tasks.tasks.bench.delivered_scene import flower_payload_surface
-        # L1-09 2026-10-16 formal run, step 6. The whole-body AABB reached
+        # L1-05 2026-10-16 formal run, step 6. The whole-body AABB reached
         # z=.8651 despite the actual collider remaining above z=.8829.
         pose = [.39672160148620605, 1.1641508340835571, .8823432922363281,
                 -.8336890339851379, -.1822560876607895, .1780846267938614, -.4899296760559082]

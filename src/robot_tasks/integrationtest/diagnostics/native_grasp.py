@@ -27,23 +27,23 @@ def probe(backend, task, output, *, check_planner=False, hold_s=1., grasp_style=
     task_id = config.task_id
     item, offset, opened, closed = {
         'L1-01': ('marker', (0,0,.125), .026, .014),
-        'L1-08': ('upper_cup', (-.038,0,.090), .012, .001),
-        'L1-07': ('hat', (-.089,0,.072), .012, .001),
-        'L1-09': ('rose', (0,0,0), .070, 0.),
+        'L1-04': ('upper_cup', (-.038,0,.090), .012, .001),
+        'L1-03': ('hat', (-.089,0,.072), .012, .001),
+        'L1-05': ('rose', (0,0,0), .070, 0.),
     }[task_id]
-    if task_id == 'L1-08' and grasp_style == 'body':
+    if task_id == 'L1-04' and grasp_style == 'body':
         offset, opened, closed = (0,.012,.042), .070, 0.
     initial = task.scene.measure()[item]
     target = np.array(initial['pose'][:3]) + offset
     orientation = np.array([np.sqrt(.5),0,0,-np.sqrt(.5)])
     rotation = pose_transform([*target,*orientation])[:3,:3]
-    if task_id in {'L1-07','L1-08'}:
+    if task_id in {'L1-03','L1-04'}:
         # Vertical fingers enter from above; a horizontal finger body would
         # already intersect the curved wall before this diagnostic even closes.
         rotation = np.array([[0,1,0],[0,0,-1],[-1,0,0]])
-    if task_id == 'L1-08' and grasp_style == 'body':
+    if task_id == 'L1-04' and grasp_style == 'body':
         rotation = pose_transform([*target,.6830127,.1830127,.1830127,-.6830127])[:3,:3]
-    if task_id == 'L1-09':
+    if task_id == 'L1-05':
         rose = pose_transform(initial['pose'])
         target = rose[:3,:3] @ np.array([0,0,.272]) + rose[:3,3] + [0,0,.005]
         # Pinch along the bud length. A crosswise pinch of its rounded surface
@@ -210,8 +210,8 @@ def probe(backend, task, output, *, check_planner=False, hold_s=1., grasp_style=
         visual_errors.extend(distance.tolist())
     placement=[]
     if place_nested:
-        if task_id != 'L1-08':
-            raise ValueError('Nested placement diagnostic is only for L1-08')
+        if task_id != 'L1-04':
+            raise ValueError('Nested placement diagnostic is only for L1-04')
         from ...planning.client import PlannerClient
         client=PlannerClient(config.robot,backend.settings.asset_directory/'curobo',log_directory=output)
         controller.planner=client
@@ -294,7 +294,7 @@ def probe(backend, task, output, *, check_planner=False, hold_s=1., grasp_style=
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('task',choices=['L1-01','L1-07','L1-08','L1-09'])
+    parser.add_argument('task',choices=['L1-01','L1-03','L1-04','L1-05'])
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--check-planner',action='store_true')
     parser.add_argument('--place-nested',action='store_true')

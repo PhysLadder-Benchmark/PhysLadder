@@ -19,9 +19,9 @@ from robot_tasks.tasks.bench.stacked_books import score
 from robot_tasks.video_delivery import effective_cameras, scenes
 from test_household_tasks import measurement
 
-L1 = ("L1-01", "L1-03", "L1-07", "L1-08", "L1-09")
-L2 = ("L2-01", "L2-03", "L2-04", "L2-06", "L2-07", "L2-08")
-L3 = ("L3-03", "L3-05", "L3-11", "L3-14", "L3-15")
+L1 = ("L1-01", "L1-02", "L1-03", "L1-04", "L1-05")
+L2 = ("L2-01", "L2-02", "L2-03", "L2-04", "L2-05", "L2-06")
+L3 = ("L3-01", "L3-02", "L3-03", "L3-04", "L3-05")
 
 
 class CombinedTaskTests(unittest.TestCase):
@@ -38,7 +38,7 @@ class CombinedTaskTests(unittest.TestCase):
             self.assertEqual(a.robot.source, b.robot.source)
 
     def test_l1_canonical_entries_preserve_frozen_selected_layout_and_rules(self):
-        selected = {"L1-01":3, "L1-03":3, "L1-07":2, "L1-08":1, "L1-09":1}
+        selected = {"L1-01":3, "L1-02":3, "L1-03":2, "L1-04":1, "L1-05":1}
         for tid, number in selected.items():
             _, a = resolve_task(tid)
             _, b = resolve_task(tid + "_v3")
@@ -73,7 +73,7 @@ class CombinedTaskTests(unittest.TestCase):
             self.assertEqual(effective_cameras(a.scene_id), effective_cameras(b.scene_id))
 
     def test_renderer_and_gpu_selection_coexist(self):
-        _, cfg = resolve_task("L2-08_v3")
+        _, cfg = resolve_task("L2-06_v3")
         raw = deepcopy(cfg.raw)
         raw["simulation"].update(active_gpu=7, physics_gpu=7)
         settings = SimulationSettings.from_config(replace(cfg, raw=raw))
@@ -94,7 +94,7 @@ class CombinedTaskTests(unittest.TestCase):
                                  "all_requests" if tid.startswith("L2") else "completed_generations")
 
     def test_l2_pouring_retains_empty_source_and_half_received(self):
-        for tid in ("L2-04", "L2-04_v3"):
+        for tid in ("L2-03", "L2-03_v3"):
             _, cfg = resolve_task(tid)
             spec = resolve_bench_spec(cfg.raw["task"], cfg.robot)
             self.assertEqual(spec.parameters["count"], 12)
@@ -102,7 +102,7 @@ class CombinedTaskTests(unittest.TestCase):
             self.assertEqual(spec.parameters["pouring_success_rule"], "empty_source_half_received_v1")
 
     def test_stacked_books_boundary_rules_belong_to_their_versions(self):
-        for tid, lower_only in (("L3-14", False), ("L3-14_v3", True)):
+        for tid, lower_only in (("L3-04", False), ("L3-04_v3", True)):
             _, cfg = resolve_task(tid)
             spec = resolve_bench_spec(cfg.raw["task"], cfg.robot)
             self.assertEqual(spec.parameters["boundary_reference"],
@@ -123,7 +123,7 @@ class CombinedTaskTests(unittest.TestCase):
             self.assertEqual(details["upper_book_containment_required"], not lower_only)
 
     def test_sweeping_requires_all_three_blocks(self):
-        for tid in ("L3-15", "L3-15_v3"):
+        for tid in ("L3-05", "L3-05_v3"):
             _, cfg = resolve_task(tid)
             spec = resolve_bench_spec(cfg.raw["task"], cfg.robot)
             self.assertEqual(spec.parameters["required"], 3)

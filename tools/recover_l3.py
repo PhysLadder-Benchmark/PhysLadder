@@ -5,7 +5,7 @@ sys.path.insert(0,str(ROOT/'src'))
 
 def arguments():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('task',choices=[t+s for t in ['L3-03','L3-05','L3-11','L3-14','L3-15'] for s in ['', '_v3']])
+    p.add_argument('task',choices=[t+s for t in ['L3-01','L3-02','L3-03','L3-04','L3-05'] for s in ['', '_v3']])
     p.add_argument('--gpu',type=int,required=True,help='nvidia-smi GPU index (0..7 on the current host)')
     p.add_argument('--pack',type=pathlib.Path)
     p.add_argument('--output',type=pathlib.Path)

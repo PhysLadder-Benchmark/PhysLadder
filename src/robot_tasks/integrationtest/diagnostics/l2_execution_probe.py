@@ -22,7 +22,7 @@ def check(task_id, poses, output, width=None, velocity_iterations=None, travel=0
     from ...robots.control import width_to_joints
     from ...types import Action, ArmCommand, EvaluationState
 
-    if task_id == "L2-07":
+    if task_id == "L2-05":
         raise ValueError(
             "The added drawer handle has been removed; old grasp fixtures are invalid. "
             "Qualify a native-lip contact fixture before running this diagnostic."
@@ -31,9 +31,9 @@ def check(task_id, poses, output, width=None, velocity_iterations=None, travel=0
         raise ValueError("Old step-close control requires the paired marker diagnostic")
     if marker_pair and task_id != "L2-01":
         raise ValueError("Paired marker diagnostic only supports L2-01")
-    if finish and task_id not in {"L2-04", "L2-06", "L2-07"}:
+    if finish and task_id not in {"L2-03", "L2-04", "L2-05"}:
         raise ValueError("Finish qualification supports only pouring, orange and drawer")
-    maximum = .085 if finish and task_id == "L2-07" else (.080 if task_id == "L2-06" else .05)
+    maximum = .085 if finish and task_id == "L2-05" else (.080 if task_id == "L2-04" else .05)
     if not np.isfinite(travel) or not 0 < travel <= maximum:
         raise ValueError(f"Probe travel must be between 0 and {maximum} m")
     os.environ.setdefault("OMNI_KIT_ACCEPT_EULA", "YES")
@@ -41,8 +41,8 @@ def check(task_id, poses, output, width=None, velocity_iterations=None, travel=0
     spec, config = resolve_task(task_id)
     config = spec.factory.prepare_config(config)
     if soft_physics is not None:
-        if task_id != "L2-06":
-            raise ValueError("Soft physics overrides require L2-06")
+        if task_id != "L2-04":
+            raise ValueError("Soft physics overrides require L2-04")
         overrides = json.loads(soft_physics.read_text(encoding="utf-8"))
         config = replace(config, raw={**config.raw, "orange_physics": {
             **config.raw.get("orange_physics", {}), **overrides}})
@@ -162,7 +162,7 @@ def check(task_id, poses, output, width=None, velocity_iterations=None, travel=0
             if assessment.status in {"failed", "invalid"}:
                 capture("terminal")
                 raise RuntimeError(assessment.reason)
-            if finish and task_id == "L2-06" and assessment.status == "succeeded":
+            if finish and task_id == "L2-04" and assessment.status == "succeeded":
                 return
             completed = completed + 1 if robot.feedback().status == "completed" else 0
             if tick % 24 == 23:
@@ -208,15 +208,15 @@ def check(task_id, poses, output, width=None, velocity_iterations=None, travel=0
             if width is not None
             else {
                 "L2-01": 0.012,
-                "L2-03": 0.015,
-                "L2-06": 0.023,
-                "L2-07": 0.035,
-                "L2-04": 0.055,
+                "L2-02": 0.015,
+                "L2-04": 0.023,
+                "L2-05": 0.035,
+                "L2-03": 0.055,
             }[task_id]
         )
         result["close_width_m"] = close
         widths = [close]
-        if task_id == "L2-06":
+        if task_id == "L2-04":
             widths = [w for w in (0.030, 0.026, 0.023, 0.021, 0.019) if w > close] + [
                 close
             ]
@@ -233,7 +233,7 @@ def check(task_id, poses, output, width=None, velocity_iterations=None, travel=0
         # Deliberately local, not a task-solving trajectory or goal-position helper.
         delta = (
             travel * np.asarray(task.spec.parameters["outward_axis_world"])
-            if task_id in {"L2-03", "L2-07"}
+            if task_id in {"L2-02", "L2-05"}
             else np.array([0.0, 0.0, travel])
         )
         result["requested_displacement_m"] = None if marker_pair else delta.tolist()
@@ -253,7 +253,7 @@ def check(task_id, poses, output, width=None, velocity_iterations=None, travel=0
                 goal = start + (np.array(lifted) - start) * ((i + 1) / 2)
             execute(Action(tuple(commands), config.control_dt_s), diagnostic_joint_goal=goal)
             after = capture(f"move_{i + 1}")
-            if finish and task_id == "L2-06" and assess().status == "succeeded":
+            if finish and task_id == "L2-04" and assess().status == "succeeded":
                 break
         if marker_pair:
             if task_id != "L2-01":
@@ -279,29 +279,29 @@ def check(task_id, poses, output, width=None, velocity_iterations=None, travel=0
                                                     and min(pair["cap"]["fingers"]["right"]) > .05)
         name = {
             "L2-01": "body",
-            "L2-03": "middle_book",
-            "L2-06": "orange",
-            "L2-07": "drawer",
-            "L2-04": "source_cup",
+            "L2-02": "middle_book",
+            "L2-04": "orange",
+            "L2-05": "drawer",
+            "L2-03": "source_cup",
         }[task_id]
-        key = "centroid" if task_id == "L2-06" else "pose"
+        key = "centroid" if task_id == "L2-04" else "pose"
         actual = np.asarray(after[name][key][:3]) - before[name][key][:3]
         result["measured_object_displacement_m"] = actual.tolist()
         result["passed"] = bool(np.linalg.norm(actual - delta) < 0.01)
         if marker_pair:
             result["passed"] = result.get("paired_close_passed", False)
-        if finish and result["passed"] and task_id == "L2-04":
+        if finish and result["passed"] and task_id == "L2-03":
             from .pearl_pour_motion import finish_pour
 
             result["scope"] = "Prepositioned open-finger R5 fixture, physical grip/pour/release through production planner; no GPT or visual grasp-selection success claim"
             result["passed"] = False
             finish_pour(backend, robot, task, config, execute, capture, assess)
             result["passed"] = assess().status == "succeeded"
-        if finish and task_id == "L2-06":
+        if finish and task_id == "L2-04":
             result["scope"] = "Prepositioned open-finger R5 grasp and 50 mm lift qualification through the production adapter; no GPT or autonomous approach evidence"
             result["passed"] = assess().status == "succeeded"
             capture("final_held_lift")
-        if finish and result["passed"] and task_id == "L2-07":
+        if finish and result["passed"] and task_id == "L2-05":
             result["passed"] = False
             execute(Action((ArmCommand("left", "gripper", (.07,)),), config.control_dt_s))
             capture("released")
@@ -309,7 +309,7 @@ def check(task_id, poses, output, width=None, velocity_iterations=None, travel=0
             # optional retreat after success must not invalidate a completed task.
             if assess().status != "succeeded":
                 pose = list(robot.state()["left"].tcp_pose_world_wxyz)
-                pose[1 if task_id == "L2-07" else 2] += .03
+                pose[1 if task_id == "L2-05" else 2] += .03
                 execute(Action((ArmCommand("left", "cartesian_pose", tuple(pose), frame="world"),), config.control_dt_s))
                 for _ in range(12):
                     backend.step(config.control_dt_s)
@@ -324,7 +324,7 @@ def check(task_id, poses, output, width=None, velocity_iterations=None, travel=0
     except Exception as exc:  # noqa: BLE001 - diagnostics must retain simulator/planner failures
         result["passed"] = False
         result["error"] = f"{type(exc).__name__}: {exc}"
-        if task_id == "L2-06" and result["checkpoints"]:
+        if task_id == "L2-04" and result["checkpoints"]:
             try:
                 capture("exception_state")
             except Exception:
@@ -350,7 +350,7 @@ def check(task_id, poses, output, width=None, velocity_iterations=None, travel=0
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("task", choices=["L2-01", "L2-03", "L2-04", "L2-06", "L2-07"])
+    p.add_argument("task", choices=["L2-01", "L2-02", "L2-03", "L2-04", "L2-05"])
     p.add_argument("--poses", required=True, type=Path)
     p.add_argument("--output", required=True, type=Path)
     p.add_argument("--width", type=float)
@@ -358,7 +358,7 @@ def main():
     p.add_argument("--step-close", action="store_true", help="Diagnostic only: reproduce old direct right closure")
     p.add_argument("--finish", action="store_true", help="Qualify cup pouring, orange held lift or drawer pull/release from the explicit grip fixture, without GPT")
     p.add_argument("--physics-hz", type=int, choices=[240, 480, 960], help="Explicit local step-size diagnostic override")
-    p.add_argument("--soft-physics", type=Path, help="L2-06 physics override JSON; diagnostic only")
+    p.add_argument("--soft-physics", type=Path, help="L2-04 physics override JSON; diagnostic only")
     p.add_argument("--velocity-iterations", type=int)
     p.add_argument(
         "--travel",

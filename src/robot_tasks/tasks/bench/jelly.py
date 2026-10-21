@@ -1,4 +1,4 @@
-"""L2-08: supplied gelatin FEM, with the reviewed Feishu English goal."""
+"""L2-06: supplied gelatin FEM, with the reviewed Feishu English goal."""
 from dataclasses import replace
 from functools import lru_cache
 import json
@@ -22,13 +22,13 @@ def jelly():
     base = orange()
     reference = jelly_reference()
     goal = reference['success_conditions']
-    row = scenes()['L2-08']
+    row = scenes()['L2-06']
     prop, support, pedestal = row['jelly'], row['l2_support_measurement'], row['fixtures'][0]
     article = replace(base.design.articles[0], name='jelly', initial=tuple(prop['pose']),
                       goal=tuple(prop['pose']), asset='delivery:jelly',
                       asset_bounds=tuple(map(tuple, prop['bounds'])), mass=prop['mass'])
     instruction = reference['simulation_prompt_en']
-    return replace(base, design=replace(base.design, task_id='L2-08',
+    return replace(base, design=replace(base.design, task_id='L2-06',
         name='果冻抬升并放回', articles=(article,), fixtures=(),
         instruction=instruction, version='l2-08-feishu-lift-return-v2'),
         mechanism='native_fem_jelly_lift', facts='',
@@ -50,7 +50,7 @@ class JellyScene(OrangeScene):
         from pxr import Usd, UsdGeom, UsdPhysics
         from .surface_distance import link_triangles
         if not backend.settings.gpu_dynamics:
-            raise ValueError('L2-08 jelly requires GPU dynamics')
+            raise ValueError('L2-06 jelly requires GPU dynamics')
         self.backend, self.config, self.spec, self.design = backend, config, spec, spec.design
         self.stage = backend.world.stage
         self.path = '/World/L2/jelly'
@@ -89,9 +89,9 @@ class JellyScene(OrangeScene):
             'version':self.design.version,'mechanism':spec.mechanism,
             'limitations':spec.limitations,'parameters':spec.parameters,
             'initial_poses':self.initial,'object_attachment':False,
-            'assets':[scenes()['L2-08']['derived_contents']],
+            'assets':[scenes()['L2-06']['derived_contents']],
             'native_physical_material_preserved':True,
-            'render_material_adapter':scenes()['L2-08']['jelly']['render_adapter'],
+            'render_material_adapter':scenes()['L2-06']['jelly']['render_adapter'],
             'soft_contact_measurement':'FEM collision vertices to finger triangle surfaces; proximity, not force',
             'deformation':'95th-percentile principal element strain; diagnostic only'}
 

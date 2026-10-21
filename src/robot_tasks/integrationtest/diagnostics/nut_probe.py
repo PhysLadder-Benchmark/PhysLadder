@@ -116,7 +116,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    return check("L3-05", args.output, prepare=False, capture_hook=hook)
+    return check("L3-02", args.output, prepare=False, capture_hook=hook)
 
 
 if __name__ == "__main__":

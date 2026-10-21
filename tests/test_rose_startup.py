@@ -40,7 +40,7 @@ class RoseStartupTests(unittest.TestCase):
         self.assertTrue(monitor.update(2.,r))
 
     def test_initial_native_colliders_are_near_support_without_penetration(self):
-        spec=build_spec('L1-09');t=pose_transform(spec.design.articles[0].initial)
+        spec=build_spec('L1-05');t=pose_transform(spec.design.articles[0].initial)
         lows={s['name']:transformed_poly('artificial_rose',i,t)[0][:,2].min()
               for i,s in enumerate(shapes('artificial_rose'))}
         self.assertGreaterEqual(min(lows.values()),spec.parameters['table_z'])

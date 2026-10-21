@@ -1,4 +1,4 @@
-"""Offline L3-03 workspace diagnostic; never imported by the robot policy.
+"""Offline L3-01 workspace diagnostic; never imported by the robot policy.
 
 Run in the planner environment (numpy/scipy/trimesh). Numerical IK only proposes
 joint-limit-respecting inspection poses; it is NOT the production planner.
@@ -167,9 +167,9 @@ class Geometry:
 def check(output):
     from .l2_clearance import solve_clear
 
-    _, config = resolve_task("L3-03")
+    _, config = resolve_task("L3-01")
     geometry = Geometry(config)
-    spec = build_spec("L3-03")
+    spec = build_spec("L3-01")
     body, cap = spec.design.articles
     # Bounds for the free body/neck; only the support fingers may touch the body.
     obstacles = [

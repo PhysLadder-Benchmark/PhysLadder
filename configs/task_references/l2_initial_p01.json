@@ -25,7 +25,7 @@
         }
       ]
     },
-    "L2-03": {
+    "L2-02": {
       "base_runtime_sha256": "8ab152a7e835b1cf02a77f39cc06da85621681eb4fc91c63000bf2af6ff6bbd8",
       "description_zh": "书堆与支撑盒整体水平偏转 15°；保留原有叠放间距、书页斜度和凸边支撑关系。",
       "operations": [
@@ -50,7 +50,7 @@
         }
       ]
     },
-    "L2-04": {
+    "L2-03": {
       "base_runtime_sha256": "b190d773e057f083c96511e661e8cb85708bf7a03cc1eb74cc68e31b50dc8371",
       "description_zh": "两杯居中前后排列、远离机械臂底座；源杯及 12 颗球在后，接收杯在前，中心间距 21 cm。",
       "operations": [
@@ -100,7 +100,7 @@
         }
       ]
     },
-    "L2-06": {
+    "L2-04": {
       "base_runtime_sha256": "e8438198a3363e7840aa17f1025a4dd124aa8d53a50df915b53db971b080d194",
       "description_zh": "橘瓣在原处水平旋转 90°，画面中长轴朝上下；盒子不动。",
       "operations": [
@@ -122,7 +122,7 @@
         }
       ]
     },
-    "L2-07": {
+    "L2-05": {
       "base_runtime_sha256": "fcdc25acce380539287aff2dca76bfb692006907521c213cda9fd495fb2ff11e",
       "description_zh": "收纳盒居中并向镜头方向前移 12 cm，远离机械臂底座；抽屉朝画面左侧抽拉。",
       "operations": [
@@ -145,7 +145,7 @@
         }
       ]
     },
-    "L2-08": {
+    "L2-06": {
       "base_runtime_sha256": "e4e56fae752f6860a45016c8eeff0c904996f72b66b8662b3d33f39941871b4e",
       "description_zh": "果冻向画面右侧平移 5 cm，靠近盒面右边缘，仍完全位于盒面内。",
       "operations": [

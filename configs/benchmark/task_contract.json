@@ -1,8 +1,9 @@
 {
   "schema_version": 2,
+  "numeric_comparison": "12 significant digits; magnitudes below 1e-12 treated as zero; source files exact SHA-256",
   "tasks": {
     "L1-01": {
-      "configuration": "33f9a4486402366c3431a7c2a739cf2da3853d28416358048300f6d7d519318a",
+      "configuration": "c53f9d8b6c447d4317e08c821921920147754577e705c89898e23ea8c2fb894f",
       "instruction": "8daac3fe488b9082519f98f0454e25a03134c0ea559ece4acdf5366894c54c23",
       "robot": "4757fe84d99595586f3202ec6f2d2a968ce5cd3a7498ef7be59d5f63cdede875",
       "simulation": "2cdd175687276e7da4958404d4b0d27a65e95e8a0cdf03e41b7527c5147eacad",
@@ -12,97 +13,97 @@
       "geometry_and_scoring": "1ae840895045e81ac2bab117e39c3f7331cd5dfcec5042e4ac9dd5f38050be57"
     },
     "L1-01_v3": {
-      "configuration": "d95992d0f325aeb9bc5b039b83da0dfc26b7a18455a7a938a6da8625a23392b4",
+      "configuration": "dc6e8aef25a03330f0e1bd97e89fcabf7218e63bd1b6e5279096b5bf9f17371f",
       "instruction": "8daac3fe488b9082519f98f0454e25a03134c0ea559ece4acdf5366894c54c23",
       "robot": "4757fe84d99595586f3202ec6f2d2a968ce5cd3a7498ef7be59d5f63cdede875",
       "simulation": "2cdd175687276e7da4958404d4b0d27a65e95e8a0cdf03e41b7527c5147eacad",
       "execution": "6e36701f43b307beb48a41918fa0cae7d74a641d2213df4370458cca624bdfa4",
       "system_instructions": "1b598ad720fb6ff0b36d58ee960740c84d025030d384383fc8f5b5114b2cfd52",
-      "initial_layout": "8232d0a06d6f13244c16fa292b3b499da243b328e36f160a4c58d4c3cce4972f",
+      "initial_layout": "1c6eb5101c711615fe2e2aa170c903104d9935e6570bebe44954c56e765763b1",
       "geometry_and_scoring": "5dd74f50ff75e54f990e5f89ac856fc7b89df6a6ccd07ccce86d48888f8b023e"
     },
-    "L1-03": {
-      "configuration": "a0c3407856c20e9c238b8c435fece9c8431a9f7c37ad6032923ff3149eaf71f7",
+    "L1-02": {
+      "configuration": "669eb627bd64e8743ecb64fb0957961f03ecb8a60084a97d871e8eade516cd8b",
       "instruction": "67048241ceb0600b0631f07a42560f3f606d657e6546851723bbffb4eb0abcd5",
       "robot": "8228d1bbecdb9bab0a9e5a9be958117d91c4a1bf6ed2b1d635dafe0efac4f181",
       "simulation": "2cdd175687276e7da4958404d4b0d27a65e95e8a0cdf03e41b7527c5147eacad",
       "execution": "6e36701f43b307beb48a41918fa0cae7d74a641d2213df4370458cca624bdfa4",
       "system_instructions": "1b598ad720fb6ff0b36d58ee960740c84d025030d384383fc8f5b5114b2cfd52",
       "initial_layout": "92d0f8de2d59c6b0dee3c1999b6f7c942a55a80409a5359c00f51f5358f4e92b",
-      "geometry_and_scoring": "7e1f099abc42ae48627caffe2a7ba96226736413325b7b3a0fb93ea11e40c532"
+      "geometry_and_scoring": "965698cdd71f072d81597e9b3872f269f6883ae8873abfb1e48fa4f8a2ff92a9"
     },
-    "L1-03_v3": {
-      "configuration": "aea9a3e61b37ce3e29550b44bca597c04a5995e2aaf6e00c3cc5ead381aad6bf",
+    "L1-02_v3": {
+      "configuration": "178a899057725c64a498e03c23d922915166911199d341308a81de492c4e6e40",
       "instruction": "67048241ceb0600b0631f07a42560f3f606d657e6546851723bbffb4eb0abcd5",
       "robot": "8228d1bbecdb9bab0a9e5a9be958117d91c4a1bf6ed2b1d635dafe0efac4f181",
       "simulation": "2cdd175687276e7da4958404d4b0d27a65e95e8a0cdf03e41b7527c5147eacad",
       "execution": "6e36701f43b307beb48a41918fa0cae7d74a641d2213df4370458cca624bdfa4",
       "system_instructions": "1b598ad720fb6ff0b36d58ee960740c84d025030d384383fc8f5b5114b2cfd52",
-      "initial_layout": "12eedd823930b75f8e2ecaf4db8320eaca5c55cbb3e36e0697ee112ef526862d",
-      "geometry_and_scoring": "14f83ea42b7034bcf73a9295f47298d0e932b08e12ad77f2dc87f02d7cd17fe8"
+      "initial_layout": "f6499adb847b635206e6c76fd43acbb7efae749df80f4760774f19db0878f72b",
+      "geometry_and_scoring": "c824394804062496e7408c36935a692e6647fdc08da7045b513ea0252e2e52ac"
     },
-    "L1-07": {
-      "configuration": "2ce84432f18610e1a66205360721cc46e132798859f835bd86b45ff54fd13fd3",
+    "L1-03": {
+      "configuration": "64726125121272d6db3b025440eda7e815610e52bb18760030eb53429d0e76ea",
       "instruction": "093f072cca7fd87737d581bee5be15aa5dca4af612b3bc95026d01bbfeb2b26e",
       "robot": "e1243005314591628b43e4a7287d7ef191413e2635eca22524884165dbb552f6",
       "simulation": "2cdd175687276e7da4958404d4b0d27a65e95e8a0cdf03e41b7527c5147eacad",
       "execution": "6e36701f43b307beb48a41918fa0cae7d74a641d2213df4370458cca624bdfa4",
       "system_instructions": "1b598ad720fb6ff0b36d58ee960740c84d025030d384383fc8f5b5114b2cfd52",
       "initial_layout": "076de10f38622d7916c15070ea25850a61cb6d13a77635a1ecc98254bf4bc305",
-      "geometry_and_scoring": "6e556df58a953ce290890838e5ada6fb7671256c857e516c89650b1bafb3dda8"
+      "geometry_and_scoring": "8a593a7a38ef63b83d93edd4b120529bace81f5a80e9a009ae2b05d16555dac2"
     },
-    "L1-07_v3": {
-      "configuration": "3846d475ca71091ac7c87db48980df187e50c001f042f2530a0b67e58365901d",
+    "L1-03_v3": {
+      "configuration": "2fd71713d9f8bfc89f7d84c60e70866d055fbc7505293971fa762c5855015ccc",
       "instruction": "093f072cca7fd87737d581bee5be15aa5dca4af612b3bc95026d01bbfeb2b26e",
       "robot": "e1243005314591628b43e4a7287d7ef191413e2635eca22524884165dbb552f6",
       "simulation": "2cdd175687276e7da4958404d4b0d27a65e95e8a0cdf03e41b7527c5147eacad",
       "execution": "6e36701f43b307beb48a41918fa0cae7d74a641d2213df4370458cca624bdfa4",
       "system_instructions": "1b598ad720fb6ff0b36d58ee960740c84d025030d384383fc8f5b5114b2cfd52",
-      "initial_layout": "09b2c15bb320f9684777b919a67b25a4e5997b7dbf0bb447f85abcdc87d87a35",
-      "geometry_and_scoring": "4088aef4f12f061b867f15845bcde8e6c22cd6b337e49c543942a63e76f2d8ed"
+      "initial_layout": "785d0d1bdf991910656f8bcccbbfacc1cb4474f137487994d3b8808702d3db40",
+      "geometry_and_scoring": "8a6f6ab4587fa53325e300eeba839e7da5a11fb5424242ad2b3a426c40eb6f1a"
     },
-    "L1-08": {
-      "configuration": "f56b3dcca5244bc35ce7c9b0f23bc04f8698c04c21bf429ae9272d1e8a7a369a",
+    "L1-04": {
+      "configuration": "9bb2a124c2a324269e67f1bcc347102073dabfada48c93f56a9acdd592d530b8",
       "instruction": "cb9e5f7ae4972ba0b657c9465c9123b442fe693d0e6069610ee8b9ca44481e62",
       "robot": "a8d8dd7363de3817603b7f64c5ce471a69500a009d216afad60ef3e8c335a3c6",
       "simulation": "9f9310d1d494cbc5ceaa304e7c59ab6d0f5302d1c6883d9139e77ff8689e49a9",
       "execution": "6e36701f43b307beb48a41918fa0cae7d74a641d2213df4370458cca624bdfa4",
       "system_instructions": "1ede39ee3a44b3d4844b3ea3f5ba1c6f3d86dabe6176902b644bbe4568be3779",
       "initial_layout": "fa20aeab116a01439cb56b6109c145ac72245fa960482ecb52b9a280eee8f36d",
-      "geometry_and_scoring": "376eebc654f97112be60bff86e8d42c7e66527d1d2f60f11c3ccc0549d636b95"
+      "geometry_and_scoring": "d47a8429d9e860ca3c71553a1192d08f58b16514ad88b0ed9186e602a64e99b7"
     },
-    "L1-08_v3": {
-      "configuration": "db1a41b931ea13a58c7ea8b037368e0c32f70ed6564fdd620f3f085c4938e192",
+    "L1-04_v3": {
+      "configuration": "05ff680ef814c85c498b1258c7ab666cc936319683da0efa5446977825b43612",
       "instruction": "cb9e5f7ae4972ba0b657c9465c9123b442fe693d0e6069610ee8b9ca44481e62",
       "robot": "a8d8dd7363de3817603b7f64c5ce471a69500a009d216afad60ef3e8c335a3c6",
       "simulation": "9f9310d1d494cbc5ceaa304e7c59ab6d0f5302d1c6883d9139e77ff8689e49a9",
       "execution": "6e36701f43b307beb48a41918fa0cae7d74a641d2213df4370458cca624bdfa4",
       "system_instructions": "1ede39ee3a44b3d4844b3ea3f5ba1c6f3d86dabe6176902b644bbe4568be3779",
-      "initial_layout": "54d062c15d4101caa4e8688cf78fc7b1a7695086b8511ef079f268b73e86ad84",
-      "geometry_and_scoring": "1a4e8fc35a9935725ad7956c1c7b41314024e7629bcb8b9eab27b9198ce73d2b"
+      "initial_layout": "1299de963b537163dbc45e924acb3a4f855594ec57c107436337c40e932b8599",
+      "geometry_and_scoring": "4df367550b158e8bf50d31f9a045dfe15e8f279e2d0681314e5c7d4b1f8d8948"
     },
-    "L1-09": {
-      "configuration": "2690913382cce388b1d262a056857b21fd6bc65123977294f0bbe06054fd60c4",
+    "L1-05": {
+      "configuration": "61b606a31ffdf906eed9186d8b2bed6d89c46879da494a0cb4270a7e4b9ebb3b",
       "instruction": "743c0b366b2b6e749c49531b97da7271f30f4162a6fdeb1bc1b6191e2ef0958b",
       "robot": "af1696c6e41d4421993ec8ce7a43f4f79c0de8014954d50cc576da7e7917512f",
       "simulation": "9f9310d1d494cbc5ceaa304e7c59ab6d0f5302d1c6883d9139e77ff8689e49a9",
       "execution": "6e36701f43b307beb48a41918fa0cae7d74a641d2213df4370458cca624bdfa4",
       "system_instructions": "1b598ad720fb6ff0b36d58ee960740c84d025030d384383fc8f5b5114b2cfd52",
-      "initial_layout": "b7fbff74d7b293da23c762e3cde9e047d69043fac1c8d46e7f8a6d608f87daae",
-      "geometry_and_scoring": "0a8a3e41564745ed6003e8802fc8f6bf20125ab04537db45f104b4d25d790a26"
+      "initial_layout": "f9b37b7ec7ac3c41c4a7c190626d2b8dcb965550686fed6240b724e23ee54ae1",
+      "geometry_and_scoring": "a27c586fbd93d5e29f8a294e8fbd91cb7d3d9d68b2cb7daf6de673dce1659e1b"
     },
-    "L1-09_v3": {
-      "configuration": "9df64afefdc3c21462a56a0e9679da8c037a7770b0f0a94e2cd8bc590181877d",
+    "L1-05_v3": {
+      "configuration": "feb86fed014d6222b0b9191885b8e86112a4a97db3f5d4cc5290a7ab9ef103be",
       "instruction": "743c0b366b2b6e749c49531b97da7271f30f4162a6fdeb1bc1b6191e2ef0958b",
       "robot": "af1696c6e41d4421993ec8ce7a43f4f79c0de8014954d50cc576da7e7917512f",
       "simulation": "9f9310d1d494cbc5ceaa304e7c59ab6d0f5302d1c6883d9139e77ff8689e49a9",
       "execution": "6e36701f43b307beb48a41918fa0cae7d74a641d2213df4370458cca624bdfa4",
       "system_instructions": "1b598ad720fb6ff0b36d58ee960740c84d025030d384383fc8f5b5114b2cfd52",
-      "initial_layout": "51a1fe48ceea51959655c5d4a8bc5035259ecfe196e0e32b4643545800ec0cde",
-      "geometry_and_scoring": "e9d96395ae9198eaca85c72066e77423844dbc644d0fc77c1d64a5eb0084dac0"
+      "initial_layout": "fdfe3603cc2c5f8088b94d923ce07b9154bd32c5dbd5642ce9316d7fad205884",
+      "geometry_and_scoring": "bd7c8ed27f7a6aa649f47d942f9dd59ba2bdee46964a15d7d14db553dae3ceba"
     },
     "L2-01": {
-      "configuration": "ef22a1aff5f4354b021f2e7a2323cc2245b1716015508d36dbc95df9760dfd16",
+      "configuration": "5b455ee9676801ce4e37f60624cd4fff9a77879eb33eed9081d3431812cd0967",
       "instruction": "ca441a5217aad1f3bce09d22c72efae98ec6b7e5db1ff87733e36dfc56cd132e",
       "robot": "97ad882f7b68db232a78b0474d2ae328dbc3097f766d8372424e56a01005a572",
       "simulation": "7afa48be88be988c38b419f91c89490485eccd083f272b81cfe84421c67ada42",
@@ -112,7 +113,7 @@
       "geometry_and_scoring": "4af58bc0f11c2c8de951940c70fb3caebfad9e813c6926c9f50b443d86cec72f"
     },
     "L2-01_v3": {
-      "configuration": "0c1e81c69f8e5047d5ec9e52a3a41b66a85b7588070d7c2eebca2c4f74aec800",
+      "configuration": "69d95c9d0fc0726d5f5d775f94f447ec5bd0810d9f270cdc387adca64e87d0e8",
       "instruction": "ca441a5217aad1f3bce09d22c72efae98ec6b7e5db1ff87733e36dfc56cd132e",
       "robot": "97ad882f7b68db232a78b0474d2ae328dbc3097f766d8372424e56a01005a572",
       "simulation": "7afa48be88be988c38b419f91c89490485eccd083f272b81cfe84421c67ada42",
@@ -121,246 +122,246 @@
       "initial_layout": "c481bdb9864d677e0b356aa601e2ee359afae042d798e0da85e53ab8f7d6e267",
       "geometry_and_scoring": "2438bd2d9a879c16488005b3ea99fd2e555e60823418309819938676bf57d5ae"
     },
-    "L2-03": {
-      "configuration": "8c383d42130db1f61f272cd15f13b01201612c5ea51887f74aa2c3d1ba14a73f",
+    "L2-02": {
+      "configuration": "1ef674391807d81578a4709482b05d571dab0fa6ac573a0c036aadbe218671b5",
       "instruction": "c823162c5cc59609a99283a16c92acd74a2cb1df9fbc674db1e9cb9c0e076e7d",
       "robot": "97ad882f7b68db232a78b0474d2ae328dbc3097f766d8372424e56a01005a572",
       "simulation": "7afa48be88be988c38b419f91c89490485eccd083f272b81cfe84421c67ada42",
       "execution": "6e36701f43b307beb48a41918fa0cae7d74a641d2213df4370458cca624bdfa4",
       "system_instructions": "bac8e972cc42713e4f24d76ae60328b2c41c95edcb49f55092d31d415b1a2a86",
       "initial_layout": "62e182890beb37073ab63d762ca70b252ce836bb56e230bbb0612b45d888e720",
-      "geometry_and_scoring": "4ea47fc4265f78427e339fbfce740ba13010bf9ba46306de202494d9c6ef34d5"
+      "geometry_and_scoring": "e2a4b7c0b5f965dec61ac4145738b543365129b194b35f89544d676f893e087b"
     },
-    "L2-03_v3": {
-      "configuration": "e872242207152f2aa279d873ea93b7c81a9d5a1ac47b6f5f161ae1463290e037",
+    "L2-02_v3": {
+      "configuration": "7dbadc5e115bda7a98186980bb4d068055f8ec3b02ebd5885bfe0941aaa03b9d",
       "instruction": "c823162c5cc59609a99283a16c92acd74a2cb1df9fbc674db1e9cb9c0e076e7d",
       "robot": "97ad882f7b68db232a78b0474d2ae328dbc3097f766d8372424e56a01005a572",
       "simulation": "7afa48be88be988c38b419f91c89490485eccd083f272b81cfe84421c67ada42",
       "execution": "6e36701f43b307beb48a41918fa0cae7d74a641d2213df4370458cca624bdfa4",
       "system_instructions": "bac8e972cc42713e4f24d76ae60328b2c41c95edcb49f55092d31d415b1a2a86",
       "initial_layout": "85f02c88afb3e154267ff1836854f1147c201421b1b4dc44fae6ed342f79ff21",
-      "geometry_and_scoring": "4da61196d9b7ec14682c9f6634b7a68be87a6e2cf26ada41258c853d0976a20c"
+      "geometry_and_scoring": "7e4fa46fa496c8daf95d68d25d23772adb7cbd3af2a3315efe36f09d99a3ccd8"
+    },
+    "L2-03": {
+      "configuration": "ec82e4dc86aaff4b437ad7186e5aa3e58427d06ade03c529bede84534fce69e9",
+      "instruction": "fd5d612a67986b8b09d07682bdf29e0a923bd2ccb05400d657563e695a4e65bc",
+      "robot": "3b3616c898c0e74b32d9d088290fc7f120f4db5a1a07dbdc0a5043f1658e4158",
+      "simulation": "7afa48be88be988c38b419f91c89490485eccd083f272b81cfe84421c67ada42",
+      "execution": "6e36701f43b307beb48a41918fa0cae7d74a641d2213df4370458cca624bdfa4",
+      "system_instructions": "6029e8e28ef19055e9b31ba200189cf503eaa970244ed3a6843603fe6a027863",
+      "initial_layout": "8f471d0a9cb15668af4ede77222a587d06204f0c807ea4de9b2e54fdb94ea9dc",
+      "geometry_and_scoring": "890f7ea7e11810d4fa7c466835fca46e764b80d07a0dd8ad33eaec42dc49040f"
+    },
+    "L2-03_v3": {
+      "configuration": "c7ccaa4cb054a388944e438b48ef441195852e2b4886295543a7b73b51303a20",
+      "instruction": "fd5d612a67986b8b09d07682bdf29e0a923bd2ccb05400d657563e695a4e65bc",
+      "robot": "3b3616c898c0e74b32d9d088290fc7f120f4db5a1a07dbdc0a5043f1658e4158",
+      "simulation": "7afa48be88be988c38b419f91c89490485eccd083f272b81cfe84421c67ada42",
+      "execution": "6e36701f43b307beb48a41918fa0cae7d74a641d2213df4370458cca624bdfa4",
+      "system_instructions": "6029e8e28ef19055e9b31ba200189cf503eaa970244ed3a6843603fe6a027863",
+      "initial_layout": "4dfdfe12fc8434264fb3ebce6e840c672bb2c5a7600deb8872060e0a06fb5c17",
+      "geometry_and_scoring": "da64f0fbefef3cb71270de1eb4f1d728aa25990a825ac09d410eba80db8bf393"
     },
     "L2-04": {
-      "configuration": "f44fbc6daee918e9536882083fabe726e0d0ba7696e828e4c8af655bad2c0d36",
-      "instruction": "fd5d612a67986b8b09d07682bdf29e0a923bd2ccb05400d657563e695a4e65bc",
-      "robot": "3b3616c898c0e74b32d9d088290fc7f120f4db5a1a07dbdc0a5043f1658e4158",
-      "simulation": "7afa48be88be988c38b419f91c89490485eccd083f272b81cfe84421c67ada42",
-      "execution": "6e36701f43b307beb48a41918fa0cae7d74a641d2213df4370458cca624bdfa4",
-      "system_instructions": "6029e8e28ef19055e9b31ba200189cf503eaa970244ed3a6843603fe6a027863",
-      "initial_layout": "2e036cde8c25b57c8da3a12120fb392e837e63a95832f115e79051a5cbff41db",
-      "geometry_and_scoring": "88ed6fac25d87d7e72ef4c665d647ea4ead650b6110f5c7f271d9087039464c5"
-    },
-    "L2-04_v3": {
-      "configuration": "748a39f512ab6bd63c22598c75a7cd0899022d1813c4149635fd6c7c856f3406",
-      "instruction": "fd5d612a67986b8b09d07682bdf29e0a923bd2ccb05400d657563e695a4e65bc",
-      "robot": "3b3616c898c0e74b32d9d088290fc7f120f4db5a1a07dbdc0a5043f1658e4158",
-      "simulation": "7afa48be88be988c38b419f91c89490485eccd083f272b81cfe84421c67ada42",
-      "execution": "6e36701f43b307beb48a41918fa0cae7d74a641d2213df4370458cca624bdfa4",
-      "system_instructions": "6029e8e28ef19055e9b31ba200189cf503eaa970244ed3a6843603fe6a027863",
-      "initial_layout": "09d91147cf1c197a2f4fbd9ee56d6c81dd25b5d241cbcb8355e8d9b2e8862318",
-      "geometry_and_scoring": "b3cb56ac782a0d0896afa5d48f83a6fa98740a31517ec056bb6d33ba25866b77"
-    },
-    "L2-06": {
-      "configuration": "1308e55da4818013ef4380b5b8877461a4265188784e9bb23cfede61bd273054",
+      "configuration": "4b5d6d2135f5591b73d55cb7f7dc31977eb3bd66d6dcebdb347fb83e3afdeb17",
       "instruction": "23e3f8d01eee5383c09b3dd82e42c3f9247ace36fe6b5125286c354b2dd47e56",
       "robot": "94b605a1f3f8a3b7c95b6dc0ce1c41a036fec67f135c9c47e2410abbd238a3af",
       "simulation": "5929fadd4a597df0b89fcfd721409d422c07220cf53eda0cc2cf47f2972554fd",
       "execution": "6e36701f43b307beb48a41918fa0cae7d74a641d2213df4370458cca624bdfa4",
       "system_instructions": "6029e8e28ef19055e9b31ba200189cf503eaa970244ed3a6843603fe6a027863",
       "initial_layout": "5a3eb2ac263e752f92d57db0cdc4e2b25b81b85d0574305b748d7ea49c48ba60",
-      "geometry_and_scoring": "c9d85b56b619a08638a3b3f1b8e5755c511ce70693a2da75c37eadfd28ff9cca"
+      "geometry_and_scoring": "6fee289ae65aac95c630c25f80ed165d05a85be3a0c9c65dd84a5bd8c85d2b6d"
     },
-    "L2-06_v3": {
-      "configuration": "c9a1764bfec338000e45d2f570f2dbddc0a23318614bbe8744a51fac4fc4a871",
+    "L2-04_v3": {
+      "configuration": "b993b3a188c9affeea07085a9895e5708409d8a2fa180557119d7b21dc360db4",
       "instruction": "23e3f8d01eee5383c09b3dd82e42c3f9247ace36fe6b5125286c354b2dd47e56",
       "robot": "94b605a1f3f8a3b7c95b6dc0ce1c41a036fec67f135c9c47e2410abbd238a3af",
       "simulation": "5929fadd4a597df0b89fcfd721409d422c07220cf53eda0cc2cf47f2972554fd",
       "execution": "6e36701f43b307beb48a41918fa0cae7d74a641d2213df4370458cca624bdfa4",
       "system_instructions": "6029e8e28ef19055e9b31ba200189cf503eaa970244ed3a6843603fe6a027863",
       "initial_layout": "c8047a96a32a87996061f72f9566d2a894b42c47e99aa9a663f526e3be90af9a",
-      "geometry_and_scoring": "3a317ef98f03795f7fda9a18317401a3c616fe802dae07ace3d9c41948be93a0"
+      "geometry_and_scoring": "5032469337d6557b3c848bbaf83e655150f9decd6748c51e69739b260a3141e1"
     },
-    "L2-07": {
-      "configuration": "11e419ed302b557957dcb14ecdbed85b263f0185e37029a9b966f3bc8aeda7b3",
+    "L2-05": {
+      "configuration": "ecee3aaada619ae75d2e23778caa039bb29716a332551af98586b6479b0f95c2",
       "instruction": "841473feafa8d18ef8c7cb4a4dd84e89da08069bd89db451cee95d06e1648be6",
       "robot": "8141d41df2e5f1dc133dac777611003a19ed8a313d6dc3a9fba424159bb9fbbe",
       "simulation": "7afa48be88be988c38b419f91c89490485eccd083f272b81cfe84421c67ada42",
       "execution": "6e36701f43b307beb48a41918fa0cae7d74a641d2213df4370458cca624bdfa4",
       "system_instructions": "6029e8e28ef19055e9b31ba200189cf503eaa970244ed3a6843603fe6a027863",
       "initial_layout": "318b08528e5ffcecc58b63e1d6eeec5e5167c927849a3e1b6eb9178a261bcb98",
-      "geometry_and_scoring": "1b60394df5e997857495a7652ba622b24ef68eb61e2ad91a1d0cbcb252627305"
+      "geometry_and_scoring": "0bcba5ca37a425f5acafcd14bef8d1c984a15c23046cad290faeed8c5b0ca473"
     },
-    "L2-07_v3": {
-      "configuration": "22651697b9d33186f8ec3f1c8ccfc8c503392a1f7338f0c08f20392a588e1e92",
+    "L2-05_v3": {
+      "configuration": "fd5dbf6ee13fb32e659e456ee410ceea057c8230452b802bc8c10f6df768796f",
       "instruction": "841473feafa8d18ef8c7cb4a4dd84e89da08069bd89db451cee95d06e1648be6",
       "robot": "8141d41df2e5f1dc133dac777611003a19ed8a313d6dc3a9fba424159bb9fbbe",
       "simulation": "7afa48be88be988c38b419f91c89490485eccd083f272b81cfe84421c67ada42",
       "execution": "6e36701f43b307beb48a41918fa0cae7d74a641d2213df4370458cca624bdfa4",
       "system_instructions": "6029e8e28ef19055e9b31ba200189cf503eaa970244ed3a6843603fe6a027863",
       "initial_layout": "c051bc0280ffe980a8367700c7a73001c3ddf964d9f92025c20ebf45ded80dc0",
-      "geometry_and_scoring": "165b3b7aa9bd037aea52817274a78fe2f9dda76319da3282e27ea5ec9ed51397"
+      "geometry_and_scoring": "a824a0bb3a0e6533154d451b3526bfde7ee0a76832ba6b43e3354fc40acab7b7"
     },
-    "L2-08": {
-      "configuration": "7de5d3c3565ba6103584544d950dc3e66b234c84472010c7815242c2f585b67e",
+    "L2-06": {
+      "configuration": "8b419e2c43eb4dff2d057d0256fe9a744dda144906b83f5f0dbb79c50c8e8dcf",
       "instruction": "297e88e3f076c7de2e0ec9d8aa372925ec8c11781799f0da1857ba51c6c77b7c",
       "robot": "94b605a1f3f8a3b7c95b6dc0ce1c41a036fec67f135c9c47e2410abbd238a3af",
       "simulation": "1c821d6e0e60727030020bfbb7989b2daf90783b6e6cf57cd2dddd515cb35f0b",
       "execution": "6e36701f43b307beb48a41918fa0cae7d74a641d2213df4370458cca624bdfa4",
       "system_instructions": "6029e8e28ef19055e9b31ba200189cf503eaa970244ed3a6843603fe6a027863",
-      "initial_layout": "0dc97deeb066fc2841f23b7e3b2f9e242b63a9417e5c28905fa9b73c6f5098dc",
-      "geometry_and_scoring": "e75eb0df4454b22a538b2fecd6bc775328c513702cb40978c7c64ba87dae7df4"
+      "initial_layout": "34ceeee89a10d2ae62e48ffb7c776b0cef19390984986849473b1282d85c4a73",
+      "geometry_and_scoring": "ca2405515cfd4d1b7b3d1c6ba20963dce4b84ee040d592d083009df2e33a1787"
     },
-    "L2-08_v3": {
-      "configuration": "b6b256aa82831f805b4bbf02aff8e4d158ec4b8186db3da446eebf54e845cec1",
+    "L2-06_v3": {
+      "configuration": "62c4ff6949d176c09b11eaaf7cff0ac6407b8ff9bb656d9dcfc47b24a6d7a53d",
       "instruction": "297e88e3f076c7de2e0ec9d8aa372925ec8c11781799f0da1857ba51c6c77b7c",
       "robot": "94b605a1f3f8a3b7c95b6dc0ce1c41a036fec67f135c9c47e2410abbd238a3af",
       "simulation": "1c821d6e0e60727030020bfbb7989b2daf90783b6e6cf57cd2dddd515cb35f0b",
       "execution": "6e36701f43b307beb48a41918fa0cae7d74a641d2213df4370458cca624bdfa4",
       "system_instructions": "6029e8e28ef19055e9b31ba200189cf503eaa970244ed3a6843603fe6a027863",
-      "initial_layout": "795fa53c3deb06a4889190c0061f6b1bf322848f8b8f0c90c2c114105d373d5e",
-      "geometry_and_scoring": "88fba0e974f3692425a7afc15560f2bd7d01baa134ee5747e0498f229b195b0e"
+      "initial_layout": "88223828b4f250de67086423f5a0351aacec37080ceabec471d5c1291847d407",
+      "geometry_and_scoring": "425d40e8b28c53ba2726ea168ed6bd9e124cd1e319ef26c88c7c75e35f11407d"
     },
-    "L3-03": {
-      "configuration": "828e2c410dd1d5a9ee15d3277eece310b60a8db47de808bd528b63ac4dc814cc",
+    "L3-01": {
+      "configuration": "ff6c75a2359fa6a6b9c82f4d652b183e69176668140eb7631376fd8b9eeb3870",
       "instruction": "eacb79cc5649a11b1d5a05e6c891b29a2c64de2d374629f8a0eb4edf64cba372",
       "robot": "2ffc5d023586d92eaf887b0ab3af428311b6035dc3d9b675b667fd06c966f663",
       "simulation": "f6552b26929e2da1d4c0b7d8cce54c527953f62327b8009bb4634a96331f2599",
       "execution": "a80236e3c461ac2d23339c83a002d4cadbe1c98f9ce447a40b20ca82ad7b08b7",
       "system_instructions": "bac8e972cc42713e4f24d76ae60328b2c41c95edcb49f55092d31d415b1a2a86",
-      "initial_layout": "0ef9fc52103e8b39d799638b85f733358e9633ecb9e78bc1c27eb00c01d91a5a",
-      "geometry_and_scoring": "eda43fc09b423fe804fc3312391daeb5feb5d45e88995095fce00d8d1c3f7c24"
+      "initial_layout": "5c07b7e4ebeee09ca26190dd76f3f92e0eebcf8761b653b8c5c3746f6edde963",
+      "geometry_and_scoring": "8d31c311abc553b76b894c2e906a5d6e7d37ec3f437728889bedf49c9e2f7978"
     },
-    "L3-03_v3": {
-      "configuration": "db301da2f512f1cac23c002a2f68209cefebe693dd167e9aff5f99a362532633",
+    "L3-01_v3": {
+      "configuration": "20c8cf15af18edfe1ee12e1434d767f5fc95efbfeae9df70be69b2fcca0fa4a8",
       "instruction": "eacb79cc5649a11b1d5a05e6c891b29a2c64de2d374629f8a0eb4edf64cba372",
       "robot": "2ffc5d023586d92eaf887b0ab3af428311b6035dc3d9b675b667fd06c966f663",
       "simulation": "f6552b26929e2da1d4c0b7d8cce54c527953f62327b8009bb4634a96331f2599",
       "execution": "a80236e3c461ac2d23339c83a002d4cadbe1c98f9ce447a40b20ca82ad7b08b7",
       "system_instructions": "bac8e972cc42713e4f24d76ae60328b2c41c95edcb49f55092d31d415b1a2a86",
-      "initial_layout": "307507fc885079a9e4ea7a27025a36988aabba4a93b1610ce90b90b4228a77c3",
-      "geometry_and_scoring": "64b7464edf8c3def7a9c6ab68feaa619c8c977aa39b57f4540e10f038e9b151d"
+      "initial_layout": "70c14824e95620e3ed07b90cbb0a8fb5ad36cb5b09c41edb6805cd352a5a0e83",
+      "geometry_and_scoring": "968b86f8da5b3d1136fe184d918ca9bd3060af0c97cde0c0c32beef8ec1c2b7e"
     },
-    "L3-05": {
-      "configuration": "53bbade9b9026b44ce45f80d85ded4fa4a24a825c003075fa9b18fe8066a6218",
+    "L3-02": {
+      "configuration": "b06df55b8b3192d1bb60313dda6e4f1d6a8b0ed83b256a8e27c7e46a195fc758",
       "instruction": "83f499e9b03b12527ad7f2b285224bbf098e6627e00ab3118cf0089aa8441531",
       "robot": "00e07cd02cb6d3e93dba64c1cccf7ad913309cea49f164704bb5cbd874fc5abe",
       "simulation": "f6552b26929e2da1d4c0b7d8cce54c527953f62327b8009bb4634a96331f2599",
       "execution": "a80236e3c461ac2d23339c83a002d4cadbe1c98f9ce447a40b20ca82ad7b08b7",
       "system_instructions": "ab85174cf2e7b6d931015ba1a2608161c6c26ab3927bb1205f8808290193f700",
-      "initial_layout": "4a57a72114a02be5227173f4869c07453cceaaa6cf85f521b2b6552f65470318",
-      "geometry_and_scoring": "53bbade9b9026b44ce45f80d85ded4fa4a24a825c003075fa9b18fe8066a6218"
+      "initial_layout": "bba65871d8b23b7e6a0c144ce4555b994a4f5d8b58aa44390d70c9253ea77cf8",
+      "geometry_and_scoring": "b06df55b8b3192d1bb60313dda6e4f1d6a8b0ed83b256a8e27c7e46a195fc758"
     },
-    "L3-05_v3": {
-      "configuration": "1495c906f69883a0317ddfed757c40449a63b1c303dc3e236acfff581ebd23a7",
+    "L3-02_v3": {
+      "configuration": "92122502367c5fa138e49dcfaeaf0f033e305f5309384a2c86c9705e6c406127",
       "instruction": "83f499e9b03b12527ad7f2b285224bbf098e6627e00ab3118cf0089aa8441531",
       "robot": "00e07cd02cb6d3e93dba64c1cccf7ad913309cea49f164704bb5cbd874fc5abe",
       "simulation": "f6552b26929e2da1d4c0b7d8cce54c527953f62327b8009bb4634a96331f2599",
       "execution": "a80236e3c461ac2d23339c83a002d4cadbe1c98f9ce447a40b20ca82ad7b08b7",
       "system_instructions": "ab85174cf2e7b6d931015ba1a2608161c6c26ab3927bb1205f8808290193f700",
       "initial_layout": "f8a75c4022e102cf0df81abae2e8878c7f15d577ea15ae27973238787c1004c7",
-      "geometry_and_scoring": "1495c906f69883a0317ddfed757c40449a63b1c303dc3e236acfff581ebd23a7"
+      "geometry_and_scoring": "92122502367c5fa138e49dcfaeaf0f033e305f5309384a2c86c9705e6c406127"
     },
-    "L3-11": {
-      "configuration": "30e3d1b0c0fe6614f5bbff60abfd6187b224deec716c18ae107074c1413b2547",
+    "L3-03": {
+      "configuration": "109e2e1e6927194de21a8df4316921e53b980b3bf6f903eb16627def951dfb2b",
       "instruction": "a5e0cdeced98276ea561643acfc2eb6961a7d8421692b515041cc6937ad64557",
       "robot": "d013d97a821a839bbd9f1c6def5e449e65673c148581696016d96955e6d27cba",
       "simulation": "57e58bda8e70c64c0ffd9274ade3040935a4d3d723b078fd47a14f5bc986f539",
       "execution": "a80236e3c461ac2d23339c83a002d4cadbe1c98f9ce447a40b20ca82ad7b08b7",
       "system_instructions": "6029e8e28ef19055e9b31ba200189cf503eaa970244ed3a6843603fe6a027863",
-      "initial_layout": "10e375670732b1fd04c42e2bfef20f55b58d7ed657c64907ac6bd20ad3128371",
-      "geometry_and_scoring": "6694acb9dfbad28afeb4f5ed8b937be5cd6969a9c89cebd446b7ee0689a3ed3a"
+      "initial_layout": "2764ac5acfa8f99598f8af2ddaad365741f62dd5b7f5fc08223cf4a738e4c2be",
+      "geometry_and_scoring": "06fc331e922f92a4e08e86031c60e2138ab27b69c55c161f9164ac500609fe23"
     },
-    "L3-11_v3": {
-      "configuration": "7896a83ecbbff91cc24012c80d08e01ef8462610924235e61e5af58bcdb4efb8",
+    "L3-03_v3": {
+      "configuration": "da18f5578d001064cc6991929df6560e865434210e41c05e5cd074c7e9d31bf9",
       "instruction": "a5e0cdeced98276ea561643acfc2eb6961a7d8421692b515041cc6937ad64557",
       "robot": "d013d97a821a839bbd9f1c6def5e449e65673c148581696016d96955e6d27cba",
       "simulation": "57e58bda8e70c64c0ffd9274ade3040935a4d3d723b078fd47a14f5bc986f539",
       "execution": "a80236e3c461ac2d23339c83a002d4cadbe1c98f9ce447a40b20ca82ad7b08b7",
       "system_instructions": "6029e8e28ef19055e9b31ba200189cf503eaa970244ed3a6843603fe6a027863",
-      "initial_layout": "98598832b686565f6e7899a87b96002e3a19ae3a5f3c7227ffa332602a4d082e",
-      "geometry_and_scoring": "ba213536e7fce1d119062f0a6491c132c358f757fbbd7e1d183085e3b3764f30"
+      "initial_layout": "6a1196629819d9f491cd006f276b869d7f6efcd2ec58623f14fbc55c6f76f215",
+      "geometry_and_scoring": "e696d5d5052565e4d456d0f57d487eef3f2e85243aefef5da8646eeb6a651a43"
     },
-    "L3-14": {
-      "configuration": "3ea4b90f95aaf716468fe2b5abe2de1e6904d000736eff7a92f5642fd45577b7",
+    "L3-04": {
+      "configuration": "4875032447ea5a6045957f54d6e9211e2259a229df3127f0af45911c5dcda308",
       "instruction": "ecb6f636bb3c8d4d10dd04c0173cc434bb889b8dfb718ade4040b854f5219227",
       "robot": "32f28ff5ef54c6e3e46b0c6b130c864a737e1afa30fef66f47404656f96aec56",
       "simulation": "57e58bda8e70c64c0ffd9274ade3040935a4d3d723b078fd47a14f5bc986f539",
       "execution": "cca42f3e2cb82a403a9c0176243f841c5f7febef813c022498a36ec8ee473dd4",
       "system_instructions": "963e18d7eb3d2e82a2ccae3491f5566fd99acfbf02647d779315e3ecd2431b65",
-      "initial_layout": "63d3811d6b97fa061f16609cc64b73963e023196d4501f2ea02d52dbdb1513f6",
-      "geometry_and_scoring": "cc2f123665f7423d0623679f3e0f1ade04714dd89a57f371f7be91cb3a9fe3f3"
+      "initial_layout": "51ab0c92e5f54903344f6b85add8b27e022d2590ceabf7fbb0f0ec8b476b49a0",
+      "geometry_and_scoring": "d5afead050db320d942e213599a82a88f540ed1b57c93b2e7445ef0ed1e4bbe2"
     },
-    "L3-14_v3": {
-      "configuration": "071d50701ad59d522f2debeb17162ffa8f77208c6b0694f9c3f8b99bf0028549",
+    "L3-04_v3": {
+      "configuration": "93cab2e9ede6b3838bf6d06cceea32b7cdd941ac172467b776cb88247644d709",
       "instruction": "ab57263b036f0c928636865b6b474a87661bd12def63dc20adea790257dc6f8b",
       "robot": "32f28ff5ef54c6e3e46b0c6b130c864a737e1afa30fef66f47404656f96aec56",
       "simulation": "57e58bda8e70c64c0ffd9274ade3040935a4d3d723b078fd47a14f5bc986f539",
       "execution": "d41224ab72b72719ee7ffe3e0152be840d2c92380a5c2b503496df11224421c4",
       "system_instructions": "963e18d7eb3d2e82a2ccae3491f5566fd99acfbf02647d779315e3ecd2431b65",
-      "initial_layout": "e8ae7e8da5d634510825a38eb47d99e78548e479227d1cf420930b1b3ea0340c",
-      "geometry_and_scoring": "236f2ea70a40b6af2512e9b713d1c6003faabdba5a6202a25da1adec881fcaa1"
+      "initial_layout": "6b590f5f26a639204f440e4d1ffb0f385ba4706f4476898febc98f626282749f",
+      "geometry_and_scoring": "42c5ff5b489c4af15d1a6be2d2edc1969840864b513c37d059070138d619553a"
     },
-    "L3-15": {
-      "configuration": "65023a9c353c2faef1d3e41ff3676740622c8713971f8b229eeb30a449df8a80",
+    "L3-05": {
+      "configuration": "f87cc06fccdbf8305372ef84e50253dc08b937be5d5ed6c921478f2824695e98",
       "instruction": "46f33afe211890fb0bd80f2168ba6eeb8e9bc3ef43701040617ab7a3de6053b9",
       "robot": "d2e2a233810d765375cfe6cbfe2f6f06fa9c6f25a6e3da6e162e4b032da3cced",
       "simulation": "57e58bda8e70c64c0ffd9274ade3040935a4d3d723b078fd47a14f5bc986f539",
       "execution": "cca42f3e2cb82a403a9c0176243f841c5f7febef813c022498a36ec8ee473dd4",
       "system_instructions": "6029e8e28ef19055e9b31ba200189cf503eaa970244ed3a6843603fe6a027863",
-      "initial_layout": "b92f8398e1e971effa4e81b8e39511a1b224fdfd93a4ba73abd67777a8049125",
-      "geometry_and_scoring": "6bde131814097bb2cce178f2e52f5f090d62579773ba6daeb7cf8ea0bd893d23"
+      "initial_layout": "518fdf2ac06353e6246981af6e6c4789ca8a537a74cae811b19704156983d095",
+      "geometry_and_scoring": "7bd5faa3ee0668108bae639f7a4f7f9e3465c0216893361d1e5de0dd64effc07"
     },
-    "L3-15_v3": {
-      "configuration": "a276bfbdacb031ed3898a20f3d2b51cab125d5104882fc033c8ccc3f953cdb11",
+    "L3-05_v3": {
+      "configuration": "529b407d95eca2b36b9e6af136705f6525011c12fc9cbc4e04e0435de766504c",
       "instruction": "46f33afe211890fb0bd80f2168ba6eeb8e9bc3ef43701040617ab7a3de6053b9",
       "robot": "d2e2a233810d765375cfe6cbfe2f6f06fa9c6f25a6e3da6e162e4b032da3cced",
       "simulation": "57e58bda8e70c64c0ffd9274ade3040935a4d3d723b078fd47a14f5bc986f539",
       "execution": "d41224ab72b72719ee7ffe3e0152be840d2c92380a5c2b503496df11224421c4",
       "system_instructions": "6029e8e28ef19055e9b31ba200189cf503eaa970244ed3a6843603fe6a027863",
-      "initial_layout": "cbcbc5ddc5d835dd8cad2150591828c17755f8220c64e0c842d55fbe2ef69790",
-      "geometry_and_scoring": "67113d3f2b693c45a4e6ea28f0dd1117c6cc8b8133ec69c2dac114d3023185fe"
+      "initial_layout": "093fcc8a4fdae194903678399283023895af1eb8601d106ad91d998acb8a9a6c",
+      "geometry_and_scoring": "b1bae6c8094a79ef3b186b159e5e6fcadd814b4160c4e5175b012ba2f54e28f2"
     }
   },
   "protected_files": {
     "src/robot_tasks/tasks/__init__.py": "3dbfae6fa2ed5b1fe2d7ade3d513beaed8b37c4b495f26298a58b9b3d48f5ef6",
     "src/robot_tasks/tasks/bench/__init__.py": "a851f86d44b516359aadbda7ed758e55c37a8d7eb5e74c9a6a1bdd1a2f9e6472",
     "src/robot_tasks/tasks/bench/arm_selection.py": "274fab2fada3f45da9376debbea310a81feb9ac3e9575464b24cb5a8d88aa276",
-    "src/robot_tasks/tasks/bench/delivered_scene.py": "aeb3acaae62866720eccec95a51238e181c3fbab41449ca9d8f208d12ff8aece",
-    "src/robot_tasks/tasks/bench/english_reference.py": "0fd676046fb6e2e8ec92e032d5b80a7b67604c66b4b3f376fa311fdb701e2dc5",
-    "src/robot_tasks/tasks/bench/evaluation.py": "46bd769136b8ad4a76f3b80370c7dc4c8a3c398c6cf871ecea5a97417c260a81",
+    "src/robot_tasks/tasks/bench/delivered_scene.py": "e2f5562d9fdb9626fe4157f024d067ee87974130d65c48edfeb47061dd1559f0",
+    "src/robot_tasks/tasks/bench/english_reference.py": "51983c831298ca03ea23d004b8fa4abedab49054eedc9bf07b94895e441ce0e8",
+    "src/robot_tasks/tasks/bench/evaluation.py": "47dc150f3681b81caecca6147239d74abcae63c6314a84370349f6f99cfda922",
     "src/robot_tasks/tasks/bench/geometry.py": "73d5b756a194458991e5af8a2428754b0c729a0549a5ea57911b8b9d4b6c76a6",
     "src/robot_tasks/tasks/bench/initial_placement.py": "c85d13ca31317af2271a1b16309ed930a07c3758d9c6cf0fb80780945831f5c5",
-    "src/robot_tasks/tasks/bench/jelly.py": "7c279bf4288f46f5b6f1f4fbf99ce7ed39e9140024d5c3ce89e9fa3b4e0e2358",
-    "src/robot_tasks/tasks/bench/l1.py": "35fcf31070e42c606b9db1058828acfc2c77804107c9662bb5bb09bcdcc351bd",
-    "src/robot_tasks/tasks/bench/l2.py": "6bf1729d48a174b283be0b49f743f3279146fbb8494713f2c61b1542e20ac8e6",
+    "src/robot_tasks/tasks/bench/jelly.py": "3fe69dedbc26eca8098ce473dc31dd5049e5c8e6dec8ccc63932a6866a81c6c3",
+    "src/robot_tasks/tasks/bench/l1.py": "7f3808cee05cbf8ce7b5cba21061807da96377a2b9e5ca323ce12a5dd1cecfe5",
+    "src/robot_tasks/tasks/bench/l2.py": "3255759f9489ca7741d110b37815c7b1a49154c9c2aec499fa8ee51f52df6f7a",
     "src/robot_tasks/tasks/bench/l2_protocol.py": "b59ac26d1d26199f59acc45f8da3098d9ba53474b5ff9efafbb08c42857a7c30",
-    "src/robot_tasks/tasks/bench/l3.py": "ccecabc9e15a762ba435ce1e4cc3cc04be834c3af935b977ac6eeae5749ef1c5",
+    "src/robot_tasks/tasks/bench/l3.py": "e9474f43493d8b78e580acca79ff72c0666ae76d0aa4616b7c7a0da26ef0098d",
     "src/robot_tasks/tasks/bench/l3_brush_handle.py": "5b3ff8648f9cd323fefefe25f9fab277d7b7c1b4ea69fbc433dc1a85617c5b76",
-    "src/robot_tasks/tasks/bench/l3_sweep_physics.py": "cfcdb1ebd9a184b40f890ad853e2d449e9062a3e87000855d52aa4a4cdf2a650",
+    "src/robot_tasks/tasks/bench/l3_sweep_physics.py": "689ed4fdc7b206eaf9d04f9437979e233cd13ba888023efe4688bd672f202a47",
     "src/robot_tasks/tasks/bench/marker_contacts.py": "7b6b9462720e4d63a3ed11e24e7ed329c8de42bc637829ecc3b344e224fa3612",
     "src/robot_tasks/tasks/bench/marker_fit.py": "34ddf3bff751c8eb5e40e8ead6c383d6b4884acba9316d9a207cfc43071683ce",
     "src/robot_tasks/tasks/bench/native_geometry.py": "e6b5a78099ca2bb3cf18afc180d303e6d06c2eb86defe473a6fee0be5f9666dc",
     "src/robot_tasks/tasks/bench/native_l2.py": "de0da33035298441b4bb588fdb80a961763c0c7f90052974b508fe070342928b",
-    "src/robot_tasks/tasks/bench/native_l2_specs.py": "5f3550e795835c2787492fc360cfbaf63817ebefbe0a0395ebd9a10f37b8f346",
-    "src/robot_tasks/tasks/bench/native_l3_specs.py": "f52455a7e7cad16b0a4cc6aad7ed14caff824571dccb489d87426c1b86f7c367",
+    "src/robot_tasks/tasks/bench/native_l2_specs.py": "95e31c62fb2658e10a81020f0c1bca6291d49cdd4d5fd10c9ee63a22359789de",
+    "src/robot_tasks/tasks/bench/native_l3_specs.py": "cb361297394ea0558f8a9b09ae1136370f74c992d3807e8981f2fc7576c8990e",
     "src/robot_tasks/tasks/bench/observer_contact.py": "abf523561bc21da0ccee43b950f7a7638a6c83a915014907d45878cb37df44c8",
     "src/robot_tasks/tasks/bench/orange_evaluation.py": "42eb51cb460c2787c8add15696727a0e2eae0a96d8152b96834aec74ccb31d5a",
     "src/robot_tasks/tasks/bench/orange_physics.py": "e51b758fa2a504c1c1a6af62de09b0804476433fe88b0593d5f4abb3e152c775",
-    "src/robot_tasks/tasks/bench/orange_scene.py": "15117edb5b2786fd201dd9f6f40beddd9592c49fbbd3758b63341bd1c7639c77",
-    "src/robot_tasks/tasks/bench/pearl_pouring.py": "772dcad4b6ade23e085b284247ea83e7d7afe10bff430b12889efa86f0cb484b",
-    "src/robot_tasks/tasks/bench/push_triangle.py": "214f4b757459fd34e6b449e7cc41e6c085e88a21c4492d3a0478b9c558ba5b48",
-    "src/robot_tasks/tasks/bench/resistant_wiping.py": "46114d06fe98fc7ab814a41618bf0b82bab58508152242d19687d6c4d85c8b97",
-    "src/robot_tasks/tasks/bench/scene.py": "f3b6c9838180db3d490a3074d28790f2e07f61712e9ad40c4eada27ce8048a8f",
-    "src/robot_tasks/tasks/bench/scoring_l1.py": "a5885cfeb9d38e7dd8f4c18d6c4ceffd02a39113252ef45e8b6f9209b6a5077d",
-    "src/robot_tasks/tasks/bench/scoring_l2.py": "014c27e172b78004859075849a1ffc66479496fd3ed35bd8005304b1475974d1",
-    "src/robot_tasks/tasks/bench/scoring_l3.py": "bdd30ca79854b821f5e4d90138c65fbdf8d3d2b6a656e267dffcff0343b8f359",
+    "src/robot_tasks/tasks/bench/orange_scene.py": "f5039e23723d5ab7e93cd41f4468b380e5a0627381331a539653f35b81418e11",
+    "src/robot_tasks/tasks/bench/pearl_pouring.py": "0acb12c0f23dbd1984f0e096f7f67d66e3c07b85d74e32cb4b34a83e3a28964b",
+    "src/robot_tasks/tasks/bench/push_triangle.py": "888edde43454af8954c9cca9d49755e262726c4ed10e3df1e8ebd6a5bc247ef0",
+    "src/robot_tasks/tasks/bench/resistant_wiping.py": "0577db772909a6a34dc72c25ec7b450951d0d8f82e9559ba7a181d4f19a74ba2",
+    "src/robot_tasks/tasks/bench/scene.py": "ef17af38a39ef54e1a146dd71cf7e4c5ac140ae4d08caa695de092e54cb9489f",
+    "src/robot_tasks/tasks/bench/scoring_l1.py": "a26f4c25a3a9f7aa2912bd325b8d4f08af4e5f3b661bd701f1beffd4accf9b88",
+    "src/robot_tasks/tasks/bench/scoring_l2.py": "df10d5f8e89db6b329a8307a51fb97c35b61d4d5bbff5802a76b937b7debf488",
+    "src/robot_tasks/tasks/bench/scoring_l3.py": "dfeca2619790a8fdbd6da721473de4cd0fd94d82c947e445ff9878c1d9221ee8",
     "src/robot_tasks/tasks/bench/spec.py": "16608adacae4d3a03d86f5f350c6821d87b57bad1b87f4500cd2a230931bab72",
-    "src/robot_tasks/tasks/bench/stacked_books.py": "ad170baf97718fd3a0412badf8b43a36148fc3f211625d3666d56e94e780b84d",
-    "src/robot_tasks/tasks/bench/startup_settling.py": "a403e3492a4f1b9f723d412395fcc5eae8efd652143f616bf48b68db4ef0345c",
+    "src/robot_tasks/tasks/bench/stacked_books.py": "4cc3d1b99efdc13c8a0a240eefcc0cc9bda4f71f8c342a2dbbf44169cbdd3107",
+    "src/robot_tasks/tasks/bench/startup_settling.py": "c772b23270eda4401f98d72e557305c7bc1ddae7233c8dc6be23ee22aef7ff0b",
     "src/robot_tasks/tasks/bench/surface_distance.py": "449ea5cc7c360eeeedb989c564e8cab3447038fdb882fe81b4f85aa5dcba79bf",
-    "src/robot_tasks/tasks/bench/task.py": "3812e5d66e2496919cedd0ac5bfb10a9ef809bfa398934e2dd7f503117989d01",
-    "src/robot_tasks/tasks/bench/video_reference.py": "8a249e2ec59c05056bf941c6b201e9becc751b9fdd3a15a7edb779c79cf12d90",
+    "src/robot_tasks/tasks/bench/task.py": "e6f1aecbf47e93c35f3d5555e3845b9a05422dd2849850c2f1b99685140d425a",
+    "src/robot_tasks/tasks/bench/video_reference.py": "4a308c8fbbe469b6988fe06ee0a0d2a5d072c91b7bd31070970606f33c47b642",
     "src/robot_tasks/tasks/bench/wiping.py": "8f516f4c2a51904ae645e9bdeddfe72e3b17bdb1847003a38738b628c575e79d",
     "src/robot_tasks/tasks/bench/wiping_scene.py": "6d1f8caaf9a172066ad8482f9c4f8c6267000a17ab4cd02cfacb65f4c326bc3c",
     "src/robot_tasks/tasks/completion.py": "88ecfd9308a29c74740f06d26e1d1682282f6795b872d838792d41a26e48c78f",
@@ -372,12 +373,12 @@
     "src/robot_tasks/tasks/pick_place_metrics.py": "c59377a5b6d6787594c95c9506dc5527dc20932c5a54d694eb715ce68ec022a7",
     "src/robot_tasks/tasks/pick_place_scene.py": "dd31783ccc43d9e0625ca826e63330168b7f0b541fea03c32e4e1cb6dc0b8055",
     "src/robot_tasks/tasks/screw/__init__.py": "77e8bbfd7d3528b0131b1a4804987a66e6a8e9955bd868dcda106144abcae2e9",
-    "src/robot_tasks/tasks/screw/nut.py": "d4bddcd4784e7917df25e5740c2c2ae2efd637896ff6a02572dc744a54f50093",
+    "src/robot_tasks/tasks/screw/nut.py": "fb0bd5d92bc372d69824aa9f6b7670f1b66e1405590c30cc26b6d06043b464d8",
     "src/robot_tasks/robots/__init__.py": "1e7988766b5f67baa280d55f5a54ec3d3cc77c46e5c36e59fd1071c0a7579fdf",
     "src/robot_tasks/robots/adapters.py": "1233dcc50b43bb301e376639757d44d302abb73b62eaf937a940a6c6dae1a55d",
     "src/robot_tasks/robots/audit.py": "3162816c540ab88de08add9dd1afe9559fbf871bb0698defd392d0f16ae25523",
     "src/robot_tasks/robots/collision_feedback.py": "4021c6c757015044743b516600a173548c338a2fecc3159fa4b58658fc67ab91",
-    "src/robot_tasks/robots/control.py": "e684b82f4a52da84204bdc6366dc98e371621d44418161e46d846ac2067c00a4",
+    "src/robot_tasks/robots/control.py": "169de87ab855c8de40b84afba37ac752376a191224f9eb50b3d45b8acbb9a287",
     "src/robot_tasks/robots/finger_collision.py": "4ef5027602d1e05b0926edb87c2a23047f8fa52062be3ad38988342f37887339",
     "src/robot_tasks/robots/gripper_drive.py": "76ced3a1d7ffbb24abe4f4dcd16ab1a6ad4f0c149efc183ab9e665573cd7f5b5",
     "src/robot_tasks/robots/importer.py": "ce2de4ac4b9c94fcfcaa70434171f0ad0e864710a8f228e21114b845ac78534c",
@@ -390,7 +391,7 @@
     "src/robot_tasks/robots/wrist_collision.py": "338a8b65f8b0ab3859cbb9022e52101327cf0aec18ad866c25cc1783b4631e25",
     "src/robot_tasks/backends/__init__.py": "ee6794a35b155220628b179f85fd95c63b9f3997023c7579cca28890fc414cdc",
     "src/robot_tasks/backends/appearance.py": "27585bcb64d11960a95bd06db2082e3af283fca4af98a63c447b5a92a19f8b4e",
-    "src/robot_tasks/backends/isaacsim.py": "424f94344ff674d345b29d2cf8acef63729a3d824ae14126df58ee9700554fb1",
+    "src/robot_tasks/backends/isaacsim.py": "db4b65f0a9ef2951687494a70c492e33e0b1891e0bbe6568dd320cae131deb5b",
     "src/robot_tasks/backends/lab_room.py": "613fe6fcb67cc559408b4e6eafd302ff620dc131dd5f7f27022b70f49b44344b",
     "src/robot_tasks/backends/mock.py": "e29225f2214bf6d6036eeb31ec83c0a20a9e13590fa26ab6afeb2dcde5bca392",
     "src/robot_tasks/backends/scene_geometry.py": "66b2fb0e1ffb6f99466b053addc94077ea8033709829358194308ccf31aaa622",
@@ -404,7 +405,7 @@
     "src/robot_tasks/planning/failures.py": "8b2a734de0b91c58b25e0cae4c50ac2721812740ef1f8d45dbd7eca5a2344ca3",
     "src/robot_tasks/planning/recovery.py": "2ae960b856430490bae2fc55a4a0ee9a103785c267e86a8854fef560b6490421",
     "src/robot_tasks/planning/reference_assets.py": "160b51494de726138f4d28651381a3d89a8c6530cab16d4ec8daa2d9f689fcb8",
-    "src/robot_tasks/planning/scene.py": "fd183aad52632209ef6c9d3c09456043f59c2e184d2f67f340092d4c1bd51255",
+    "src/robot_tasks/planning/scene.py": "11904619e25eef41a3c813363e82e94db9b057e55a644e01b2a5d7c990cfbcbd",
     "src/robot_tasks/planning/trajectory.py": "927d7df0c9967fad685662c53d5cf29474fcda673b1db8ac352d6dfeefd302af",
     "src/robot_tasks/planning/worker.py": "a7ddd8cf89eaff4e767f2b6c2ae790e3945b75fdfb826af7a3f9f2340c9c84bb",
     "src/robot_tasks/policies/__init__.py": "ff5e14ac45d30c4c53cd6d0e716ff340bbb276e417f40515d87b71c63afb9d45",
@@ -414,7 +415,7 @@
     "src/robot_tasks/policies/codex_process.py": "2dc4970745a83b11e8ab494b889562f8b70f7e4781554faad6c3700a324580ac",
     "src/robot_tasks/policies/decision_note.py": "aad1f84ec545c1f95272da2eb11d3af6674d1305b501227090d73b3ca139b5e6",
     "src/robot_tasks/policies/depth_query.py": "b7ea9765d8b5f18229f7b4cb4a471a938ca2ca4bb91c283cd507eb224e68087b",
-    "src/robot_tasks/policies/gpt.py": "6ebc4890843157b9b23c97928262b45974b734e8ab66285bc6b2995132420520",
+    "src/robot_tasks/policies/gpt.py": "587f9f2c6c5aa994c8afb8765521c9a4fcb5794dc33774a9f4e4ae8ac62c2b3d",
     "src/robot_tasks/policies/grasp_comparison.py": "d9dec00fc7fda1108213e97462b2b2313c9d1425222b69d27d4a35d391670f4b",
     "src/robot_tasks/policies/model_config.py": "ddbeb496fae2a29dfb2ae834e80a06b891ebbd0813ad2031971c7fae58effb31",
     "src/robot_tasks/policies/operating_notes.py": "65de12c979a94573fd771b269b78ee9045b893b7918c543c1122c37532a5149f",
@@ -430,60 +431,60 @@
     "src/robot_tasks/cameras/profile.py": "1a772eab761255f47413b21682f5ed339e18b91bda5eeebc759450d70f10aea2",
     "src/robot_tasks/cameras/release_evidence.py": "97cdcf892ff12c8161cc8495cb1157aa32deb990dceb9bc9f74b3bfd14cfddd4",
     "src/robot_tasks/cameras/visual_aids.py": "176f664fbcca644d4443c987c6978ee44b648982785597463a1b3046816b248f",
-    "configs/tasks/l1_01_cylinder_insertion.toml": "2c2aa0eaf9861b8bad014ddae9b49e462b3b36203b5e34c9fa5b086a231edb77",
-    "configs/tasks/l1_01_cylinder_insertion_v3.toml": "087f740f0c6b2fa0fc95e835a7b294bb3710c7e81177bc3a320d6a2b9b3ff7af",
-    "configs/tasks/l1_03_plug_insertion.toml": "8c028d646fab3e0a8ac9d8dcad0b2ceb7911b5a3ae845a45c59130e6a5c19a14",
-    "configs/tasks/l1_03_plug_insertion_v3.toml": "6607e731ae550b8d69975ea71a771c6a763d6c8956d7a92d58cee67cabe75cd9",
-    "configs/tasks/l1_07_ring_hook.toml": "53bf34afd0be7593c93cb279d2bf485ba79ef5985f6aab5c68d3ee679abd3dd5",
-    "configs/tasks/l1_07_ring_hook_v3.toml": "9b9a068538032051031d72e0ff86eaa2543f5c0cfa1d1f63e8c531906f680527",
-    "configs/tasks/l1_08_block_stack.toml": "b5ab2b30f3d2f82586229ea57bc8d4ac8ed0643aaad8c8bce24c11cafe8b8c8d",
-    "configs/tasks/l1_08_block_stack_v3.toml": "991620ece4635735575ff5659a1825d46cb7a15021f8c1ed62c87006ff639a62",
-    "configs/tasks/l1_09_soft_stem_flower.toml": "556ee0d9337d51372ad2ded57d1a4785a15d0b71c821d156d970fbae7345effe",
-    "configs/tasks/l1_09_soft_stem_flower_v3.toml": "51c1aaca49ecc38afe10c277615681306887c6c7861012402c31bbb6b2fcb8b4",
-    "configs/tasks/l2_01_marker_uncap.toml": "0ba4143d4df57a65d6208e8af4da8abb903dc16349895efc16aafdbae1ffbea1",
-    "configs/tasks/l2_01_marker_uncap.v3.toml": "85e7d5122c0235874d41ba342b0441a92517b2d339382cadda86c64f84e2c956",
-    "configs/tasks/l2_03_middle_book_extraction.toml": "5ad28ea4e872c59c15741580c1ee1ccb4cee2eec756ccf0f2d73a11a509715d9",
-    "configs/tasks/l2_03_middle_book_extraction.v3.toml": "e7c652f4859cc6fc80eb8177b619373724e88e97ebf533d4e99fdeb8e78d16ba",
-    "configs/tasks/l2_04_cup_pearl_pouring.toml": "912017369274b84bee818d7efc6f6b3e097f821e64e5201f1b3191f9e034600a",
-    "configs/tasks/l2_04_cup_pearl_pouring.v3.toml": "15820a4eb0ee0a54e71729aad2b098de4c4c93208b59f67b6dca768585891fbe",
-    "configs/tasks/l2_06_orange_transfer.toml": "d376ecc8ae466487d0cb83815164701d0077b6250b87a7633e2e33191dcf2376",
-    "configs/tasks/l2_06_orange_transfer.v3.toml": "8be505aa364dac2bee95c5c9001892d9505887c5f76dbf2473028b5dd4b4a2fd",
-    "configs/tasks/l2_07_drawer_open_close.toml": "1ab9a30567a54a810d7a2493682cbc44eb9bb63988edc1d98888375b8f1a32eb",
-    "configs/tasks/l2_07_drawer_open_close.v3.toml": "325a6b2bd4b0adc3944bc9523bc14e3c7c55d5efbb1c2c1c325406ede60d5f18",
-    "configs/tasks/l2_08_jelly_lift.toml": "c9e13f6616dcbd431253d7219cd88bcb55c9cf63831f318bc9d4939d5ac5927b",
-    "configs/tasks/l2_08_jelly_lift.v3.toml": "df146c63bbddfdd11925e6b24f5bfe5a866a3b11e38483270e744a8d75c6a135",
-    "configs/tasks/l3_03_bottle_cap_unscrew.toml": "313dee3758ce4b10a14d7ef450378d2cfbfb3d4190f50462d5a5c797671ae37e",
-    "configs/tasks/l3_03_bottle_cap_unscrew.v3.toml": "a1e8591b5f5ba52382d710a5b37870afe1f7b056565b6dded566d67a8fc9dc4f",
-    "configs/tasks/l3_05_coarse_screw.toml": "59f16104e77b41784e40adb3546371f1b18a004d19664d53145ab5b1c98c9f39",
-    "configs/tasks/l3_05_coarse_screw.v3.toml": "696f8d626b1be796d1cef6fdde125db2667e818ad8e3cc8bdfa3405309f87ec9",
-    "configs/tasks/l3_11_board_wiping.toml": "582d417b3ecd5a7a3d1da0c5affb2bdb22e14e2b95bc121464352df1bdb375e0",
-    "configs/tasks/l3_11_board_wiping.v3.toml": "afc09f12edb7f133b2c52debb10d49fbc8d876ce9519529d16244b7c81c1f6d5",
-    "configs/tasks/l3_14_gripper_push_triangle.toml": "652ff0caf15f0b9127ba1df4b2ad219da3f3cd00330e750413bfd241e8fafbd9",
-    "configs/tasks/l3_14_gripper_push_triangle.v3.toml": "1f6b908586e02a90781eec7470df211cddde329fb7d3c25e71c9a3e6e2ef6c2c",
-    "configs/tasks/l3_15_bimanual_sweep_blocks.toml": "c8d134a9beff5f3dbb1e16b7c8c379559b7878afae76b6cf793bef29dd5243ab",
-    "configs/tasks/l3_15_bimanual_sweep_blocks.v3.toml": "b5a18ff51367bd9ec326a0edc722bf92108fa5ed8aee2d2ce9e1210057858b92",
+    "configs/tasks/l1_01_cylinder_insertion.toml": "3e8e621b813b2dcfedc89049f346b63830b0008ed3e01017a45f9378a9c4ad6c",
+    "configs/tasks/l1_01_cylinder_insertion_v3.toml": "5be13183b409ed6409cb64aef293d3bc78d44aef50799bfeab3090cdd2b0d1c1",
+    "configs/tasks/l1_02_plug_insertion.toml": "360da9e24c050e00abe23d6824403afdf482d80e7e759a0ac8c7237d7863f382",
+    "configs/tasks/l1_02_plug_insertion_v3.toml": "ebf35e454b942f2a79169ae94f962f3b5b3023647ea45acf59bdee7a985b662d",
+    "configs/tasks/l1_03_ring_hook.toml": "1ffb0b5347b87cee75bf54b8a665dafd6fa1bf286d7f56c51aaf996f16b25af6",
+    "configs/tasks/l1_03_ring_hook_v3.toml": "64126aa4117875cbb9869df0b55168674cb46f6b7f6327231f1e3c068f61a791",
+    "configs/tasks/l1_04_block_stack.toml": "95f25be45d58ebb88a732a13b8382bfe101289fd73902c3cedc72e21d9114741",
+    "configs/tasks/l1_04_block_stack_v3.toml": "8fbbf5bc6d019fb454538ebe35d11c50e0201a0a81a4d03852597acafb86b9b8",
+    "configs/tasks/l1_05_soft_stem_flower.toml": "333f9046398f77a1498b52f75f0fa35f8faa7a69f11a319f61039c2e80003325",
+    "configs/tasks/l1_05_soft_stem_flower_v3.toml": "d214e10c20a41bea8633d91b922a33888e5179d892d77a80261cd88bdc0b4b93",
+    "configs/tasks/l2_01_marker_uncap.toml": "7657446b450a1fdd8fe02cd7dac0f7deaabb6e0d0ba7e3d0069f1f8c3a02e076",
+    "configs/tasks/l2_01_marker_uncap.v3.toml": "8dc64b43814f33ac34108702b2f0ceabbcd6c13fe0a7990744666c87ca34ac41",
+    "configs/tasks/l2_02_middle_book_extraction.toml": "11ce6628efeb1dd999ca213e4ad5322baab003605d58696a27182501a094b1d0",
+    "configs/tasks/l2_02_middle_book_extraction.v3.toml": "b410f32437c895bd56448bd974a749e06892e8fdb74ed56875de5a09ec73bbc0",
+    "configs/tasks/l2_03_cup_pearl_pouring.toml": "7eed654a49df5cc2087dc1e77ba14517fe50544098f82c878eaa5c71bd095711",
+    "configs/tasks/l2_03_cup_pearl_pouring.v3.toml": "8dbd3e1fb3841a008fb951b679850ea720816caa4ce27a9c0ff9bc1130b58c54",
+    "configs/tasks/l2_04_orange_transfer.toml": "0499222247de42b0b321b69766e0eec7fe0aa4ee7aebb39987f95f107f3c16a6",
+    "configs/tasks/l2_04_orange_transfer.v3.toml": "b32f3a16464b574cd8b94be8573653ec68219b1a4fb9af43a257824ceff17844",
+    "configs/tasks/l2_05_drawer_open_close.toml": "5b6c58b54264f2515cfe5078e5afe70bbe264fc3cdd570e778a2c28ec488705e",
+    "configs/tasks/l2_05_drawer_open_close.v3.toml": "2f0cc46179d33ca06839d253ebc376f89a6b8678ce3ba735025daf4377991b77",
+    "configs/tasks/l2_06_jelly_lift.toml": "47587de92d61cf1ef4b1b299bc0b4f0f5200bc6362a28d67b37aef5823306bdf",
+    "configs/tasks/l2_06_jelly_lift.v3.toml": "f965abf2ecae430ca2f903e195f8cea37078ecef915bb9aad29891516b20a2f8",
+    "configs/tasks/l3_01_bottle_cap_unscrew.toml": "e702e5bb563ff1e245a699aa74a26d5056b34074a8647af24224d04ca7544579",
+    "configs/tasks/l3_01_bottle_cap_unscrew.v3.toml": "a7b9ba2f10bcf598482f9ab045a0f612cb0b6814dde5d9ac21a14732e35f527c",
+    "configs/tasks/l3_02_coarse_screw.toml": "587ed60279ae244be2867c650b3662bf7decdde56d893ae6b9da0934c909afc7",
+    "configs/tasks/l3_02_coarse_screw.v3.toml": "190187156cc095a3b206b7fa9ad280f970162917e3c0f375a9f3fc7f6a529209",
+    "configs/tasks/l3_03_board_wiping.toml": "d2871b546760a90f4649ed7ce573546f86efc1de64c63682876944a9929a5c53",
+    "configs/tasks/l3_03_board_wiping.v3.toml": "f0edec7c705d4e495ef7e6f815e85af2796267febadd103532bdc57de6a5e41c",
+    "configs/tasks/l3_04_gripper_push_triangle.toml": "63ceab4641a7ee9105d24bc9872c130e85be2a4517101a5a29f79ba14c86b9f2",
+    "configs/tasks/l3_04_gripper_push_triangle.v3.toml": "10843e48616f32c59be9b5d9c3e776d61bce6480423e452c71a00120844c89dc",
+    "configs/tasks/l3_05_bimanual_sweep_blocks.toml": "734fdfe0093e5aa4fdb4a805f592740f7836d07ed9d7eaf20dbfaec8ea648bfb",
+    "configs/tasks/l3_05_bimanual_sweep_blocks.v3.toml": "94399634c11e95548a8f40822e696f10f0ee6d073d25ca518b6bf4473a996ae9",
     "configs/robots/r5.toml": "1929ccbbdfb685d5d39e6208f604607f7f82364ae3cd6ee427bfc7611c3b2560",
     "configs/robots/r5_sim.toml": "8c55b2d106da8e59aaa2213b1f37585f43cb1ae7d6d5cca61961ada3c4d1b14b",
     "configs/robots/r5_tuojing_lab.toml": "0ca7946e22fc1fc1c5cabb53db4808d7fad098dd913c291267857109cbc7cd10",
-    "configs/robots/r5_tuojing_lab_small_grasp.toml": "55ccdcfc5b74dd33ec350469c7740de7352cc0c896e3eef6756f1a33bf02a272",
+    "configs/robots/r5_tuojing_lab_small_grasp.toml": "f2b0ddb2efd1229bf4391af01a60b6ca697d875c073a0a6a4775a1a23cf38eb9",
     "configs/robots/r5_video_20261015.toml": "fc0bdeffddedf98a64317c9298aee00b4abc6551fc3c235b569c2867ce7a7fd9",
     "configs/cameras/r5_orbbec_provisional.toml": "24671f92b13294267990447c640f2fa659c17ab2ca6e6fff0952d647c1606795",
     "configs/cameras/r5_tuojing_lab.toml": "61e0d17f743946b47ca0c40c4bab5082f8bb2853f1b72f044e0e3fa986bb6735",
     "configs/workflows/gpt_default.toml": "69ac7eea6352d7b345bae3a9eb86dc8002457b8bccfc74d53f7442a588d2a63e",
     "configs/task_references/combined_sources.json": "f3ded451b5412db04f579cb03e57c0101928136251e7e7de79ee1189e40d1e13",
-    "configs/task_references/feishu_20261015.json": "4bf158d7a3c73f6acf8d6761ff9812a06fc178c519fccecea29cf5131e8f6a11",
-    "configs/task_references/feishu_jelly_20261016.json": "6ee9c65fd49e8f94992eff15009b00501888821d5a08c1c2b5d2442329170549",
-    "configs/task_references/l1_position_perturbations_20261018.json": "f99fad6f1f6c10638d2fdb1f9772fa47dcd7310f8747f0828ac9ce2b878abb9f",
-    "configs/task_references/l1_position_perturbations_p02_20261018.json": "dd179d91d64eb7457861ee5bc1b9767b250c3a1b734dd1d3d991bd384cd405fa",
-    "configs/task_references/l1_position_perturbations_p03_20261018.json": "a21120a0eb95d7592f35694a5a7aa0732191e91a4701abe86f4b475d7715ee99",
-    "configs/task_references/l1_position_perturbations_p03_rejections_20261018.json": "751bd930a44cff481170e3649f73899e4ebe67beb287dff51f3a551f0b194f5e",
-    "configs/task_references/l1_position_perturbations_p03_selection_20261018.json": "1aeb6a49466eb67d7116ed1908c77dfb4971b833144ac080ae1559c462810dbf",
-    "configs/task_references/l2_initial_p01.json": "312ee5c4a9c97a16606f4108806caadc18566aa9d39cb378907b327d23a772ef",
-    "configs/task_references/l2_layout_refinement_20261015.json": "1d82bfe59d809e2bd7405a359d233b7b6e7c9b3db19899257157365eacdf3ea3",
+    "configs/task_references/feishu_20261015.json": "80c8469af4ba7414f8eb3293addd756c1a134159b42e2e21e248759bbf8649ae",
+    "configs/task_references/feishu_jelly_20261016.json": "9b5cb485868ebc2a541836f18124b2c6704180ab953f6137d368c547693eead7",
+    "configs/task_references/l1_position_perturbations_20261018.json": "6b42ca4b2fdc408f88273d773a7cd9e1096da924a26de0d4a3a988482ec89891",
+    "configs/task_references/l1_position_perturbations_p02_20261018.json": "662bff22d20fa128e239d9d7f4bcd9c91d25847b0b42257a0537fd2e3aa5e145",
+    "configs/task_references/l1_position_perturbations_p03_20261018.json": "f682752078bf9cad7301dba7ee133bbc28385a61ffe7cfb8221f0776db233b12",
+    "configs/task_references/l1_position_perturbations_p03_rejections_20261018.json": "e134056d29328b33ff9bc27199d0fcc3ff9d3a3c4689f25857b4afddb814675e",
+    "configs/task_references/l1_position_perturbations_p03_selection_20261018.json": "4b97a3ca3b19c2c9e6ece6de6c020388e007bab656b183195ede53a1898cbbf0",
+    "configs/task_references/l2_initial_p01.json": "181ce9c35f2dc3045c304920cb48833cc2ede1da752fbdeff23c9d737c4c2c02",
+    "configs/task_references/l2_layout_refinement_20261015.json": "37ddb78c2b9296466238079d9a06e66f9b4387c2312316b9b0521835e0d0b6b3",
     "configs/task_references/l2_marker_asset_20261016.json": "99759fcbd822ab608015803e7e23d99ad9ab63d401d9e58f0ebe10628b7bb082",
     "configs/task_references/l3_wiping_resistance.json": "afb450a8f68e3f8316af334025bd5fcb76bb81c27a0530a5b9ac0a1e5d70075d",
-    "configs/task_references/user_l303_camera_fit_20261015.json": "fee672a2732de39f044340998f8df0801fc7dbf2d615dced0e05a92505d40c9d",
-    "configs/task_references/video_visual_setup_20261015.json": "acda1a821f894899b862d23fcf3c09814cab31df670815c5229739446c6372fa",
+    "configs/task_references/user_l303_camera_fit_20261015.json": "d84fda2fc41eb108353765c226cbb8e7f6fc9210f8853366f262aa36b2ffd199",
+    "configs/task_references/video_visual_setup_20261015.json": "e9fcc542e1686b725f1e74f7e572e314982f0aed83dd0bb5d876e57dda61f03c",
     "configs/task_references/video_visual_setup_history/00799e588dc3c878f10a33f0fb79df99e8c10f313e709007ce5288c99f711c79.json": "00799e588dc3c878f10a33f0fb79df99e8c10f313e709007ce5288c99f711c79",
     "configs/task_references/video_visual_setup_history/015c6f4e461758ee6d5b7e2b2adccb410839a1057a4095dd03fb59349feb179d.json": "015c6f4e461758ee6d5b7e2b2adccb410839a1057a4095dd03fb59349feb179d",
     "configs/task_references/video_visual_setup_history/049f6b3367efdbdb15725a86c0ced816afd3216f603d189bd5769f1aedff1425.json": "049f6b3367efdbdb15725a86c0ced816afd3216f603d189bd5769f1aedff1425",
@@ -539,6 +540,7 @@
     "configs/task_references/video_visual_setup_history/a082fbc1786659c9981b3b2c3b07a9d46f54e77a2091b563f38a31d7ac4f9f79.json": "a082fbc1786659c9981b3b2c3b07a9d46f54e77a2091b563f38a31d7ac4f9f79",
     "configs/task_references/video_visual_setup_history/a44e61ecbe4d039626303bdb7088a1264d0b18874484ea34356eed4e6ece28b7.json": "a44e61ecbe4d039626303bdb7088a1264d0b18874484ea34356eed4e6ece28b7",
     "configs/task_references/video_visual_setup_history/a7c0e9ef26d3c306be404d4224b8804dc651f6be9b9076030182057b1660ae7b.json": "a7c0e9ef26d3c306be404d4224b8804dc651f6be9b9076030182057b1660ae7b",
+    "configs/task_references/video_visual_setup_history/acda1a821f894899b862d23fcf3c09814cab31df670815c5229739446c6372fa.json": "acda1a821f894899b862d23fcf3c09814cab31df670815c5229739446c6372fa",
     "configs/task_references/video_visual_setup_history/ad51c61ec9d60f84f7f111c14037a87e6a17b4bde0c304840488315eafff5682.json": "ad51c61ec9d60f84f7f111c14037a87e6a17b4bde0c304840488315eafff5682",
     "configs/task_references/video_visual_setup_history/ad836b0ac312821454ce7318d77d97dcf34ad64691572211483aa284a5cf3bbf.json": "ad836b0ac312821454ce7318d77d97dcf34ad64691572211483aa284a5cf3bbf",
     "configs/task_references/video_visual_setup_history/b0265ce4d56fa850c292cdc4168e5cbe7c182f6e7acdeff58225d6228920faf6.json": "b0265ce4d56fa850c292cdc4168e5cbe7c182f6e7acdeff58225d6228920faf6",
@@ -562,14 +564,18 @@
     "configs/task_references/video_visual_setup_history/f484c02d623105a5bf4bff7136e8f15d3da590478e753ee5e651759fc5c9369d.json": "f484c02d623105a5bf4bff7136e8f15d3da590478e753ee5e651759fc5c9369d",
     "configs/task_references/video_visual_setup_history/facdfbae425162b38982aeb33c9dc636ff205d3c00c14b67662d930a572cc0d9.json": "facdfbae425162b38982aeb33c9dc636ff205d3c00c14b67662d930a572cc0d9",
     "configs/task_references/video_visual_setup_history/fbc74493ce9b43df7af2bdc7813d9dc466b4bee0839bbe9506b1c64c7595a0b5.json": "fbc74493ce9b43df7af2bdc7813d9dc466b4bee0839bbe9506b1c64c7595a0b5",
-    "configs/task_references/view_pose_landmarks_20261015.json": "c1a59f6113a697c6894309189dac4176cec484ec38acd69b8b59cfa844cfdb0e",
-    "src/robot_tasks/initial_layout.py": "db7afd720c8fa5912b24adf071eb05dfd6ed9ac49c29f408bdc5730fadaedc4a",
-    "src/robot_tasks/config.py": "4e7bcceb9e588c4f1b6ce1a2dc83eabe2e75fecc11d3f8bad95c5596bbbff34b",
+    "configs/task_references/view_pose_landmarks_20261015.json": "a2cb0bf282b8ac98104f23696eb01dd3a0a40f6d53729acdb902a07c3901d653",
+    "src/robot_tasks/initial_layout.py": "3dd53340a84d9e89022e1709a045a89274ad94ad30bf4d0e9f38b54fb3ac3800",
+    "src/robot_tasks/config.py": "55660e284af7d4f1cc5061f74378b084eab7c782fc7dbccd57d196b1868c87b3",
     "src/robot_tasks/execution.py": "7bdd0c862cf33c26967db2918dd0c69ffc27000fb03793127bf8beee6eca590f",
     "src/robot_tasks/runner.py": "72491ed8af42f30da8b77b7338ab1f3b3b44226233171901e1211edcfebfd873",
     "src/robot_tasks/video_appearance.py": "9acc6f2c5a2372c52384445d143a83e7fb555e36982a21ad0cd10d8636045ec7",
-    "assets/runtime.lock.json": "6ce25577ff62c6e4c61d7aaa9b2a777e47c4c3b80e99c463b19e1b8a88edfaca",
+    "src/robot_tasks/video_delivery.py": "78fbd324f45801e8fe76bbc353eee548f7df0acbd9b4759625a80b20ee19e93c",
+    "src/robot_tasks/task_ids.py": "46234fda591945bfe9ee576530af9ad041bf7b0bb93ce4efcfcce0b6ea63239a",
+    "src/robot_tasks/task_numbering.py": "73589af67cc3d075af3de1ba81ab15838537bbe41290d3cd8025e17fc23e74af",
+    "src/robot_tasks/asset_layout.py": "fba17239548ab036ea6c941701d6f9c1ae4e2cd71afba0df5b17624598ed9b68",
+    "configs/benchmark/task_numbering.json": "f51f6b6681422a5ce9653d840f1c9a3e09819ec83d2b2960112b3601e58c0adf",
+    "assets/runtime.lock.json": "0de76b829d35b4fb6b1198bfb6c9fe46ce57311b964c8551e7f85e32f13f4168",
     "configs/models/gpt.toml": "8f7799f5fbece495bad9128bb754d6e7471c89d7fc3389a282c14c7c2e291755"
-  },
-  "numeric_comparison": "12 significant digits; magnitudes below 1e-12 treated as zero; source files exact SHA-256"
+  }
 }

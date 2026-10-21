@@ -49,7 +49,7 @@ class NativeTaskScoringTests(unittest.TestCase):
                 self.assertFalse(fit(pose_transform(pose(*xyz))))
 
     def test_rigid_rose_requires_release_support_and_native_stem_inside_cup(self):
-        spec = build_spec("L1-09")
+        spec = build_spec("L1-05")
         article, = spec.design.articles
         self.assertEqual(article.asset, "tuojing:artificial_rose")
         self.assertEqual(spec.joints, ())
@@ -75,9 +75,9 @@ class NativeTaskScoringTests(unittest.TestCase):
     def test_rigid_rose_allows_leaning_and_uses_lift_verification(self):
         from robot_tasks.registry import resolve_task
 
-        task, config = resolve_task("L1-09")
+        task, config = resolve_task("L1-05")
         self.assertEqual(task.factory.prepare_config(config).grasp_check_mode, "lift")
-        spec = build_spec("L1-09")
+        spec = build_spec("L1-05")
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
         rows = measurement(spec)
         r = rows["rose"]
@@ -91,7 +91,7 @@ class NativeTaskScoringTests(unittest.TestCase):
         self.assertTrue(flower(e, rows)[0])
 
     def test_two_native_blades_need_both_slots_but_not_full_depth(self):
-        spec = build_spec("L1-03")
+        spec = build_spec("L1-02")
         article = spec.design.articles[0]
         e = BenchEvaluator(spec, {"plug": article.initial})
         rows = measurement(spec)
@@ -115,7 +115,7 @@ class NativeTaskScoringTests(unittest.TestCase):
         self.assertFalse(plug(e, rows)[0])
 
     def test_charger_in_source_holder_is_incomplete_and_tabletop_recovery_allowed(self):
-        spec = build_spec("L1-03")
+        spec = build_spec("L1-02")
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
         rows = measurement(spec)
         for now in (.1, .5, 2.):
@@ -128,7 +128,7 @@ class NativeTaskScoringTests(unittest.TestCase):
     def test_charger_photo_layout_preserves_free_holder_and_downward_blades(self):
         from robot_tasks.robots.transforms import pose_transform
 
-        spec = build_spec("L1-03")
+        spec = build_spec("L1-02")
         charger, base = spec.design.articles
         strip = pose_transform(spec.design.fixture_pose)
         self.assertEqual(base.asset, "tuojing:plug_storage_base")
@@ -142,7 +142,7 @@ class NativeTaskScoringTests(unittest.TestCase):
         self.assertLess(charger.initial[2], base.initial[2] + .020)
 
     def test_cup_rim_balancing_and_interpenetration_do_not_count_as_nesting(self):
-        spec = build_spec("L1-08")
+        spec = build_spec("L1-04")
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
         e.grasped.add("upper_cup")
         rows = measurement(spec)
@@ -155,14 +155,14 @@ class NativeTaskScoringTests(unittest.TestCase):
             self.assertEqual(cups(e, rows)[0], expected)
 
     def test_native_charger_payload_does_not_fill_space_between_blades(self):
-        article = build_spec("L1-03").design.articles[0]
+        article = build_spec("L1-02").design.articles[0]
         samples = article_surface(article)
         self.assertFalse(np.any((samples[:, 2] < .016) & (np.abs(samples[:, 0]) < .005)))
 
     def test_nesting_uses_cavity_fit_instead_of_an_ideal_pose_band(self):
         from robot_tasks.robots.transforms import pose_transform, transform_pose
 
-        spec = build_spec("L1-08")
+        spec = build_spec("L1-04")
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
         e.grasped.add("upper_cup")
         rows = measurement(spec)
@@ -181,7 +181,7 @@ class NativeTaskScoringTests(unittest.TestCase):
         from robot_tasks.robots.transforms import pose_transform
         from robot_tasks.tasks.l1.specs import local_corners
 
-        for task_id, name in (("L1-08", "upper_cup"),):
+        for task_id, name in (("L1-04", "upper_cup"),):
             spec = build_spec(task_id)
             rows = measurement(spec)
             article = next(a for a in spec.design.articles if a.name == name)
@@ -195,7 +195,7 @@ class NativeTaskScoringTests(unittest.TestCase):
                 self.assertEqual(e.update(now, rows).status, "running")
 
     def test_rose_shallow_entry_requires_real_support_not_arbitrary_depth(self):
-        spec = build_spec("L1-09")
+        spec = build_spec("L1-05")
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
         e.grasped.add("rose")
         rows = measurement(spec)

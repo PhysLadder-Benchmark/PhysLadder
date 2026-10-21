@@ -54,7 +54,7 @@ class RemoteRuntimeTests(unittest.TestCase):
         job = original / 'runs/remote' / os.uname().nodename / 'job.json'
         job.parent.mkdir(parents=True)
         job.write_text(json.dumps({'pid': os.getpid(),
-                                  'identity': self.module.identity(os.getpid()), 'tasks': ['L2-07']}))
+                                  'identity': self.module.identity(os.getpid()), 'tasks': ['L2-05']}))
         with patch.object(self.module, 'ROOT', original.with_name(original.name + '_v3')):
             with self.assertRaisesRegex(SystemExit, 'busy'):
                 self.module.require_other_deployment_idle()

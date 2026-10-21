@@ -11,10 +11,10 @@
     "hat_yaw": "equal probability of each sign; magnitude uniform in [10,25] degrees",
     "rejection": [
       "10mm tabletop margin",
-      "5mm separation of independent group XY bounds; L1-07 uses actual separate rack segment polygons",
+      "5mm separation of independent group XY bounds; L1-03 uses actual separate rack segment polygons",
       "relative translation change >=15mm",
       "preserve cup sides",
-      "L1-08 cup front/back difference 10..50mm",
+      "L1-04 cup front/back difference 10..50mm",
       "whole moved props fit overview with 8px margin (rack top exempt)",
       "position-only URDF IK <=3mm",
       "recorded passive-physics rejections"
@@ -24,7 +24,7 @@
   },
   "physical_rejections": [
     {
-      "task": "L1-07",
+      "task": "L1-03",
       "variant": 4,
       "seed": 10987712550009242467,
       "candidate_sha256": "0dea13fdec467f7359b86b00ebee47a3c95b9898f8d1991408c9d08d9a9169fe",
@@ -66,7 +66,7 @@
         ]
       },
       "reason": "Unexpected arm/attachment contact in initial scene: {'arm': 'left', 'link': 'link6', 'component': 'link6', 'robot_collider': '/World/Robots/R5_Left/link6/collisions/link6/node_STL_BINARY_', 'other_collider': '/World/Household/Fixture/Colliders/Leg1', 'impulse_ns': 2.952552272734406, 'separation_m': -0.0038405656814575195, 'robot_actor': '/World/Robots/R5_Left/link6', 'other_actor': '/World/Household/Fixture/Colliders/Leg1', 'force_n': 708.6125454562574}",
-      "evidence": "/home/hym/Documents/ChatGPT/Tuojing/GPT_Benchmark_without_runs_reports_20261015_222239/GPT_Benchmark/build/l1_position_perturbations_p03_20261018/rejected_samples/L1-07_v04_r0/result.json"
+      "evidence": "/home/hym/Documents/ChatGPT/Tuojing/GPT_Benchmark_without_runs_reports_20261015_222239/GPT_Benchmark/build/l1_position_perturbations_p03_20261018/rejected_samples/L1-03_v04_r0/result.json"
     }
   ],
   "tasks": {
@@ -445,7 +445,7 @@
         }
       ]
     },
-    "L1-03": {
+    "L1-02": {
       "baseline_runtime_sha256": "616d8f7f1e143f8e936abb26fd1402ab5644c4a68cfab4f40f8a51befa9df485",
       "translation_ranges_m": [
         [
@@ -825,7 +825,7 @@
         }
       ]
     },
-    "L1-07": {
+    "L1-03": {
       "baseline_runtime_sha256": "3935f39f6fb561726dfcd0232c5adb5fcf3729ad6bce1ad80d722cc135da38c8",
       "translation_ranges_m": [
         [
@@ -1259,7 +1259,7 @@
         }
       ]
     },
-    "L1-08": {
+    "L1-04": {
       "baseline_runtime_sha256": "f31ac428f045e82b2c552740057c7a31e98b311442ab979c39967f5101115cac",
       "translation_ranges_m": [
         [
@@ -1825,7 +1825,7 @@
         }
       ]
     },
-    "L1-09": {
+    "L1-05": {
       "baseline_runtime_sha256": "4f5786655464c7c3c1f07d92c2052b4446e73f6ec50bbadc2df71cf82f971398",
       "translation_ranges_m": [
         [

@@ -100,7 +100,7 @@ class BenchEvaluator:
         # Observable task failures terminate this episode; objects are never reset mid-run.
         fallen = [
             n for n, r in rows.items()
-            if not (self.spec.design.task_id == "L2-04" and n.startswith("load_"))
+            if not (self.spec.design.task_id == "L2-03" and n.startswith("load_"))
             and not held(r)
             and np.min(np.asarray(r["corners"])[:, 2]) < self.spec.parameters.get("table_z", 0.0) - 0.08
         ]
@@ -121,7 +121,7 @@ class BenchEvaluator:
             "criteria": details,
             "stages": details.get("stages", {}),
             "objects": ({n: row for n, row in rows.items() if not n.startswith("load_")}
-                        if self.spec.design.task_id == "L2-04" else rows),
+                        if self.spec.design.task_id == "L2-03" else rows),
             "grasp_lift_confirmed": sorted(self.grasped),
             "process_flags": sorted(self.flags),
             "peak_finger_force_n": self.peak_force,
@@ -132,13 +132,13 @@ class BenchEvaluator:
             "quality_warnings": details.get("quality_warnings", []),
             "stage": "stabilize" if complete else "manipulate",
         }
-        if self.spec.design.task_id == "L2-04":
+        if self.spec.design.task_id == "L2-03":
             # Hundreds of small pearls share geometry. Record their measured
             # poses compactly instead of repeating corners/zero finger forces
             # in every frame (which previously inflated memory and JSON logs).
             metrics["load_poses"] = [np.round(rows[f"load_{i}"]["pose"], 6).tolist()
                                      for i in range(self.spec.parameters["count"])]
-        if self.spec.design.task_id == "L2-07" and failure.startswith("Drawer"):
+        if self.spec.design.task_id == "L2-05" and failure.startswith("Drawer"):
             metrics["invalid_reason"] = "simulation_invalid"
             return Assessment("invalid", failure + "; this fixture has no modeled breakage", metrics)
         if self.spec.design.task_id.startswith("L2-") and (failure or violations):

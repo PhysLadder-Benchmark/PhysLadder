@@ -26,7 +26,7 @@ class VideoVisibleSetupTests(unittest.TestCase):
         fit = json.loads(raw)
         self.assertEqual(hashlib.sha256((PROJECT_ROOT/lock['image']).read_bytes()).hexdigest(),
                          lock['image_sha256'])
-        current = effective_cameras('L3-03')['overview']
+        current = effective_cameras('L3-01')['overview']
         for key in ('pose', 'intrinsics'):
             self.assertEqual(current[key], fit[key])
         self.assertEqual(current['resolution'], fit['native_resolution'])
@@ -35,7 +35,7 @@ class VideoVisibleSetupTests(unittest.TestCase):
         self.assertLess(fit['native_preview_verification']['direct_no_warp_p95_px'], 1.5)
 
     def test_every_task_uses_the_bottle_cap_camera_rig_and_rejects_overrides(self):
-        reference = effective_cameras('L3-03')
+        reference = effective_cameras('L3-01')
         for tid in scenes():
             for name, camera in effective_cameras(tid).items():
                 for key in ('parent', 'pose', 'intrinsics', 'resolution', 'clipping_m'):
@@ -43,18 +43,18 @@ class VideoVisibleSetupTests(unittest.TestCase):
         original = setup_for
         for name, key in [('overview', 'pose'), ('overview', 'intrinsics'),
                           ('left_wrist', 'pose'), ('right_wrist', 'intrinsics')]:
-            changed = copy.deepcopy(setup_for('L1-03'))
+            changed = copy.deepcopy(setup_for('L1-02'))
             changed['cameras'][name][key][0] += .01
             with patch('robot_tasks.video_delivery.setup_for',
-                       side_effect=lambda tid: changed if tid == 'L1-03' else original(tid)):
-                with self.assertRaisesRegex(ValueError, 'must match shared camera reference L3-03'):
-                    effective_cameras('L1-03')
+                       side_effect=lambda tid: changed if tid == 'L1-02' else original(tid)):
+                with self.assertRaisesRegex(ValueError, 'must match shared camera reference L3-01'):
+                    effective_cameras('L1-02')
 
     def test_historical_evidence_is_reused_only_for_an_identical_complete_task_record(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder)/'current.json'
             record = {'arms': {'left': {'home': [0, 0, 0]}}, 'cameras': {'fx': 500}}
-            old = json.dumps({'tasks': {'L1-01': record, 'L1-03': {'old': True}}}).encode()
+            old = json.dumps({'tasks': {'L1-01': record, 'L1-02': {'old': True}}}).encode()
             sha = hashlib.sha256(old).hexdigest()
             history = path.parent/'video_visual_setup_history'
             history.mkdir()
@@ -63,7 +63,7 @@ class VideoVisibleSetupTests(unittest.TestCase):
                  patch('robot_tasks.video_delivery.setup_digest', return_value='f'*64), \
                  patch('robot_tasks.video_delivery.setup_for', return_value=record):
                 self.assertTrue(setup_compatible('L1-01', sha))
-                self.assertFalse(setup_compatible('L1-03', sha))
+                self.assertFalse(setup_compatible('L1-02', sha))
                 changed = {**record, 'cameras': {'fx': 600}}
                 with patch('robot_tasks.video_delivery.setup_for', return_value=changed):
                     self.assertFalse(setup_compatible('L1-01', sha))
@@ -101,10 +101,10 @@ class VideoVisibleSetupTests(unittest.TestCase):
                 target = setup_for(tid)['arms'][mount.name]
                 self.assertEqual(mount.home_positions_rad, tuple(target['home_positions_rad']))
                 self.assertAlmostEqual(initial_gripper_width(config, mount.name, .035), target['gripper_width_m'])
-        entry, config = resolve_task('L1-03')
+        entry, config = resolve_task('L1-02')
         config = entry.factory.prepare_config(config)
         self.assertGreater(config.robot.mounts[0].home_positions_rad[5], 1.3)
-        _, closed = resolve_task('L2-07')
+        _, closed = resolve_task('L2-05')
         self.assertLess(initial_gripper_width(closed, 'left', .035), .004)
         _, open_ = resolve_task('L1-01')
         self.assertGreater(initial_gripper_width(open_, 'left', .035), .06)
@@ -156,7 +156,7 @@ class VideoVisibleSetupTests(unittest.TestCase):
                 self.assertTrue(0 <= x0 < x1 <= w and 0 <= y0 < y1 <= h)
         layout = video_layout('L1-01')
         self.assertLess(layout['rois']['right_wrist'][0], layout['rois']['left_wrist'][0])
-        self.assertIsNone(video_layout('L1-09')['rois']['left_wrist'])
+        self.assertIsNone(video_layout('L1-05')['rois']['left_wrist'])
 
     def test_rgb_views_are_composed_into_the_matching_real_video_panes(self):
         try:

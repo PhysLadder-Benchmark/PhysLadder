@@ -8,7 +8,7 @@ from .profile import RobotProfile
 
 # Use the same measured-error allowance as joint tracking completion. A settled
 # loaded joint was accepted by the controller but rejected as the next planning
-# start (L2-03: 2.503939 rad; L3-11: 2.506142 rad at a 2.5-rad software limit).
+# start (L2-02: 2.503939 rad; L3-03: 2.506142 rad at a 2.5-rad software limit).
 # Only the planning/timeout reference is bounded. Raw observations, requested
 # goals, trajectory limits and collision checks remain unchanged.
 ARM_JOINT_TRACKING_TOLERANCE_RAD = 0.015

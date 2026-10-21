@@ -14,7 +14,7 @@ def run(scene):
         "gpt_called": False,
         "scope": "mechanism-only diagnostic; direct test actuation, not robot task success",
     }
-    if scene.config.task_id == "L2-07":
+    if scene.config.task_id == "L2-05":
         from pxr import UsdPhysics
 
         drive = UsdPhysics.DriveAPI(
@@ -52,7 +52,7 @@ def run(scene):
             raise RuntimeError(
                 "Native drawer rail failed opening/release diagnostic: " + str(result)
             )
-    elif scene.config.task_id == "L2-04":
+    elif scene.config.task_id == "L2-03":
         from ...tasks.bench.evaluation import relative
         from ...tasks.bench.pearl_pouring import cup_contains
         from pxr import UsdPhysics
@@ -105,7 +105,7 @@ def run(scene):
             raise RuntimeError(
                 "Native cap fit did not release under diagnostic pull: " + str(result)
             )
-    elif scene.config.task_id == "L2-03":
+    elif scene.config.task_id == "L2-02":
         from pxr import Gf, UsdPhysics
 
         start = scene.measure()["middle_book"]["pose"][:3]

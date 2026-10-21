@@ -93,7 +93,10 @@ def snapshot():
                 protected[path.relative_to(ROOT).as_posix()] = hashlib.sha256(path.read_bytes()).hexdigest()
     for name in ("src/robot_tasks/initial_layout.py", "src/robot_tasks/config.py",
                  "src/robot_tasks/execution.py", "src/robot_tasks/runner.py",
-                 "src/robot_tasks/video_appearance.py", "assets/runtime.lock.json",
+                 "src/robot_tasks/video_appearance.py", "src/robot_tasks/video_delivery.py",
+                 "src/robot_tasks/task_ids.py", "src/robot_tasks/task_numbering.py",
+                 "src/robot_tasks/asset_layout.py", "configs/benchmark/task_numbering.json",
+                 "assets/runtime.lock.json",
                  "configs/models/gpt.toml"):
         protected[name] = hashlib.sha256((ROOT / name).read_bytes()).hexdigest()
     return {"schema_version": 2, "numeric_comparison": "12 significant digits; magnitudes below 1e-12 treated as zero; source files exact SHA-256",

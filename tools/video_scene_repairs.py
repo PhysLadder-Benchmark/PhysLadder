@@ -135,7 +135,7 @@ def fix_l109_cups(stage, row):
         path = row['tracked'][name]['path']
         prim = stage.GetPrimAtPath(path)
         if not prim or not prim.HasAPI(UsdPhysics.RigidBodyAPI):
-            raise ValueError('Missing L1-09 cup rigid body: ' + path)
+            raise ValueError('Missing L1-05 cup rigid body: ' + path)
         UsdPhysics.RigidBodyAPI(prim).CreateKinematicEnabledAttr(True)
         # PhysX does not support CCD on kinematic bodies; their collision
         # shapes still support the dynamic flower, charger and glass beads.
@@ -157,25 +157,25 @@ def apply(stage, tid, row):
     box = replace_support(stage, row)
     if box:
         result['support'] = box
-    if tid == 'L1-07':
-        from l1_07_initial_layout import apply as align_hat_and_rack
-        result['initial_layout'] = align_hat_and_rack(stage)
-        from l1_07_contact_geometry import apply as simplify_hat_contacts
-        result['contact_geometry'] = simplify_hat_contacts(stage)
     if tid == 'L1-03':
-        from l1_03_measured_base import apply as measured_holder
+        from l1_03_initial_layout import apply as align_hat_and_rack
+        result['initial_layout'] = align_hat_and_rack(stage)
+        from l1_03_contact_geometry import apply as simplify_hat_contacts
+        result['contact_geometry'] = simplify_hat_contacts(stage)
+    if tid == 'L1-02':
+        from l1_02_measured_base import apply as measured_holder
         result['measured_holder'] = measured_holder(stage)
-        from l1_03_height_spacer import apply as height_spacer
+        from l1_02_height_spacer import apply as height_spacer
         result['height_spacer'] = height_spacer(stage)
-    if tid == 'L1-08':
+    if tid == 'L1-04':
         result['initial_layout'] = align_l108_right_cup(stage)
-    if tid == 'L1-09':
+    if tid == 'L1-05':
         result['fixed_cups'] = fix_l109_cups(stage, row)
     if tid == 'L2-01':
         result['marker'] = split_marker(stage)
         from l2_marker_asset import apply as replace_marker_exterior
         result['marker']['asset_override'] = replace_marker_exterior(stage)
-    if tid == 'L2-03':
+    if tid == 'L2-02':
         # Contact reporting deliberately disables sleep. Resolve the contact
         # velocity more accurately instead of freezing or hiding jitter.
         for name in ('lower_book','middle_book','upper_book'):
@@ -185,10 +185,10 @@ def apply(stage, tid, row):
         result['books']={'position_iterations': 64, 'velocity_iterations': 16,
                          'remain_dynamic': True, 'continuous_contact_reports': True,
                          'mass_friction_and_restitution_unchanged': True}
-    if tid == 'L3-03':
+    if tid == 'L3-01':
         UsdPhysics.RigidBodyAPI(stage.GetPrimAtPath(row['tracked']['bottle']['path'])).CreateKinematicEnabledAttr(True)
         result['bottle_fixed'] = True
-    if tid == 'L3-11':
+    if tid == 'L3-03':
         rotate_about_origin(stage,row['fixtures'][0]['path'],np.pi)
         rotate_about_origin(stage,row['tracked']['eraser']['path'],np.pi/2)
         result['video_orientation'] = {'board_yaw_delta_rad': float(np.pi), 'eraser_yaw_delta_rad': float(np.pi/2),
