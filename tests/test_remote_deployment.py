@@ -98,6 +98,15 @@ class RemoteDeploymentTests(unittest.TestCase):
             with patch.object(fleet, 'remote') as remote:
                 fleet.require_idle('worker')
             command = remote.call_args.args[1]
+            # Enumerate only the process owned by this test. Its real /proc
+            # metadata still drives the check, without requiring access to
+            # unrelated users' processes on a shared CI runner.
+            probe = command[2]
+            command[2] = (
+                'from pathlib import Path\nfrom unittest.mock import patch\n'
+                f'with patch.object(Path, "glob", return_value=[Path("/proc/{worker.pid}")]):\n'
+                f'    exec({probe!r})\n'
+            )
             busy = subprocess.run(command, capture_output=True, text=True, timeout=10)
             self.assertNotEqual(busy.returncode, 0)
             self.assertIn(str(worker.pid), busy.stderr)
@@ -106,6 +115,23 @@ class RemoteDeploymentTests(unittest.TestCase):
             worker.wait(timeout=5)
         idle = subprocess.run(command, capture_output=True, text=True, timeout=10)
         self.assertEqual(idle.returncode, 0, idle.stderr)
+
+    @unittest.skipIf(os.name == 'nt', 'Process inspection uses Linux /proc')
+    def test_idle_check_refuses_deployment_when_process_permissions_are_unknown(self):
+        self.config['project'] = str(self.root)
+        with patch.object(fleet, 'remote') as remote:
+            fleet.require_idle('worker')
+        command = remote.call_args.args[1]
+        probe = command[2]
+        command[2] = (
+            'from pathlib import Path\nfrom unittest.mock import patch\n'
+            'with patch.object(Path, "glob", return_value=[Path("/proc/999999999")]), '
+            'patch.object(Path, "read_bytes", side_effect=PermissionError):\n'
+            f'    exec({probe!r})\n'
+        )
+        result = subprocess.run(command, capture_output=True, text=True, timeout=10)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('Cannot inspect project processes', result.stderr)
 
 
 if __name__ == '__main__':
