@@ -13,7 +13,7 @@ from unittest.mock import patch
 class RemoteRuntimeTests(unittest.TestCase):
     def setUp(self):
         spec = importlib.util.spec_from_file_location(
-            'remote_job_test', Path(__file__).resolve().parents[1] / 'tools/remote/remote_job.py')
+            'remote_job_test', Path(__file__).resolve().parents[1] / 'skills/r5-remote-deploy/scripts/remote_job.py')
         self.module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(self.module)
         self.temp = tempfile.TemporaryDirectory()
@@ -50,12 +50,13 @@ class RemoteRuntimeTests(unittest.TestCase):
             self.module.check_runtime()
 
     def test_other_deployment_busy_blocks_start_before_runtime(self):
-        original = self.root / 'GPT_Benchmark_remote_mengjq'
+        original = self.root / 'another-experiment'
         job = original / 'runs/remote' / os.uname().nodename / 'job.json'
         job.parent.mkdir(parents=True)
         job.write_text(json.dumps({'pid': os.getpid(),
                                   'identity': self.module.identity(os.getpid()), 'tasks': ['L2-05']}))
-        with patch.object(self.module, 'ROOT', original.with_name(original.name + '_v3')):
+        with patch.object(self.module, 'ROOT', self.root / 'current-project'), \
+                patch.dict(os.environ, {'GPT_BENCHMARK_GUARD_PROJECTS': json.dumps([str(original)])}):
             with self.assertRaisesRegex(SystemExit, 'busy'):
                 self.module.require_other_deployment_idle()
             job.write_text(json.dumps({'pid': os.getpid(), 'identity': 'stale'}))

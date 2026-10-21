@@ -23,3 +23,12 @@
 /build/codex/
 __pycache__/
 *.pyc
+
+# Local environments and release archives are not runtime project inputs.
+.venv/
+venv/
+.conda/
+*.egg-info/
+node_modules/
+/dist/
+/skills/**/.env*

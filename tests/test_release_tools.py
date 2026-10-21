@@ -7,6 +7,7 @@ from pathlib import Path
 import tarfile
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -23,6 +24,25 @@ reproduce = module("reproduce", "tools/reproduce.py")
 
 
 class ReleaseToolTests(unittest.TestCase):
+    def test_source_delivery_includes_optional_skill_and_excludes_private_files(self):
+        packager = module('release_packager_test', 'tools/release/package.py')
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            keep = ['skills/r5-remote-deploy/SKILL.md',
+                    'skills/r5-remote-deploy/scripts/fleet.py',
+                    'skills/r5-remote-deploy/assets/fleet.example.json']
+            private = ['configs/.env', 'skills/r5-remote-deploy/.env.remote',
+                       'skills/r5-remote-deploy/assets/fleet.local.json',
+                       'tools/local.key', 'tools/.venv/example.py']
+            for name in keep + private:
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text('synthetic fixture')
+            with patch.object(packager, 'ROOT', root):
+                selected = set(packager.source_files())
+            self.assertTrue(set(keep) <= selected)
+            self.assertFalse(set(private) & selected)
+
     def test_reproduction_preserves_nonuniform_budgets(self):
         rows = reproduce.plan(["L2-03_variant01", "L3-04", "L3-04_variant01"],
                               ROOT / "configs/models/gpt.toml")

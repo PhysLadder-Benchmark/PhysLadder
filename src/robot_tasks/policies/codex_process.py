@@ -5,8 +5,10 @@ without installing the robot project or Isaac in WSL, and never reads tokens.
 """
 
 import argparse
+from contextlib import ExitStack
+import json
 import os
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import shutil
 import signal
 import subprocess
@@ -17,6 +19,37 @@ import time
 from urllib.parse import urlsplit
 
 _WINDOWS = sys.platform == "win32"
+
+
+def _wsl_path(command, *, timeout_s=10):
+    """Bound path conversion even when a WSL descendant retains stdout handles."""
+    options = ({"creationflags": subprocess.CREATE_NO_WINDOW} if os.name == "nt"
+               else {"start_new_session": True})
+    # communicate() on Windows can wait forever for inherited pipe handles after
+    # killing the timed-out launcher. A file does not require descendant EOF.
+    with tempfile.TemporaryFile() as output:
+        process = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=output,
+                                   stderr=subprocess.DEVNULL, env=codex_environment(), **options)
+        try:
+            process.wait(timeout=timeout_s)
+        except BaseException:
+            try:
+                if os.name == "nt":
+                    subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                   timeout=3, check=False, creationflags=subprocess.CREATE_NO_WINDOW)
+                else:
+                    _kill_group(process.pid)
+            finally:
+                if process.poll() is None:
+                    process.kill()
+                process.wait(timeout=3)
+            raise
+        output.seek(0)
+        value = output.read(16385).decode("utf-8", errors="replace").strip()
+    if process.returncode or len(value) > 16384 or not value.startswith("/") or "\n" in value:
+        raise RuntimeError("Cannot translate project paths into WSL")
+    return PurePosixPath(value)
 
 
 class _StdoutLines:
@@ -78,6 +111,7 @@ def _local_settings():
 class CodexProcess:
     def __init__(self, codex_bin):
         self._cancel = threading.Event()
+        self._path_roots = {}
         config = _local_settings()
         self.codex_bin = codex_bin
         self.executable = shutil.which(codex_bin)
@@ -105,22 +139,29 @@ class CodexProcess:
     def path(self, path):
         if self.mode == "native":
             return path
+        windows = PureWindowsPath(str(path))
+        anchor = windows.anchor.casefold()
+        if windows.is_absolute() and anchor in self._path_roots:
+            return self._path_roots[anchor].joinpath(*windows.parts[1:])
         try:
-            result = subprocess.run([*self.prefix, "wslpath", "-a", "-u", str(path)],
-                                    capture_output=True, timeout=10, env=codex_environment())
+            converted = _wsl_path([*self.prefix, "wslpath", "-a", "-u", str(path)])
         except (OSError, subprocess.TimeoutExpired):
             raise RuntimeError("Cannot translate project paths into WSL") from None
-        value = result.stdout.decode("utf-8", errors="replace").strip()
-        if result.returncode or not value.startswith("/") or "\n" in value:
-            raise RuntimeError("Cannot translate project paths into WSL")
-        return PurePosixPath(value)
+        # Learn the selected distro's actual mount root before Isaac starts;
+        # do not assume /mnt, a drive letter, or a particular WSL configuration.
+        suffix = windows.parts[1:]
+        if windows.is_absolute() and suffix and len(converted.parts) > len(suffix):
+            tail = converted.parts[-len(suffix):]
+            if tuple(p.casefold() for p in tail) == tuple(p.casefold() for p in suffix):
+                self._path_roots[anchor] = PurePosixPath(*converted.parts[:-len(suffix)])
+        return converted
 
     def command(self, arguments, directory, timeout_s):
         if self.mode == "native":
             return [self.executable, *arguments]
         return [*self.prefix, self.python, self.worker, "--wsl-worker",
                 "--directory", str(self.path(directory)), "--codex-bin", self.codex_bin,
-                "--timeout", str(timeout_s),
+                "--timeout", str(timeout_s), "--file-output",
                 *(["--proxy", self.proxy] if self.proxy else []), "--", *arguments]
 
     def cancel_pending(self):
@@ -132,6 +173,8 @@ class CodexProcess:
     def run(self, arguments, *, directory, data=b"", timeout_s, on_stdout_line=None):
         if self._cancel.is_set():
             raise KeyboardInterrupt("Codex request cancelled")
+        if self.mode == "wsl":
+            (directory / "worker_result.json").unlink(missing_ok=True)
         command = self.command(arguments, directory, timeout_s)
         # A finite input file gives the child reliable EOF, even if it starts
         # reading late. Repeated communicate(None) after a short timeout can
@@ -147,7 +190,11 @@ class CodexProcess:
             lines = _StdoutLines(reader, on_stdout_line)
             process = subprocess.Popen(command, stdin=prompt, stdout=output, stderr=errors,
                                        env=codex_environment(), start_new_session=(os.name != "nt"),
-                                       creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0)
+                                       # stdin/stdout are files. WSL must not inherit
+                                       # Isaac/Kit's console and wait on its host at exit.
+                                       creationflags=(subprocess.CREATE_NEW_PROCESS_GROUP |
+                                                      subprocess.CREATE_NO_WINDOW) if os.name == "nt" else 0)
+            reported_exit = None
             try:
                 # WSL enforces the same deadline itself; allow it time to reap
                 # Linux descendants before terminating the Windows launcher.
@@ -155,6 +202,22 @@ class CodexProcess:
                 while True:
                     if self._cancel.is_set():
                         raise KeyboardInterrupt("Codex request cancelled")
+                    completion = directory / "worker_result.json"
+                    if self.mode == "wsl" and completion.is_file():
+                        report = json.loads(completion.read_text(encoding="utf-8"))
+                        if (type(report.get("returncode")) is not int
+                                or report.get("cleanup_complete") is not True):
+                            raise RuntimeError("Invalid WSL worker completion record")
+                        # The Linux supervisor has reaped Codex and its children.
+                        # wsl.exe can linger after that; its exit code is not the
+                        # already completed model process's exit code.
+                        reported_exit = report["returncode"]
+                        try:
+                            process.wait(timeout=2)
+                        except subprocess.TimeoutExpired:
+                            self.terminate(process, directory)
+                        lines.poll(final=True)
+                        break
                     remaining = deadline - time.monotonic()
                     if remaining <= 0:
                         raise subprocess.TimeoutExpired(command, timeout_s)
@@ -175,9 +238,10 @@ class CodexProcess:
             stderr = errors.read(8192)
         if len(stdout) > 4 * 1024 * 1024:
             raise RuntimeError("Codex event stream exceeds size limit")
-        if self.mode == "wsl" and process.returncode == 124:
+        returncode = process.returncode if reported_exit is None else reported_exit
+        if self.mode == "wsl" and returncode == 124:
             raise subprocess.TimeoutExpired(command, timeout_s)
-        return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
+        return subprocess.CompletedProcess(command, returncode, stdout, stderr)
 
     def terminate(self, process, directory):
         if process.poll() is not None:
@@ -192,8 +256,13 @@ class CodexProcess:
             except subprocess.TimeoutExpired:
                 pass
         if os.name == "nt":
-            subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"],
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10, check=False)
+            try:
+                subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=3,
+                               check=False, creationflags=subprocess.CREATE_NO_WINDOW)
+            except (OSError, subprocess.TimeoutExpired):
+                if process.poll() is None:
+                    process.kill()
         else:
             _kill_group(process.pid)
         process.wait(timeout=10)
@@ -213,6 +282,7 @@ def wsl_worker(argv=None):
     parser.add_argument("--codex-bin", required=True)
     parser.add_argument("--timeout", type=float, required=True)
     parser.add_argument("--proxy")
+    parser.add_argument("--file-output", action="store_true")
     parser.add_argument("arguments", nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
     executable = shutil.which(args.codex_bin)
@@ -232,23 +302,39 @@ def wsl_worker(argv=None):
             environment[key] = args.proxy
     # Hand the existing input descriptor directly to Codex. This supervisor
     # must not drain/re-send the prompt or keep an extra pipe writer open.
-    process = subprocess.Popen([executable, *arguments], stdin=sys.stdin.buffer,
-                               env=environment, start_new_session=True)
-    deadline = time.monotonic() + args.timeout
-    try:
-        while True:
-            if not args.directory.exists() or (args.directory / "cancel").exists():
-                return 130
-            if time.monotonic() >= deadline:
-                return 124
-            try:
-                process.wait(timeout=0.1)
-                return process.returncode
-            except subprocess.TimeoutExpired:
-                pass
-    finally:
-        _kill_group(process.pid)
-        process.wait(timeout=3)
+    with ExitStack() as files:
+        # Bypass wsl.exe's asynchronous stdout forwarding. Completion is only
+        # published after the actual child's output and descendants are closed.
+        stdout = files.enter_context((args.directory / "events.jsonl").open("ab")) if args.file_output else None
+        stderr = files.enter_context((args.directory / "stderr.log").open("ab")) if args.file_output else None
+        process = subprocess.Popen([executable, *arguments], stdin=sys.stdin.buffer,
+                                   stdout=stdout, stderr=stderr,
+                                   env=environment, start_new_session=True)
+        deadline = time.monotonic() + args.timeout
+        returncode = None
+        try:
+            while True:
+                if not args.directory.exists() or (args.directory / "cancel").exists():
+                    returncode = 130
+                    return returncode
+                if time.monotonic() >= deadline:
+                    returncode = 124
+                    return returncode
+                try:
+                    process.wait(timeout=0.1)
+                    returncode = process.returncode
+                    return returncode
+                except subprocess.TimeoutExpired:
+                    pass
+        finally:
+            _kill_group(process.pid)
+            process.wait(timeout=3)
+            files.close()
+            if returncode is not None and args.directory.exists():
+                temporary = args.directory / "worker_result.json.tmp"
+                temporary.write_text(json.dumps({"returncode": returncode, "cleanup_complete": True}),
+                                     encoding="utf-8")
+                temporary.replace(args.directory / "worker_result.json")
 
 
 if __name__ == "__main__":

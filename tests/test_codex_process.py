@@ -2,7 +2,8 @@
 
 import os
 import hashlib
-from pathlib import Path
+import json
+from pathlib import Path, PurePosixPath
 import subprocess
 import sys
 import tempfile
@@ -25,15 +26,50 @@ class CodexProcessTests(unittest.TestCase):
     def test_windows_without_native_codex_selects_wsl_and_translates_paths(self):
         def which(name):
             return "wsl.exe" if name == "wsl.exe" else None
-        converted = subprocess.CompletedProcess([], 0, b"/mnt/d/a space/worker.py\n", b"")
+        converted = PurePosixPath("/mnt/d/a space/worker.py")
         with patch.object(codex_process, "_WINDOWS", True), \
                 patch.object(codex_process.shutil, "which", side_effect=which), \
-                patch.object(codex_process.subprocess, "run", return_value=converted):
+                patch.object(codex_process, "_wsl_path", return_value=converted):
             host = codex_process.CodexProcess("codex")
             command = host.command(["login", "status"], self.root, 15)
         self.assertEqual(host.mode, "wsl")
         self.assertEqual(command[:4], ["wsl.exe", "--exec", "python3", "/mnt/d/a space/worker.py"])
         self.assertEqual(command[-3:], ["--", "login", "status"])
+
+    def test_wsl_mount_mapping_is_discovered_once_per_drive(self):
+        host = object.__new__(codex_process.CodexProcess)
+        host.mode, host.prefix, host._path_roots = "wsl", ["wsl", "--exec"], {}
+        with patch.object(codex_process, "_wsl_path", side_effect=[
+                PurePosixPath("/custom/drives/d/project/src/worker.py"),
+                PurePosixPath("/custom/drives/e/other/request")]) as translate:
+            host.path(r"D:\project\src\worker.py")
+            self.assertEqual(host.path(r"D:\project\build\request with spaces"),
+                             PurePosixPath("/custom/drives/d/project/build/request with spaces"))
+            self.assertEqual(host.path(r"E:\other\request"),
+                             PurePosixPath("/custom/drives/e/other/request"))
+            self.assertEqual(translate.call_count, 2)
+
+    def test_path_conversion_timeout_does_not_wait_for_inherited_pipe_eof(self):
+        # A descendant retains stdout after its launcher is killed. The old
+        # Windows communicate(timeout) cleanup could then wait indefinitely.
+        pidfile = self.root / "path_child.pid"
+        script = ("import subprocess,sys,time\n"
+                  "from pathlib import Path\n"
+                  "p=subprocess.Popen([sys.executable,'-c','import time; time.sleep(30)'])\n"
+                  f"Path({str(pidfile)!r}).write_text(str(p.pid))\n"
+                  "time.sleep(30)\n")
+        started = time.monotonic()
+        with self.assertRaises(subprocess.TimeoutExpired):
+            codex_process._wsl_path([sys.executable, "-c", script], timeout_s=.5)
+        self.assertLess(time.monotonic() - started, 5)
+        self.assertTrue(pidfile.is_file())
+
+    def test_path_conversion_accepts_absolute_posix_and_rejects_empty_output(self):
+        self.assertEqual(codex_process._wsl_path([
+            sys.executable, "-c", "print('/custom/d/a space')"]),
+            PurePosixPath("/custom/d/a space"))
+        with self.assertRaisesRegex(RuntimeError, "Cannot translate"):
+            codex_process._wsl_path([sys.executable, "-c", "pass"])
 
     def test_explicit_wsl_account_takes_precedence_over_windows_install(self):
         with patch.object(codex_process, "_WINDOWS", True), \
@@ -49,6 +85,40 @@ class CodexProcessTests(unittest.TestCase):
                 patch.object(codex_process.shutil, "which", return_value=None):
             with self.assertRaisesRegex(RuntimeError, "Codex CLI not found"):
                 codex_process.CodexProcess("missing")
+
+    def test_completed_linux_worker_status_survives_lingering_wsl_launcher(self):
+        with patch.object(codex_process.shutil, "which", return_value="fixture"):
+            host = codex_process.CodexProcess("fixture")
+        host.mode = "wsl"
+        def launched(*args, **kwargs):
+            kwargs["stdout"].write(b"completed model response\n")
+            kwargs["stdout"].flush()
+            (self.root / "worker_result.json").write_text(json.dumps(
+                {"returncode": 0, "cleanup_complete": True}))
+            return process
+        from unittest.mock import Mock
+        process = Mock(returncode=1)
+        process.wait.side_effect = subprocess.TimeoutExpired("wsl", 2)
+        with patch.object(host, "command", return_value=["fixture"]), \
+                patch.object(codex_process.subprocess, "Popen", side_effect=launched), \
+                patch.object(host, "terminate") as terminate:
+            result = host.run([], directory=self.root, timeout_s=30)
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, b"completed model response\n")
+        terminate.assert_called_once_with(process, self.root)
+
+    def test_stale_wsl_completion_is_removed_before_new_request(self):
+        with patch.object(codex_process.shutil, "which", return_value="fixture"):
+            host = codex_process.CodexProcess("fixture")
+        host.mode = "wsl"
+        completion = self.root / "worker_result.json"
+        completion.write_text('{"returncode":0,"cleanup_complete":true}')
+        with patch.object(host, "command", return_value=["fixture"]), \
+                patch.object(codex_process.subprocess, "Popen") as popen:
+            popen.return_value.returncode = 7
+            result = host.run([], directory=self.root, timeout_s=30)
+        self.assertEqual(result.returncode, 7)
+        self.assertFalse(completion.exists())
 
     def delayed_input_fixture(self):
         # Larger than a pipe buffer, with a reader delayed beyond the 100 ms
@@ -97,6 +167,7 @@ class CodexProcessTests(unittest.TestCase):
                           on_stdout_line=lines.append)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), expected)
+
         self.assertEqual([line.strip() for line in lines], [expected])
 
     @unittest.skipIf(os.name == "nt", "WSL worker requires POSIX")
@@ -106,6 +177,20 @@ class CodexProcessTests(unittest.TestCase):
                                 input=payload, capture_output=True, timeout=5)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout.strip(), expected)
+        completion = json.loads((self.root / "worker_result.json").read_text())
+        self.assertEqual(completion, {"returncode": 0, "cleanup_complete": True})
+
+    @unittest.skipIf(os.name == "nt", "WSL worker requires POSIX")
+    def test_wsl_file_output_is_complete_before_completion_record(self):
+        payload, script, expected = self.delayed_input_fixture()
+        command = self.worker_command(sys.executable, 3, "-c", script)
+        command.insert(command.index("--"), "--file-output")
+        result = subprocess.run(command, input=payload, capture_output=True, timeout=5)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout, b"")
+        self.assertEqual((self.root / "events.jsonl").read_bytes().strip(), expected)
+        self.assertEqual(json.loads((self.root / "worker_result.json").read_text()),
+                         {"returncode": 0, "cleanup_complete": True})
 
     def test_wsl_proxy_is_explicitly_forwarded_to_the_supervisor(self):
         with patch.object(codex_process, "_WINDOWS", True), \
@@ -132,6 +217,8 @@ class CodexProcessTests(unittest.TestCase):
         self.assertTrue((self.root / "cancel").is_file())
         self.assertEqual(process.wait.call_count, 2)
         self.assertEqual(process.wait.call_args.kwargs, {"timeout": 3})
+        if os.name == "nt":
+            self.assertTrue(popen.call_args.kwargs["creationflags"] & subprocess.CREATE_NO_WINDOW)
 
     @unittest.skipIf(os.name == "nt", "POSIX subprocess fixture")
     def test_wsl_worker_forwards_input_and_filters_api_keys(self):

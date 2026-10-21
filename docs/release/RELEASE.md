@@ -5,7 +5,7 @@
 `python tools/release/package.py --output dist` builds:
 
 - `r5-benchmark-source.tar.gz`: maintained code, all task configurations, tests,
-  release documentation, site and the runtime asset lock. No `.git` history,
+  release documentation, optional deployment skill, site and the runtime asset lock. No `.git` history,
   credentials, host-local config, environments, runs, reports or caches.
 - `r5-benchmark-assets.tar.gz`: every file in `assets/runtime.lock.json`, including
   all references, source layers, textures and upstream notices.

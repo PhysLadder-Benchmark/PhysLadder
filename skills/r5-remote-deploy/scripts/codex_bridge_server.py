@@ -10,7 +10,7 @@ import queue
 import sys
 import threading
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / 'src'))
 from robot_tasks.policies.codex_cli import CodexCLIClient
 from robot_tasks.policies.model_config import GPTSettings, load_gpt_settings
@@ -21,10 +21,12 @@ class Server(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
 
-    def __init__(self, address, token, settings, factory=CodexCLIClient):
+    def __init__(self, address, token, settings, factory=CodexCLIClient, *, max_concurrent=5):
+        if max_concurrent < 1:
+            raise ValueError('max_concurrent must be positive')
         super().__init__(address, Handler)
         self.token, self.settings, self.factory = token, settings, factory
-        self.slots = threading.BoundedSemaphore(5)
+        self.slots = threading.BoundedSemaphore(max_concurrent)
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -113,13 +115,14 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('--port', type=int, default=18465)
     p.add_argument('--token-file', type=Path, required=True)
+    p.add_argument('--max-concurrent', type=int, default=5)
     a = p.parse_args()
     token = a.token_file.read_text().strip()
     if len(token) < 32:
         raise ValueError('Use a random private token with at least 32 characters')
     settings = load_gpt_settings(ROOT / 'configs/models/gpt.toml')
     CodexCLIClient(settings).require_chatgpt_login()
-    server = Server(('127.0.0.1', a.port), token, settings)
+    server = Server(('127.0.0.1', a.port), token, settings, max_concurrent=a.max_concurrent)
     print(f'CODEX_BRIDGE_READY 127.0.0.1:{a.port}', flush=True)
     try:
         server.serve_forever()

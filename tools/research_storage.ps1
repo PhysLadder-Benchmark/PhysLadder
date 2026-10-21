@@ -2,7 +2,8 @@
 function Get-ResearchStorageConfig {
     $taskFile = Join-Path (Split-Path -Parent $PSScriptRoot) 'configs\runtime\windows.json'
     $taskConfig = Get-Content -LiteralPath $taskFile -Raw | ConvertFrom-Json
-    if ([IO.Path]::GetPathRoot($taskConfig.root) -ne 'D:\') { throw 'Research storage must be on D:' }
+    if (-not [IO.Path]::IsPathRooted($taskConfig.root)) { throw 'Research storage root must be an absolute path' }
+    $taskConfig.root = [IO.Path]::GetFullPath($taskConfig.root)
     return $taskConfig
 }
 

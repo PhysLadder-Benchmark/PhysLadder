@@ -1,19 +1,10 @@
-Remote operation (optional)
+Optional remote deployment has moved to skills/r5-remote-deploy/SKILL.md.
+Local experiments use tools/reproduce.py or tools/batch_run.py and need no SSH.
 
-See docs/release/INSTALL.md for simulator/planner setup and model transport.
+This directory retains only compatibility launchers for existing commands:
+- fleet.py forwards to the skill helper.
+- remote_entry.sh and recovery_planner.sh forward existing runtime/recovery calls.
+- fleet.local.json, when present, is private and ignored; it remains supported.
 
-1. Copy fleet.json to fleet.local.json, which is ignored by Git.
-2. Configure host, user, SSH port, project and runtime directories.
-3. Install the project and external runtimes on that host.
-4. From the local machine, `python tools/remote/fleet.py status` checks jobs.
-5. `connect` establishes an authenticated loopback bridge for the local Codex CLI.
-6. `start --machine cluster --tasks L2-02_variant01 --max-calls 150 --wall-time-s 18000`
-   launches a task with explicit budgets. It uses the configured model account.
-
-The placeholder fleet.json is not a real machine. An explicit
-GPT_BENCHMARK_FLEET_CONFIG overrides fleet.local.json. SSH authentication and
-bridge tokens are private; never put them in a release archive.
-
-Do not synchronize a running experiment's dependencies. Never kill unrelated
-jobs to deploy. This checkout may have additional rules in AGENTS.local.md.
-Historical project directories and experiment snapshots must remain intact.
+New deployments configure configs/runtime/remote.local.json from the skill's
+assets/fleet.example.json. The public skill contains no team host or credentials.

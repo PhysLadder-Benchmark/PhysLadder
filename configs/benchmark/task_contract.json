@@ -412,7 +412,7 @@
     "src/robot_tasks/policies/action_codec.py": "ae1be0f2e9d6ebace73e470ad2e3c7f44e24c149821672936bf3bf93179ead34",
     "src/robot_tasks/policies/codex_bridge.py": "4287c2b8496a964f29741ecb84ac0e2145a3c2fbf566eec8630e927032edd4d8",
     "src/robot_tasks/policies/codex_cli.py": "92ce4e962c4a5797d60b8597af40546a8f3c8c61a1deeced7d90dacf70312227",
-    "src/robot_tasks/policies/codex_process.py": "2dc4970745a83b11e8ab494b889562f8b70f7e4781554faad6c3700a324580ac",
+    "src/robot_tasks/policies/codex_process.py": "7c14dffd72b4b3c2f253e29883cdf3ccd0b99afb45289b61fcee62dd7b8fa61c",
     "src/robot_tasks/policies/decision_note.py": "aad1f84ec545c1f95272da2eb11d3af6674d1305b501227090d73b3ca139b5e6",
     "src/robot_tasks/policies/depth_query.py": "b7ea9765d8b5f18229f7b4cb4a471a938ca2ca4bb91c283cd507eb224e68087b",
     "src/robot_tasks/policies/gpt.py": "587f9f2c6c5aa994c8afb8765521c9a4fcb5794dc33774a9f4e4ae8ac62c2b3d",

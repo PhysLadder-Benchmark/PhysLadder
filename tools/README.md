@@ -4,12 +4,12 @@
 
 以下是既有工具的用途索引。原项目、历史实验和任务资产保持原样。
 
-日常运行主要使用 `launch.py`、`batch_run.py` 和 `remote/fleet.py`。资产已随项目提供，启动任务不需要先执行资产生成、修复或安装脚本。
+本机日常运行主要使用 `launch.py`、`reproduce.py` 和 `batch_run.py`。远端部署按需使用 [remote-deploy skill](../skills/r5-remote-deploy/SKILL.md)。资产已随项目提供，启动任务不需要先执行资产生成、修复或安装脚本。
 
 ```text
 tools/
 ├── launch.py、batch_run.py       日常运行入口
-├── remote/                      集群部署、桥接、任务管理
+├── remote/                      旧命令兼容入口；实现位于可选 skill
 ├── diagnostics/                 视角检查、L2 初态对照图
 ├── recover_l3.py                基于兼容记录恢复 L3
 ├── generate_l1_position_variants.py
@@ -18,27 +18,21 @@ tools/
 └── *.ps1、setup_curobo.sh        本机环境与检查工具
 ```
 
-## 运行与远端管理：13 个
+## 本机运行与可选远端部署
 
-| 脚本 | 用途与执行影响 |
+| 入口 | 用途 |
 | --- | --- |
-| [launch.py](launch.py) | 公共任务／工程检查启动器；`list` 只列入口，正式运行按配置调用模型。 |
-| [batch_run.py](batch_run.py) | 串行批量运行；创建 `runs/` 实验记录。 |
-| [remote/fleet.py](remote/fleet.py) | 远端状态、部署、连接、启动、停止和收集；`start` 会启动实验。 |
-| [remote/remote_job.py](remote/remote_job.py) | 远端任务进程管理，由 fleet 调用。 |
-| [remote/remote_entry.sh](remote/remote_entry.sh) | Linux 解释器、缓存及桥接环境包装器，由 fleet 调用。 |
-| [remote/bootstrap.sh](remote/bootstrap.sh) | 创建远端运行环境和包装器。 |
-| [remote/codex_bridge_server.py](remote/codex_bridge_server.py) | 本机模型桥接服务，处理远端请求。 |
-| [remote/check_bridge.py](remote/check_bridge.py) | **会实际调用一次模型**，不是纯网络连通检查。 |
-| [remote/native_probe.py](remote/native_probe.py) | 远端原生复位、相机及规划器检查；不调用 GPT。 |
-| [remote/export_planner_geometry.py](remote/export_planner_geometry.py) | 从已有运行导出规划几何；校验输入。 |
-| [remote/verify_files.py](remote/verify_files.py) | 核对同步文件清单。 |
-| [remote/recovery_planner.sh](remote/recovery_planner.sh) | 历史恢复使用的规划器包装器。 |
-| [recover_l3.py](recover_l3.py) | 校验源文件与恢复记录，按指定 GPU 继续 L3；`--probe` 不调用模型，正常恢复会调用。只适用于兼容的记录包。 |
+| [launch.py](launch.py) | 本机任务和工程检查启动器。 |
+| [batch_run.py](batch_run.py) | 本机批量运行，创建 `runs/` 记录。 |
+| [reproduce.py](reproduce.py) | 按已有任务配置生成计划或显式执行。 |
+| [setup_runtime.sh](setup_runtime.sh) | 为本机 Linux 的既有 Isaac/cuRobo 安装创建包装器。 |
+| [recover_l3.py](recover_l3.py) | 兼容特定测量状态记录包的历史恢复入口。 |
 
-远端配置和同步排除项仍在 [fleet.json](remote/fleet.json)、[rsync-excludes.txt](remote/rsync-excludes.txt)，使用说明见 [remote/README.txt](remote/README.txt)。
+SSH 配置、同步、远端状态、桥接和记录收集集中在
+[skills/r5-remote-deploy](../skills/r5-remote-deploy/SKILL.md)。正常本机实验不需要它。
+`remote/fleet.py`、`remote/remote_entry.sh` 和 `remote/recovery_planner.sh` 只转发旧命令，保留已有部署的兼容性。
 
-## 检查与预览：4 个
+## 检查与预览
 
 以下工具不调用 GPT。它们需要已有渲染／真机证据，或在 Isaac 中生成初态。
 
@@ -49,7 +43,7 @@ tools/
 | [diagnostics/audit_view_pose_alignment.py](diagnostics/audit_view_pose_alignment.py) | 检查真机／仿真视角与机械臂物理复位；可指定 `--initial-root`、`--output`，仍需对应真机证据。 |
 | [diagnostics/preview_l2_initial_layouts.py](diagnostics/preview_l2_initial_layouts.py) | 渲染 L2 原版／P01 初态并合成对照图；需 Isaac 与中文字体。`--compose-only` 仅合成已有图片。 |
 
-这四个脚本从 `tools/` 根目录移动到 `tools/diagnostics/`，文件名保持不变；引用和测试已随路径调整。它们是可复用工具，但默认的历史输入目录不会随干净的 Git 检出提供。
+上述四个预览脚本从 `tools/` 根目录移动到 `tools/diagnostics/`，文件名保持不变；引用和测试已随路径调整。它们是可复用工具，但默认的历史输入目录不会随干净的 Git 检出提供。
 
 例如，在配置好 Isaac 的 Python 环境中，从项目根目录预览：
 
@@ -58,12 +52,13 @@ PYTHONPATH=src python tools/diagnostics/preview_l2_initial_layouts.py \
   --tasks L2-02 L2-03 --output build/l2_initial_preview
 ```
 
-## 资产安装、构建与校验入口：14 个
+## 资产安装、构建与校验入口
 
 这些是手动维护工具。部分仍面向旧版本的资产包，**不构成 Combined 当前全部资产的一键重建流程**。重建后需要核对输出、任务清单和运行资产锁，不能把重建等同于验证通过。
 
 | 脚本 | 用途与执行影响 |
 | --- | --- |
+| [diagnostics/export_planner_geometry.py](diagnostics/export_planner_geometry.py) | 从已有运行的缓存导出规划几何；会更新规划参考资产。 |
 | [verify_runtime_assets.py](verify_runtime_assets.py) | 默认校验当前运行输入；`--usd` 检查 USD 引用，`--write-lock` 才改写资产锁。 |
 | [prepare_video_scenes.py](prepare_video_scenes.py) | 从原始 USDZ 生成运行层，串联外观、碰撞体和摆放修订；会改资产和元数据。 |
 | [prepare_combined_original_scenes.py](prepare_combined_original_scenes.py) | 从记录的可逆变换重建 L3-01／05／11 原版覆盖层；会更新场景及元数据。 |
