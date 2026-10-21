@@ -1,0 +1,12 @@
+雅谷黑色成膜H型白板笔，环绕视频参考版
+
+独立资产：yagu_marker_video_v2.usdz（已包含 label_video_v2.png，无外部纹理依赖）。
+可编辑资产：yagu_marker_video_v2.usdc + label_video_v2.png，保持二者相邻。
+坐标：米、Z向上，默认Prim /Marker；原有尺寸、刚体属性及碰撞体保留。
+L1-01 已使用本贴图，任务场景中的位置不变。
+Isaac RTX 渲染注意：标签距离透明笔管约40微米，需设置 /rtx/translucency/worldEps = 0.00001；L1-01 已自动设置。USDZ 中只记录此建议，不会自动改动其他应用的渲染设置。
+
+依据：用户提供的22.17秒环绕视频；使用内置 imagegen 重建全周贴图。
+正面、背面文字及侧面布局均参考视频。小字、图示细节和条码是近似重建，不保证逐字或条码可扫描；不属于厂家原始印刷文件。
+生成记录：generation_prompt_video_v2.txt、provenance_video_v2.json；参考抽帧：video_references/。
+复现导出：python tools/export_yagu_marker.py（需pxr/USD）。

@@ -13,12 +13,14 @@ class L2LayoutTests(unittest.TestCase):
     def test_real_roles_map_to_overview_ids_in_config_and_evaluator(self):
         from robot_tasks.policies.operating_notes import operating_notes
         from robot_tasks.tasks.screw.nut import nut_spec
+        from robot_tasks.tasks.bench.arm_selection import resolve_bench_spec
+        from robot_tasks.tasks.bench.english_reference import apply_reference
 
         operators = {
             "L2-01": ("left", "right"), "L2-03": ("left", "right"),
             "L2-04": ("right",), "L2-06": ("right",), "L2-07": ("right",),
-            "L3-03": ("right",), "L3-05": ("left", "right"),
-            "L3-11": ("right",), "L3-14": ("right",), "L3-15": ("right",),
+            "L3-03": ("left", "right"), "L3-05": ("left", "right"),
+            "L3-11": ("right",), "L3-14": ("right", "left"), "L3-15": ("right",),
         }
         for task_id, expected in operators.items():
             with self.subTest(task=task_id):
@@ -27,7 +29,8 @@ class L2LayoutTests(unittest.TestCase):
                 self.assertEqual(prepared.arms, expected)
                 self.assertEqual(prepared.observation_arms,
                                  tuple(a for a in ("left", "right") if a not in expected))
-                spec = nut_spec() if task_id == "L3-05" else build_spec(task_id)
+                spec = (apply_reference(nut_spec(), cfg.raw['task']) if task_id == "L3-05"
+                        else resolve_bench_spec(cfg.raw['task'], cfg.robot))
                 self.assertEqual(spec.arms, expected)
                 names = operating_notes(prepared)["arm_naming"]
                 self.assertIn("real setup's RIGHT", names["simulation_left"])
@@ -58,7 +61,7 @@ class L2LayoutTests(unittest.TestCase):
                 self.assertEqual(cfg.arms, roles)
                 self.assertEqual(cfg.observation_arms, () if len(roles) == 2 else ("left",))
                 self.assertEqual(cfg.raw["simulation"]["environment"], "tuojing_lab_v4")
-                self.assertTrue(cfg.raw["completion"]["return_home"])
+                self.assertFalse(cfg.raw["completion"]["return_home"])
         book = build_spec("L2-03")
         np.testing.assert_allclose(book.parameters["outward_axis_world"], [1, 0, 0])
         self.assertEqual(book.parameters["manipulation_arm"], "right")

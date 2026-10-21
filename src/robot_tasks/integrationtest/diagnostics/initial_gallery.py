@@ -22,9 +22,10 @@ def source_fingerprint():
     files = list((PROJECT_ROOT / "src/robot_tasks").rglob("*.py"))
     for folder in ("tasks", "robots", "cameras", "workflows"):
         files.extend((PROJECT_ROOT / "configs" / folder).glob("*.toml"))
+    files.extend((PROJECT_ROOT / "configs/task_references").glob("*.json"))
     files.extend(
         PROJECT_ROOT / "assets/tuojing" / name
-        for name in ("catalog.json", "source.lock.json")
+        for name in ("catalog.json", "source.lock.json", "video_20261015.json", "video_scoring_geometry.json")
     )
     for path in sorted(files):
         digest.update(path.relative_to(PROJECT_ROOT).as_posix().encode())
@@ -121,7 +122,7 @@ def write_index(output, results):
 section{background:white;border:1px solid #ddd;padding:20px;margin:24px 0;border-radius:10px}
 .photos{display:flex;gap:16px}figure{flex:1;min-width:0;margin:0}img{width:100%;border-radius:6px}
 pre{white-space:pre-wrap;font:inherit}a{color:#135abc}@media(max-width:700px){.photos{display:block}}</style>
-<h1>任务初始场景</h1><p>机器人零关节初态，道具经过物理落稳；未调用 GPT、未执行任务。
+<h1>任务初始场景</h1><p>机器人按任务配置的关节与夹爪初态复位，道具经过物理落稳；未调用 GPT、未执行任务。
 初态通过不等于模型能完成任务。第三视角是实际输入画面；近景是独立展示相机。</p>"""
     document += (
         "<nav>"
@@ -138,7 +139,10 @@ def main():
     parser.add_argument("task", nargs="?")
     parser.add_argument("--all", action="store_true")
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--config", type=Path, help="Optional explicit initial-layout task config")
     args = parser.parse_args()
+    if args.all and args.config:
+        parser.error("--config selects one task; cannot be used with --all")
     args.output.mkdir(parents=True, exist_ok=True)
     if not args.all:
         if not args.task:
@@ -146,13 +150,13 @@ def main():
         from .scene_smoke import check
 
         return check(args.task, args.output, prepare=False, capture_hook=capture_detail,
-                     capture_before_observations=True)
+                     capture_before_observations=True, config_path=args.config)
 
     from ...registry import TASKS
 
     results = []
     for spec in TASKS.values():
-        if not spec.task_id.startswith("L"):
+        if not spec.task_id.startswith("L") or spec.base_task_id is not None:
             continue
         if not spec.implemented:
             results.append(

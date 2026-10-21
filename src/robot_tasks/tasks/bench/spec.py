@@ -29,8 +29,6 @@ class BenchSpec:
 
     @property
     def observers(self):
-        if "observation_arms" in self.parameters:
-            return tuple(self.parameters["observation_arms"])
         return tuple(arm for arm in ("left", "right") if arm not in self.arms)
 
 

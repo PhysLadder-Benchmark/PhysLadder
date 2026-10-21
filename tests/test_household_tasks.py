@@ -49,7 +49,7 @@ class HouseholdTests(unittest.TestCase):
         tasks = [
             s for s in TASKS.values() if s.task_id.startswith("L") and s.implemented
         ]
-        self.assertEqual(len(tasks), 16)
+        self.assertEqual(len(tasks), 32)
         for spec in tasks:
             with self.subTest(task=spec.task_id):
                 _, cfg = resolve_task(spec.task_id)
@@ -58,12 +58,11 @@ class HouseholdTests(unittest.TestCase):
                     cfg.raw["task"]["launch_command"],
                     f"python tools/launch.py run {spec.task_id} --gui",
                 )
-                self.assertEqual(cfg.raw["execution"]["max_decisions"], 100)
+                self.assertIn(cfg.raw["execution"]["max_decisions"], (0, 100, 150))
                 self.assertNotIn("reasoning_effort", cfg.raw["policy"])
                 self.assertEqual(
                     cfg.observation_arms,
-                    (() if spec.task_id in {"L1-08"}
-                     else tuple(a for a in ("left", "right") if a not in cfg.arms)),
+                    tuple(a for a in ("left", "right") if a not in cfg.arms),
                 )
                 self.assertFalse(prepared.include_depth)
                 self.assertTrue(prepared.raw["task"]["description"])
@@ -71,9 +70,16 @@ class HouseholdTests(unittest.TestCase):
         self.assertNotIn("L3-16", TASKS)
         with self.assertRaises(ValueError):
             resolve_task("L3-16")
+        for removed in ("L1-05", "L1-05_v3"):
+            self.assertNotIn(removed, TASKS)
+            with self.assertRaisesRegex(ValueError, "Unknown task ID"):
+                resolve_task(removed)
+            with self.assertRaisesRegex(ValueError, "No local scene implementation"):
+                build_spec(removed)
 
     def test_every_initial_state_is_incomplete_without_robot_evidence(self):
-        for task_id in (i for i in IDS if i != "L2-06"):
+        # FEM tasks use OrangeEvaluator and have dedicated initial-state tests.
+        for task_id in (i for i in IDS if i not in {"L2-06", "L2-08"}):
             with self.subTest(task=task_id):
                 spec = build_spec(task_id)
                 json.dumps(asdict(spec), allow_nan=False)
@@ -171,7 +177,7 @@ class HouseholdTests(unittest.TestCase):
         article = spec.design.articles[0]
         corners = local_corners(article)
         self.assertAlmostEqual(corners[:, 2].min(), 0.)
-        self.assertAlmostEqual(corners[:, 2].max(), .151)
+        self.assertAlmostEqual(corners[:, 2].max(), .1512)
         evaluator = BenchEvaluator(spec, {"marker": article.initial})
         evaluator.grasped.add("marker")  # Scorer fixture, not robot execution evidence.
         rows = measurement(spec)

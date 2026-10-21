@@ -1,14 +1,15 @@
-# Run from the repository root in the Isaac Sim environment; uses the selected model provider.
-# launch_command / launch_command_conda below are documentation, not auto-executed shell code.
 schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_tuojing_lab_l1.toml"
+profile = "../robots/r5_video_20261015.toml"
 active_arms = ["left", "right"]
 observation_arms = []
 
 [simulation]
+# Preserve Hym L1 motion settings; L2/L3 keep their own profiles.
+robot_gravity_compensation = false
+cartesian_completion_tolerance_m = 0.005
 environment = "tuojing_lab_v4"
 camera_profile = "../cameras/r5_tuojing_lab.toml"
 asset_directory = "../../build/tuojing_lab"
@@ -32,21 +33,25 @@ solver_velocity_iterations = 4
 model_config = "../models/gpt.toml"
 
 [task]
-verbatim_instruction = true
-prompt_source = "../prompts/feishu_english_20261014.json"
+launch_command = "python tools/launch.py run L1-08 --gui"
+scene_delivery = "video_20261015"
+initial_placement_profile = "baseline"
+prompt_protocol = "feishu_english_20261015_v1"
+reference_document = "https://my.feishu.cn/docx/QK4EdOD3hotgp4x782ycgoyyn6g"
+reference_sheet_id = "KyMjZ7"
+reference_sheet_revision = 324
+reference_sheet_row = 10
 id = "L1-08"
 name = "两个波纹纸杯套叠"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
 implementation = "household"
-arm_selection = "real_prompt"
-simulation_limitations = "2026-10-11 colour-corrected native cups; dimensions/colliders unchanged. Photo-proportional left-source/right-receiver layout, receiver slightly toward the table front; not calibrated. Native rigid paper cups, identical taper and size; no paper crushing. Native hollow cups retain their dimensions; corrected 0-70 mm nominal finger gap permits thin-wall or lower-body grasp."
-launch_command = "python tools/launch.py run L1-08 --gui"
-launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L1-08 --gui"
-instruction = "Use the left arm to place the left cup at the center and release it, then use the right arm to nest the right cup inside it and release it."
+simulation_limitations = "Latest complete 2026-10-15 scene. Latest prop geometry, materials and masses are retained. Robot joint homes and gripper openings use per-task video estimates. All camera mounts and lens parameters use the shared L3-03 rig; overview is fixed in world space and wrist cameras follow their own arms. Video-guided geometry and illumination remain uncalibrated; rigid flowers/cups/bristles and contact-driven wiping are explicit simulation approximations. Known per-task discrepancies are recorded in reports/reference_alignment_20261015.json."
+instruction = """
+Use the left arm to place the left cup at the center and release it, then use the right arm to nest the right cup inside it and release it.
+"""
 
-scene_context = "两只相同纸杯均直立且可自由移动。画面右前方的杯为第一杯（机器人左臂侧）、左后方的杯为第二杯（机器人右臂侧）。左臂先把第一杯朝第二杯方向搬近，放到两杯之间的中央交接区域，放稳、完全释放并回位；随后右臂拿第二杯套进已摆好的第一杯，释放并回位。一次只操作一臂。中央是宽泛交接区域，不要求精密落点、严格中心对齐、固定套叠深度或绕竖轴朝向；上杯实际进入下杯且独立承托稳定即可。原地提起后原地放回没有完成第一阶段的搬近要求。"
-
-# Chinese setup/props description; keep this the final task attribute.
-description = "对齐飞书 2026-10-12 场景说明与当轮指令摘要，非完整真机系统提示词。两只相同纸杯均直立且可自由移动。画面右前方的杯为第一杯（机器人左臂侧）、左后方的杯为第二杯（机器人右臂侧）。左臂先把第一杯朝第二杯方向搬近，放到两杯之间的中央交接区域，放稳、完全释放并回位；随后右臂拿第二杯套进已摆好的第一杯，释放并回位。一次只操作一臂。中央是宽泛交接区域，不要求精密落点、严格中心对齐、固定套叠深度或绕竖轴朝向；上杯实际进入下杯且独立承托稳定即可。原地提起后原地放回没有完成第一阶段的搬近要求。 评分依据实际进入、释放承托及指令要求的回位；除挂帽不额外等待外，稳定验证 1 s，允许 5 mm 位移、5 度倾斜变化，回位容差 0.05 rad / 0.05 rad/s。不要求最低抬升高度或额外 TCP 包络间距。这些是仿真验证容差，不是真机操作精度。"
+description = """
+Complete 2026-10-15 assets: room, table, robot mounts, lighting and task props. Robot initial joints and gripper openings follow the per-task video-visible setup. All camera views use the shared L3-03 rig. Prop placements follow the delivered video reconstruction. Task left/right use the robot perspective; overview-image left/right are reversed. No older individual prop is imported. Physical parameters remain uncalibrated.
+"""

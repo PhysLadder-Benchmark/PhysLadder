@@ -64,7 +64,7 @@ class PayloadClearanceTests(unittest.TestCase):
             self.worker.check_payload('left',self.path,request,{})
 
     def rose_pickup(self, downward=False):
-        from robot_tasks.tasks.l1.specs import Article
+        from robot_tasks.tasks.bench.l1 import flower
         from robot_tasks.planning.scene import article_surface
         from robot_tasks.robots.transforms import pose_transform
 
@@ -73,11 +73,7 @@ class PayloadClearanceTests(unittest.TestCase):
         pose = [-.28030720353126526, 1.2197195291519165, .7818540334701538,
                 .2691560387611389, -.6684878468513489, .15632425248622894, -.675456702709198]
         transform = pose_transform(pose)
-        # Preserve this historical rose regression independently of L1-09,
-        # which now transfers a different tulip asset between cups.
-        article = Article('legacy_rose', (), tuple(pose), tuple(pose), .008,
-                          asset='tuojing:artificial_rose')
-        points = article_surface(article)
+        points = article_surface(flower().design.articles[0])
         world = points @ transform[:3, :3].T + transform[:3, 3]
         self.assertGreater(world[:, 2].min(), .78)
         table = trimesh.creation.box(extents=[2., 2., .08])
@@ -108,6 +104,37 @@ class PayloadClearanceTests(unittest.TestCase):
         block['pose'][:3] = point
         request['scene']['obstacles']['mesh']['bud_obstruction'] = block
         with self.assertRaisesRegex(ValueError, 'bud_obstruction'):
+            self.worker.check_payload('left', self.path, request, {})
+
+    def delivered_flower_pickup(self, direction=1):
+        from robot_tasks.tasks.bench.delivered_scene import flower_payload_surface
+        # L1-09 2026-10-16 formal run, step 6. The whole-body AABB reached
+        # z=.8651 despite the actual collider remaining above z=.8829.
+        pose = [.39672160148620605, 1.1641508340835571, .8823432922363281,
+                -.8336890339851379, -.1822560876607895, .1780846267938614, -.4899296760559082]
+        points = flower_payload_surface(pose)
+        self.assertGreater(points[:,2].min(), .880)
+        request = self.request(points.tolist())
+        request['scene']['table_surface_z_m'] = .880
+        request['scene']['obstacles']['mesh'] = {}
+        self.worker.kin = SimpleNamespace(forward=lambda q, arm: (0,0,q[0],1,0,0,0))
+        self.path = SimpleNamespace(duration_s=.1, sample=lambda t:[direction*.25*t])
+        return request
+
+    def test_delivered_flower_lift_passes_without_weakening_table_guard(self):
+        request = self.delivered_flower_pickup()
+        self.worker.check_payload('left', self.path, request, {})
+        request = self.delivered_flower_pickup(-1)
+        with self.assertRaisesRegex(ValueError, 'intersects table'):
+            self.worker.check_payload('left', self.path, request, {})
+
+    def test_delivered_flower_head_is_still_checked_for_fixture_collision(self):
+        request = self.delivered_flower_pickup()
+        point = max(request['scene']['payloads']['left'][0]['surface_points_world'],key=lambda p:p[2])
+        block = self.request([point])['scene']['obstacles']['mesh']['box']
+        block['pose'][:3] = point
+        request['scene']['obstacles']['mesh']['head_obstruction'] = block
+        with self.assertRaisesRegex(ValueError, 'head_obstruction'):
             self.worker.check_payload('left', self.path, request, {})
 
 

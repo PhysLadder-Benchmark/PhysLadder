@@ -37,10 +37,21 @@ class IsaacSimBackend:
     def open(self, config: TaskConfig) -> None:
         if self.app is not None:
             raise RuntimeError("Isaac Sim backend is already open")
+        self.allow_actor_recovery = config.task_id.startswith("L1-")
         self.settings = SimulationSettings.from_config(config)
+        from ..video_delivery import enabled
+        self.video_delivery = enabled(config)
+        if self.video_delivery:
+            from ..video_delivery import scenes
+            if scenes()[config.scene_id].get('sdf_colliders') and not self.settings.gpu_dynamics:
+                raise ValueError('Delivered SDF colliders require simulation.gpu_dynamics = true')
         if self.settings.environment == "tuojing_lab_v4":
-            from .tuojing_lab import require_lab_assets
-            self.lab_asset = require_lab_assets()
+            if self.video_delivery:
+                from ..video_delivery import verified_scene
+                self.lab_asset = verified_scene(config.scene_id)
+            else:
+                from .tuojing_lab import require_lab_assets
+                self.lab_asset = require_lab_assets()
         self.environment_report = {"profile": self.settings.environment}
         self.camera_names = config.cameras
         self.include_depth = config.include_depth
@@ -48,8 +59,11 @@ class IsaacSimBackend:
             raise ValueError("Depth capture requires a camera rig profile")
         if self.settings.camera_profile:
             from ..cameras.profile import load_camera_rig
-            self.camera_profile = load_camera_rig(config.source.parent / self.settings.camera_profile, robot_profile=config.robot)
-            if "camera_position" in config.raw.get("simulation", {}):
+            self.camera_profile = load_camera_rig(config.source.parent / self.settings.camera_profile)
+            if self.video_delivery:
+                from ..video_delivery import camera_profile
+                self.camera_profile = camera_profile(self.camera_profile, config.scene_id)
+            elif "camera_position" in config.raw.get("simulation", {}):
                 from ..cameras.overview import override_overview
                 self.camera_profile = override_overview(self.camera_profile, self.settings)
             self.camera_profile.select(config.cameras)
@@ -67,7 +81,6 @@ class IsaacSimBackend:
         self.app = SimulationApp(application_config)
         try:
             import numpy as np
-            import omni.replicator.core as rep
             from isaacsim.core.api import World
             from isaacsim.core.api.objects import FixedCuboid
             from pxr import PhysxSchema, UsdLux
@@ -78,12 +91,24 @@ class IsaacSimBackend:
                 from isaacsim.core.utils.stage import open_stage
                 from .tuojing_lab import configure_stage, validate_robot_binding
 
-                if not open_stage(str(self.lab_asset)):
-                    raise RuntimeError(f"Could not open laboratory: {self.lab_asset}")
-                stage = omni.usd.get_context().get_stage()
-                self.environment_report = configure_stage(stage, self.camera_profile, config.robot)
+                if self.video_delivery:
+                    if not open_stage(str(self.lab_asset)):
+                        raise RuntimeError(f"Could not open latest scene: {self.lab_asset}")
+                    stage = omni.usd.get_context().get_stage()
+                    from ..video_delivery import configure_stage as configure_video_stage
+                    self.environment_report = configure_video_stage(stage, config.scene_id)
+                    from ..initial_layout import apply_stage as apply_initial_layout
+                    placement = apply_initial_layout(stage, config.raw["task"])
+                    if placement is not None:
+                        self.environment_report["initial_layout"] = placement
+                else:
+                    if not open_stage(str(self.lab_asset)):
+                        raise RuntimeError(f"Could not open laboratory: {self.lab_asset}")
+                    stage = omni.usd.get_context().get_stage()
+                    self.environment_report = configure_stage(stage, self.camera_profile)
                 from ..robots.wrist_collision import configure_wrist_collisions
-                self.wrist_geometry, wrist_report = configure_wrist_collisions(stage, config.robot)
+                self.wrist_geometry, wrist_report = configure_wrist_collisions(
+                    stage, config.robot, expected_shapes=21 if self.video_delivery else 5)
                 self.environment_report["wrist_collision"] = wrist_report
                 if config.task_id.startswith(("L2-", "L3-")):
                     from .tuojing_lab import apply_l2_finger_collisions
@@ -93,7 +118,8 @@ class IsaacSimBackend:
                     # L2/L3 overrides intact.
                     from ..robots.finger_collision import configure_finger_collisions
                     self.environment_report["finger_collision_by_arm"] = {
-                        mount.name: configure_finger_collisions(stage, mount.prim_path)
+                        mount.name: configure_finger_collisions(stage, mount.prim_path,
+                            torsional_patch_radius=.004 if config.task_id == 'L1-09' else 0.)
                         for mount in config.robot.mounts
                     }
                 validate_robot_binding(stage, config.robot)
@@ -102,6 +128,9 @@ class IsaacSimBackend:
                 self.planning_environment_paths = self.environment_report["planning_environment_paths"]
                 self.planning_legacy_bench = False
                 world_options["physics_prim_path"] = "/World/PhysicsScene"
+            # Import Replicator after opening the final stage. Importing it on
+            # the temporary startup stage can leave stale OmniGraph handles.
+            import omni.replicator.core as rep
             self.world = World(
                 stage_units_in_meters=1.0, physics_dt=config.physics_dt_s,
                 rendering_dt=1 / self.settings.fps, backend="numpy", device="cpu",
@@ -145,6 +174,17 @@ class IsaacSimBackend:
                 from isaacsim.core.utils.viewports import set_camera_view
                 set_camera_view(eye=np.array(self.settings.camera_position), target=np.array(self.settings.camera_target))
         except Exception:
+            # Kit fast shutdown may terminate before a caller can save errors.
+            # Persist initialization failures before closing the application.
+            import json
+            import traceback
+            error = traceback.format_exc()
+            print(error, flush=True)
+            directory = getattr(self, "run_directory", None)
+            if directory is not None:
+                directory.mkdir(parents=True, exist_ok=True)
+                (directory / "initialization_error.json").write_text(
+                    json.dumps({"passed": False, "error": error}), encoding="utf-8")
             self.close()
             raise
 
@@ -164,10 +204,10 @@ class IsaacSimBackend:
         else:
             usd_path = self.lab_asset
             self.import_report = {"source": str(usd_path), "binding": "existing_articulations",
-                                  "source_lock": "assets/tuojing/source.lock.json"}
+                                  "source_lock": "assets/tuojing/video_20261015.json" if self.video_delivery else "assets/tuojing/source.lock.json"}
         self.scene_report = {"asset": str(usd_path), "physics_device": "cuda" if self.settings.gpu_dynamics else "cpu", "arms": {},
                              "environment": self.environment_report,
-                             "robot_appearance": "delivered_tuojing_lab_v4" if self.lab_asset else self.settings.robot_appearance,
+                             "robot_appearance": ("complete_video_20261015" if self.video_delivery else "delivered_tuojing_lab_v4") if self.lab_asset else self.settings.robot_appearance,
                              "storage": storage_report(self.runtime_storage, kit_started=True),
                              "self_collision": self.settings.self_collision,
                              "drive_type": "force", "gravity_m_s2": 9.81,
@@ -249,6 +289,9 @@ class IsaacSimBackend:
                 self.scene_report["arms"][mount.name]["appearance"] = apply_r5_appearance(
                     self.world.stage, mount.prim_path)
         if self.camera_profile is not None:
+            if getattr(self, "video_delivery", False):
+                from ..video_delivery import reconcile_render_graph
+                self.scene_report["saved_scene_render_graph_reconciliation"] = reconcile_render_graph()
             from ..cameras.isaac_rig import IsaacCameraRig
             self.camera_rig = IsaacCameraRig(self.world.stage, self._rep, self.camera_profile, self.camera_names,
                                              include_depth=self.include_depth)
@@ -261,7 +304,8 @@ class IsaacSimBackend:
                     self.world.stage, self.camera_rig.paths["overview"])
         if self.lab_asset is not None:
             from ..robots.collision_feedback import CollisionMonitor
-            self.collision_monitor = CollisionMonitor(self.world.stage, profile)
+            self.collision_monitor = CollisionMonitor(self.world.stage, profile,
+                allow_actor_recovery=self.allow_actor_recovery)
             self.scene_report["collision_feedback"] = self.collision_monitor.metadata()
         return dict(self.articulations)
 

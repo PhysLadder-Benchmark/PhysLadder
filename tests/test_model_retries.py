@@ -1,4 +1,4 @@
-"""Fixed generation retries reuse observations; no paid/network calls."""
+"""Uncapped generation retries reuse observations; no paid/network calls."""
 
 import json
 import subprocess
@@ -31,11 +31,13 @@ def reply(*, move=False):
 
 
 class ModelRetryTests(unittest.TestCase):
-    def run_fixture(self, replies=None, calls=10, *, interrupt=False, client=None):
+    def run_fixture(self, replies=None, calls=10, *, interrupt=False, client=None,
+                    finish_after_action=False, wall_time_s=0., sleep_effect=None):
         config = robot_config()
         config = replace(
             config,
             max_steps=0,
+            max_wall_time_s=wall_time_s,
             raw={
                 **config.raw,
                 "execution": {
@@ -60,12 +62,15 @@ class ModelRetryTests(unittest.TestCase):
         robot.apply = Mock()
         robot.feedback = Mock(return_value=Feedback("completed"))
         task.evaluate = Mock(return_value=Assessment("running", "Offline fixture"))
+        if finish_after_action:
+            task.evaluate.side_effect = lambda *_: Assessment(
+                "succeeded" if robot.apply.called else "running", "Offline fixture")
         with (
             tempfile.TemporaryDirectory() as directory,
             redirect_stdout(StringIO()),
             patch(
                 "robot_tasks.runner.time.sleep",
-                side_effect=KeyboardInterrupt if interrupt else None,
+                side_effect=KeyboardInterrupt if interrupt else sleep_effect,
             ) as sleep,
         ):
             output, result = run_episode(
@@ -76,6 +81,45 @@ class ModelRetryTests(unittest.TestCase):
                 for l in (output / "episode.jsonl").read_text().splitlines()
             ]
         return result, events, policy, robot, client, sleep
+
+    def test_unlimited_retries_pass_100_failures_then_execute_once(self):
+        result, events, policy, robot, client, sleep = self.run_fixture(
+            [failed()] * 105 + [reply(move=True)], calls=0, finish_after_action=True)
+        self.assertEqual(client.generate.call_count, 106)
+        self.assertEqual(result["status"], "finished")
+        self.assertTrue(result["success"])
+        self.assertEqual(result["model_retry_attempts"], 105)
+        self.assertIsNone(result["generation_retry_limit"])
+        robot.apply.assert_called_once()
+        self.assertEqual(len(policy.history), 1)
+        self.assertEqual([c.args[0] for c in sleep.call_args_list], [2., 4.] + [8.] * 103)
+        retries = [e for e in events if e["event"].startswith("model_retry")]
+        self.assertTrue(all(e["remaining_decisions"] is None for e in retries))
+        self.assertTrue(all(e["retry_limit"] is None for e in retries))
+        self.assertTrue(all(e["retry_exhaustion"] is None for e in retries))
+        self.assertTrue(all(e["simulation_time_s"] == 0. for e in retries))
+        exchanges = [e["exchange"] for e in events if e["event"] == "model_exchange"]
+        self.assertTrue(all(e["frames"] == exchanges[0]["frames"] for e in exchanges))
+
+    def test_five_hour_deadline_interrupts_retry_backoff(self):
+        clock = [0.]
+        client = Mock()
+        client.settings = GPTSettings("https://example.invalid", "fixture", max_calls=0)
+        def generate(**_):
+            if client.generate.call_count == 5:
+                clock[0] = 17999.
+            raise failed()
+        client.generate.side_effect = generate
+        def sleep_for(delay):
+            clock[0] += delay
+        with patch("robot_tasks.runner.time.monotonic", side_effect=lambda: clock[0]):
+            result, events, _policy, robot, _client, sleep = self.run_fixture(
+                calls=0, client=client, wall_time_s=18000., sleep_effect=sleep_for)
+        self.assertEqual(result["termination_reason"], "wall_time_limit")
+        self.assertEqual(result["wall_time_s"], 18000.)
+        self.assertEqual(result["model_calls"], 5)
+        self.assertEqual([c.args[0] for c in sleep.call_args_list], [2., 4., 8., 8., 1.])
+        robot.apply.assert_not_called()
 
     def codex_fixture(self):
         settings = GPTSettings("https://example.invalid", "fixture", transport="codex_cli", timeout_s=2400)
@@ -113,28 +157,28 @@ class ModelRetryTests(unittest.TestCase):
         self.assertEqual([e["retryable"] for e in exchanges[1:4]], [True] * 3)
         self.assertTrue(all(e["frames"] == exchanges[1]["frames"] for e in exchanges[1:]))
 
-    def test_four_codex_timeouts_stop_without_actions_or_fifth_request(self):
+    def test_codex_timeouts_continue_until_configured_call_budget(self):
         client, _completed = self.codex_fixture()
         client.host.run.side_effect = subprocess.TimeoutExpired("codex", 2400, output=b"partial action")
         result, events, policy, robot, _, _sleep = self.run_fixture(client=client)
         self.assertEqual(result["status"], "error")
-        self.assertEqual(client.host.run.call_count, 4)
-        self.assertEqual(result["model_calls"], 4)
-        self.assertEqual(result["model_retry_attempts"], 3)
+        self.assertEqual(client.host.run.call_count, 10)
+        self.assertEqual(result["model_calls"], 10)
+        self.assertEqual(result["model_retry_attempts"], 9)
         self.assertEqual(result["completed_steps"], 0)
         self.assertFalse(policy.history)
         robot.apply.assert_not_called()
         exhausted = [e for e in events if e["event"] == "model_retry_exhausted"]
-        self.assertEqual(exhausted[0]["retry_exhaustion"], "retry_limit")
+        self.assertEqual(exhausted[0]["retry_exhaustion"], "model_call_limit")
 
-    def test_unknown_codex_exit_retries_three_times_and_preserves_diagnostics(self):
+    def test_unknown_codex_exit_retries_beyond_three_and_preserves_diagnostics(self):
         client, completed = self.codex_fixture()
         failure = subprocess.CompletedProcess([], 1, b'{"type":"error","message":"connection reset"}',
                                               b"upstream stream closed")
-        client.host.run.side_effect = [failure] * 3 + [completed]
-        result, events, policy, robot, _, sleep = self.run_fixture(calls=4, client=client)
+        client.host.run.side_effect = [failure] * 6 + [completed]
+        result, events, policy, robot, _, sleep = self.run_fixture(calls=7, client=client)
         self.assertEqual(result["status"], "finished")
-        self.assertEqual(result["model_retry_attempts"], 3)
+        self.assertEqual(result["model_retry_attempts"], 6)
         self.assertEqual(robot.apply.call_count, 1)
         self.assertEqual(len(policy.history), 1)
         exchanges = [e["exchange"] for e in events if e["event"] == "model_exchange"]
@@ -171,19 +215,19 @@ class ModelRetryTests(unittest.TestCase):
         self.assertTrue(all(e["frames"] == exchanges[0]["frames"] for e in exchanges))
         self.assertEqual([e["retryable"] for e in exchanges[:3]], [True] * 3)
 
-    def test_four_consecutive_failures_stop_without_fifth_call_or_partial_action(self):
-        result, events, policy, robot, client, _sleep = self.run_fixture([failed()] * 4)
+    def test_configured_call_budget_stops_retries_without_partial_actions(self):
+        result, events, policy, robot, client, _sleep = self.run_fixture([failed()] * 7, calls=7)
         self.assertEqual(result["status"], "error")
-        self.assertEqual(result["model_calls"], 4)
-        self.assertEqual(result["model_retry_attempts"], 3)
-        self.assertEqual(client.generate.call_count, 4)
+        self.assertEqual(result["model_calls"], 7)
+        self.assertEqual(result["model_retry_attempts"], 6)
+        self.assertEqual(client.generate.call_count, 7)
         self.assertEqual(result["completed_steps"], 0)
         self.assertFalse(result["task_evaluated"])
         self.assertIsNone(result["success"])
         robot.apply.assert_not_called()
         self.assertFalse(policy.history)
         exhausted = [e for e in events if e["event"] == "model_retry_exhausted"]
-        self.assertEqual(exhausted[0]["retry_exhaustion"], "retry_limit")
+        self.assertEqual(exhausted[0]["retry_exhaustion"], "model_call_limit")
 
     def test_success_resets_retry_streak_and_retains_accepted_history(self):
         result, events, policy, robot, client, sleep = self.run_fixture(
@@ -229,6 +273,14 @@ class ModelRetryTests(unittest.TestCase):
         self.assertEqual(client.generate.call_count, 1)
         self.assertEqual(result["model_calls"], 1)
         self.assertEqual(result["model_retry_attempts"], 0)
+        robot.apply.assert_not_called()
+
+    def test_manual_stop_after_long_retry_streak(self):
+        result, _events, _policy, robot, client, _sleep = self.run_fixture(
+            [failed()] * 6, calls=0, sleep_effect=[None] * 5 + [KeyboardInterrupt])
+        self.assertEqual(result["status"], "cancelled")
+        self.assertEqual(result["termination_reason"], "user_interrupt")
+        self.assertEqual(client.generate.call_count, 6)
         robot.apply.assert_not_called()
 
 

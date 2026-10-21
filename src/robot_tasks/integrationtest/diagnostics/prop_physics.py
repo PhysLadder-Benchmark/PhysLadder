@@ -36,7 +36,7 @@ def run(scene):
         from .plug_holder_probe import run as probe_holder
 
         result["source_holder"] = probe_holder(scene)
-    if task in {"L1-01", "L1-03", "L1-05", "L1-07", "L1-08", "L1-09"}:
+    if task in {"L1-01", "L1-03", "L1-07", "L1-08", "L1-09"}:
         article = (next(a for a in scene.design.articles if a.name == "plug")
                    if task == "L1-03" else scene.design.articles[-1])
         goal = list(article.goal)
@@ -69,7 +69,6 @@ def run(scene):
         key = {
             "L1-01": "inside_holder",
             "L1-03": "inside_socket",
-            "L1-05": "inside_socket",
             "L1-07": "hook_through_head_opening",
             "L1-08": "nested",
             "L1-09": "stem_end_inside",

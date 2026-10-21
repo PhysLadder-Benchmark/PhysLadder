@@ -63,7 +63,8 @@ class OrangeEvaluator:
         if self.last_time == now:
             return self.last_assessment
         self.last_time = now
-        row, p = rows["orange"], self.spec.parameters
+        p = self.spec.parameters
+        row = rows[p.get("soft_object_name", "orange")]
         low, high = np.asarray(row["bounds_min"]), np.asarray(row["bounds_max"])
         checks = [
             *low,
@@ -93,9 +94,9 @@ class OrangeEvaluator:
         self.lifted |= lifted_now
         support_xy = np.asarray(p["pedestal_pose"][:2])
         within_box = bool(np.all(np.abs(centroid[:2] - support_xy) <= p["support_half_extents_m"]))
-        # The native recessed centre and raised rim differ by 6.5 mm.
+        # The return surface spans the recessed platform and its raised rim.
         on_support = bool(p["support_z"] - 0.003 <= row["collision_bounds_min"][2]
-                          <= p["table_z"] + 0.100 + 0.003)
+                          <= p.get("support_rim_z", p["table_z"] + 0.100) + 0.003)
         released = all(d >= 0.006 for d in near)
         complete = bool(self.lifted and within_box and on_support and released
                         and row["centroid_speed_m_s"] < 0.05)

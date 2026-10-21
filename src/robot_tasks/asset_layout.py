@@ -28,6 +28,11 @@ def read_layout(root):
     return data
 
 
+def current_scene_tasks(root):
+    manifest=root/'video_20261015.json'
+    return set(json.loads(manifest.read_text(encoding='utf-8'))['tasks']) if manifest.exists() else set()
+
+
 def verify_files(directory, files):
     """Verify original bytes, and reject links escaping the bundle."""
     for name, expected in files.items():
@@ -98,7 +103,11 @@ def find_bundle(root, group, asset):
 def install_layout(root, package_ids=None):
     """Make independent copies; never overwrite a changed existing bundle."""
     installed = []
+    complete=current_scene_tasks(root)
     for item in bundles(root):
+        group=item.destination.parent.name
+        if group in complete or (complete and group=='common'):
+            continue  # Current configs load complete scenes; never restore older props over them.
         if package_ids is not None and item.package not in package_ids:
             continue
         verify_files(item.source, item.files)
@@ -118,6 +127,8 @@ def install_layout(root, package_ids=None):
         installed.append(item.destination.relative_to(root).as_posix())
     # Procedural props have no delivered USD; say so rather than inventing one.
     for task, data in read_layout(root)["tasks"].items():
+        if task in complete:
+            continue
         for folder, implementation in data.get("generated", {}).items():
             destination = root / "source" / relative_path(task) / relative_path(folder)
             destination.mkdir(parents=True, exist_ok=True)

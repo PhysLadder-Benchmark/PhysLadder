@@ -1,0 +1,365 @@
+{
+  "world_axes": "+X windows, +Y desk wall, +Z up; metre; origin at room floor center",
+  "room": {
+    "dimensions_m": [
+      2.84,
+      3.93,
+      2.6
+    ],
+    "source": "Polycam plan + registered PLY/OBJ/USD shell"
+  },
+  "desk": {
+    "center_xy_m": [
+      0.04354960845762923,
+      1.187650417122201
+    ],
+    "size_m": [
+      1.7,
+      0.9,
+      0.78
+    ],
+    "top_thickness_m": 0.025,
+    "corner_radius_m": 0.045,
+    "source": "User confirmed 1.70 x 0.90 x 0.78 m on 2026-10-05, superseding old photo size for length/depth",
+    "shell_placement_uncertainty_m": 0.07,
+    "texture_status": "Repeated clean wood patch from IMG3334; hidden wood grain is not reconstructed.",
+    "previous_size_m": [
+      1.63,
+      0.78,
+      0.78
+    ],
+    "placement_source": "Preserve previous rear edge relative to fixed room; expand depth towards operator. Table size explicitly confirmed; rear-edge world placement remains estimated."
+  },
+  "robots": [
+    {
+      "name": "R5_Left",
+      "base_xyz_m": [
+        -0.02470371669496446,
+        1.5628988169384406,
+        0.79
+      ],
+      "base_xy_table_frame_m": [
+        -0.06825332515259369,
+        0.3752483998162395
+      ],
+      "yaw_deg": -90.0,
+      "home_q_rad_m": [
+        0.0,
+        -0.08088586905054927,
+        -0.07962149385043675,
+        0.012571612754717354,
+        0.0,
+        1.5707963267948966,
+        0.01,
+        0.01
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "previous_fitted_yaw_deg": -81.3682256170252,
+      "orientation_source": "User requested straight alignment: parallel arms, perpendicular to table long edge. Overrides unconstrained visual yaw fit.",
+      "wrist_roll_source": "Estimated +/-90deg roll: native CAD mount on link6 datum, camera outboard on each arm as photographed. Not encoder-measured.",
+      "previous_fitted_base_xyz_m": [
+        -0.02470371669496446,
+        1.552182532919966,
+        0.79
+      ],
+      "previous_home_q_rad_m": [
+        0,
+        -0.0478856804584346,
+        -0.04593631307641279,
+        1.4515101093743168e-11,
+        0,
+        1.5707963267948966,
+        0.01,
+        0.01
+      ],
+      "alignment_source": "User correction: same fore-aft position, parallel bases, identical shoulder/elbow pose and opposite wrist rolls; native meshes remain unmirrored."
+    },
+    {
+      "name": "R5_Right",
+      "base_xyz_m": [
+        0.41600614770047356,
+        1.5628988169384406,
+        0.79
+      ],
+      "base_xy_table_frame_m": [
+        0.37245653924284433,
+        0.3752483998162395
+      ],
+      "yaw_deg": -90.0,
+      "home_q_rad_m": [
+        0.0,
+        -0.08088586905054927,
+        -0.07962149385043675,
+        0.012571612754717354,
+        0.0,
+        -1.5707963267948966,
+        0.01,
+        0.01
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "previous_fitted_yaw_deg": -85.26960743784409,
+      "orientation_source": "User requested straight alignment: parallel arms, perpendicular to table long edge. Overrides unconstrained visual yaw fit.",
+      "wrist_roll_source": "Estimated +/-90deg roll: native CAD mount on link6 datum, camera outboard on each arm as photographed. Not encoder-measured.",
+      "previous_fitted_base_xyz_m": [
+        0.41600614770047356,
+        1.573615100956915,
+        0.79
+      ],
+      "previous_home_q_rad_m": [
+        0,
+        -0.11388605764266395,
+        -0.11330667462446072,
+        0.025143225494919607,
+        0,
+        -1.5707963267948966,
+        0.01,
+        0.01
+      ],
+      "alignment_source": "User correction: same fore-aft position, parallel bases, identical shoulder/elbow pose and opposite wrist rolls; native meshes remain unmirrored."
+    }
+  ],
+  "camera": {
+    "name": "ThirdPerson",
+    "stand_xyz_m": [
+      0.21354960845762924,
+      0.48765041712220114,
+      0.0
+    ],
+    "measurement_height_m": 1.32,
+    "eye_xyz_m": [
+      0.21354960845762924,
+      0.5226504171222012,
+      1.35
+    ],
+    "target_xyz_m": [
+      0.14354960845762924,
+      1.2876504171222012,
+      0.83
+    ],
+    "resolution": [
+      1280,
+      720
+    ],
+    "horizontal_fov_deg": 70,
+    "intrinsics_status": "provisional; source camera model, K, distortion and original camera feed unavailable",
+    "housing_dimensions_m": [
+      0.043,
+      0.025,
+      0.043
+    ],
+    "eye_position_uncertainty_m": 0.04,
+    "orientation_uncertainty_deg": 10,
+    "horizontal_fov_sweep_deg": [
+      60,
+      70,
+      85
+    ],
+    "evidence": [
+      "IMG3333 height",
+      "IMG3338 25cm offset",
+      "IMG3341.MOV multi-view geometry"
+    ],
+    "placement_source": "User confirmed 0.25m stand setback from updated front edge and 1.32m marked height; eye height 1.35m, lateral placement, intrinsics and target remain estimates.",
+    "user_confirmed_constraints": {
+      "stand_front_setback_m": 0.25,
+      "marked_height_m": 1.32,
+      "date": "2026-10-05"
+    }
+  },
+  "wall_cork": {
+    "x_min": -0.29165777616261207,
+    "x_max": 0.7386936854440731
+  },
+  "measurement_conflict": {
+    "table_length_m": 1.7,
+    "ruler_left_gap_m": 0.68,
+    "ruler_between_points_m": 0.51,
+    "ruler_right_gap_m": 0.48,
+    "closure_error_m": -0.03,
+    "interpretation": "Ruler endpoints are visible surface points; robot rotation-axis centers are inferred with native CAD. Do not equate 51cm annotation to confirmed axis spacing."
+  },
+  "ba_metrics": {
+    "status": "`ftol` termination condition is satisfied.",
+    "nfev": 65,
+    "registered_views": 28,
+    "points3D": 2750,
+    "observations": 10684,
+    "mean_reprojection_error_px": 0.873782601448202,
+    "median_reprojection_error_px": 0.7403826517598664,
+    "p90_reprojection_error_px": 1.6688705099325782,
+    "plane_constraints_counts": [
+      113,
+      256,
+      108
+    ],
+    "floor_z_median_m": -0.0072278601894778674,
+    "table_z_median_m": 0.7819632863946641,
+    "desk_wall_y_table_frame_m": 0.689349582877799,
+    "robot_fit": [
+      [
+        -0.06825332515259369,
+        0.3045321157977652,
+        -1.4201434435226845,
+        -0.0478856804584346,
+        -0.04593631307641279,
+        1.4515101093743168e-11
+      ],
+      [
+        0.37245653924284433,
+        0.3259646838347141,
+        -1.4882354016734254,
+        -0.11388605764266395,
+        -0.11330667462446072,
+        0.025143225494919607
+      ]
+    ],
+    "stand_xy": [
+      0.12812014484043363,
+      -0.6721840945215249
+    ],
+    "intrinsics": [
+      [
+        1143.9538915238202,
+        0.030100677304240587
+      ],
+      [
+        1147.6543751949969,
+        0.012776303370670575
+      ],
+      [
+        1143.8396219889096,
+        0.031508690850765554
+      ],
+      [
+        947.8312995494266,
+        0.016586941464907003
+      ],
+      [
+        1151.5960010217482,
+        0.01325059341606707
+      ],
+      [
+        1144.9622588469904,
+        0.017844438690969522
+      ],
+      [
+        1145.9756131825059,
+        0.013432563754057289
+      ],
+      [
+        1148.292222835304,
+        0.027259050284572484
+      ],
+      [
+        1125.5037610297031,
+        0.022411110416268722
+      ]
+    ],
+    "edge_reprojection_rmse_px": 28.84881775581277,
+    "note": "Metric-constrained fit: tabletop 1.63x0.78m at z0.78; floor z0; perpendicular wall; native CAD points; soft arm-position priors informed by 68/51/48cm annotations; 1.32m stand line. The 51cm annotation is not enforced as a confirmed axis-to-axis distance. Constraint residuals are not independent accuracy."
+  },
+  "not_calibrated": [
+    "camera intrinsics/distortion",
+    "exact mounting-hole centers",
+    "camera housing geometry/mass",
+    "servo gains/friction/contact compliance",
+    "rolling shutter/exposure/noise"
+  ],
+  "physical_defaults": {
+    "static_friction": 0.7,
+    "dynamic_friction": 0.55,
+    "restitution": 0.05,
+    "status": "unmeasured simulation defaults"
+  },
+  "robots_estimated_position_uncertainty_m": 0.04,
+  "wrist_mount": {
+    "asset": "mounts/wrist_camera_mount.usdc",
+    "source": "mounts/wrist_camera_mount.step",
+    "cad_units": "mm",
+    "scale_to_metres": 0.001,
+    "dimensions_mm": [
+      81.19731748,
+      57.00003735,
+      89.19446819
+    ],
+    "T_link6_from_cad": [
+      [
+        1,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        1
+      ]
+    ],
+    "camera_surface_center_m": [
+      0.0730406045,
+      0,
+      0.0880574874
+    ],
+    "camera_surface_normal": [
+      0.7738402097,
+      0,
+      -0.6333808726
+    ],
+    "camera_housing_depth_m": 0.026,
+    "camera_housing_width_height_m": [
+      0.043,
+      0.043
+    ],
+    "camera_housing_status": "estimated; not camera manufacturer CAD",
+    "physics_status": "visual geometry follows link6; added mass and mount collisions not identified",
+    "assembly_status": "shared CAD datum supported by matching 30.3048mm surface; wrist roll from appearance, fasteners unverified"
+  },
+  "symmetry": {
+    "base_y_m": 1.5628988169384406,
+    "pair_center_x_m": 0.19565121550275455,
+    "axis_spacing_x_m": 0.440709864395438,
+    "shared_joint1_to_joint5_rad": [
+      0.0,
+      -0.08088586905054927,
+      -0.07962149385043675,
+      0.012571612754717354,
+      0.0
+    ],
+    "wrist_rolls_rad": [
+      1.5707963267948966,
+      -1.5707963267948966
+    ],
+    "source": "User explicitly requested symmetric arms with no fore-aft stagger."
+  },
+  "revision": "V4 2026-10-05 table dimensions and placement review",
+  "ba_metrics_status": "Historical V3 fit under 1.63 x 0.78m table; not re-solved for user-confirmed V4 dimensions. Do not use old residuals as V4 calibration accuracy.",
+  "position_status": "Default placement chosen from supplied visual/CAD evidence and user-authorized judgment: preserve symmetric arm axis positions and rear setback; use measured stand setback and height. Coordinates are estimates, not surveyed.",
+  "placement_decision": {
+    "date": "2026-10-05",
+    "authorization": "User asks assistant to decide from provided facts and understanding.",
+    "axis_spacing_m": 0.440709864395438,
+    "reason": "51cm photo endpoints do not establish axis centers; retain CAD landmark-derived spacing with aligned bases. Table rear edge held fixed when depth increases.",
+    "camera_reason": "Use photographed 25cm stand-front-edge setback and 1.32m marked height; camera eye +3cm remains a geometric estimate."
+  }
+}

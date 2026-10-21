@@ -160,7 +160,8 @@ class NutEvaluator:
         from ..bench.evaluation import released
         placed = all(released(r) and r["bench_force_n"] + r["fixture_force_n"] > 0.02
                      for r in (body, nut))
-        complete = detached and self.removal_seen and placed
+        release_required = self.spec.parameters.get("release_required", True)
+        complete = detached and self.removal_seen and (placed or not release_required)
         fallen = [
             n
             for n, r in rows.items()
@@ -182,7 +183,7 @@ class NutEvaluator:
                 "thread_contact_n": contact,
                 "nut_detached": detached,
                 "bimanual_removal_observed": self.removal_seen,
-                "release_required": True,
+                "release_required": release_required,
                 "parts_released_supported": placed,
                 "timed_hold_s": 0,
             },
@@ -196,7 +197,8 @@ class NutEvaluator:
         return Assessment(
             "succeeded" if complete else "running",
             (
-                "Nut removed and both parts released onto a support"
+                ("Nut removed and both parts released onto a support" if release_required
+                 else "Nut fully unscrewed and detached")
                 if complete
                 else "Waiting for bimanual pickup and nut removal"
             ),
@@ -207,6 +209,9 @@ class NutEvaluator:
 class NutTask:
     @staticmethod
     def prepare_config(config):
+        from ...video_delivery import enabled, robot_profile
+        if enabled(config):
+            config = replace(config, robot=robot_profile(config.robot, config.scene_id))
         if config.arms != ("left", "right") or config.observation_arms:
             raise ValueError(
                 "L3-05 nut removal requires both manipulation arms and no observation-only arm"
@@ -219,21 +224,28 @@ class NutTask:
             raise ValueError("Native nut task requires the Tuojing laboratory scene")
         from ..completion import completion_instruction
 
-        facts = nut_spec().facts
+        from ..bench.english_reference import uses_reference
+        facts = "" if uses_reference(config.raw["task"]) else nut_spec().facts
         return replace(
             config,
-            instruction=(config.instruction if config.raw["task"].get("verbatim_instruction") else config.instruction + (
+            instruction=config.instruction + (
                 "" if facts in config.instruction else "\n" + facts
-            ) + completion_instruction(config)),
+            ) + completion_instruction(config),
             grasp_check_mode="contact_inspection",
-            initial_state_description="Both hands start empty; the assembly lies horizontally at the centre between the arms, on the green support box, body on overview-image LEFT and nut on RIGHT; nut pre-loosened but still threaded. No robot attachments.",
+            initial_state_description="Both hands start empty; the assembly rests on the green support box, with the nut pre-loosened but still threaded on the body. No robot attachments.",
         )
 
     def build_scene(self, backend, config):
         from ..bench.native_l2 import NativeL2Scene
 
         self.config = config
-        self.scene = NativeL2Scene(backend, config, nut_spec())
+        from ..bench.english_reference import apply_reference
+        from ...video_delivery import enabled
+        if enabled(config):
+            from ..bench.delivered_scene import DeliveredScene
+            self.scene = DeliveredScene(backend, config, apply_reference(nut_spec(), config.raw["task"]))
+        else:
+            self.scene = NativeL2Scene(backend, config, apply_reference(nut_spec(), config.raw["task"]))
 
     def reset(self, backend, seed):
         self.scene.reset(seed)

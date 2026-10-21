@@ -74,6 +74,32 @@ class PlanningExecutionTests(unittest.TestCase):
             robot._advance_drive_targets(2.)
             self.assertEqual(robot.drive_targets["left"], opened)
 
+    def test_gravity_compensation_updates_held_arm_but_not_finger_forces(self):
+        import sys
+        robot, _ = self.robot()
+        robot.gravity_compensation = True
+        robot.instances = {name: Mock() for name in robot.targets}
+        robot.indices = {name: np.arange(8) for name in robot.targets}
+        robot.drive_targets = dict(robot.targets)
+        for instance in robot.instances.values():
+            instance._articulation_view.get_generalized_gravity_forces.return_value = np.array([[0., 1., -2., .3, 0., 0.]])
+        modules = {"isaacsim.core.utils.types": SimpleNamespace(
+            ArticulationAction=lambda **kwargs: SimpleNamespace(**kwargs))}
+        with patch.dict(sys.modules, modules):
+            robot._advance_drive_targets(.01)
+        command = robot.instances['left'].apply_action.call_args.args[0]
+        np.testing.assert_allclose(command.joint_efforts, [0., 1., -2., .3, 0., 0., 0., 0.])
+        np.testing.assert_allclose(command.joint_positions, robot.targets['left'])
+
+    def test_cartesian_sag_of_four_mm_is_not_completed(self):
+        robot, states = self.robot()
+        pose = (.3, .4, .9, 1., 0., 0., 0.)
+        robot.cartesian_targets = {'left': pose}
+        states['left'] = replace(states['left'], tcp_pose_world_wxyz=(.3, .4, .896, 1., 0., 0., 0.))
+        self.assertFalse(robot.feedback().metrics['arms']['left']['motion_reached'])
+        states['left'] = replace(states['left'], tcp_pose_world_wxyz=(.3, .4, .8995, 1., 0., 0., 0.))
+        self.assertTrue(robot.feedback().metrics['arms']['left']['motion_reached'])
+
     def test_normalized_gripper_endpoints_and_invalid_values(self):
         for x, w in ((0, 0.012), (0.5, 0.041), (1, 0.07)):
             self.assertAlmostEqual(normalized_to_width(self.config.robot, x), w)

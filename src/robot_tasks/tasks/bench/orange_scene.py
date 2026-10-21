@@ -12,6 +12,7 @@ from .orange_evaluation import (
 
 class OrangeScene:
     root = "/World/L2"
+    object_name = "orange"
     set_pose = L1Scene.set_pose
     add_part = L1Scene.add_part
 
@@ -31,18 +32,31 @@ class OrangeScene:
         self.stage = backend.world.stage
         self.colliders = []
         self.path = self.root + "/orange"
-        asset, evidence = verified_prop("orange_segment", task_id=config.task_id)
-        prim = self.stage.DefinePrim(self.path)
-        prim.GetReferences().AddReference(str(asset))
+        from ...video_delivery import enabled, scenes
+        latest = enabled(config)
+        if latest:
+            scene = scenes()[config.task_id]
+            evidence = {"delivery": "video_20261015", "path": scene["path"], "sha256": scene["sha256"]}
+            prim = self.stage.GetPrimAtPath(self.path)
+        else:
+            asset, evidence = verified_prop("orange_segment", task_id=config.task_id)
+            prim = self.stage.DefinePrim(self.path)
+            prim.GetReferences().AddReference(str(asset))
         self.placement = self.design.articles[0].initial
-        self.set_pose(self.path, self.placement)
+        if not latest:
+            self.set_pose(self.path, self.placement)
         pedestal_path = self.root + "/Pedestal"
-        pedestal_asset, pedestal_evidence = verified_prop(
-            spec.parameters["pedestal_asset"], task_id=config.task_id
-        )
-        pedestal = self.stage.DefinePrim(pedestal_path)
-        pedestal.GetReferences().AddReference(str(pedestal_asset))
-        self.set_pose(pedestal_path, spec.parameters["pedestal_pose"])
+        if latest:
+            pedestal_evidence = {**evidence, "prim": pedestal_path}
+            pedestal = self.stage.GetPrimAtPath(pedestal_path)
+        else:
+            pedestal_asset, pedestal_evidence = verified_prop(
+                spec.parameters["pedestal_asset"], task_id=config.task_id
+            )
+            pedestal = self.stage.DefinePrim(pedestal_path)
+            pedestal.GetReferences().AddReference(str(pedestal_asset))
+        if not latest:
+            self.set_pose(pedestal_path, spec.parameters["pedestal_pose"])
         # Passive fixed support only; never attach or drive the orange.
         UsdPhysics.RigidBodyAPI(pedestal).CreateKinematicEnabledAttr(True)
         PhysxSchema.PhysxRigidBodyAPI.Apply(pedestal).CreateEnableCCDAttr(False)
@@ -153,6 +167,10 @@ class OrangeScene:
         self.backend.reset(seed)
         self.previous = self.cached = None
 
+    def fem_points(self):
+        return (np.asarray(self.sim.GetAttribute("points").Get(), dtype=float),
+                np.asarray(self.collision.GetAttribute("points").Get(), dtype=float))
+
     def measure(self):
         from omni.physx import get_physx_interface
         from pxr import UsdGeom
@@ -162,8 +180,7 @@ class OrangeScene:
             return self.cached
         get_physx_interface().update_transformations(False, True, True, False)
         points = np.asarray(self.visual.GetAttribute("points").Get(), dtype=float)
-        simulation = np.asarray(self.sim.GetAttribute("points").Get(), dtype=float)
-        collision = np.asarray(self.collision.GetAttribute("points").Get(), dtype=float)
+        simulation, collision = self.fem_points()
         cache = UsdGeom.XformCache()
         t = np.asarray(cache.GetLocalToWorldTransform(self.visual)).T
         world = points @ t[:3, :3].T + t[:3, 3]
@@ -219,14 +236,14 @@ class OrangeScene:
                 "distance_m": nearest,
                 "scope": "soft collision surface to observer link bounds; contact ambiguous",
             }
-        self.previous, self.cached = (now, world.copy()), {"orange": row}
+        self.previous, self.cached = (now, world.copy()), {self.object_name: row}
         return self.cached
 
     def observer_evidence(self):
-        return self.measure()["orange"]["observer_proximity"]
+        return self.measure()[self.object_name]["observer_proximity"]
 
     def planning_payloads(self):
-        row = self.measure()["orange"]
+        row = self.measure()[self.object_name]
         payloads = {a: [] for a in self.config.arms}
         arm = self.spec.arms[0]
         if (

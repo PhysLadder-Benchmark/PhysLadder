@@ -10,7 +10,7 @@ from robot_tasks.planning.scene import article_surface
 from robot_tasks.robots.transforms import pose_transform, transform_pose
 from robot_tasks.tasks.bench.evaluation import BenchEvaluator
 from robot_tasks.tasks.bench.native_geometry import catalog, cavity_fit, cup_cavity, shapes, transformed_poly
-from robot_tasks.tasks.bench.scoring_l1 import cups, flower, hat, insertion, marker
+from robot_tasks.tasks.bench.scoring_l1 import cups, flower, hat, plug, marker
 from robot_tasks.tasks.bench.spec import build_spec
 from robot_tasks.tasks.l1.specs import local_corners, pose
 from test_household_tasks import measurement
@@ -66,7 +66,7 @@ class NativeOutcomeTests(unittest.TestCase):
         r['fixture_force_n']=0.
         r['linear_velocity']=[.01,0.,-.03]
         r['angular_velocity']=[0.,0.,.5]
-        done,c,_=insertion(e,rows)
+        done,c,_=plug(e,rows)
         self.assertTrue(c['inside_socket']);self.assertFalse(c['housing_seated']);self.assertTrue(done)
         self.assertFalse(c['release_required']);self.assertFalse(c['released'])
         self.assertFalse(c['fixture_supported']);self.assertFalse(c['grasp_lift_recorded'])
@@ -78,7 +78,7 @@ class NativeOutcomeTests(unittest.TestCase):
             with self.subTest(depth=depth):
                 spec,rows,e=goal('L1-03')
                 rows['plug']['pose'][2]=spec.parameters['rim']-depth
-                self.assertFalse(insertion(e,rows)[0])
+                self.assertFalse(plug(e,rows)[0])
                 self.assertEqual(e.update(.1,rows).status,'running')
 
     def test_released_shallow_charger_can_succeed_without_support(self):
@@ -91,29 +91,29 @@ class NativeOutcomeTests(unittest.TestCase):
         spec,rows,e=goal('L1-03')
         local=pose_transform(pose(0,0,.03015-.0002,pitch=.03))
         rows['plug']['pose']=list(transform_pose(pose_transform(spec.design.fixture_pose) @ local))
-        done,criteria,_=insertion(e,rows)
+        done,criteria,_=plug(e,rows)
         self.assertEqual(sum(c['inside_slot'] for c in criteria['blades']),1)
         self.assertFalse(done)
 
     def test_entry_cannot_ignore_floor_or_housing_penetration(self):
         spec,rows,e=goal('L1-03')
         rows['plug']['pose'][2]=spec.parameters['floor']-.001
-        self.assertFalse(insertion(e,rows)[0])
+        self.assertFalse(plug(e,rows)[0])
         local=pose_transform(pose(0,0,.03015+.017,pitch=np.pi))
         rows['plug']['pose']=list(transform_pose(pose_transform(spec.design.fixture_pose) @ local))
-        done,criteria,_=insertion(e,rows)
+        done,criteria,_=plug(e,rows)
         self.assertFalse(criteria['housing_clear_of_strip'])
         self.assertFalse(done)
 
     def test_real_blade_chamfers_and_both_slots_are_checked(self):
         self.assertGreater(len(shapes('usb_charger')[1]['points']),8)
         spec,rows,e=goal('L1-03');rows['plug']['pose'][1]+=.0008
-        _,c,_=insertion(e,rows)
+        _,c,_=plug(e,rows)
         self.assertFalse(c['inside_socket']);self.assertEqual(len(c['blades']),2)
 
     def test_charger_score_follows_fixture_translation_and_yaw(self):
         spec,rows,e=goal('L1-03')
-        self.assertTrue(insertion(e,rows)[0])
+        self.assertTrue(plug(e,rows)[0])
         for yaw in (0., .37, -1.2):
             shift=pose_transform(pose(.13,-.04,.08,yaw=yaw))
             fixture=shift @ pose_transform(spec.design.fixture_pose)
@@ -122,25 +122,25 @@ class NativeOutcomeTests(unittest.TestCase):
                                       'floor':spec.parameters['floor']+.08})
             rows['plug']['pose']=list(transform_pose(shift @ pose_transform(spec.design.articles[0].goal)))
             evaluator=BenchEvaluator(moved,e.initial)
-            self.assertTrue(insertion(evaluator,rows)[0])
+            self.assertTrue(plug(evaluator,rows)[0])
             # A miss across the narrow slot dimension remains a miss at every yaw.
             rows['plug']['pose'][:3]=(np.asarray(rows['plug']['pose'][:3])+fixture[:3,0]*.002).tolist()
-            self.assertFalse(insertion(evaluator,rows)[0])
+            self.assertFalse(plug(evaluator,rows)[0])
 
     def test_tilted_housing_corner_contact_does_not_count_as_seated(self):
         spec,rows,e=goal('L1-03');r=rows['plug']
         r['pose']=list(pose(*r['pose'][:3],pitch=.05))
-        _,c,_=insertion(e,rows)
+        _,c,_=plug(e,rows)
         self.assertFalse(c['housing_seated'])
 
     def test_hat_is_native_and_planner_keeps_opening_unfilled(self):
         spec=build_spec('L1-07');a=spec.design.articles[0]
-        self.assertEqual(a.asset,'tuojing:yellow_visor_20261011')
+        self.assertEqual(a.asset,'tuojing:yellow_visor')
         self.assertEqual(len(shapes('yellow_visor')),208)
         samples=article_surface(a)
-        near_plane=samples[np.abs(samples[:,2]-spec.parameters['band_plane_z'])<.002]
+        near_plane=samples[np.abs(samples[:,2]-.035)<.002]
         self.assertGreater(len(near_plane),0)
-        self.assertTrue(np.all(np.linalg.norm(near_plane[:,:2],axis=1)>.064))
+        self.assertTrue(np.all(np.linalg.norm(near_plane[:,:2],axis=1)>.080))
         self.assertEqual(spec.parameters['hold_s'],0.)
 
     def test_hat_round_tip_balancing_and_wrong_support_are_rejected(self):
@@ -151,7 +151,7 @@ class NativeOutcomeTests(unittest.TestCase):
         r['target_hook_vertical_force_n']=.64
         # Move the plane to the peg's rounded endpoint: contact is insufficient.
         t=pose_transform(r['pose']);end=np.asarray(spec.parameters['hook_end'])
-        t[:3,3]=end-t[:3,:3]@np.array([0,.088*.8,spec.parameters['band_plane_z']]);r['pose']=list(transform_pose(t))
+        t[:3,3]=end-t[:3,:3]@np.array([0,.088,.035]);r['pose']=list(transform_pose(t))
         self.assertFalse(hat(e,rows)[1]['hook_through_head_opening'])
 
     def test_native_cup_spin_can_pass_but_tumbling_cannot(self):
@@ -195,17 +195,18 @@ class NativeOutcomeTests(unittest.TestCase):
         # This pose was rejected by the former straight-centreline criterion.
         self.assertGreater(.0251+.00105,.025*np.cos(np.pi/48)+.001)
 
-    def test_hat_source_box_is_free_standing_and_photo_layout_is_not_initial_success(self):
-        spec=build_spec('L1-07');hat_article,box=spec.design.articles
-        self.assertEqual(spec.design.fixtures, ())
-        self.assertEqual(box.asset,'tuojing:green_support_box_20261011')
-        self.assertGreater(hat_article.initial[0],spec.design.fixture_pose[0])
-        self.assertAlmostEqual(box.asset_bounds[1][2],.1)
-        self.assertGreater(hat_article.initial[2],box.initial[2]+.095)
-        rows=measurement(spec)
-        e=BenchEvaluator(spec,{a.name:a.initial for a in spec.design.articles})
-        rows['hat']['pair_forces']['source_box']=.65
-        self.assertFalse(hat(e,rows)[0])
+    def test_hat_pickup_pads_use_fixture_local_coordinates(self):
+        from robot_tasks.robots.transforms import origin_transform
+
+        spec=build_spec('L1-07');rack=pose_transform(spec.design.fixture_pose)
+        positions=[]
+        for pad in spec.design.fixtures:
+            world=rack@origin_transform(pad.position,pad.rotation)
+            self.assertAlmostEqual(world[2,3]+pad.size[2]/2,.825)
+            np.testing.assert_allclose(world[:3,:3],np.eye(3),atol=1e-9)
+            positions.append(world[:2,3])
+        self.assertEqual(len(positions),4)
+        np.testing.assert_allclose(np.mean(positions,axis=0),spec.design.articles[0].initial[:2])
 
     def test_cached_colliders_are_from_exact_locked_source_usds(self):
         import json
@@ -213,6 +214,8 @@ class NativeOutcomeTests(unittest.TestCase):
         entries = {e['id']: e for e in json.loads((root / 'catalog.json').read_text(encoding='utf-8'))['entries']}
         packages = {p['id']: p for p in json.loads((root / 'source.lock.json').read_text(encoding='utf-8'))['packages']}
         for name, record in catalog().items():
+            if name.startswith("video:"):
+                continue  # Complete scene geometry has a separate hash-locked manifest test.
             entry = entries[name]
             package = packages[entry['package']]
             self.assertEqual(package['files'][entry['path']]['sha256'], record['sha256'])

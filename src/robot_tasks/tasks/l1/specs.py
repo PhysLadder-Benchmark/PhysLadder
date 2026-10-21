@@ -66,19 +66,6 @@ def box(name, size, xyz=(0.0, 0.0, 0.0), color=GREY, rpy=(0.0, 0.0, 0.0), collis
     return Part(name, tuple(size), tuple(xyz), tuple(rpy), color=color, collision=collision)
 
 
-def rectangular_well(center, opening, height, bottom=0.006):
-    x, y = center
-    a, b = opening
-    wall = 0.016
-    return (
-        box("floor", (a + 2 * wall, b + 2 * wall, bottom), (x, y, bottom / 2)),
-        box("west", (wall, b + 2 * wall, height), (x - a / 2 - wall / 2, y, bottom + height / 2)),
-        box("east", (wall, b + 2 * wall, height), (x + a / 2 + wall / 2, y, bottom + height / 2)),
-        box("south", (a, wall, height), (x, y - b / 2 - wall / 2, bottom + height / 2)),
-        box("north", (a, wall, height), (x, y + b / 2 + wall / 2, bottom + height / 2)),
-    )
-
-
 def local_corners(article):
     """Conservative visual/collision envelope for process and containment checks."""
     from itertools import product

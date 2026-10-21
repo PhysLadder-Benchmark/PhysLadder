@@ -1,0 +1,78 @@
+{
+  "method": "RANSAC floor leveling + common yaw search + three supported wall-strip fits + plan length constraint; no scale deformation",
+  "source_to_world_matrix_column_vectors": [
+    [
+      0.9982320669211685,
+      -0.059261173142353074,
+      0.004566610130479483,
+      0.10261350957997284
+    ],
+    [
+      0.0593396120187023,
+      0.9980462457150723,
+      -0.019557654755100254,
+      0.0034601581212878596
+    ],
+    [
+      -0.003398678531669103,
+      0.019794059003697673,
+      0.9997983017651093,
+      1.4698587681899804
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "floor_plane_source": [
+    -0.003398678531669103,
+    0.019794059003697673,
+    0.9997983017651092,
+    1.4698587681899804
+  ],
+  "floor_inlier_median_residual_m": 0.006949576237746058,
+  "yaw_degrees": 3.400000000000005,
+  "wall_fits_source_leveled": [
+    {
+      "name": "partition",
+      "axis": 0,
+      "offset_m": -1.514274209246442,
+      "inliers": 3108,
+      "median_residual_m": 0.006704464808133581
+    },
+    {
+      "name": "window_wall",
+      "axis": 0,
+      "offset_m": 1.3090471900864964,
+      "inliers": 7152,
+      "median_residual_m": 0.010383578912998903
+    },
+    {
+      "name": "storage_wall",
+      "axis": 1,
+      "offset_m": -1.9150725525371968,
+      "inliers": 43,
+      "median_residual_m": 0.004847932840677638
+    },
+    {
+      "name": "desk_wall",
+      "axis": 1,
+      "offset_m": 1.9615398418787122,
+      "inliers": 13482,
+      "median_residual_m": 0.010573908230264717
+    }
+  ],
+  "wall_fit_interior_width_m": 2.8233213993329382,
+  "length_constraint_m": 3.93,
+  "storage_wall_fit_rejected": true,
+  "storage_wall_fit_rejection_reason": "Only 43 inliers; occluded by cabinets. Longitudinal center uses well-supported desk wall and 3.93 m plan length.",
+  "plan_dimensions_m": [
+    2.84,
+    3.93,
+    2.6
+  ],
+  "world_axes": "+X window wall, +Y desk wall, +Z up",
+  "limitation": "Residuals are inlier fit residuals, not whole-scene reconstruction accuracy. Glass returns and scan fragments are excluded by manually chosen spatial strips."
+}

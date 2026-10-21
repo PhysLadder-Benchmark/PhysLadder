@@ -154,6 +154,8 @@ def snapshot(backend):
     callback = getattr(backend, "planning_payloads", None)
     return {
         "obstacles": backend._planner_static_scene,
+        "allow_start_collision_retreat": getattr(backend, "environment_report", {}).get("task_id") == "L3-15",
+        "unexpected_contact_blocked": bool(getattr(getattr(backend, "collision_monitor", None), "blocked", None)),
         "payloads": callback() if callback is not None else {},
         "table_surface_z_m": getattr(backend, "environment_report", {}).get("table_surface_z_m", 0.0),
         "information_source": "privileged simulator collision geometry; never task targets or score",
@@ -176,9 +178,9 @@ def box_surface(size, resolution=5):
     )
 
 
-@lru_cache(maxsize=16)
-def _native_surface(prop):
-    """Sample locked compound colliders without filling gaps and openings.
+@lru_cache(maxsize=1)
+def _rose_surface():
+    """Sample the locked physical colliders, preserving all four stem bends.
 
     A widened straight stem penetrates the supporting table before a pickup
     even starts. Use the same local geometry as physics/scoring, without
@@ -187,8 +189,8 @@ def _native_surface(prop):
     from ..tasks.bench.native_geometry import shapes, polyhedron
 
     samples = []
-    for index, shape in enumerate(shapes(prop)):
-        vertices, _, _ = polyhedron(prop, index)
+    for index, shape in enumerate(shapes("artificial_rose")):
+        vertices, _, _ = polyhedron("artificial_rose", index)
         samples.append(vertices)
         if shape["kind"] == "mesh":
             triangles = vertices[np.asarray(shape["faces"])]
@@ -203,9 +205,8 @@ def _native_surface(prop):
 def article_surface(article):
     from ..robots.transforms import origin_transform
 
-    if article.asset in {"tuojing:artificial_rose", "tuojing:cream_tulip_20261011",
-                         "tuojing:capped_marker_20261011", "tuojing:yellow_visor_20261011"}:
-        return _native_surface(article.asset.split(":",1)[1])
+    if article.asset == "tuojing:artificial_rose":
+        return _rose_surface()
     if article.asset == "tuojing:yellow_visor":
         from ..tasks.bench.native_geometry import shapes, transformed_poly
 

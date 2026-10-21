@@ -1,0 +1,30 @@
+{
+  "revision": "measured_83_93_55_cavity45_depth25_20261016_v1",
+  "measured": {
+    "top_xy_m": [
+      0.083,
+      0.083
+    ],
+    "bottom_xy_m": [
+      0.093,
+      0.093
+    ],
+    "height_m": 0.055,
+    "central_well_xy_m": [
+      0.045,
+      0.045
+    ],
+    "well_depth_m": 0.025
+  },
+  "photo_estimates": {
+    "hole_diameter_m": 0.02,
+    "scallop_radius_m": 0.01,
+    "shell_thickness_m": 0.0015,
+    "notch": "rounded diagonal front-right relief",
+    "outer_corner_radius_m": 0.005
+  },
+  "collision_convex_cells": 1024,
+  "mass_and_contact_material_preserved": true,
+  "source_modified": false,
+  "plug_housing_clearance_above_floor_m": 0.0005
+}

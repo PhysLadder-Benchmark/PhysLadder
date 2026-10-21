@@ -7,41 +7,6 @@ from ...paths import PROJECT_ROOT
 
 ROOT = PROJECT_ROOT / "assets/l1"
 
-# L1-07 photo variant: retain the dimensioned 190 x 200 x 100 mm box;
-# match the estimated visor to the real video's near-equal box/brim width.
-# This is a photo estimate, not a measured hat size.
-VISOR_PHOTO_SCALE = 0.8
-
-MARBLE_PROPS = tuple('marble_' + color + '_20261011' for color in
-                     ('yellow_green', 'red_white', 'aqua_blue', 'emerald_green', 'clear_mint'))
-
-
-def resize_visor_for_photo(stage, parent):
-    """Bake the same uniform scale into visuals, colliders and reference frames.
-
-    The rigid-body root stays unscaled. Keep the 65-g mass estimate and scale
-    centre of mass by s and inertia by s². Source layers remain immutable.
-    """
-    import numpy as np
-    from pxr import Gf, Usd, UsdGeom, UsdPhysics
-
-    root = stage.GetPrimAtPath(parent)
-    for prim in Usd.PrimRange(root):
-        if prim.IsA(UsdGeom.Mesh):
-            mesh = UsdGeom.Mesh(prim)
-            points = np.asarray(mesh.GetPointsAttr().Get(), dtype=float) * VISOR_PHOTO_SCALE
-            mesh.GetPointsAttr().Set([Gf.Vec3f(*p) for p in points])
-            mesh.CreateExtentAttr([Gf.Vec3f(*points.min(axis=0)), Gf.Vec3f(*points.max(axis=0))])
-        if prim != root and UsdGeom.Xformable(prim):
-            for op in UsdGeom.Xformable(prim).GetOrderedXformOps():
-                if op.GetOpType() == UsdGeom.XformOp.TypeTranslate:
-                    op.Set(op.Get() * VISOR_PHOTO_SCALE)
-                else:
-                    raise ValueError("Unexpected visor transform in photo adapter: " + str(prim.GetPath()))
-    mass = UsdPhysics.MassAPI(root)
-    mass.GetCenterOfMassAttr().Set(mass.GetCenterOfMassAttr().Get() * VISOR_PHOTO_SCALE)
-    mass.GetDiagonalInertiaAttr().Set(mass.GetDiagonalInertiaAttr().Get() * VISOR_PHOTO_SCALE**2)
-
 
 def verified_asset(name):
     lock = json.loads((ROOT / "source.lock.json").read_text(encoding="utf-8"))
@@ -182,49 +147,12 @@ def import_asset(stage, parent, name, size, rotation, *, dynamic, task_id=None):
     }
 
 
-def shallow_storage_pocket(stage, parent):
-    """L1-03 photo variant: raise the shoulder seat 25 mm, keep the outer shell.
-
-    Update visual and collision vertices together. The 22-mm blade hole stays
-    open. This is a session-layer override, never an edit to the locked USD.
-    """
-    import numpy as np
-    from pxr import Gf, Usd, UsdGeom
-
-    wall_scale = (.055 - .045) / (.055 - .020)
-    changed = []
-    for prim in Usd.PrimRange(stage.GetPrimAtPath(parent)):
-        name = prim.GetName()
-        if not prim.IsA(UsdGeom.Mesh) or not name.startswith(("PocketFloor", "PocketWall")):
-            continue
-        mesh = UsdGeom.Mesh(prim)
-        points = np.asarray(mesh.GetPointsAttr().Get(), dtype=float)
-        if name.startswith("PocketFloor"):
-            points[:,2] += .025  # Retain the authored 0.8-mm floor thickness.
-        else:
-            points[:,2] = .045 + (points[:,2] - .020) * wall_scale
-            normals = mesh.GetNormalsAttr().Get()
-            if normals is not None and len(normals):
-                normals = np.asarray(normals, dtype=float)
-                normals[:,2] /= wall_scale
-                normals /= np.maximum(np.linalg.norm(normals, axis=1)[:,None], 1e-12)
-                mesh.GetNormalsAttr().Set([Gf.Vec3f(*n) for n in normals])
-        mesh.GetPointsAttr().Set([Gf.Vec3f(*p) for p in points])
-        mesh.CreateExtentAttr([Gf.Vec3f(*points.min(axis=0)), Gf.Vec3f(*points.max(axis=0))])
-        changed.append(str(prim.GetPath()))
-    if not changed:
-        raise ValueError("Storage holder has no native pocket geometry")
-
-
 def import_tuojing_asset(stage, parent, name, *, dynamic, task_id=None):
     """Reference native geometry, material and origin; apply declared task overrides."""
     from pxr import Gf, Usd, UsdGeom, UsdPhysics
     from ...asset_delivery import verified_prop
 
-    if name not in {"whiteboard_marker", "ripple_paper_cup", "black_ceramic_mug", "usb_charger", "plug_storage_base", "power_strip", "wooden_rack", "artificial_rose", "yellow_visor",
-                    "capped_marker_20261011", "black_ceramic_mug_20261011", "usb_charger_20261010",
-                    "power_strip_20261010", "wooden_rack_20261011", "yellow_visor_20261011",
-                    "green_support_box_20261011", "ripple_paper_cup_20261011", "cream_tulip_20261011", *MARBLE_PROPS}:
+    if name not in {"whiteboard_marker", "ripple_paper_cup", "black_ceramic_mug", "usb_charger", "plug_storage_base", "power_strip", "wooden_rack", "artificial_rose", "yellow_visor"}:
         raise ValueError(f"Tuojing prop has no validated task adapter yet: {name}")
     path, evidence = verified_prop(name, task_id=task_id)
     prim = stage.GetPrimAtPath(parent)
@@ -232,35 +160,8 @@ def import_tuojing_asset(stage, parent, name, *, dynamic, task_id=None):
     if not dynamic:
         # A fixed receptacle has static colliders, not a driven/teleported body.
         prim.RemoveAPI(UsdPhysics.RigidBodyAPI)
-        prim.RemoveAppliedSchema("PhysxRigidBodyAPI")
+        prim.RemoveAPI("PhysxRigidBodyAPI")
     overrides = []
-    if name == "yellow_visor_20261011":
-        resize_visor_for_photo(stage, parent)
-        overrides.append("L1-07 photo variant: visor uniformly scaled to 80% (about 188 x 238 x 69 mm); visuals, colliders, reference frames, COM and inertia agree; estimated 65-g mass retained; dimensioned 190 x 200 x 100 mm box unchanged")
-    if name == "plug_storage_base":
-        shallow_storage_pocket(stage, parent)
-        overrides.append("L1-03 photo variant: pocket floor 20 -> 45 mm, recess 35 -> 10 mm; visuals/colliders updated together; outer 55-mm height and 22-mm through-hole retained")
-    if name == "capped_marker_20261011":
-        # L1 transfers a CLOSED marker, not a cap-removal assembly. Preserve all
-        # authored external geometry; use a single compound rigid body. Do not
-        # attach it to the hand or change immutable delivery bytes.
-        for child in list(Usd.PrimRange(prim)):
-            if not child:
-                continue  # An internal shoe parent may already be inactive.
-            if child != prim:
-                for schema in (UsdPhysics.RigidBodyAPI, UsdPhysics.MassAPI):
-                    child.RemoveAPI(schema)
-                child.RemoveAppliedSchema("PhysxRigidBodyAPI")
-            if child.IsA(UsdPhysics.Joint) or child.GetName().startswith("Shoe"):
-                child.SetActive(False)
-        overrides.append("L1 closed-cap variant: body and cap form one 22-g rigid compound; internal shoes/springs disabled; external native colliders unchanged")
-    if name == "power_strip_20261010" and not dynamic:
-        from pxr import Sdf
-
-        housing = stage.GetPrimAtPath(parent + "/Housing")
-        UsdPhysics.RigidBodyAPI(housing).CreateKinematicEnabledAttr(True)
-        housing.CreateAttribute("physxRigidBody:enableCCD", Sdf.ValueTypeNames.Bool).Set(False)
-        overrides.append("Fixed strip housing is kinematic; all 12 native contact bodies and spring joints retained with native material/contact offsets")
     if name == "whiteboard_marker":
         # The delivered capsule extends below the flat visible end and balances
         # on a rounded point. Match the barrel/end envelope with a flat cylinder
@@ -277,7 +178,6 @@ def import_tuojing_asset(stage, parent, name, *, dynamic, task_id=None):
                  if p.HasAPI(UsdPhysics.CollisionAPI) and UsdPhysics.CollisionAPI(p).GetCollisionEnabledAttr().Get()]
     if not colliders:
         raise ValueError(f"Tuojing prop has no active collision shapes: {name}")
-    return colliders, {**evidence, "native_metres": True,
-                       "origin": "delivered sphere centre" if name in MARBLE_PROPS else "delivered bottom centre",
+    return colliders, {**evidence, "native_metres": True, "origin": "delivered bottom centre",
                        "dynamic": dynamic, "source_modified": False,
                        "overrides": overrides, "collision_adapter": "native separate convex/primitives; cavity retained"}

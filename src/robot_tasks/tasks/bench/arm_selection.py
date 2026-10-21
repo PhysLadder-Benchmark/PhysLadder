@@ -17,13 +17,13 @@ from .spec import build_spec
 
 def resolve_bench_spec(task, robot):
     spec = build_spec(task["id"])
+    from .english_reference import apply_reference, uses_reference
+    from ...initial_layout import apply_spec as apply_initial_layout
+    if uses_reference(task):
+        return apply_initial_layout(apply_reference(spec, task), task)
     mode = task.get("arm_selection", "fixed")
-    if mode == "real_prompt":
-        from .real_l1 import configure
-
-        return configure(spec, robot)
     if mode == "fixed":
-        return spec
+        return apply_initial_layout(spec, task)
     if mode != "nearest_initial_object":
         raise ValueError(f"Unknown task.arm_selection: {mode}")
     if not task["id"].startswith("L1-") or len(spec.arms) != 1:

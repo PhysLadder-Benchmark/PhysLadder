@@ -36,6 +36,16 @@ class TaskConfig:
     initial_state_description: str = ""
 
     @property
+    def experiment_id(self) -> str:
+        """Public run ID; task_id stays the physical/scoring implementation ID."""
+        return self.raw["task"].get("variant_id", self.task_id)
+
+    @property
+    def scene_id(self) -> str:
+        """Versioned scene selection, independent of the scoring implementation."""
+        return self.raw["task"].get("scene_variant", self.task_id)
+
+    @property
     def command_arms(self) -> tuple[str, ...]:
         """Arms allowed to move; arms itself identifies task manipulation arms."""
         return self.arms + self.observation_arms
@@ -67,8 +77,10 @@ class ExecutionSettings:
     wait_steps: int = 1
     settle_steps: int = 0
     stop_steps: int = 0
-    max_decisions: int | None = None
+    max_decisions: int | None = None  # None inherits the policy budget; 0 disables this cap.
     fixed_arm_tolerance_rad: float = 0.01
+    model_budget_basis: str = "all_requests"
+    retry_model_errors: bool = False
 
     @property
     def gripper_timing(self) -> str:
@@ -81,6 +93,10 @@ class ExecutionSettings:
         if unknown:
             raise ValueError(f"Unknown execution settings: {sorted(unknown)}")
         result = cls(**data)
+        if result.model_budget_basis not in {"all_requests", "completed_generations"}:
+            raise ValueError("execution.model_budget_basis must be all_requests or completed_generations")
+        if type(result.retry_model_errors) is not bool:
+            raise ValueError("execution.retry_model_errors must be boolean")
         _positive(result.fixed_arm_tolerance_rad, "execution.fixed_arm_tolerance_rad")
         for name in ("max_action_steps", "completion_samples", "wait_steps", "settle_steps", "stop_steps"):
             value = getattr(result, name)
@@ -92,8 +108,8 @@ class ExecutionSettings:
         if config.max_steps and result.settle_steps >= config.max_steps:
             raise ValueError("settle_steps must leave an action budget")
         if result.max_decisions is not None and (type(result.max_decisions) is not int
-                                               or not 1 <= result.max_decisions <= 1000):
-            raise ValueError("execution.max_decisions must be in [1, 1000]")
+                                               or not 0 <= result.max_decisions <= 1000):
+            raise ValueError("execution.max_decisions must be in [0, 1000]; zero disables the cap")
         return result
 
 
@@ -145,6 +161,21 @@ def load_config(path: Path, *, depth: bool | None = None) -> TaskConfig:
     for label, value in (("task.id", task["id"]), ("task.instruction", task["instruction"])):
         if not isinstance(value, str) or not value.strip():
             raise ValueError(f"{label} must be a nonempty string")
+    if "variant_id" in task:
+        l1 = task["id"] in {"L1-01", "L1-03", "L1-07", "L1-08", "L1-09"}
+        l2 = task["id"] in {"L2-01", "L2-03", "L2-04", "L2-06", "L2-07", "L2-08"}
+        l3 = task["id"] in {"L3-03", "L3-05", "L3-11", "L3-14", "L3-15"}
+        if (task["variant_id"] != task["id"] + "_v3"
+                or task.get("scene_delivery") != "video_20261015"
+                or not ((l1 and task.get("initial_placement_profile") == "l1_xy_random_p03_20261018")
+                        or (l2 and task.get("initial_layout") == "l2_p01")
+                        or (l3 and task.get("scene_variant") == task["variant_id"]))):
+            raise ValueError("variant_id requires a matching L1/L2 layout or L3 versioned scene")
+    if "scene_variant" in task:
+        from .video_delivery import scenes
+        if (task["scene_variant"] != task.get("variant_id")
+                or task["scene_variant"] not in scenes()):
+            raise ValueError("scene_variant must select the registered variant scene")
     if (not isinstance(robot, dict) or not {"profile", "active_arms"}.issubset(robot)
             or set(robot) - {"profile", "active_arms", "observation_arms"}):
         raise ValueError("robot must contain only profile and active_arms, with optional observation_arms; this project uses R5 exclusively")
@@ -174,7 +205,7 @@ def load_config(path: Path, *, depth: bool | None = None) -> TaskConfig:
         camera_profile = raw.get("simulation", {}).get("camera_profile")
         if not camera_profile or not observation["include_robot_state"] or not observation["include_feedback"]:
             raise ValueError("Observation arms require a camera profile, robot state and execution feedback")
-        rig = load_camera_rig(source.parent / camera_profile, robot_profile=profile)
+        rig = load_camera_rig(source.parent / camera_profile)
         parents = {camera.parent for camera in rig.select(cameras)}
         if not set(observation_arms).issubset(parents):
             raise ValueError("Each observation arm must carry a selected camera")

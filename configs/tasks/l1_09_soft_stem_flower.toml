@@ -1,14 +1,15 @@
-# Run from the repository root in the Isaac Sim environment; uses the selected model provider.
-# launch_command / launch_command_conda below are documentation, not auto-executed shell code.
 schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_tuojing_lab_l1.toml"
-active_arms = ["left"]
-observation_arms = ["right"]
+profile = "../robots/r5_video_20261015.toml"
+active_arms = ["right"]
+observation_arms = ["left"]
 
 [simulation]
+# Preserve Hym L1 motion settings; L2/L3 keep their own profiles.
+robot_gravity_compensation = false
+cartesian_completion_tolerance_m = 0.005
 environment = "tuojing_lab_v4"
 camera_profile = "../cameras/r5_tuojing_lab.toml"
 asset_directory = "../../build/tuojing_lab"
@@ -32,21 +33,25 @@ solver_velocity_iterations = 4
 model_config = "../models/gpt.toml"
 
 [task]
-verbatim_instruction = true
-prompt_source = "../prompts/feishu_english_20261014.json"
+launch_command = "python tools/launch.py run L1-09 --gui"
+scene_delivery = "video_20261015"
+initial_placement_profile = "baseline"
+prompt_protocol = "feishu_english_20261015_v1"
+reference_document = "https://my.feishu.cn/docx/QK4EdOD3hotgp4x782ycgoyyn6g"
+reference_sheet_id = "KyMjZ7"
+reference_sheet_revision = 324
+reference_sheet_row = 12
 id = "L1-09"
-name = "奶白郁金香从画面右源杯移入左目标杯"
+name = "刚体玫瑰插花"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
 implementation = "household"
-arm_selection = "real_prompt"
-simulation_limitations = "Native rigid tulip; movable right source cup with metal-pins-up / USB-down charger and near-vertical flower on its overview-left side. Left target cup has native 16-mm glass marbles; count 10 confirmed by user; dimensions/mass are delivery estimates. Pearl quantity/dimensions and exact poses unmeasured. No attachment or forced pose; not yet a strict same-condition comparison."
-launch_command = "python tools/launch.py run L1-09 --gui"
-launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L1-09 --gui"
-instruction = "Pick up the flower from the left cup, insert its stem into the right cup, and release it."
+simulation_limitations = "Latest complete 2026-10-15 scene. Latest prop geometry, materials and masses are retained. Robot joint homes and gripper openings use per-task video estimates. All camera mounts and lens parameters use the shared L3-03 rig; overview is fixed in world space and wrist cameras follow their own arms. Video-guided geometry and illumination remain uncalibrated; rigid flowers/cups/bristles and contact-driven wiping are explicit simulation approximations. Known per-task discrepancies are recorded in reports/reference_alignment_20261015.json."
+instruction = """
+Pick up the flower from the left cup, insert its stem into the right cup, and release it.
+"""
 
-scene_context = "按用户对真机画面的明确更正：以 overview 相机图像为准，白色仿真花和白色充电头初始在画面右侧源纸杯；画面左侧另一纸杯为目标。画面左右不等同于机械臂名称。左臂自主取花并转移到目标杯，右臂仅辅助观察；源杯和充电头留在原处。茎端实际入杯、花头留在杯沿上方，松爪撤离后花与杯独立稳定，再双臂回位，不要求精密插入深度。源杯内白色充电头 两根金属插脚朝上、USB 插孔朝下，花茎在其画面左侧，接近竖直。目标杯已加入飞书原生 16 mm 彩色玻璃弹珠，均可自由碰撞滚动；数量为用户确认的 10 颗，球径和质量仍为交付方估计值。白色珍珠的数量和尺寸仍未确认，未添加；布局坐标由照片估计。上述差异必须随结果报告，不能视为严格同条件完成率。"
-
-# Chinese setup/props description; keep this the final task attribute.
-description = "对齐飞书 2026-10-12 场景说明与当轮指令摘要，非完整真机系统提示词。按用户对真机画面的明确更正：以 overview 相机图像为准，白色仿真花和白色充电头初始在画面右侧源纸杯；画面左侧另一纸杯为目标。画面左右不等同于机械臂名称。左臂自主取花并转移到目标杯，右臂仅辅助观察；源杯和充电头留在原处。茎端实际入杯、花头留在杯沿上方，松爪撤离后花与杯独立稳定，再双臂回位，不要求精密插入深度。源杯内白色充电头 两根金属插脚朝上、USB 插孔朝下，花茎在其画面左侧，接近竖直。目标杯已加入飞书原生 16 mm 彩色玻璃弹珠，均可自由碰撞滚动；数量为用户确认的 10 颗，球径和质量仍为交付方估计值。白色珍珠的数量和尺寸仍未确认，未添加；布局坐标由照片估计。上述差异必须随结果报告，不能视为严格同条件完成率。 评分依据实际进入、释放承托及指令要求的回位；除挂帽不额外等待外，稳定验证 1 s，允许 5 mm 位移、5 度倾斜变化，回位容差 0.05 rad / 0.05 rad/s。不要求最低抬升高度或额外 TCP 包络间距。这些是仿真验证容差，不是真机操作精度。"
+description = """
+Complete 2026-10-15 assets: room, table, robot mounts, lighting and task props. Robot initial joints and gripper openings follow the per-task video-visible setup. All camera views use the shared L3-03 rig. Prop placements follow the delivered video reconstruction. Task left/right use the robot perspective; overview-image left/right are reversed. No older individual prop is imported. Physical parameters remain uncalibrated.
+"""

@@ -1,6 +1,6 @@
 """Portable RGB camera profiles, independent of Kit and hardware SDKs."""
 
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, dataclass
 import hashlib
 import math
 from pathlib import Path
@@ -48,7 +48,7 @@ class CameraRigProfile:
         return tuple(available[name] for name in names)
 
 
-def load_camera_rig(path: Path, *, robot_profile=None) -> CameraRigProfile:
+def load_camera_rig(path: Path) -> CameraRigProfile:
     source = path.expanduser().resolve()
     with source.open("rb") as stream:
         raw = tomllib.load(stream)
@@ -106,29 +106,7 @@ def load_camera_rig(path: Path, *, robot_profile=None) -> CameraRigProfile:
             if key in values:
                 values[key] = tuple(values[key])
         result.append(CameraSpec(**values))
-    rig = CameraRigProfile(source, raw["calibration_status"], raw["notes"], tuple(result))
-    return bind_wrist_cameras(rig, robot_profile) if robot_profile is not None else rig
-
-
-def bind_wrist_cameras(rig, robot_profile):
-    """Resolve semantic wrist names through mounts, retaining physical calibration.
-
-    Delivered USD names can differ from task-facing left/right names. Select the
-    original camera by its physical mount before renaming; do not swap twice or
-    copy the other sensor's extrinsics. World cameras and generated rigs stay as-is.
-    """
-    mounts = {m.name: m for m in robot_profile.mounts}
-    cameras = []
-    for camera in rig.cameras:
-        if camera.parent == "world" or not camera.existing_prim_path:
-            cameras.append(camera)
-            continue
-        parent = mounts[camera.parent].prim_path + "/" + robot_profile.ee_link + "/"
-        candidates = [c for c in rig.cameras if c.existing_prim_path.startswith(parent)]
-        if len(candidates) != 1:
-            raise ValueError(f"{camera.name}: expected one delivered wrist camera under {parent}")
-        cameras.append(replace(candidates[0], name=camera.name, parent=camera.parent))
-    return replace(rig, cameras=tuple(cameras))
+    return CameraRigProfile(source, raw["calibration_status"], raw["notes"], tuple(result))
 
 
 def intrinsics_from_fov(width: int, height: int, horizontal_deg: float, vertical_deg: float) -> tuple[float, ...]:

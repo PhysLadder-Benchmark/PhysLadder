@@ -30,8 +30,8 @@ def _gpt_policy(config: TaskConfig, model_config: Path | None):
     if decisions is not None:
         settings = replace(settings, max_calls=decisions)
     if settings.transport == "codex_cli":
-        from .policies.codex_cli import CodexCLIClient
-        client = CodexCLIClient(settings)
+        from .policies.codex_bridge import create_codex_client
+        client = create_codex_client(settings)
         client.require_chatgpt_login()
         return GPTPolicy(config, settings, client=client)
     read_api_key(settings.api_key_env)
@@ -45,7 +45,7 @@ def execute_task(spec: TaskSpec, config: TaskConfig, output_root: Path, *, polic
                  model_config: Path | None = None, gui: bool = False, dry_run: bool = False,
                  step_limit: int | None = None, run_directory: Path | None = None,
                  summarize: Callable[[dict], dict] | None = None) -> tuple[Path, dict]:
-    if config.task_id != spec.task_id:
+    if config.experiment_id != spec.task_id:
         raise ValueError("Task/config mismatch")
     prepare = getattr(spec.factory, "prepare_config", None)
     if prepare is not None:

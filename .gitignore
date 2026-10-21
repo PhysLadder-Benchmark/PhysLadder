@@ -21,6 +21,7 @@ dist/
 !.env.example
 *.local.toml
 *.local.json
+AGENTS.local.md
 *.pem
 *.key
 /configs/runtime/windows.json
@@ -34,10 +35,15 @@ dist/
 # Generated simulations, downloads and machine-specific evidence
 /runs/
 /reports/
+/report/
+/exports/
+/real_videos/
 /assets/cameras/source/
 /assets/l1/source/
-/assets/tuojing/source/
 /assets/tuojing/packages/
+# Current source scenes, runtime layers and visual textures are runtime inputs.
+# Keep them versioned; historical ZIP deliveries and generated caches stay out.
+# L1 appearance inputs under assets/tuojing/appearance/ are also runtime assets.
 # Original local delivery; metadata is tracked, ZIPs belong in asset releases.
 /新增三类资产_圆柱杯子插头底座_20261009.zip
 *.log
@@ -54,3 +60,4 @@ Desktop.ini
 *~
 
 /configs/runtime/local.toml
+.rsync-partial/

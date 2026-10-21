@@ -61,7 +61,7 @@ class BenchEvaluator:
         self.contact_motion = {}
         self.peak_speeds = {}
 
-    def update(self, now, rows, *, robot=None):
+    def update(self, now, rows):
         if not math.isfinite(now) or (
             self.last_time is not None and now <= self.last_time
         ):
@@ -97,10 +97,6 @@ class BenchEvaluator:
 
         rules = {**scoring_l1.RULES, **scoring_l2.RULES, **scoring_l3.RULES}
         complete, details, failure = rules[self.spec.design.task_id](self, rows)
-        if self.spec.parameters.get("real_prompt_protocol"):
-            from .real_l1 import requirements
-
-            complete, details, failure = requirements(self, rows, robot, complete, details, failure)
         # Observable task failures terminate this episode; objects are never reset mid-run.
         fallen = [
             n for n, r in rows.items()
@@ -150,9 +146,7 @@ class BenchEvaluator:
             return Assessment("failed", failure or "; ".join(violations), metrics)
         if failure:
             return Assessment("failed", failure, metrics)
-        # The real-prompt protocol verifies the stable outcome before return
-        # home. Do not impose a second stability interval after that gate.
-        stability = 0.0 if self.spec.parameters.get("real_prompt_protocol") else self.spec.parameters.get("hold_s", 1.0)
+        stability = self.spec.parameters.get("hold_s", 1.0)
         if complete and duration >= stability - 1e-9:
             metrics["stage"] = "complete"
             if violations:

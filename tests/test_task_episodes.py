@@ -400,9 +400,46 @@ class EpisodeExecutionTests(unittest.TestCase):
 
     def test_execution_options_reject_impossible_budget(self):
         for data in ({"max_action_steps": 0}, {"max_action_steps": 2, "completion_samples": 3},
-                     {"wait_steps": True}, {"max_decisions": 0}):
+                     {"wait_steps": True}, {"max_decisions": -1}):
             with self.subTest(data=data), self.assertRaises(ValueError):
                 ExecutionSettings.from_config(replace(self.config, raw={**self.config.raw, "execution": data}))
+
+    def test_zero_call_caps_continue_past_100_and_end_on_task_terminal(self):
+        from types import SimpleNamespace
+        config = replace(self.config, max_steps=0, raw={**self.config.raw, "execution": {
+            "max_decisions": 0, "max_action_steps": 1, "wait_steps": 1}})
+        for terminal in ("succeeded", "failed"):
+            with self.subTest(terminal=terminal):
+                class Policy(NoopPolicy):
+                    def act(policy, context):
+                        return Action((), policy.duration_s, request_stop=context.step == 1)
+                policy = Policy(config.control_dt_s)
+                policy.settings = SimpleNamespace(max_calls=0)
+                task = RunningTask()
+                backend = RGBDBackend()
+                task.evaluate = lambda state, feedback: Assessment(
+                    terminal if backend.time_s() > 10.1 else "running", "fixture")
+                with redirect_stdout(io.StringIO()):
+                    _, result = run_episode(config, backend, TrackingRobot(), task, policy, self.root)
+                self.assertGreater(result["decisions"], 100)
+                self.assertEqual(result["rejected_stop_requests"], 1)
+                self.assertEqual(result["termination_reason"], "task_terminal")
+                self.assertEqual(result["success"], terminal == "succeeded")
+
+    def test_zero_call_caps_still_reject_response_after_five_hour_deadline(self):
+        from types import SimpleNamespace
+        clock = [0.0]
+        config = replace(self.config, max_steps=0, max_wall_time_s=18000,
+                         raw={**self.config.raw, "execution": {"max_decisions": 0}})
+        class SlowPolicy(NoopPolicy):
+            settings = SimpleNamespace(max_calls=0)
+            def act(policy, context):
+                clock[0] = 18000.
+                return Action((ArmCommand("left", "gripper", (0.04,)),), policy.duration_s)
+        with patch("robot_tasks.runner.time.monotonic", side_effect=lambda: clock[0]):
+            _, result, _, robot = self.run_case(SlowPolicy(0.1), config=config)
+        self.assertFalse(robot.applied)
+        self.assertEqual(result["termination_reason"], "wall_time_limit")
 
 
 if __name__ == '__main__':

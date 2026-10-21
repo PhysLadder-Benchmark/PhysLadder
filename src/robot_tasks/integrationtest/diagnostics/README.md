@@ -77,7 +77,7 @@ L1 使用独立机器人配置和贴合表面的凸分解，名义开口为原�
 python -m robot_tasks.integrationtest.diagnostics.scene_smoke L1-03 --prop-probe --output build/tuojing_l1_migration/L1-03
 ```
 
-将 ID 替换为 L1-01、L1-05、L1-07、L1-08、L1-09。覆盖双臂准备、三路 RGB-D、
+将 ID 替换为 L1-01、L1-03、L1-07、L1-08、L1-09。覆盖双臂准备、三路 RGB-D、
 初态评分、插座/杯腔/挂杆与刚体玫瑰承托；无需模型令牌。检查 `result.json` 的
 `passed`，不能只看 Isaac 进程退出码。无任务执行轨迹或模型成功率含义。
 

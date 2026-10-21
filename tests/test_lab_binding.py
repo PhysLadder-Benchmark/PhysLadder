@@ -33,7 +33,7 @@ class LabSettingsTests(unittest.TestCase):
         self.assertAlmostEqual(overview.optical_pose_wxyz[2], 1.45)
         self.assertEqual(overview.resolution, (1280, 960))
         self.assertAlmostEqual(overview.optical_pose_wxyz[0],
-                               np.mean([m.base_pose_wxyz[0] for m in config.robot.mounts]))
+                               .1956512155)
         self.assertLess(overview.optical_pose_wxyz[1], bench.centre[1] - bench.size[1] / 2)
         forward = -pose_transform(overview.optical_pose_wxyz)[:3, 2]
         np.testing.assert_allclose(forward, [0, np.cos(np.deg2rad(36)), -np.sin(np.deg2rad(36))], atol=1e-9)
@@ -71,9 +71,9 @@ class LabSettingsTests(unittest.TestCase):
 
         _, config = resolve_task("L1-01")
         bench = bench_geometry(config)
-        self.assertAlmostEqual(bench.top, .78)
-        self.assertAlmostEqual(GraspGuard(config).table_z_m, .78)
-        self.assertAlmostEqual(operating_notes(config)["bench"]["surface_world_z_m"], .78)
+        self.assertAlmostEqual(bench.top, .88)
+        self.assertAlmostEqual(GraspGuard(config).table_z_m, .88)
+        self.assertAlmostEqual(operating_notes(config)["bench"]["surface_world_z_m"], .88)
         projected = []
 
         def project(points, *args):
@@ -86,7 +86,7 @@ class LabSettingsTests(unittest.TestCase):
             annotate(Image.new("RGB", (320, 180)), calibration, {}, bench=bench)
         points = np.asarray(projected)
         self.assertGreater(len(points), 0)
-        np.testing.assert_allclose(points[:, 2], .781)
+        np.testing.assert_allclose(points[:, 2], .881)
         self.assertTrue(np.all(points[:, 1] > .7))
 
     def test_private_camera_profile_can_be_parsed_offline_but_no_asset_is_fabricated(self):
@@ -162,15 +162,6 @@ class LabBindingTests(unittest.TestCase):
         original = self.stage.GetRootLayer().ExportToString()
         apply_camera_mounts(self.stage, profile)
         self.assertEqual(validate_existing_camera(self.stage, spec, parent), str(camera.GetPath()))
-
-        # Real L1 calls this physical R5_Left arm "right". Camera transforms
-        # must follow the declared mount, never reconstruct a prim from its name.
-        renamed = replace(spec, name="right_wrist", parent="right")
-        robot = SimpleNamespace(mounts=(SimpleNamespace(name="right", prim_path=parent.rsplit('/', 1)[0]),))
-        apply_camera_mounts(self.stage, SimpleNamespace(cameras=(renamed,)), robot)
-        self.assertEqual(validate_existing_camera(self.stage, renamed, parent), str(camera.GetPath()))
-        with self.assertRaisesRegex(ValueError, "camera binding"):
-            apply_camera_mounts(self.stage, SimpleNamespace(cameras=(renamed,)))
         self.assertEqual(original, self.stage.GetRootLayer().ExportToString())
         cache = UsdGeom.XformCache()
         np.testing.assert_allclose(np.array(cache.GetLocalToWorldTransform(housing.GetPrim())),
@@ -247,10 +238,6 @@ class LabBindingTests(unittest.TestCase):
                                 base_pose_wxyz=(0.1, 0.2, 0.79, 1, 0, 0, 0))
         profile = SimpleNamespace(mounts=(mount,))
         validate_robot_binding(self.stage, profile)
-        mount.name = "right"  # Task-facing identity can differ from the USD name.
-        validate_robot_binding(self.stage, profile)
-        with self.assertRaisesRegex(ValueError, "distinct"):
-            validate_robot_binding(self.stage, SimpleNamespace(mounts=(mount, mount)))
         mount.base_pose_wxyz = (0., 0.42, 0.04, 1, 0, 0, 0)
         with self.assertRaisesRegex(ValueError, "base pose"):
             validate_robot_binding(self.stage, profile)

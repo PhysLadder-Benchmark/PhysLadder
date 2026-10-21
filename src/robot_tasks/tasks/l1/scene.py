@@ -98,18 +98,6 @@ class L1Scene:
         )
         for path in paths:
             prim = stage.GetPrimAtPath(path)
-            # The new strip's spring contacts and fine blade colliders carry
-            # measured-in-metres contact skins and their own friction bindings.
-            # Replacing these with a generic zero-friction fixture breaks them.
-            if (self.design.fixture_asset == "tuojing:power_strip_20261010"
-                    and (path.startswith(self.root + "/Fixture/")
-                         or path.startswith(self.root + "/plug/"))):
-                continue
-            # Delivered glass spheres retain their own material, restitution
-            # and 80-micrometre contact skin; do not turn them into gripper pads.
-            if any(a.asset.startswith('tuojing:marble_') and path.startswith(self.root+'/'+a.name+'/')
-                   for a in self.design.articles):
-                continue
             while prim.IsInstanceProxy():
                 ancestor = prim.GetParent()
                 while ancestor and not ancestor.IsInstance():

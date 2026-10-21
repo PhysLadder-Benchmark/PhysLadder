@@ -4,11 +4,14 @@ schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_tuojing_lab.toml"
+profile = "../robots/r5_video_20261015.toml"
 active_arms = ["right"]
 observation_arms = ["left"]
 
 [simulation]
+# Preserve the established L3 controller profile. GPU selection is a launch option.
+robot_gravity_compensation = false
+cartesian_completion_tolerance_m = 0.005
 environment = "tuojing_lab_v4"
 camera_profile = "../cameras/r5_tuojing_lab.toml"
 asset_directory = "../../build/tuojing_lab"
@@ -31,20 +34,29 @@ model_config = "../models/gpt.toml"
 return_home = false
 
 [task]
-verbatim_instruction = true
-prompt_source = "../prompts/feishu_english_20261014.json"
+scene_delivery = "video_20261015"
+prompt_protocol = "feishu_english_20261015_v1"
+reference_document = "https://my.feishu.cn/docx/QK4EdOD3hotgp4x782ycgoyyn6g"
+reference_sheet_id = "KyMjZ7"
+reference_sheet_revision = 324
+reference_sheet_row = 28
 id = "L3-11"
-name = "抓板擦擦除原生字迹"
+name = "抓板擦擦除白板字迹"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented_proxy"
 implementation = "household"
 launch_command = "python tools/launch.py run L3-11 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L3-11 --gui"
-instruction = "Pick up the board eraser with the left arm and erase the writing on the whiteboard."
-
-# Chinese setup and props; final task attribute.
-description = """
-更新绿板及120×60×20 mm蓝色板擦。绿板固定平放，保留资产自带红色GPT6字迹，第三视角看上下颠倒；板擦清洁面朝下放在第三视角画面中黑板的右侧，右臂自主拿擦，左臂观察，不预置持擦。实际接触扫过的字迹一次消除；实际擦掉任意一点原始字迹即成功（至少一个字迹单元），不设置擦除比例门槛。原生静态字迹改成依据原字迹mask的1 mm接触擦除代理，不声称真实去污化学过程。
-擦除被确认后立即结束，不要求继续擦拭、放下板擦、释放或双臂回位。资产来源：飞书《GPT6评测任务及资产管理》2026-10-11下载包。
+instruction = """
+Pick up the board eraser with the left arm and erase the writing on the whiteboard.
 """
+
+# English scene context; task instruction retains source robot-perspective names.
+description = """
+Complete 2026-10-15 assets: room, table, robot mounts, lighting and task props. Robot initial joints and gripper openings follow the per-task video-visible setup. All camera views use the shared L3-03 rig. Prop placements follow the delivered video reconstruction. Task left/right use the robot perspective; overview-image left/right are reversed. No older individual prop is imported. Physical parameters remain uncalibrated.
+"""
+
+[execution]
+model_budget_basis = "completed_generations"
+retry_model_errors = true

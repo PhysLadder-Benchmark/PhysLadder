@@ -118,16 +118,6 @@ def operating_notes(config) -> dict:
         "manipulation_guidance": manipulation_guidance(config),
         "task_execution_guidance": task_execution_guidance(include_depth=config.include_depth),
     }
-    if config.task_id.startswith("L1-"):
-        notes["arm_identity"] = {
-            "prim_by_arm": {m.name: m.prim_path for m in profile.mounts},
-            "convention": "Arm names follow the real-trial robot, not image left/right. "
-                          "In the standard front overview, left arm has the RIGHT base; "
-                          "right arm has the LEFT base. left_wrist/right_wrist follow "
-                          "their named arm. Keep these identities when a camera moves.",
-        }
-    if config.raw["task"].get("arm_selection") == "real_prompt":
-        notes["home_joint_positions_rad"] = {m.name: m.home_positions_rad for m in profile.mounts}
     if config.raw.get("simulation", {}).get("environment") == "tuojing_lab_v4":
         notes["rigid_collision_feedback"] = (
             "collision_blocked means the current action was stopped after measured contact "
@@ -136,19 +126,19 @@ def operating_notes(config) -> dict:
             "a clear retreat or another approach; there is no automatic recovery. This binary "
             "simulation contact flag is not a calibrated force sensor or a task-success verdict."
         )
-        identities = arm_identities(config)
         notes["arm_naming"] = {
             "protocol": ARM_IDENTITY_PROTOCOL,
             "real_skill_revision": REAL_SKILL_REVISION,
             "reference": "Fixed overview camera, facing the two robots. Arm IDs refer to base locations, not current TCP positions.",
-            **{f"simulation_{arm}": (
-                f"Robot on overview-image {row['overview_base_side'].upper()}; "
-                f"corresponds to the real setup's {row['real_arm'].upper()} arm."
-            ) for arm, row in identities.items()},
+            "simulation_left": "Robot on overview-image LEFT; corresponds to the real setup's RIGHT arm.",
+            "simulation_right": "Robot on overview-image RIGHT; corresponds to the real setup's LEFT arm.",
             "commands_and_cameras": "Use simulation IDs in commands. left_wrist belongs to simulation left; right_wrist belongs to simulation right. Wrist image orientation does not rename arms. Task instructions already use simulation IDs; do not swap them again.",
-            "by_command_arm": identities,
+            "by_command_arm": arm_identities(config),
             "coordinate_rule": "Converting real arm names does not mirror object positions or motion coordinates. Both simulation arms use the same absolute world frame; the real robot's two base frames and historical CAN labels are not command frames here. An arm crossing the image centre retains its ID, role and wrist camera.",
         }
+        from ..video_delivery import enabled, PROMPT_FRAME
+        if enabled(config):
+            notes["arm_naming"]["commands_and_cameras"] = PROMPT_FRAME
         notes["real_skill_observation_guidance"] = (
             "Use the overview to identify robot bases and the entire approach corridor, "
             "then wrist views to inspect fingers and contact. Include the camera housing, "
@@ -164,7 +154,7 @@ def operating_notes(config) -> dict:
     if camera_path:
         from ..cameras.profile import load_camera_rig
         notes["camera_roles"] = {c.name: {"model": c.model, "parent": c.parent}
-                                 for c in load_camera_rig(config.source.parent / camera_path, robot_profile=profile).select(config.cameras)}
+                                 for c in load_camera_rig(config.source.parent / camera_path).select(config.cameras)}
     notes["motion_backend"] = "curobo_trajectory"
     notes["startup_preparation"] = (
         "Before your first observation the arms settle at their configured joint home. "

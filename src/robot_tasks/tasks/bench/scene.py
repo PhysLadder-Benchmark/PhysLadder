@@ -21,6 +21,14 @@ class BenchScene(L1Scene):
         self.spec = spec
         settings = ResetSettings()
         super().__init__(backend, config, settings, design=spec.design)
+        if spec.parameters.get("fixed_articles"):
+            from pxr import PhysxSchema, UsdPhysics
+            for name in spec.parameters["fixed_articles"]:
+                prim = self.stage.GetPrimAtPath(self.root + "/" + name)
+                UsdPhysics.RigidBodyAPI(prim).CreateKinematicEnabledAttr(True)
+                PhysxSchema.PhysxRigidBodyAPI.Apply(prim).CreateEnableCCDAttr(False)
+                prefix = self.root + "/" + name + "/"
+                backend.planning_fixture_paths += tuple(path for path in self.colliders if path.startswith(prefix))
         if spec.design.task_id == "L1-01":
             self.configure_marker_contacts()
         if spec.design.task_id in {"L1-01", "L1-03", "L1-07", "L1-08", "L1-09"}:
@@ -28,8 +36,7 @@ class BenchScene(L1Scene):
 
             roots = [(a.asset.split(":", 1)[1], self.root + "/" + a.name)
                      for a in self.design.articles if a.asset.startswith("tuojing:")]
-            if (self.design.fixture_asset.startswith("tuojing:")
-                    and self.design.fixture_asset.split(":", 1)[1] in catalog()):
+            if self.design.fixture_asset in {"tuojing:ripple_paper_cup", "tuojing:black_ceramic_mug", "tuojing:wooden_rack"}:
                 roots.append((self.design.fixture_asset.split(":", 1)[1], self.root + "/Fixture"))
             source_hashes = {record.get("prop"): record.get("sha256")
                              for record in backend.scene_report[self.report_key]["assets"]}
@@ -43,7 +50,7 @@ class BenchScene(L1Scene):
                 "primitive_surface_error_budget_m": 0.00005,
                 "geometry_does_not_enter_policy_input": True,
             }
-        if spec.design.task_id == "L1-03" and self.design.fixture_asset != "tuojing:power_strip_20261010":
+        if spec.design.task_id == "L1-03":
             from pxr import PhysxSchema
 
             # A 1-mm contact margin exceeds the native 0.55-mm side clearance.
@@ -83,25 +90,12 @@ class BenchScene(L1Scene):
         for joint in spec.joints:
             self.create_joint(joint)
         report = backend.scene_report[self.report_key]
-        if spec.parameters.get('target_fillers'):
-            import carb
-
-            # Default 1-m image reprojection threshold draws 16-mm glass balls
-            # through the opaque paper wall in RTX Real-Time. Keep native MDL
-            # glass, but ray trace at the task's millimetre geometry scale.
-            key = '/rtx/translucency/worldEps'
-            settings = carb.settings.get_settings()
-            previous = settings.get(key)
-            settings.set_float(key, .0001)
-            report['glass_rendering'] = {'setting': key, 'previous': previous, 'value': .0001,
-                                        'scope': 'this L1-09 scene process; camera and asset bytes unchanged'}
         report.update(
             mechanism=spec.mechanism,
             limitations=spec.limitations,
             public_facts=spec.facts,
             parameters=spec.parameters,
-            goal_rule=("real-trial summary: correct-arm pickup, independently supported release, stability and task-specific return/sequence"
-                       if spec.parameters.get("real_prompt_protocol") else
+            goal_rule=(spec.design.instruction if spec.parameters.get("scoring_protocol") == "feishu_english_20261015_v1" else
                        "marker end inside the main cup cavity; release, support and stability are diagnostic only"
                        if spec.design.task_id == "L1-01" else
                        "task-specific physical geometry, contact/process evidence and stable final state"),
@@ -218,7 +212,6 @@ class BenchScene(L1Scene):
                 for arm, f in forces.items()
             }
             row["pair_forces"] = {}
-            row["pair_force_vectors"] = {}
             if name in self.pairs:
                 matrix = np.asarray(self.pairs[name].get_contact_force_matrix(dt=dt))
                 if not np.isfinite(matrix).all():
@@ -229,7 +222,6 @@ class BenchScene(L1Scene):
                         map(float, np.linalg.norm(matrix[0], axis=1)),
                     )
                 )
-                row["pair_force_vectors"] = dict(zip(self.pair_names[name], matrix[0].tolist()))
         if self.spec.design.task_id == "L1-07":
             suffix = self.spec.parameters["target_hook_suffix"]
             indices = [i for i, path in enumerate(self.support_filters) if path.endswith(suffix)]
@@ -246,6 +238,8 @@ class BenchScene(L1Scene):
         rows = self.measure()
         payloads = {a: [] for a in self.config.arms}
         for article in self.design.articles:
+            if article.name in self.spec.parameters.get("fixed_articles", ()):
+                continue
             row = rows[article.name]
             t = pose_transform(row["pose"])
             for arm in self.config.arms:

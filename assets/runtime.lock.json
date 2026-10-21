@@ -1,0 +1,1315 @@
+{
+  "schema_version": 1,
+  "scope": "Combined checkout assets; historical deliveries and caches excluded",
+  "external_runtime": [
+    "Isaac Sim 5.1",
+    "cuRobo planner environment"
+  ],
+  "isaac_builtin_mdl": [
+    "OmniGlass.mdl",
+    "OmniPBR.mdl",
+    "OmniSurface.mdl"
+  ],
+  "files": {
+    "assets/appearance/README.md": {
+      "bytes": 1889,
+      "sha256": "e1938dfe632b186c4cde09a9c446aa4f5bf05ab2f0e1d1ec01b73853efc06313"
+    },
+    "assets/appearance/r5/LICENSE": {
+      "bytes": 1503,
+      "sha256": "11b6d7cd3c80b5eda4974f4fde6c08ec4c142bd9cb66f1b854974c25dab9cf22"
+    },
+    "assets/appearance/r5/base_link.glb": {
+      "bytes": 276780,
+      "sha256": "72c4b822c074140b1d58f6f2f2d844845db7d8fd074a274b0033f29b4c801e14"
+    },
+    "assets/appearance/r5/link1.glb": {
+      "bytes": 126820,
+      "sha256": "39955f2cd3cd1d7d9c41164e90eb54f68d8184213196eb10fe271395469bf5ef"
+    },
+    "assets/appearance/r5/link2.glb": {
+      "bytes": 624932,
+      "sha256": "cd007429d608205843dc8a206c1978e04c4ee4fbdf1ec98030b66180fac00724"
+    },
+    "assets/appearance/r5/link3.glb": {
+      "bytes": 697048,
+      "sha256": "dada60483a8c9d07c9a02effc61cc89aefaee25333ee8d95ebfcfce2c7a429ce"
+    },
+    "assets/appearance/r5/link4.glb": {
+      "bytes": 139856,
+      "sha256": "b03ff7eca8302d047ae6a0e44f5d32e8735d6c19ae7cd9b42a855994ebd1333a"
+    },
+    "assets/appearance/r5/link5.glb": {
+      "bytes": 713064,
+      "sha256": "6b1369c5f41ccbdd5312b54646ca974a5e3a16b4eb194e99aeb4b71b19f0d661"
+    },
+    "assets/appearance/r5/link6.glb": {
+      "bytes": 647856,
+      "sha256": "0b6f5a27a51bfb51db09ef13874980af5e256502518d90b5d1d2975b723b47cc"
+    },
+    "assets/appearance/r5/link7.glb": {
+      "bytes": 94116,
+      "sha256": "1a979bf3402bab7685294ca9474924620775f916216446ff523bf450d329577f"
+    },
+    "assets/appearance/r5/link8.glb": {
+      "bytes": 93996,
+      "sha256": "4464747c86d14fd2300990452bb1edca01cb4f4dfbb7cc87cb89d1499aed3399"
+    },
+    "assets/appearance/source.lock.json": {
+      "bytes": 5941,
+      "sha256": "7b605d4706446fe1cff537578fc7ccf61467fef0bce6c027e3a20c43b73d9c6b"
+    },
+    "assets/appearance/textures/concrete_floor_02_diff.jpg": {
+      "bytes": 776097,
+      "sha256": "6db84a6d87dc50508b9d134d6fbd2b7e876b8081a5f43a118a249ca18de73af5"
+    },
+    "assets/appearance/textures/concrete_floor_02_nor_gl.jpg": {
+      "bytes": 192757,
+      "sha256": "fcda391b57a816d646ae15544688be53790478da5cd48dbe514b3c6901415e61"
+    },
+    "assets/appearance/textures/concrete_floor_02_rough.jpg": {
+      "bytes": 318550,
+      "sha256": "c7f026a611b7859903c61ec7fd4574944157223e9e7796413dd6e2a66eaeac7a"
+    },
+    "assets/appearance/textures/kitchen_wood_diff.jpg": {
+      "bytes": 879137,
+      "sha256": "6d0170f1ab1b9353aab6f0382a7753026e32a5b58f779651cd05a91618dfcdab"
+    },
+    "assets/appearance/textures/kitchen_wood_nor_gl.jpg": {
+      "bytes": 666833,
+      "sha256": "30d6c1f3f7ad9e6a0e216393d9ee9a489f3b8a6efd9d85237f639e9bfde4cae5"
+    },
+    "assets/appearance/textures/kitchen_wood_rough.jpg": {
+      "bytes": 875985,
+      "sha256": "38044a0b781b2d3219804bc045fc0d226bae33060cc18bb13355fb578ee98c73"
+    },
+    "assets/cameras/README.md": {
+      "bytes": 4973,
+      "sha256": "9b7ffcdcf51454eb213ff409b6268486f36690937bcb28ee7c7e93251c5a2cb9"
+    },
+    "assets/cameras/gemini305.json": {
+      "bytes": 828,
+      "sha256": "d0f4487edd177ef17e38b77aefb8bfdb483e8a37b77f685aa31bcdd67d3d35a7"
+    },
+    "assets/cameras/gemini305.usdc": {
+      "bytes": 3829138,
+      "sha256": "e677a6467712d49fe6697c341d0073ccba8804a15dedfd1c8b026ab9aa9ff36e"
+    },
+    "assets/cameras/gemini305_r5_mounted.json": {
+      "bytes": 2011,
+      "sha256": "b988701cfb6c9308dcc83e483d6e80293610f32c8dbb4be490f198b09c036143"
+    },
+    "assets/cameras/gemini305_r5_mounted.usda": {
+      "bytes": 1157,
+      "sha256": "18ea0405714e57311812a0dddf067719282d8e370fbb350070c2c48a26246499"
+    },
+    "assets/cameras/gemini_pro.json": {
+      "bytes": 864,
+      "sha256": "d9947d4e474036c410a745f00984ae2118792ebe6096a8eb4b4ede164725d545"
+    },
+    "assets/cameras/gemini_pro.usdc": {
+      "bytes": 5044707,
+      "sha256": "79ae6c261d4447ea47f889d45858786d273eac1debcc49b6569ff332b0b4b006"
+    },
+    "assets/cameras/r5_wrist_camera_mount.json": {
+      "bytes": 880,
+      "sha256": "7790b4043a02ba68d54e666f9d2fc88245f23b65a3ce6526f81613ba326b7eea"
+    },
+    "assets/cameras/r5_wrist_camera_mount.usdc": {
+      "bytes": 76469,
+      "sha256": "f1328a814bc131b523ce6ce31f002ebca7fdaf04d9dffa8ec5c12d38c1d3c86e"
+    },
+    "assets/l1/LICENSE-APACHE-2.0.txt": {
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    "assets/l1/README.md": {
+      "bytes": 1353,
+      "sha256": "101fe7af9094556808666e4877836d0d7311c7b5de7223afb5d0fdde8bd421c4"
+    },
+    "assets/l1/source.lock.json": {
+      "bytes": 2278,
+      "sha256": "b33766c11c18f8035363ad299f428319c0d3acb87b740c035601d0106fd2f551"
+    },
+    "assets/r5/R5a/CMakeLists.txt": {
+      "bytes": 281,
+      "sha256": "f9dcf648b2954e224433460b6d55e5efd7dac6327882a795a167ad3cabe7b3b1"
+    },
+    "assets/r5/R5a/config/joint_names_R5a.yaml": {
+      "bytes": 112,
+      "sha256": "a9988bbc2d6dd7b297de0c01f849f7e996137c9fb1416e8f02acf0a5a08b0de4"
+    },
+    "assets/r5/R5a/export.log": {
+      "bytes": 984,
+      "sha256": "6f4108a54383486a1c9344afd9d2f497235fd6500eb28930ee8ba4e496cbe582"
+    },
+    "assets/r5/R5a/launch/display.launch": {
+      "bytes": 470,
+      "sha256": "d3f05b6c31ee364e763dcccfb3f71dac6b6648215baff4b2a632f4607ab50a31"
+    },
+    "assets/r5/R5a/launch/gazebo.launch": {
+      "bytes": 537,
+      "sha256": "dde06072d4ae6d2c520d082e80b08c856d18947afdafec0ec6cb98d77d818b75"
+    },
+    "assets/r5/R5a/meshes/base_link.STL": {
+      "bytes": 298284,
+      "sha256": "1ea7ba47065195c7cc12d5372977fea91e96972d806542f90450462e13019306"
+    },
+    "assets/r5/R5a/meshes/link1.STL": {
+      "bytes": 155484,
+      "sha256": "65659b3f97f89c22f674bd38567b599ba2e35f7b305085145a232f642aa179cb"
+    },
+    "assets/r5/R5a/meshes/link2.STL": {
+      "bytes": 713184,
+      "sha256": "c7d693a9c74fba586c6941aa2754116bf1cb1eeb51bea4c31dda7a79d2bd88a9"
+    },
+    "assets/r5/R5a/meshes/link3.STL": {
+      "bytes": 781184,
+      "sha256": "3c5c590f64cc944dd4f843d52b86c393d2a6a222be25f68a063835a04dfd9562"
+    },
+    "assets/r5/R5a/meshes/link4.STL": {
+      "bytes": 142884,
+      "sha256": "da6e53e00ffbf5c3b3ab5bbdb980a74f580bb76298b63bdebf72a0b0505d6ced"
+    },
+    "assets/r5/R5a/meshes/link5.STL": {
+      "bytes": 732184,
+      "sha256": "03a789782b7527bd075d99cc0828d5b0e7d4351ffdb574d28f20681d265a24f7"
+    },
+    "assets/r5/R5a/meshes/link6.STL": {
+      "bytes": 643784,
+      "sha256": "6e33442021162b8e2d035cd6a1700184280118a10e85519264d402bcb94bac12"
+    },
+    "assets/r5/R5a/meshes/link7.STL": {
+      "bytes": 98984,
+      "sha256": "cf13153c5a4058980a472983b80ce73fb0cb7c10a0ff9b7107b88c72b6e6766f"
+    },
+    "assets/r5/R5a/meshes/link8.STL": {
+      "bytes": 98984,
+      "sha256": "19d1dcc773a32f003d9b9d8794f7f821661b5488f35198028db5d1885ca7cc8b"
+    },
+    "assets/r5/R5a/package.xml": {
+      "bytes": 624,
+      "sha256": "e5a59f241a7c61a2d2365166f16f9859025de6fdb0fe4408a87d6c70894bd651"
+    },
+    "assets/r5/R5a/urdf/R5a.csv": {
+      "bytes": 6022,
+      "sha256": "7211ad26f8eade3841b5d200a7e187ceaef8ad62be3fbef4ca78765da4bcc9d9"
+    },
+    "assets/r5/R5a/urdf/R5a.urdf": {
+      "bytes": 10878,
+      "sha256": "600c945f2a631d10beb6473892818325ce40ad03d80f29517f2692eaaa008f36"
+    },
+    "assets/r5/README.md": {
+      "bytes": 2657,
+      "sha256": "c1e96eeda2c16380ea14599f401c245dafca705a97fcd1b64901f3a548b9092e"
+    },
+    "assets/r5/planner_reference/geometry.json": {
+      "bytes": 146628,
+      "sha256": "77714f1e39b1f11f215a94c3432a1fa0e2b2236bef09dc8579aa9519c12e2f79"
+    },
+    "assets/r5/source.lock.json": {
+      "bytes": 3094,
+      "sha256": "6f6b5dfcb7344aacf1c0c9dc783cbf7eed2be48b849bf40971e14d9b93973d2e"
+    },
+    "assets/tuojing/PUBLISHING.md": {
+      "bytes": 5666,
+      "sha256": "1c7679a76922f1a090a310b7ed91a1598de3c42684eeea4d513c69d470ec6607"
+    },
+    "assets/tuojing/README.md": {
+      "bytes": 30698,
+      "sha256": "f0ac246f4b79d7ac76bfefb7aa86fe847ae25f9d1e5aa8baf17ea34d83f64240"
+    },
+    "assets/tuojing/appearance/l1_01_yagu/USAGE_video_v2.txt": {
+      "bytes": 1065,
+      "sha256": "d0a54827cede6a1c319df5622f92200ff46fc0c4b6bf8ba1de2177799f44f03a"
+    },
+    "assets/tuojing/appearance/l1_01_yagu/generation_prompt.txt": {
+      "bytes": 1512,
+      "sha256": "1b2066dd6ba02d5dc86e2991092aefd9d571354fc10f802070918310bc16b335"
+    },
+    "assets/tuojing/appearance/l1_01_yagu/generation_prompt_video_v2.txt": {
+      "bytes": 3020,
+      "sha256": "12c8bec832a6cc4d730bb14c28cb25974fad643deeca2b5396e5722731903c5a"
+    },
+    "assets/tuojing/appearance/l1_01_yagu/label.png": {
+      "bytes": 1254747,
+      "sha256": "57825f4470f66b9cf2843006cc1e986d1d234b523b6070e268bcabf7404a32d4"
+    },
+    "assets/tuojing/appearance/l1_01_yagu/label_video_v2.png": {
+      "bytes": 1424880,
+      "sha256": "a214c809284879d7979606ec898c620c277c2b2248796a0a5b578ccd2cb206bd"
+    },
+    "assets/tuojing/appearance/l1_01_yagu/provenance.json": {
+      "bytes": 1661,
+      "sha256": "62f9f05f3826ff99edda0828a4e6faa9cdac96c1848b9fa3131aa9e31da041c0"
+    },
+    "assets/tuojing/appearance/l1_01_yagu/provenance_video_v2.json": {
+      "bytes": 1098,
+      "sha256": "4da918140c86710c87e7c88ea268d2c460076701d9c9c625418581e412bc85e1"
+    },
+    "assets/tuojing/appearance/l1_01_yagu/user_reference.jpg": {
+      "bytes": 34047,
+      "sha256": "706d4688cc28a8200cf3f80ba0d1c76e2a32aa9baad76aa27b4349b43bf68a7b"
+    },
+    "assets/tuojing/appearance/l1_01_yagu/video_references/frame_01.png": {
+      "bytes": 655895,
+      "sha256": "cd8989ecde34a2aadcd4e70f02bb40c6d89b8b7703bd1524c9fb18309fb41c6d"
+    },
+    "assets/tuojing/appearance/l1_01_yagu/video_references/frame_03.png": {
+      "bytes": 638563,
+      "sha256": "af85f2fe7c8ae62a7d71e182626908024713b3d4b9a9bede88c7c2d9e769b083"
+    },
+    "assets/tuojing/appearance/l1_01_yagu/video_references/frame_04.png": {
+      "bytes": 630998,
+      "sha256": "b0bdd904b7c7881cf8225d2beaf191eb693addcd8eb5785c8a5dbcf10243604f"
+    },
+    "assets/tuojing/appearance/l1_01_yagu/video_references/frame_05.png": {
+      "bytes": 591694,
+      "sha256": "60699e410c60c9b201c30bd2ff7ee6917f7f0b3f212a88aa9f2d5c96934d4198"
+    },
+    "assets/tuojing/appearance/l1_01_yagu/video_references/frame_07.png": {
+      "bytes": 530154,
+      "sha256": "cc9fb66d2d26e52a160cedad9e76c7f086f66f500f0c3474cf79631081327eb9"
+    },
+    "assets/tuojing/appearance/l1_01_yagu/video_references/frame_09.png": {
+      "bytes": 574988,
+      "sha256": "bfa604bf9d8adc5502237516a9063db17d57452497eada03e4f64afabea2e9ed"
+    },
+    "assets/tuojing/appearance/l1_01_yagu/yagu_marker_video_v2.usdc": {
+      "bytes": 570221,
+      "sha256": "45709b4e788012d0d32ed59a2e3b2ff027e94a837951ffaca5204bc27b00b6b9"
+    },
+    "assets/tuojing/appearance/l1_01_yagu/yagu_marker_video_v2.usdz": {
+      "bytes": 1995447,
+      "sha256": "faf13a9fadf4705c39ede792c64823992d5fd021f041c0d831f49901660db0d2"
+    },
+    "assets/tuojing/appearance/l1_03_measured_holder/dimensions_and_provenance.json": {
+      "bytes": 665,
+      "sha256": "ffbb442ff65902ea6d2c940ba69602eae7110d527d4d88d866ee1a372e131361"
+    },
+    "assets/tuojing/appearance/l1_03_measured_holder/plug_holder_measured.usdc": {
+      "bytes": 339043,
+      "sha256": "5031affa7bcded5e8f57f2568ce14b8a891886ac0b5b669e7b3817e4ba66ba10"
+    },
+    "assets/tuojing/appearance/l1_03_measured_holder/plug_holder_measured.usdz": {
+      "bytes": 339209,
+      "sha256": "efaa639f26162662ec26232c0fe9e9c935a70ecbaf6355e3f04fe1b7d745338c"
+    },
+    "assets/tuojing/catalog.json": {
+      "bytes": 9341,
+      "sha256": "af1751010746315d7c06e262b5c2c628b369297e11c8d36f5623b0aa87b2e159"
+    },
+    "assets/tuojing/l1_scoring_geometry.json": {
+      "bytes": 2020878,
+      "sha256": "43578aa623f1d265f6fe83421a3b7e356ec214548e14348e21c8647810c89e05"
+    },
+    "assets/tuojing/release.json": {
+      "bytes": 1521,
+      "sha256": "6d39dbc6f0c25bdf0342fb059181868c3d4d5b06dddf094f851c2568e5f72071"
+    },
+    "assets/tuojing/source/L1-01/runtime_aligned.usdc": {
+      "bytes": 12047699,
+      "sha256": "f8f4bafbb34eab9dc265bbb30540311f6d8a33249ac4290be154bf9195e5e4a7"
+    },
+    "assets/tuojing/source/L1-01/scene.usdz": {
+      "bytes": 70045860,
+      "sha256": "43b50d8ec3559459e4041484854e329de9e5ae0ef7289f48dfc143a0328260ca"
+    },
+    "assets/tuojing/source/L1-03/runtime_aligned.usdc": {
+      "bytes": 10376851,
+      "sha256": "616d8f7f1e143f8e936abb26fd1402ab5644c4a68cfab4f40f8a51befa9df485"
+    },
+    "assets/tuojing/source/L1-03/scene.usdz": {
+      "bytes": 68344758,
+      "sha256": "b644074bd7f765641f8b4a7e0e2a01417f7e15389db8357bb498020fb96123a5"
+    },
+    "assets/tuojing/source/L1-07/runtime_aligned.usdc": {
+      "bytes": 9587687,
+      "sha256": "3935f39f6fb561726dfcd0232c5adb5fcf3729ad6bce1ad80d722cc135da38c8"
+    },
+    "assets/tuojing/source/L1-07/scene.usdz": {
+      "bytes": 74051349,
+      "sha256": "849fb4ba2fff3b5ce207cd5e4e9217603cb26aba325345f2d60a6d16582e690b"
+    },
+    "assets/tuojing/source/L1-08/runtime_aligned.usdc": {
+      "bytes": 9683340,
+      "sha256": "f31ac428f045e82b2c552740057c7a31e98b311442ab979c39967f5101115cac"
+    },
+    "assets/tuojing/source/L1-08/scene.usdz": {
+      "bytes": 68334484,
+      "sha256": "ba3c2026560d58ef9ac2d7a75cb99f88a162c32dab7f28f8e9c06909a2c8883f"
+    },
+    "assets/tuojing/source/L1-09/runtime_aligned.usdc": {
+      "bytes": 12202042,
+      "sha256": "4f5786655464c7c3c1f07d92c2052b4446e73f6ec50bbadc2df71cf82f971398"
+    },
+    "assets/tuojing/source/L1-09/scene.usdz": {
+      "bytes": 69682323,
+      "sha256": "b27bfcc952642d20f8b5fbe4db159f7fc10af6782b2748bd8ef1c3424caea328"
+    },
+    "assets/tuojing/source/L2-01/runtime_aligned.usdc": {
+      "bytes": 9812990,
+      "sha256": "0cb24c0c22527f4d516cdbda5e14ad53731af8f2774c1019f0232a0f3ac8f792"
+    },
+    "assets/tuojing/source/L2-01/scene.usdz": {
+      "bytes": 77733456,
+      "sha256": "8a782361489028ead5b375e6152475fdda399e015c6abd375c2dec0e7ff7b43f"
+    },
+    "assets/tuojing/source/L2-01/yagu_marker_video_v2.usdz": {
+      "bytes": 1995447,
+      "sha256": "faf13a9fadf4705c39ede792c64823992d5fd021f041c0d831f49901660db0d2"
+    },
+    "assets/tuojing/source/L2-03/runtime_aligned.usdc": {
+      "bytes": 10432516,
+      "sha256": "8ab152a7e835b1cf02a77f39cc06da85621681eb4fc91c63000bf2af6ff6bbd8"
+    },
+    "assets/tuojing/source/L2-03/scene.usdz": {
+      "bytes": 82581443,
+      "sha256": "1950eee6e5480e050dea807022689252f093a533f3fd99e87c883f7b592e6ccc"
+    },
+    "assets/tuojing/source/L2-04/runtime_aligned.usdc": {
+      "bytes": 10401814,
+      "sha256": "b190d773e057f083c96511e661e8cb85708bf7a03cc1eb74cc68e31b50dc8371"
+    },
+    "assets/tuojing/source/L2-04/scene.usdz": {
+      "bytes": 68959533,
+      "sha256": "c03d4a85b5eb38f497942eedc3aa96f0b31cec953249f5752dae78dd1b48c970"
+    },
+    "assets/tuojing/source/L2-06/runtime_aligned.usdc": {
+      "bytes": 14292617,
+      "sha256": "e8438198a3363e7840aa17f1025a4dd124aa8d53a50df915b53db971b080d194"
+    },
+    "assets/tuojing/source/L2-06/scene.usdz": {
+      "bytes": 95841268,
+      "sha256": "1a5eadeb6f516a65d588d1ffd53ba45fb09abb277367200fa517ff91b0ddf846"
+    },
+    "assets/tuojing/source/L2-07/runtime_aligned.usdc": {
+      "bytes": 10188728,
+      "sha256": "fcdc25acce380539287aff2dca76bfb692006907521c213cda9fd495fb2ff11e"
+    },
+    "assets/tuojing/source/L2-07/scene.usdz": {
+      "bytes": 77578560,
+      "sha256": "6e681099c334df7adcc1281f324371d9bc94fa4bfe0ca7afcb90609adc3298b3"
+    },
+    "assets/tuojing/source/L2-08/gelatin_cup_jelly.usda": {
+      "bytes": 2031294,
+      "sha256": "62cdf66918e29719cff797b04e5a790ec1718e2ebdbefe6267fdfba03d91c0d2"
+    },
+    "assets/tuojing/source/L2-08/runtime_aligned.usdc": {
+      "bytes": 14329465,
+      "sha256": "06a65a5d1f1828c8b7af3d42a3e8936300fee14a89868135469ec81b0fe08c5c"
+    },
+    "assets/tuojing/source/L2-08/runtime_soft_reflections.usdc": {
+      "bytes": 14336935,
+      "sha256": "e4e56fae752f6860a45016c8eeff0c904996f72b66b8662b3d33f39941871b4e"
+    },
+    "assets/tuojing/source/L3-03/runtime_aligned.usdc": {
+      "bytes": 11742539,
+      "sha256": "700d088f80a349e16b8ae5e71cab38884f7c454eee995278e7a818332072c87a"
+    },
+    "assets/tuojing/source/L3-03/runtime_original.usda": {
+      "bytes": 469,
+      "sha256": "931ae1fe781e20b1b01ca5e2c20a28be3125dfa7d33e1ddccd960711e2f2d23c"
+    },
+    "assets/tuojing/source/L3-03/scene.usdz": {
+      "bytes": 67646751,
+      "sha256": "fa36946df9a82a161f9247a9bc4da09b7cf2c984c4918144ee05f250963cfcb0"
+    },
+    "assets/tuojing/source/L3-05/runtime_aligned.usdc": {
+      "bytes": 18654205,
+      "sha256": "4814f0fcedbfec5ac919c51b9beeb7a6cfa884cc50b35ce6bfe74c4fccaa90cf"
+    },
+    "assets/tuojing/source/L3-05/runtime_original.usda": {
+      "bytes": 517,
+      "sha256": "1599ce0302949b2e55cd193142b144b3302531ad91dd6fbeecc3427f539cda87"
+    },
+    "assets/tuojing/source/L3-05/scene.usdz": {
+      "bytes": 78544963,
+      "sha256": "5f66249a90cd000e2757516810a1968f9a287e6f50946adacebdc435be50ca93"
+    },
+    "assets/tuojing/source/L3-11/runtime_aligned.usdc": {
+      "bytes": 18500082,
+      "sha256": "95dbcb16dacf2668634f86e03f40c0a53f7021b1a472ba8feff4a43f63d484d5"
+    },
+    "assets/tuojing/source/L3-11/runtime_original.usda": {
+      "bytes": 467,
+      "sha256": "cfbabcedc741d5c6b29cc1212ce05be71afb1f50bb17f761e0649b2467417f87"
+    },
+    "assets/tuojing/source/L3-11/scene.usdz": {
+      "bytes": 67188416,
+      "sha256": "56c64d6604ec5769e037e5bc7b97f3f314df13ffcc0fbcc3ab0fab0317dfc475"
+    },
+    "assets/tuojing/source/L3-11/wiping_resistance.json": {
+      "bytes": 229,
+      "sha256": "afb450a8f68e3f8316af334025bd5fcb76bb81c27a0530a5b9ac0a1e5d70075d"
+    },
+    "assets/tuojing/source/L3-14/runtime_aligned.usdc": {
+      "bytes": 9819944,
+      "sha256": "86921655b4690014c0b8d97d1fa6db84f48d1606a974a421b40a2a78319d42a4"
+    },
+    "assets/tuojing/source/L3-14/runtime_v3.usdc": {
+      "bytes": 9832650,
+      "sha256": "6702469c55ef4ad148e1bb820f991b5f5eae2679c77255226dc23fa5d8ddaf82"
+    },
+    "assets/tuojing/source/L3-14/scene.usdz": {
+      "bytes": 79254994,
+      "sha256": "56b16d3b56845d1afa1b9adf96b284e754e2cfdebce17259394e1937865d0815"
+    },
+    "assets/tuojing/source/L3-15/runtime_aligned.usdc": {
+      "bytes": 14800290,
+      "sha256": "0cd40b180c7955836a53dff32b8dc147615d8bccd7f1e697f75506bb8be8f76a"
+    },
+    "assets/tuojing/source/L3-15/runtime_v3.usdc": {
+      "bytes": 14812074,
+      "sha256": "f522c163163e8d866209286187bde0084ede5b9b9936b3a47835dcf8fcd98f56"
+    },
+    "assets/tuojing/source/L3-15/scene.usdz": {
+      "bytes": 77846690,
+      "sha256": "c25b0a9d14c965241953bbc4cbf459ec55213c37b26c6a7060d124771e138d10"
+    },
+    "assets/tuojing/source/common/lab/README.md": {
+      "bytes": 4279,
+      "sha256": "cdac3e39a2015616a5a9ba00b397ad8dbf547cd20e2f0a00d2e7bb52e925fe55"
+    },
+    "assets/tuojing/source/common/lab/SHA256SUMS": {
+      "bytes": 17167,
+      "sha256": "7f999ab450ae6e3b081eec218f9f2374c2094f2aa5064a01f487331bac94e3b1"
+    },
+    "assets/tuojing/source/common/lab/alignment_top.png": {
+      "bytes": 1480175,
+      "sha256": "c9b1710614698ab804acc3a4b04f647c43cf05672c01f86248f5917901210194"
+    },
+    "assets/tuojing/source/common/lab/axis51_validation.json": {
+      "bytes": 654,
+      "sha256": "058a098039d77d3775cca59d75b348ee25dbf1043a39bc637b65f394f0e781d3"
+    },
+    "assets/tuojing/source/common/lab/build_and_validate.py": {
+      "bytes": 27973,
+      "sha256": "6f310dcd922b7ae2bad23cf017313a3880e765842b58b5985483d0e48e6cfe5a"
+    },
+    "assets/tuojing/source/common/lab/camera_calibration.json": {
+      "bytes": 3971,
+      "sha256": "2f67d3bc61ca9fda3803a0d1ef5326e563acb9dba15b631e528289995da25bc5"
+    },
+    "assets/tuojing/source/common/lab/camera_calibration_axis_51cm.json": {
+      "bytes": 4021,
+      "sha256": "e83910df1aa8ec2cd4651f5d0e41097481d2d5d23ba7660825d3107f49631ca2"
+    },
+    "assets/tuojing/source/common/lab/camera_fov_comparison.jpg": {
+      "bytes": 82073,
+      "sha256": "9c2b535b4ad7532695486f26d6cfd8e9387655b7e531ba706aab15fe375fcde9"
+    },
+    "assets/tuojing/source/common/lab/comparison_IMG_3334.jpg": {
+      "bytes": 101711,
+      "sha256": "48ff92c95d0395e451a8003eb6df091a5173dc983a1a4d9df44c0230aba4b7db"
+    },
+    "assets/tuojing/source/common/lab/comparison_IMG_3338.jpg": {
+      "bytes": 114602,
+      "sha256": "0a6d5a3f112d1c3ead2fabe569490bb40644aeea9cc3d21f8beea3112f0f1eeb"
+    },
+    "assets/tuojing/source/common/lab/comparison_new_21.jpg": {
+      "bytes": 117283,
+      "sha256": "018fb6c816ebd3b3e9467562d10bb63ed7c33c92c98e39cf8d3a43d7f3f11b15"
+    },
+    "assets/tuojing/source/common/lab/delivery_receipt.json": {
+      "bytes": 2001,
+      "sha256": "138d8ee88f3dfa587ae564b1a2b54aaa55269c5e4f3374ac2936208d344fdf70"
+    },
+    "assets/tuojing/source/common/lab/delivery_validation.json": {
+      "bytes": 508,
+      "sha256": "fd00d40a5b0b07b8bf982ab462a33ce6458f6ac33447a80b63835ba2abc33e4e"
+    },
+    "assets/tuojing/source/common/lab/evidence/IMG_3334.jpg": {
+      "bytes": 120067,
+      "sha256": "cec3dfafd0c2c1d9e7154389d734d00acc8d3190e54fdab17a62c7a3105cc335"
+    },
+    "assets/tuojing/source/common/lab/evidence/IMG_3338.jpg": {
+      "bytes": 148736,
+      "sha256": "3649532820eba5f55910296c67d75f472c6b37924c77de2c3b5a75561b4ab3a9"
+    },
+    "assets/tuojing/source/common/lab/evidence/asset_fit.json": {
+      "bytes": 5882,
+      "sha256": "73c0a58c7f75e85ec3cd11ab2e19fcfef0956638b4cbc4d20c59063773ecf9b6"
+    },
+    "assets/tuojing/source/common/lab/evidence/ba_report.json": {
+      "bytes": 1930,
+      "sha256": "3c582a5213f0c57a3273f8880869b2d16ff599f5c486b39bc610d6a9be99f6fa"
+    },
+    "assets/tuojing/source/common/lab/evidence/handheld_cameras.json": {
+      "bytes": 26061,
+      "sha256": "9e7f8bd77dd0994f145c5d72f8fe431cd115b468ccecfc0da95d831bcce67393"
+    },
+    "assets/tuojing/source/common/lab/evidence/metric_report.json": {
+      "bytes": 3516,
+      "sha256": "cd37a107b217bb66dca41d85018cddfc664d5892325434fdad3fca4f1e34688f"
+    },
+    "assets/tuojing/source/common/lab/evidence/new_21.jpg": {
+      "bytes": 155119,
+      "sha256": "7df3f5cde23e84dd85b95547f351fd73af81d07150427d74dd6669fe394cd0ac"
+    },
+    "assets/tuojing/source/common/lab/evidence/new_28.jpg": {
+      "bytes": 102301,
+      "sha256": "00b2e2805c98fb739789dd374116504b4db2a3623a9a82d55d44b7ce050dca06"
+    },
+    "assets/tuojing/source/common/lab/evidence/source_index.json": {
+      "bytes": 4818,
+      "sha256": "88603d79272ad82253ac0ab5723dc1ffae15f4db635dc9a9658c11e226d32fe7"
+    },
+    "assets/tuojing/source/common/lab/evidence/table_texture_coverage.png": {
+      "bytes": 5791,
+      "sha256": "2858b4191157f2a2b805c1ee110416a976a7d5cf14b5e783ad0c2b5b2ebc8f09"
+    },
+    "assets/tuojing/source/common/lab/fov60_validation.json": {
+      "bytes": 655,
+      "sha256": "86b3e803d8c09c3859dd8b765e47f696e981508b05193ead5b683c39d460bb62"
+    },
+    "assets/tuojing/source/common/lab/fov85_validation.json": {
+      "bytes": 655,
+      "sha256": "86b3e803d8c09c3859dd8b765e47f696e981508b05193ead5b683c39d460bb62"
+    },
+    "assets/tuojing/source/common/lab/front_aligned.png": {
+      "bytes": 1488084,
+      "sha256": "a46e51ce0397bbef256338ec2f8f47b08e419a6cf9eb6a794a38d226830a1163"
+    },
+    "assets/tuojing/source/common/lab/geometry_relationships.png": {
+      "bytes": 93286,
+      "sha256": "def2c662ce9044a47436feb025200c1f34c5f644d34e85b38e4726c0374f6fd5"
+    },
+    "assets/tuojing/source/common/lab/geometry_validation.json": {
+      "bytes": 405,
+      "sha256": "026e4b8178b5f8b4f4aa1cc675ba90a86290cb14780e5b67f08d676989da320a"
+    },
+    "assets/tuojing/source/common/lab/launch_isaac.py": {
+      "bytes": 6117,
+      "sha256": "6894882d5bd272813ce44388a463ef864c41bdebd176cf78ee84161991a44823"
+    },
+    "assets/tuojing/source/common/lab/layout_parameters.json": {
+      "bytes": 10531,
+      "sha256": "90833919d6b0754be227e1756e5d7aff4ac1456c5009abd77c36386797a227d8"
+    },
+    "assets/tuojing/source/common/lab/main_validation.json": {
+      "bytes": 655,
+      "sha256": "a0099de6101cd2efb333d3824058f8d932fd31bbf8f1941daacf0973907ce489"
+    },
+    "assets/tuojing/source/common/lab/matched_21.png": {
+      "bytes": 1052448,
+      "sha256": "9339acafe88647f705b80fb13b016437343d4a5252cba35da61d3a1e78a06578"
+    },
+    "assets/tuojing/source/common/lab/matched_3334.png": {
+      "bytes": 1358075,
+      "sha256": "e88ae5bcd9732f582883c5d77c45283fc12ddae58083be8d81378605484c9a48"
+    },
+    "assets/tuojing/source/common/lab/matched_3338.png": {
+      "bytes": 1288053,
+      "sha256": "ec9d21a3f33ff9536d9da629027461a6a8efcd265ba93d40e10b2a2be0c82acb"
+    },
+    "assets/tuojing/source/common/lab/motion_validation.json": {
+      "bytes": 647,
+      "sha256": "8a25c4a00434050d88cb31ff488f922aeeb5510519d6bba2500b9f8c25a160b3"
+    },
+    "assets/tuojing/source/common/lab/mounts/assembly_report.json": {
+      "bytes": 737,
+      "sha256": "580f72cb092776179c093856081915bf9be8ad5388f0ad275d09ee68c35b19bf"
+    },
+    "assets/tuojing/source/common/lab/mounts/cad_views.png": {
+      "bytes": 378328,
+      "sha256": "d9a8815ba87696582d6d9ec49a9f312456f3e511f2c97b310a317e7334355403"
+    },
+    "assets/tuojing/source/common/lab/mounts/conversion_report.json": {
+      "bytes": 8832,
+      "sha256": "f16d446e05148870927730ddff87e711f4d7a59acccc4c6a981e196342f1ce41"
+    },
+    "assets/tuojing/source/common/lab/mounts/convert_step.py": {
+      "bytes": 1147,
+      "sha256": "083f4951e2b1de422581529bd59a05cd8a58a7743443bd085b6a9d3e40a7460e"
+    },
+    "assets/tuojing/source/common/lab/mounts/mount_link6_fit.png": {
+      "bytes": 229877,
+      "sha256": "46587c956fbf3a06c339abdd82290091536b5e275cb2fcde860ad4c3740a73f4"
+    },
+    "assets/tuojing/source/common/lab/mounts/mount_mesh.npz": {
+      "bytes": 386518,
+      "sha256": "97a1482f43c39d9193c190b14eaa1fdf32ecce1711580b4b6d674d0e851433eb"
+    },
+    "assets/tuojing/source/common/lab/mounts/wrist_camera_mount.step": {
+      "bytes": 161176,
+      "sha256": "5b2e7d6fb591022998b13bdfd803204d5500607b26224b4fd542a054d730fba8"
+    },
+    "assets/tuojing/source/common/lab/mounts/wrist_camera_mount.usdc": {
+      "bytes": 116301,
+      "sha256": "9a8badc654122b3942e341a098c873a0733ecb1814d1671af7ca3b6d4372aa52"
+    },
+    "assets/tuojing/source/common/lab/observations/ThirdPerson_depth_m.npy": {
+      "bytes": 3686528,
+      "sha256": "1066b1dbeff6457b25b57bf6bd7d2e8817b2fd645e49c718fab003b37da355ba"
+    },
+    "assets/tuojing/source/common/lab/observations/ThirdPerson_hfov60_depth_m.npy": {
+      "bytes": 3686528,
+      "sha256": "2d3b33a5f22c652db37b536541974cf56b29f26f3107daf01687a1d782fb769f"
+    },
+    "assets/tuojing/source/common/lab/observations/ThirdPerson_hfov60_metadata.json": {
+      "bytes": 1430,
+      "sha256": "dd04103a624baf70bb83bdb6070e350f044ad99f924c19c87508ef905647b641"
+    },
+    "assets/tuojing/source/common/lab/observations/ThirdPerson_hfov60_rgb.png": {
+      "bytes": 969425,
+      "sha256": "6686bcc4c771006390eace578200bfda92d6eda0b32db9480e35c5eef2b1986d"
+    },
+    "assets/tuojing/source/common/lab/observations/ThirdPerson_hfov85_depth_m.npy": {
+      "bytes": 3686528,
+      "sha256": "70dda8afa8edd458052eb4d8d2e2df691f2a47864e6a5c47f5ddd09cd613619b"
+    },
+    "assets/tuojing/source/common/lab/observations/ThirdPerson_hfov85_metadata.json": {
+      "bytes": 1428,
+      "sha256": "a5ca6a4aebe7d8ccad1b998d71d1debfd72ed60343101e1844d561b1ded38568"
+    },
+    "assets/tuojing/source/common/lab/observations/ThirdPerson_hfov85_rgb.png": {
+      "bytes": 1052047,
+      "sha256": "b6954298c78906a818af5c8a6ecaf271c266ab1e13fbd14dfba57b1b56012314"
+    },
+    "assets/tuojing/source/common/lab/observations/ThirdPerson_metadata.json": {
+      "bytes": 1426,
+      "sha256": "f11d45c3cadd71e680ac9109c29d4f6c0bcd75373b37be5e11ea87d61b973456"
+    },
+    "assets/tuojing/source/common/lab/observations/ThirdPerson_rgb.png": {
+      "bytes": 1017783,
+      "sha256": "3a82bc6fa4958ce4e0f1a2e9f02ec4632ec860474d32ac36ec9e35974ab19cee"
+    },
+    "assets/tuojing/source/common/lab/observations/WristLeft_depth_m.npy": {
+      "bytes": 3686528,
+      "sha256": "afbe374adfcd78ef36875df3b835b7a70da386bfa55df097b103656a4afda25a"
+    },
+    "assets/tuojing/source/common/lab/observations/WristLeft_metadata.json": {
+      "bytes": 1457,
+      "sha256": "090dfa375059dd421b61f1c48427d12d10594fc468e028f69cfa65d6c59dcc1f"
+    },
+    "assets/tuojing/source/common/lab/observations/WristLeft_rgb.png": {
+      "bytes": 802052,
+      "sha256": "ae4aa81fed28380f4d8fce644b919546abc6ab600df20a91ee84c47f67049fc1"
+    },
+    "assets/tuojing/source/common/lab/observations/WristRight_depth_m.npy": {
+      "bytes": 3686528,
+      "sha256": "aef9b5b4417f6420ed93fe58ea7ea35a4d0c5112192e8696f9b8412260080602"
+    },
+    "assets/tuojing/source/common/lab/observations/WristRight_metadata.json": {
+      "bytes": 1472,
+      "sha256": "4ca83073daf3bed7231c9cd595176cdac815df5f3dafb3a24bb5188683142431"
+    },
+    "assets/tuojing/source/common/lab/observations/WristRight_rgb.png": {
+      "bytes": 690869,
+      "sha256": "99f633c51a3d1d3e3f2a72444b97e7c56f788295f4236dc695c6578464ed01be"
+    },
+    "assets/tuojing/source/common/lab/overview.png": {
+      "bytes": 1122400,
+      "sha256": "c14f8bab8ee6dc5d9ccde145a64cbaba3acc044824ddad714ecf543afc033764"
+    },
+    "assets/tuojing/source/common/lab/placement_report.json": {
+      "bytes": 1066,
+      "sha256": "d391eecc8223ace451744be519b4e094dace91cace38f77f774af9d1f9b9f3b3"
+    },
+    "assets/tuojing/source/common/lab/real_sim_comparison.jpg": {
+      "bytes": 215653,
+      "sha256": "33927131b7499056a0d2b81ace695cded05cbdb5295b74b90d7f67bd53ed3eea"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/README.md": {
+      "bytes": 1810,
+      "sha256": "0f3d5bcbe6b7f2acc741c1ef1c3863ed5d7ce879f46f1aa8f12c191e479f65e0"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/asset_fit.json": {
+      "bytes": 5882,
+      "sha256": "73c0a58c7f75e85ec3cd11ab2e19fcfef0956638b4cbc4d20c59063773ecf9b6"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/ba.npz": {
+      "bytes": 80062,
+      "sha256": "82348e4da2125789436da2575865a67e989ef09f084f7be07833f9667883af6f"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/ba_report.json": {
+      "bytes": 1861,
+      "sha256": "177ce7eb428c19c6cd8ab1834b2d75a92fc88c143d7f9aa7039b623fc2134306"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/constrained_ba_v2.py": {
+      "bytes": 8723,
+      "sha256": "48c14528a229c93f1df544afc4f8246d89483a9f295775479bd364fb48b772f0"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/fit_assets.py": {
+      "bytes": 5201,
+      "sha256": "2878891aadf5cb934d94d01320f53087553c8a9225ca6d41a257867cdfecef1b"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_01.jpg": {
+      "bytes": 124321,
+      "sha256": "897195125480cbb7bd6537e55b2b04f60ee823476e69455b6174014712c63141"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_02.jpg": {
+      "bytes": 98917,
+      "sha256": "ea0dfe1bbbdc8432e853083358b3c311f6b2c39581fd6d35806197d29f3748c3"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_03.jpg": {
+      "bytes": 121596,
+      "sha256": "f54338306128de42dde30e10e30a8fb0194bd26c7e66ebdd16d54ecaf672ab6f"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_04.jpg": {
+      "bytes": 101395,
+      "sha256": "fc0b52df31974898221d7087e226e5107a4380a99e36f86aebc1a7e5e550b094"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_05.jpg": {
+      "bytes": 113615,
+      "sha256": "cd4d899fb7b637444bc77822ae44595f8c40a98b97e0f480839cc3fb82c3ec64"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_06.jpg": {
+      "bytes": 81791,
+      "sha256": "d26f3fc5cd85412a93e52b14325e3f3f5666405cf0ba346c5c5438fa3b370b11"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_07.jpg": {
+      "bytes": 105365,
+      "sha256": "a5ca70676901c70281fc29bdcf4009238fa7342d921b5ce865ebff39927ff308"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_08.jpg": {
+      "bytes": 82943,
+      "sha256": "6627311fbbe9da09f0b18e1bd55da258703678f46e4332dc4a20871fee377357"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_09.jpg": {
+      "bytes": 109659,
+      "sha256": "ed25a1d6fd9c2a3e69bd3fe8221cd9df874a921d0f05462b65c3306ef9523978"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_10.jpg": {
+      "bytes": 82344,
+      "sha256": "6466dfe4d6193d2cb8a0b96fb1c936fb16aa4b5ba45f893873877640f671944c"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_11.jpg": {
+      "bytes": 93822,
+      "sha256": "4bc88043a897b6a503e5c7e22266af929f4ef3c78c3178e73cb3cfd0339c2615"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_12.jpg": {
+      "bytes": 64095,
+      "sha256": "0934c35266528954a4e2cc912322f34a8ad08ad44803f2b43f0052d628cc15fa"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_13.jpg": {
+      "bytes": 107296,
+      "sha256": "f8bcf3c0b3982322b0ad200744511986a5749fb147c69337ad3e350a08b4592c"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_14.jpg": {
+      "bytes": 85960,
+      "sha256": "df4d11e8b1b014a9f4d99a702e01e7fcbbe2f2f78093c16c5e428e886c8035f3"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_15.jpg": {
+      "bytes": 44846,
+      "sha256": "a8db862dfc8a6d19a5f0ff556f60d08794e51c96c20cd4c0df8fb7385226e262"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_16.jpg": {
+      "bytes": 36335,
+      "sha256": "1d434c4698c7aa2d956ebf3aed6b3e6d80d00e0b44688310ce080e063db5dbf8"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_17.jpg": {
+      "bytes": 56518,
+      "sha256": "1c35d2b4365a4c3ba01a5ed5fd143ded8082c324e311d3fe427ca43a2c6da0cf"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_18.jpg": {
+      "bytes": 127424,
+      "sha256": "57a4b4a81fe5d4d11f42e25cb92963747a80d4bd1900c282e653cc1605ae5d28"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_19.jpg": {
+      "bytes": 89600,
+      "sha256": "7013bbc9be5ff850760cce0019c3f50b65ed575b6dd0889a9522823c02d5e372"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_20.jpg": {
+      "bytes": 66659,
+      "sha256": "3dd3d2a065aec656194cad206792015f74d77b40b9cd20c8f96fdbf705d2b1df"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_21.jpg": {
+      "bytes": 155119,
+      "sha256": "7df3f5cde23e84dd85b95547f351fd73af81d07150427d74dd6669fe394cd0ac"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_22.jpg": {
+      "bytes": 88206,
+      "sha256": "72ab2b8ccc19dd5b632371828e30e115cb3f7bbb657ccd5f009dba0c39c2182f"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_23.jpg": {
+      "bytes": 63403,
+      "sha256": "bcf3b22ed41d7c095355d68052d082b53e6b8927374d9b1116c8ef8877c8d047"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_24.jpg": {
+      "bytes": 109311,
+      "sha256": "293460281c5d446be8f86e7d5b4058112146e96073538e7db147de8f0d580f38"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_25.jpg": {
+      "bytes": 76998,
+      "sha256": "131368b5a7dfc6a28955959910e071e5a4f9186cec15098dbe19894d418315d6"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_26.jpg": {
+      "bytes": 147340,
+      "sha256": "b80fbc072e11ee7064e650598a60a769947949beaf785e1f9adee36b375646e3"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_27.jpg": {
+      "bytes": 101416,
+      "sha256": "0bf513a8fa16757b3096ef6849f5e5eec6f2387d05b147c1b2284e3159b0f02c"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_28.jpg": {
+      "bytes": 102301,
+      "sha256": "00b2e2805c98fb739789dd374116504b4db2a3623a9a82d55d44b7ce050dca06"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/new_29.jpg": {
+      "bytes": 102249,
+      "sha256": "ebb72544440f9035daed05aa381482fa5d3bb91d775fef8604bc7fa8e47ce921"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/old_01.jpg": {
+      "bytes": 102666,
+      "sha256": "2ea925b4619f067cec3c9796882e1c67dec239d69e9a950b01a6e120c3848da2"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/old_02.jpg": {
+      "bytes": 100524,
+      "sha256": "de224607def40c3db06db0f278f12e47dbf17d7cbf780b854c99fc5c638ddd72"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/old_03.jpg": {
+      "bytes": 66738,
+      "sha256": "91a68dab44fc5aa1b0148dad6ab6fecb1c62bb97ed57027ba758dff114977e80"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/old_04.jpg": {
+      "bytes": 68652,
+      "sha256": "5b4449a8deff96a524eda1a88f474b13fb102bcc35605621bd07b1beedb0e5f3"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/old_05.jpg": {
+      "bytes": 68574,
+      "sha256": "ac37a3d47eb8d9df96c577d4728edb711d57030270fdeae6bc9c5e3293162c3e"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/old_06.jpg": {
+      "bytes": 58173,
+      "sha256": "d83b614a7dc4e88bf7d88042244ca618c0276ce67910fb4b81def78299d10edd"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/old_07.jpg": {
+      "bytes": 81008,
+      "sha256": "ecfd742626ac5c8372b3de51cc36bf938cab2d457a20307b897fead7b89c093c"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/old_08.jpg": {
+      "bytes": 63324,
+      "sha256": "e69237b7985d30fde9260bfb2a01d5976e1da2ab9f62db123b0032ef405e4fe1"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/old_09.jpg": {
+      "bytes": 63049,
+      "sha256": "c12dd5777e00f4298c039f5981fdee6d034d3c34953b9f60788cb30fda8f8571"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/old_10.jpg": {
+      "bytes": 79921,
+      "sha256": "e7cedb8c8bbb59d16dd7d9d091ab8e5b20a87a07d0aa850ca5ada39d02149b7d"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/frames/old_11.jpg": {
+      "bytes": 134443,
+      "sha256": "2f88f1f26c160eb2098dfe5e90acbfc15f760808322bc9437dd50eea7213ef38"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/metric.npz": {
+      "bytes": 1432,
+      "sha256": "9941d30388ce7b4fa0fc671cb27c9eb75c0da9b783f5e6fd7f9c8c76a36b8902"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/metric_fit.py": {
+      "bytes": 5921,
+      "sha256": "ed8a53826efbe995374f913f3127c8fc4607fcc2d791311fc0ab96218eb4fec4"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/metric_report.json": {
+      "bytes": 3516,
+      "sha256": "cd37a107b217bb66dca41d85018cddfc664d5892325434fdad3fca4f1e34688f"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/prepare_scene.py": {
+      "bytes": 7621,
+      "sha256": "e91c3680cf2d34c1998a2b7bb8a7eb26696b6e67a3cfde66fdef03f91aef85a6"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/reconstruct.py": {
+      "bytes": 1300,
+      "sha256": "65c835c71f8c5a6499eec9445ef5704a8863d5a8cd1bb46a568e6f9bb730abb2"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/requirements.txt": {
+      "bytes": 58,
+      "sha256": "f72df5041c5d53f29d18f7461bae7e1aa9d66eedd4b359e3c39ec7b72e9d20fa"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm/0/cameras.bin": {
+      "bytes": 512,
+      "sha256": "20357f9643dbeebf2e8562d57c5508b9a2823910992906ee1daac84a6cc6b40a"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm/0/frames.bin": {
+      "bytes": 2360,
+      "sha256": "cce53d8aee2dee01c8e6d20ca70693126ea6a1429aa13788459120f66fe81f2e"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm/0/images.bin": {
+      "bytes": 2866988,
+      "sha256": "a057b75474d984a6296e00a283f68eeb11994ec96565a3ecefcadd02f7f22600"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm/0/points3D.bin": {
+      "bytes": 225730,
+      "sha256": "085d94ff889c3f715f6d8cac8af4cb32b18c5caa27965010fc2874d0456e3211"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm/0/rigs.bin": {
+      "bytes": 152,
+      "sha256": "c84c42963051f69e07fe87ba4ea8c2cf5357501f4ef1fb73c56229d12e95c21a"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/IMG_3333.jpg": {
+      "bytes": 155247,
+      "sha256": "05f92c6091e95a28af394cb5bc775dee208bd34504f9df5fc3721e5e7daf7df5"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/IMG_3334.jpg": {
+      "bytes": 120067,
+      "sha256": "cec3dfafd0c2c1d9e7154389d734d00acc8d3190e54fdab17a62c7a3105cc335"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/IMG_3335.jpg": {
+      "bytes": 144014,
+      "sha256": "8027c04a24017d63099ad441ef37475d3aa4e3edbca68abe3f16d18528383f7e"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/IMG_3336.jpg": {
+      "bytes": 139441,
+      "sha256": "1c216c077df1205044a743c06c3e2197960f8263e639651ff3f6c7d61472750e"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/IMG_3337.jpg": {
+      "bytes": 94038,
+      "sha256": "fd675039cf89b0901aef1a0d2700ddc45d11ecd7bdc9a285f9e25c5aabd0425f"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/IMG_3338.jpg": {
+      "bytes": 148736,
+      "sha256": "3649532820eba5f55910296c67d75f472c6b37924c77de2c3b5a75561b4ab3a9"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/IMG_3339.jpg": {
+      "bytes": 112751,
+      "sha256": "ef7669089fcda202ede90d4d59e01a135c0c807f5d67130cdab59c693b13718c"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/IMG_3340.jpg": {
+      "bytes": 121715,
+      "sha256": "8ac0e449bbab6ce959ab75c83f11bb26d51a8d186cfa57e12fb337be3299ed34"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_01.jpg": {
+      "bytes": 124321,
+      "sha256": "897195125480cbb7bd6537e55b2b04f60ee823476e69455b6174014712c63141"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_02.jpg": {
+      "bytes": 98917,
+      "sha256": "ea0dfe1bbbdc8432e853083358b3c311f6b2c39581fd6d35806197d29f3748c3"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_03.jpg": {
+      "bytes": 121596,
+      "sha256": "f54338306128de42dde30e10e30a8fb0194bd26c7e66ebdd16d54ecaf672ab6f"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_04.jpg": {
+      "bytes": 101395,
+      "sha256": "fc0b52df31974898221d7087e226e5107a4380a99e36f86aebc1a7e5e550b094"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_05.jpg": {
+      "bytes": 113615,
+      "sha256": "cd4d899fb7b637444bc77822ae44595f8c40a98b97e0f480839cc3fb82c3ec64"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_06.jpg": {
+      "bytes": 81791,
+      "sha256": "d26f3fc5cd85412a93e52b14325e3f3f5666405cf0ba346c5c5438fa3b370b11"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_07.jpg": {
+      "bytes": 105365,
+      "sha256": "a5ca70676901c70281fc29bdcf4009238fa7342d921b5ce865ebff39927ff308"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_08.jpg": {
+      "bytes": 82943,
+      "sha256": "6627311fbbe9da09f0b18e1bd55da258703678f46e4332dc4a20871fee377357"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_09.jpg": {
+      "bytes": 109659,
+      "sha256": "ed25a1d6fd9c2a3e69bd3fe8221cd9df874a921d0f05462b65c3306ef9523978"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_10.jpg": {
+      "bytes": 82344,
+      "sha256": "6466dfe4d6193d2cb8a0b96fb1c936fb16aa4b5ba45f893873877640f671944c"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_11.jpg": {
+      "bytes": 93822,
+      "sha256": "4bc88043a897b6a503e5c7e22266af929f4ef3c78c3178e73cb3cfd0339c2615"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_12.jpg": {
+      "bytes": 64095,
+      "sha256": "0934c35266528954a4e2cc912322f34a8ad08ad44803f2b43f0052d628cc15fa"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_13.jpg": {
+      "bytes": 107296,
+      "sha256": "f8bcf3c0b3982322b0ad200744511986a5749fb147c69337ad3e350a08b4592c"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_14.jpg": {
+      "bytes": 85960,
+      "sha256": "df4d11e8b1b014a9f4d99a702e01e7fcbbe2f2f78093c16c5e428e886c8035f3"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_15.jpg": {
+      "bytes": 44846,
+      "sha256": "a8db862dfc8a6d19a5f0ff556f60d08794e51c96c20cd4c0df8fb7385226e262"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_16.jpg": {
+      "bytes": 36335,
+      "sha256": "1d434c4698c7aa2d956ebf3aed6b3e6d80d00e0b44688310ce080e063db5dbf8"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_17.jpg": {
+      "bytes": 56518,
+      "sha256": "1c35d2b4365a4c3ba01a5ed5fd143ded8082c324e311d3fe427ca43a2c6da0cf"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_18.jpg": {
+      "bytes": 127424,
+      "sha256": "57a4b4a81fe5d4d11f42e25cb92963747a80d4bd1900c282e653cc1605ae5d28"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_19.jpg": {
+      "bytes": 89600,
+      "sha256": "7013bbc9be5ff850760cce0019c3f50b65ed575b6dd0889a9522823c02d5e372"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_20.jpg": {
+      "bytes": 66659,
+      "sha256": "3dd3d2a065aec656194cad206792015f74d77b40b9cd20c8f96fdbf705d2b1df"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_21.jpg": {
+      "bytes": 155119,
+      "sha256": "7df3f5cde23e84dd85b95547f351fd73af81d07150427d74dd6669fe394cd0ac"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_22.jpg": {
+      "bytes": 88206,
+      "sha256": "72ab2b8ccc19dd5b632371828e30e115cb3f7bbb657ccd5f009dba0c39c2182f"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_23.jpg": {
+      "bytes": 63403,
+      "sha256": "bcf3b22ed41d7c095355d68052d082b53e6b8927374d9b1116c8ef8877c8d047"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_24.jpg": {
+      "bytes": 109311,
+      "sha256": "293460281c5d446be8f86e7d5b4058112146e96073538e7db147de8f0d580f38"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_25.jpg": {
+      "bytes": 76998,
+      "sha256": "131368b5a7dfc6a28955959910e071e5a4f9186cec15098dbe19894d418315d6"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_26.jpg": {
+      "bytes": 147340,
+      "sha256": "b80fbc072e11ee7064e650598a60a769947949beaf785e1f9adee36b375646e3"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_27.jpg": {
+      "bytes": 101416,
+      "sha256": "0bf513a8fa16757b3096ef6849f5e5eec6f2387d05b147c1b2284e3159b0f02c"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_28.jpg": {
+      "bytes": 102301,
+      "sha256": "00b2e2805c98fb739789dd374116504b4db2a3623a9a82d55d44b7ce050dca06"
+    },
+    "assets/tuojing/source/common/lab/reconstruction/sfm_images/new_29.jpg": {
+      "bytes": 102249,
+      "sha256": "ebb72544440f9035daed05aa381482fa5d3bb91d775fef8604bc7fa8e47ce921"
+    },
+    "assets/tuojing/source/common/lab/reference/floor_aligned.png": {
+      "bytes": 456585,
+      "sha256": "97658b4747755b46ab0c4ae3a37421f0ff2d3e9eae048561a744bccf87067419"
+    },
+    "assets/tuojing/source/common/lab/reference/latest_video_sparse.ply": {
+      "bytes": 191568,
+      "sha256": "7637bac2de37577d143111d7da40fba32338b2f6f59734783d961537e2539dc5"
+    },
+    "assets/tuojing/source/common/lab/reference/registered_scan_slice.png": {
+      "bytes": 1298565,
+      "sha256": "3ea6ab17630e4830c0e43ddada3e521fbd8ec7e7a52736fd9ec0d6f0f9c962b3"
+    },
+    "assets/tuojing/source/common/lab/reference/scan.usda": {
+      "bytes": 3271252,
+      "sha256": "8cccaa429e64adb27d9bfd0747b03cd79ead58bdb3f8f93761ed684eefb07a9e"
+    },
+    "assets/tuojing/source/common/lab/reference/table_aligned.png": {
+      "bytes": 115405,
+      "sha256": "a2b476492a83cb70d28a751234dc29a459ab6b8ad38951a74e3544b2c9708de6"
+    },
+    "assets/tuojing/source/common/lab/reference/textures/c022f31f990f252970d1e6358aa36dad_color.jpg": {
+      "bytes": 1118639,
+      "sha256": "73aab1d21ef839294f496235190b22ba0f75e32b79aaec67b63e26735b68709c"
+    },
+    "assets/tuojing/source/common/lab/registration.json": {
+      "bytes": 2104,
+      "sha256": "72b02582c452c526ba2a428cc6afbacfdcb9c5dba759cde6c05a994ae83b3293"
+    },
+    "assets/tuojing/source/common/lab/reopen_validation.json": {
+      "bytes": 655,
+      "sha256": "a0099de6101cd2efb333d3824058f8d932fd31bbf8f1941daacf0973907ce489"
+    },
+    "assets/tuojing/source/common/lab/robots/r5a.usdc": {
+      "bytes": 5290072,
+      "sha256": "8fcf88e1f1c1a7efecfe43ea02ee369cbef9e2332a90380a0f72020eb8c5e958"
+    },
+    "assets/tuojing/source/common/lab/robots/source.urdf": {
+      "bytes": 10878,
+      "sha256": "600c945f2a631d10beb6473892818325ce40ad03d80f29517f2692eaaa008f36"
+    },
+    "assets/tuojing/source/common/lab/robots/upstream_validation.json": {
+      "bytes": 1027,
+      "sha256": "e25b2c3ba5d3522e8733d83b7baad291cbe80d8cd46855440167275bfdacc571"
+    },
+    "assets/tuojing/source/common/lab/textures/cork.png": {
+      "bytes": 319797,
+      "sha256": "ab37eb34f8ae81aecaf4e4688984bb9ae3171f9628d38252e79f7421effd35c4"
+    },
+    "assets/tuojing/source/common/lab/textures/cork_photo.jpg": {
+      "bytes": 49656,
+      "sha256": "677afb0930a0f296ab45789b83848ea05ab5f99de1acbdd96b19d0f338eb4a3d"
+    },
+    "assets/tuojing/source/common/lab/textures/oak.png": {
+      "bytes": 272890,
+      "sha256": "b571e3bc9c223b344d1935e3356a42bcc6026f50baa1dc82caa4a4f18219393b"
+    },
+    "assets/tuojing/source/common/lab/textures/table_photo.jpg": {
+      "bytes": 456903,
+      "sha256": "07841347afeb29595fe8a8d1ca3c3d6a157f2eaca27827043d15364260cbb222"
+    },
+    "assets/tuojing/source/common/lab/third_person.png": {
+      "bytes": 1022561,
+      "sha256": "040aa907324419c8dd7da3adbf8e51fd1a3bd29071c7c9531fe961e74b316d53"
+    },
+    "assets/tuojing/source/common/lab/top.png": {
+      "bytes": 870912,
+      "sha256": "70e699c99eb83d0b4f12cd4495986f1c00debeff88f686b183083d68e74d9231"
+    },
+    "assets/tuojing/source/common/lab/tuojing_lab.usda": {
+      "bytes": 517803,
+      "sha256": "554eed3b13c3a64966b46ddf009674178493e507177d6e1dab5c954f864fd26d"
+    },
+    "assets/tuojing/source/common/lab/tuojing_lab_axis_51cm.usda": {
+      "bytes": 851,
+      "sha256": "6c3c9db4ae011b12846d9a83d6159e1a0bb0f7229bfd1be8cadd2421619e1eba"
+    },
+    "assets/tuojing/source/common/lab/validate_delivery.py": {
+      "bytes": 1169,
+      "sha256": "fe9fa4d17c4e6bf6ce7a0a994a4c846d7e765edd6f332955c3ead1beecd522e4"
+    },
+    "assets/tuojing/source/common/lab/validation.json": {
+      "bytes": 4803,
+      "sha256": "f7efb9394d4ad200fefe27d31666a0d21d8f430f8c3f5e70b469c0bfa0d7b930"
+    },
+    "assets/tuojing/source/common/lab/workcell.png": {
+      "bytes": 1685596,
+      "sha256": "e1bbd905c0f16d047d8022e59cae5e68cf002df7f963955b5bd48e2e364f6991"
+    },
+    "assets/tuojing/source/common/lab/wrist_left_validation.json": {
+      "bytes": 655,
+      "sha256": "a0099de6101cd2efb333d3824058f8d932fd31bbf8f1941daacf0973907ce489"
+    },
+    "assets/tuojing/source/common/lab/wrist_right_validation.json": {
+      "bytes": 655,
+      "sha256": "a0099de6101cd2efb333d3824058f8d932fd31bbf8f1941daacf0973907ce489"
+    },
+    "assets/tuojing/source.lock.json": {
+      "bytes": 112212,
+      "sha256": "27ed3b198088c2130daf1312df6a43bfd0814fd6aa63e6cc7508d887d4e94dc8"
+    },
+    "assets/tuojing/task_assets.json": {
+      "bytes": 4124,
+      "sha256": "76c3b6eb1caa9c164590a9cc61bfa3295a1be01bd118204da0b79f7a206478f9"
+    },
+    "assets/tuojing/video_20261015.json": {
+      "bytes": 434579,
+      "sha256": "74ebd2eae6cfa5a1850a1daef50d6bf9bbd88554e1582bcfbb5fd761773323e7"
+    },
+    "assets/tuojing/video_scoring_geometry.json": {
+      "bytes": 1061490,
+      "sha256": "eee1958121f629230b2ffbcc27d5bd213b28b31287ef4d235e26a671b42ca25d"
+    },
+    "assets/tuojing/visual_r3/textures/07841347afeb29595fe8.jpg": {
+      "bytes": 456903,
+      "sha256": "07841347afeb29595fe8a8d1ca3c3d6a157f2eaca27827043d15364260cbb222"
+    },
+    "assets/tuojing/visual_r3/textures/16f3242f001e369b0a97.png": {
+      "bytes": 11828278,
+      "sha256": "16f3242f001e369b0a9727db3ad2e0a4ebe731c4359b57c57684bb76a664bd62"
+    },
+    "assets/tuojing/visual_r3/textures/29315569a6ed137579e7.jpg": {
+      "bytes": 3347947,
+      "sha256": "29315569a6ed137579e7266a0925423f191e17a912573f3b0b034ac12858300a"
+    },
+    "assets/tuojing/visual_r3/textures/2df8f4f9a94a46a978b6.png": {
+      "bytes": 280599,
+      "sha256": "2df8f4f9a94a46a978b687ccce7693351fe97bdffb7cbf61623d6f1688a0cdae"
+    },
+    "assets/tuojing/visual_r3/textures/331f60adced46c0c266d.png": {
+      "bytes": 348784,
+      "sha256": "331f60adced46c0c266d87a7627c1473b8f0d5fa287f7c443134f8352f80aba8"
+    },
+    "assets/tuojing/visual_r3/textures/41e71f3e107c7f80d91f.png": {
+      "bytes": 1990125,
+      "sha256": "41e71f3e107c7f80d91fdce69f177d92adc40de1666e723d87eab6294ee78209"
+    },
+    "assets/tuojing/visual_r3/textures/5106e3ee8f0f7a110205.png": {
+      "bytes": 2107808,
+      "sha256": "5106e3ee8f0f7a11020529f15a9c0a677803e5c748bd16d0620a0e86cd606ba8"
+    },
+    "assets/tuojing/visual_r3/textures/517732c3dd23172af27e.jpg": {
+      "bytes": 3056565,
+      "sha256": "517732c3dd23172af27e9169f40d704a8f6df525c1418371204c52db43059c6e"
+    },
+    "assets/tuojing/visual_r3/textures/572cd02008fdd452d756.png": {
+      "bytes": 456032,
+      "sha256": "572cd02008fdd452d7560302f384dcd34f2fc3f06472b7949382398e3e56d99f"
+    },
+    "assets/tuojing/visual_r3/textures/5a4ae9dadf5c87f5e3bf.jpg": {
+      "bytes": 2614775,
+      "sha256": "5a4ae9dadf5c87f5e3bf5d8409c12884adcf9ce594f71cc869ef4141be45a1df"
+    },
+    "assets/tuojing/visual_r3/textures/60f5ebc3486a51d4ecd4.png": {
+      "bytes": 5446413,
+      "sha256": "60f5ebc3486a51d4ecd402b774645c288e5365ff4e42b793dc0b5bb4381b0a76"
+    },
+    "assets/tuojing/visual_r3/textures/677afb0930a0f296ab45.jpg": {
+      "bytes": 49656,
+      "sha256": "677afb0930a0f296ab45789b83848ea05ab5f99de1acbdd96b19d0f338eb4a3d"
+    },
+    "assets/tuojing/visual_r3/textures/7b273c9362eea351e75e.jpg": {
+      "bytes": 2159804,
+      "sha256": "7b273c9362eea351e75e0dc1b024342f0fae39ab9c401d7f60bb25cac6a09f21"
+    },
+    "assets/tuojing/visual_r3/textures/89122c48b924f00eb275.png": {
+      "bytes": 1590,
+      "sha256": "89122c48b924f00eb27591ec39d8cc21b70588b4b5e1ab63d188f4bb5427211d"
+    },
+    "assets/tuojing/visual_r3/textures/89dc699a50c2e098c8d5.png": {
+      "bytes": 3230393,
+      "sha256": "89dc699a50c2e098c8d5b90e661b901863b81c5ed31c171369b7bb6869823ec9"
+    },
+    "assets/tuojing/visual_r3/textures/9757a96e5b70af3e7311.png": {
+      "bytes": 474080,
+      "sha256": "9757a96e5b70af3e731112cada04aaf528aa338de60dd0a3e4d1ae9dce12364a"
+    },
+    "assets/tuojing/visual_r3/textures/99601db72e198af67ecf.png": {
+      "bytes": 1299869,
+      "sha256": "99601db72e198af67ecf37cc1d40fdb53659c2198f024ec9bab4271b3da59e1b"
+    },
+    "assets/tuojing/visual_r3/textures/a7addb552f396d1dfda2.png": {
+      "bytes": 1111043,
+      "sha256": "a7addb552f396d1dfda2b9fffb6de156e39f3fb0be500a86b2ab5ba2b1214b6a"
+    },
+    "assets/tuojing/visual_r3/textures/ae414077e57b68715b41.png": {
+      "bytes": 62284,
+      "sha256": "ae414077e57b68715b4109fda5bedbb675abe0c83ea454e65be155bb1a061f82"
+    },
+    "assets/tuojing/visual_r3/textures/b3540c526a9dfc8a9a72.png": {
+      "bytes": 3110728,
+      "sha256": "b3540c526a9dfc8a9a7277e42d03e946618dcb8452ed0cbe093e3599eeddb4e9"
+    },
+    "assets/tuojing/visual_r3/textures/c9956f9ad1a4a774b328.png": {
+      "bytes": 1012438,
+      "sha256": "c9956f9ad1a4a774b32897c414d05dbaa39f409ee53c5287f41eac15bcd51475"
+    },
+    "assets/tuojing/visual_r3/textures/d5ff33929a361ad11a07.png": {
+      "bytes": 108768,
+      "sha256": "d5ff33929a361ad11a076f4bc1c0b3791b5748e768eea0e45dedb930c64c31b5"
+    },
+    "assets/tuojing/visual_r3/textures/d89a8fa45ac8ae90323d.png": {
+      "bytes": 493935,
+      "sha256": "d89a8fa45ac8ae90323d189635eaac244a9c84a2459ba2b013802839e5eb539a"
+    },
+    "assets/tuojing/visual_r3/textures/e018d2722bcd81138271.png": {
+      "bytes": 22059,
+      "sha256": "e018d2722bcd811382718e7f3dc5ca5225d3b2e0a7c37b09a03a9e9423ba0ab5"
+    },
+    "assets/tuojing/visual_r3/textures/e558519f1a3436c7cccc.png": {
+      "bytes": 173764,
+      "sha256": "e558519f1a3436c7cccc3fcf339cc0b3e407e734d41a781890eb4e2831960880"
+    },
+    "assets/tuojing/visual_r3/textures/edf7a4fe03b22daa7ae0.png": {
+      "bytes": 1039068,
+      "sha256": "edf7a4fe03b22daa7ae0c97c996b832650041ff13f0f954713efd8f0392efb77"
+    },
+    "assets/tuojing/visual_r3/textures/f885ed18188caaed5f9e.png": {
+      "bytes": 45037,
+      "sha256": "f885ed18188caaed5f9e9c2954dd1f892b326024c0baa782e45d01e0f5b9c0f2"
+    },
+    "assets/tuojing/visual_r3/textures/f8e5fde889de4b637db6.png": {
+      "bytes": 287216,
+      "sha256": "f8e5fde889de4b637db6904409e9eefe2cb4a2ab4fe932d08cbe4d5933e3e6bb"
+    }
+  }
+}

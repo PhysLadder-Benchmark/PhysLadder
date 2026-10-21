@@ -3,13 +3,9 @@
 import numpy as np
 
 from ...robots.transforms import pose_transform
-from .evaluation import held, quiet, relative, released
+from .evaluation import held, relative, released
 from .native_geometry import (band_opening, cavity_fit, clip_below, cup_cavity,
                               shapes, transformed_poly)
-
-
-def article_prop(e, name):
-    return next(a.asset.split(':',1)[1] for a in e.spec.design.articles if a.name == name)
 
 
 def stable_outcome(e, key, rows, active, *, relative_frame=None):
@@ -32,8 +28,8 @@ def stable_outcome(e, key, rows, active, *, relative_frame=None):
             return False
         states.append((transform[:3,3],transform[:3,2]))
     previous=e.outcome_anchors.get(key)
-    if previous is not None and any(np.linalg.norm(pos-old_pos) > e.spec.parameters.get('stability_position_tolerance_m', .001) or
-                                    np.dot(axis,old_axis) < np.cos(e.spec.parameters.get('stability_tilt_tolerance_rad', .02))
+    if previous is not None and any(np.linalg.norm(pos-old_pos) > .001 or
+                                    np.dot(axis,old_axis) < np.cos(.02)
                                     for (pos,axis),(old_pos,old_axis) in zip(states,previous)):
         e.outcome_anchors.pop(key,None)
         return False
@@ -45,13 +41,13 @@ def stable_outcome(e, key, rows, active, *, relative_frame=None):
 def marker(e, rows):
     """L1 entry-only outcome; release/support/motion are diagnostic evidence."""
     r,p=rows['marker'],e.spec.parameters
-    prop=article_prop(e,'marker')
+    marker_name=p.get('geometry_prefix','')+'whiteboard_marker'
     t=pose_transform(r['pose'])
     cavity=np.linalg.inv(pose_transform(e.spec.design.fixture_pose)) @ t
-    inside,margin=cavity_fit(prop,cavity,.001,
+    inside,margin=cavity_fit(marker_name,cavity,.001,
                             receptacle=e.spec.design.fixture_asset.split(':',1)[1])
-    vertices=np.concatenate([transformed_poly(prop,i,t)[0]
-                             for i in range(len(shapes(prop)))])
+    vertices=np.concatenate([transformed_poly(marker_name,i,t)[0]
+                             for i in range(len(shapes(marker_name)))])
     depth=p['rim']-vertices[:,2].min()
     support=r['fixture_force_n'] > p['min_support_n'] and r['bench_force_n'] < .05
     if vertices[:,2].min() > p['table_z']+.005 and r['bench_force_n'] < .05:
@@ -61,67 +57,21 @@ def marker(e, rows):
             ('marker_left_table' in e.flags or body_on_table)):
         e.flags.add('marker_dropped_on_table')
     returned_to_table = 'marker_dropped_on_table' in e.flags
-    return inside, {'inside_holder':inside,'depth_m':float(depth),'fixture_supported':bool(support),
-                  'collider_clearance_m':float(margin),'geometry':'native closed marker body and cap colliders',
+    require_release = p.get('require_marker_release', False)
+    complete = inside and (not require_release or (released(r) and support and 'marker' in e.grasped))
+    return complete, {'inside_holder':inside,'depth_m':float(depth),'fixture_supported':bool(support),
+                  'release_required':require_release,
+                  'collider_clearance_m':float(margin),'geometry':'native barrel cylinder + cap capsule',
                   'released':released(r),'dropped_on_table':returned_to_table,
-                  'stability':'not required for L1 entry-only success',
+                  'stability':('no additional dwell after supported release' if require_release
+                               else 'not required for L1 entry-only success'),
                   'quality_warnings':(['Marker returned to or toppled on the tabletop; recovery allowed']
                                       if returned_to_table else [])}, ''
 
 
-def insertion(e, rows):
-    if e.spec.design.task_id == "L1-03":
-        return plug(e, rows)
-    name = "key"
-    r = rows[name]
-    p = e.spec.parameters
-    t = pose_transform(r["pose"])
-    axis = t[:3, 2]
-    depth = p["rim"] - t[2, 3]
-    rim = t[:3, 3] + axis * (depth / max(axis[2], 1e-6))
-    # Cross-section projected into the rectangular keyway; 180-degree yaw symmetry is natural.
-    # Section in the horizontal socket plane; account for tilt geometrically
-    # rather than imposing a separate angle limit.
-    section = t[:2, :2] - np.outer(axis[:2], t[2, :2]) / max(axis[2], 1e-6)
-    extent = np.abs(section) @ (np.array(p["tongue"]) / 2)
-    if "slot_centres" in p:
-        # Match both native blades to both native holes, including 180-degree
-        # symmetry. A body-centre-only test would accept a pin outside its slot.
-        slots = np.array(p["slot_centres"])
-        tips = np.array([t[:2, 3] + t[:2, :2] @ c for c in slots])
-        at_rim = tips + axis[:2] * depth / max(axis[2], 1e-6)
-        centres = []
-        for order in (slots, slots[::-1]):
-            offset = np.vstack((tips - order - p["socket_xy"], at_rim - order - p["socket_xy"]))
-            centres.append(offset)
-        cross_section_fits = any(np.all(np.abs(c) + extent <= np.array(p["opening"]) / 2 + 0.00015)
-                                 for c in centres)
-    else:
-        centres = np.vstack((t[:2, 3], rim[:2])) - p["socket_xy"]
-        cross_section_fits = np.all(np.abs(centres) + extent <= np.array(p["opening"]) / 2 + 0.0005)
-    inside = bool(
-        axis[2] > 1e-6
-        and depth >= p["depth"]
-        and t[2, 3] >= p["floor"] - 0.002
-        and cross_section_fits
-    )
-    release_ok = name == "key" or released(r)
-    support = held(r) or r["fixture_force_n"] > 0.05
-    return (
-        inside and name in e.grasped and release_ok and support and quiet(r),
-        {
-            "inside_socket": inside,
-            "depth_m": float(depth),
-            "release_required": name == "plug",
-        },
-        "",
-    )
-
-
-
 def plug(e, rows):
     r,p=rows['plug'],e.spec.parameters
-    prop=article_prop(e,'plug')
+    charger_name=p.get('geometry_prefix','')+'usb_charger'
     # Evaluate in the strip frame: rotating its layout must rotate both slot
     # centres and their rectangular cross-sections, not just the visual asset.
     fixture=pose_transform(e.spec.design.fixture_pose)
@@ -130,11 +80,28 @@ def plug(e, rows):
     slots=np.asarray(p['slot_centres'])
     slot_half=np.asarray(p['opening'])/2
     blades=[]
-    for i,s in enumerate(shapes(prop)):
+    for i,s in enumerate(shapes(charger_name)):
         if not s['name'].startswith('Blade'):continue
-        vertices,edges,_=transformed_poly(prop,i,t)
+        vertices,edges,_=transformed_poly(charger_name,i,t)
         clipped=clip_below(vertices,edges,rim)
         blades.append((vertices,clipped))
+    if p.get('alignment_only'):
+        candidates = []
+        for order in (slots, slots[::-1]):
+            aligned = []
+            for (vertices, _), centre in zip(blades, order):
+                tip = vertices[np.isclose(vertices[:, 2], vertices[:, 2].min(), atol=0.0001)]
+                gap = float(tip[:, 2].min() - rim)
+                aligned.append(bool(np.all(np.abs(vertices[:, :2] - centre) <= slot_half + tol)
+                                    and -tol <= gap <= p['alignment_max_gap_m']))
+            candidates.append(aligned)
+        aligned = any(all(candidate) for candidate in candidates)
+        done = aligned and t[2, 2] > 0 and held(r) and 'plug' in e.grasped
+        return bool(done), {'both_prongs_aligned': aligned, 'insertion_required': False,
+                           'release_required': False, 'grasp_lift_recorded': 'plug' in e.grasped,
+                           'alignment_max_gap_m': p['alignment_max_gap_m'],
+                           'target': p.get('target_socket','native compatible middle blue two-slot pair'),
+                           'rubric_status': 'engineering alignment proxy; source tolerance unspecified'}, ''
     assignments=[]
     for order in (slots,slots[::-1]):
         checks=[]
@@ -145,11 +112,11 @@ def plug(e, rows):
             checks.append({'inside_slot':fit,'depth_m':float(depth)})
         assignments.append(checks)
     checks=max(assignments,key=lambda a:sum(c['inside_slot'] for c in a))
-    housing_index=next(i for i,s in enumerate(shapes(prop)) if s['name']=='Housing')
-    housing=transformed_poly(prop,housing_index,t)[0]
+    housing_index=next(i for i,s in enumerate(shapes(charger_name)) if s['name']=='Housing')
+    housing=transformed_poly(charger_name,housing_index,t)[0]
     # Seating is diagnostic only. Keep a geometric nonpenetration check on the
     # housing so reversed/upside-down insertion cannot put plastic into the strip.
-    local=transformed_poly(prop,housing_index,np.eye(4))[0]
+    local=transformed_poly(charger_name,housing_index,np.eye(4))[0]
     shoulder=housing[np.isclose(local[:,2],local[:,2].min(),atol=1e-8)]
     gaps=shoulder[:,2]-rim
     seated=bool(t[2,2]>0 and gaps.min()>=-tol and gaps.max()<=p['seat_gap_m'])
@@ -175,7 +142,7 @@ def hat(e, rows):
     through=False
     if abs(direction[2]) > 1e-6:
         f=(z-a[2])/(b[2]-a[2]); hit=a+f*(b-a)
-        planes=band_opening(article_prop(e,'hat')); normals=planes[:,:2]
+        planes=band_opening(p.get('geometry_prefix','')+'yellow_visor'); normals=planes[:,:2]
         extent=radius*np.sqrt(np.sum(normals**2,axis=1)+(normals @ direction[:2]/direction[2])**2)
         # Both spherical caps must be past the opening plane: balancing the
         # rear band on the rounded end is insufficient, even with contact.
@@ -191,16 +158,25 @@ def hat(e, rows):
 
 def cups(e, rows):
     top,base=rows['upper_cup'],rows['lower_cup']; p=e.spec.parameters
-    prop=article_prop(e,'upper_cup')
+    cup_name=p.get('geometry_prefix','')+'ripple_paper_cup'
     t=relative(top,base)
-    contained,margin=cavity_fit(prop,t,p['cup_contact_tolerance'],receptacle=article_prop(e,'lower_cup'))
-    floor_index=next(i for i,s in enumerate(shapes(prop)) if s['name']=='Floor')
-    bottom=transformed_poly(prop,floor_index,t)[0]
+    contained,margin=cavity_fit(cup_name,t,p['cup_contact_tolerance'],receptacle=cup_name)
+    floor_index=next(i for i,s in enumerate(shapes(cup_name)) if s['name']=='Floor')
+    bottom=transformed_poly(cup_name,floor_index,t)[0]
     contained=bool(contained and t[2,2]>0 and pose_transform(base['pose'])[2,2]>0
-                   and bottom[:,2].max()<cup_cavity(article_prop(e,'lower_cup'))[2]-p['cup_contact_tolerance'])
+                   and bottom[:,2].max()<cup_cavity(cup_name)[2]-p['cup_contact_tolerance'])
     supported=(top['pair_forces'].get('lower_cup',0)>p['min_pair_support_n']
                and base['bench_force_n']>p['min_bench_support_n'])
     active=contained and supported and released(top) and released(base)
+    if 'centre_xy' in p:
+        if held(base, p['lower_cup_arm']):
+            e.flags.add('left_cup_grasped_by_assigned_arm')
+        centred = np.linalg.norm(np.asarray(base['pose'][:2]) - p['centre_xy']) <= p['centre_tolerance_m']
+        if centred and released(base) and base['bench_force_n'] > .05 and 'left_cup_grasped_by_assigned_arm' in e.flags:
+            e.flags.add('left_cup_placed_at_centre')
+        if held(top, p['upper_cup_arm']) and 'left_cup_placed_at_centre' in e.flags:
+            e.flags.add('right_cup_grasped_after_centre_placement')
+        active = active and centred and 'right_cup_grasped_after_centre_placement' in e.flags
     # Relative nesting geometry and the base's world pose must both stay put.
     pair_stable=stable_outcome(e,'cup_pair',[top],active,relative_frame=base)
     base_stable=stable_outcome(e,'cup_base',[base],active)
@@ -210,69 +186,54 @@ def cups(e, rows):
                  'stability':'relative position and tilt; axial spin ignored'}, ''
 
 
-def flower_cup_support(p, rows, fixture, target_prop):
-    """Measured support through free, contained marbles as well as cup contact.
-
-    A marble touching the flower on the table or in the hand is not a support
-    route to the target. No pose, velocity or contact state is written here.
-    """
-    target = p['target_article']
-    planes, floor, rim = cup_cavity(target_prop)
-    inverse = np.linalg.inv(fixture)
-    radius = p.get('target_filler_radius_m', .008)
-    eligible = set()
-    for name in p.get('target_fillers', ()):
-        row = rows.get(name)
-        if row is None or not released(row) or row['bench_force_n'] > .01:
-            continue
-        centre = (inverse @ np.array((*row['pose'][:3], 1)))[:3]
-        if (centre[2]-radius >= floor-.001 and centre[2]+radius <= rim+.001
-                and np.min(planes[:,3]-planes[:,:3]@centre) >= radius-.001):
-            eligible.add(name)
-    connected = {target}
-    while True:
-        reached = {name for name in eligible-connected if any(
-            rows[name]['pair_forces'].get(other, 0.) > .002 for other in connected)}
-        if not reached:
-            break
-        connected.update(reached)
-    return sum(rows['rose']['pair_forces'].get(name, 0.) for name in connected), sorted(connected)
-
-
 def flower(e, rows):
     r,p=rows['rose'],e.spec.parameters; t=pose_transform(r['pose'])
-    prop=article_prop(e,'rose')
-    target=rows.get(p.get('target_article'))
-    fixture=pose_transform(target['pose'] if target else e.spec.design.fixture_pose)
-    target_prop=article_prop(e,p['target_article']) if target else e.spec.design.fixture_asset.split(':',1)[1]
-    cavity=np.linalg.inv(fixture) @ t
-    stems=[i for i,s in enumerate(shapes(prop)) if 'Stem' in s['name']]
-    # Check every immersed native collider: leaves cannot penetrate the cup
-    # wall merely because the stem fits. Use the destination's measured frame.
-    inside,margin=cavity_fit(prop,cavity,.001,
-                            receptacle=target_prop)
-    tip=transformed_poly(prop,stems[0],cavity)[0]
-    _,floor,rim=cup_cavity(target_prop)
+    rose_name=p.get('geometry_prefix','')+'artificial_rose'
+    cup_name=p.get('geometry_prefix','')+'ripple_paper_cup'
+    cavity=(relative(r,rows['target_cup']) if p.get('dynamic_target_cup') else t.copy())
+    if not p.get('dynamic_target_cup'):
+        cavity[:2,3]-=p['vase_xy']; cavity[2,3]-=p['table_z']
+    stems=[i for i,s in enumerate(shapes(rose_name)) if 'stem' in s['name'].lower()]
+    # Check all immersed stem segments, including bends. The bud's complete
+    # collision envelope must remain above the mouth.
+    inside,margin=cavity_fit(rose_name,cavity,.001,indices=stems,receptacle=cup_name)
+    geometry_frame = cavity if p.get('dynamic_target_cup') else t
+    _, cavity_floor, cavity_rim = cup_cavity(cup_name)
+    floor, rim = ((cavity_floor, cavity_rim) if p.get('dynamic_target_cup') else (p['floor'], p['rim']))
+    tip=transformed_poly(rose_name,stems[0],geometry_frame)[0]
     inside=bool(inside and tip[:,2].min()<rim-.001 and tip[:,2].max()>floor-.001)
-    heads=[i for i,s in enumerate(shapes(prop))
-           if (s['name'].startswith('Petal') if prop.startswith('cream_tulip')
-               else not s['name'].startswith('Stem'))]
-    head_envelopes=[transformed_poly(prop,i,cavity) for i in heads]
+    heads=[i for i,s in enumerate(shapes(rose_name)) if 'stem' not in s['name'].lower()]
+    head_envelopes=[transformed_poly(rose_name,i,geometry_frame) for i in heads]
     head_low=min(vertices[:,2].min()-error for vertices,_,error in head_envelopes)
     head_clear=bool(head_low>rim and r['bench_force_n']<.01)
-    support_force, support_route = (r['fixture_force_n'], ['fixture']) if target is None else flower_cup_support(p,rows,fixture,target_prop)
-    supported=bool(support_force>p['min_support_n']) if target is None else bool(
-        support_force>p['min_support_n']
-        and target['bench_force_n']>.014*9.81*.5 and released(target) and fixture[2,2]>.8)
+    support_force = r['pair_forces'].get('target_cup',0.) if p.get('dynamic_target_cup') else r['fixture_force_n']
+    if p.get('target_filler_names'):
+        from .pearl_pouring import cup_contains
+        target_inverse = np.linalg.inv(pose_transform(rows['target_cup']['pose']))
+        contained = {name for name in p['target_filler_names']
+            if cup_contains((target_inverse @ pose_transform(rows[name]['pose']))[:3,3],
+                            radius=p['filler_radius_m'],receptacle=cup_name)}
+        connected = {'target_cup'}
+        while True:
+            added = {name for name in contained-connected if any(
+                max(rows[name]['pair_forces'].get(other,0.),rows[other]['pair_forces'].get(name,0.))>.005
+                for other in connected)}
+            if not added:
+                break
+            connected.update(added)
+        support_force += sum(r['pair_forces'].get(name,0.) for name in connected-{'target_cup'})
+    supported=bool(support_force>p['min_support_n'] and
+                   (not p.get('dynamic_target_cup')
+                    or 'target_cup' in p.get('fixed_articles', ())
+                    or rows['target_cup']['bench_force_n']>.005))
     active=inside and head_clear and supported and released(r)
     done=stable_outcome(e,'rose',[r],active)
     return done, {'stem_end_inside':inside,'depth_m':float(rim-tip[:,2].min()),
                   'flower_clear_of_table':head_clear,'head_above_rim':head_clear,
                   'fixture_supported':supported,'rigid_flower':True,'collider_clearance_m':float(margin),
-                  'target_support_force_n':float(support_force), 'target_support_route':support_route,
-                  'geometry':'native stem, leaves and petals; destination-cup containment',
+                  'geometry':'four native bent stem capsules and native bud colliders',
                   'grasp_lift_recorded':'rose' in e.grasped,
                   'stability':'position and tilt; axial spin ignored if containment persists'}, ''
 
 
-RULES={'L1-01':marker,'L1-03':insertion,'L1-05':insertion,'L1-07':hat,'L1-08':cups,'L1-09':flower}
+RULES={'L1-01':marker,'L1-03':plug,'L1-07':hat,'L1-08':cups,'L1-09':flower}

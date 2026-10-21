@@ -23,6 +23,7 @@ from .config import load_config
 from .paths import PROJECT_ROOT
 from .policies.model_config import load_gpt_settings
 from .registry import TASKS, resolve_task
+from .task_ids import internal_task_id
 from .runtime_config import load_runtime
 
 
@@ -209,18 +210,42 @@ def stop_process(process, owned):
     return forced, complete
 
 
+class RequestLogMirror:
+    """Mirror model progress without flooding the console with native startup logs."""
+
+    def __init__(self, stream):
+        self.stream = stream
+        self.pending = b""
+
+    def poll(self, final=False):
+        self.pending += self.stream.read()
+        # Native workers can escape CRLF when forwarding their console output.
+        lines = re.split(rb"\r?\n|\\r\\n|\\n", self.pending)
+        self.pending = lines.pop()
+        if final and self.pending:
+            lines.append(self.pending)
+            self.pending = b""
+        for raw in lines:
+            line = raw.decode("utf-8", errors="replace").strip()
+            if line.startswith(("R5_POLICY_REQUEST ", "[request ")):
+                print(line, flush=True)
+
+
 def run_job(command, directory, environment, timeout, started):
     directory.mkdir(parents=True)
     options = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" else {"start_new_session": True}
     start, owned = time.monotonic(), {}
     next_progress = start + 30
     record = {"returncode": None, "timed_out": False, "interrupted": False, "cleanup_complete": True}
-    with (directory / "process.log").open("w", encoding="utf-8") as log:
+    with (directory / "process.log").open("w", encoding="utf-8") as log, \
+            (directory / "process.log").open("rb") as reader:
+        mirror = RequestLogMirror(reader)
         process = subprocess.Popen(command, cwd=PROJECT_ROOT, env=environment, stdout=log, stderr=subprocess.STDOUT, **options)
         record.update(worker_pid=process.pid, worker_identity=process_identity(process.pid))
         try:
             started(record)
             while True:
+                mirror.poll()
                 if time.monotonic() >= next_progress:
                     print(f"BATCH_PROGRESS task={directory.parent.name} elapsed_s={time.monotonic() - start:.0f}", flush=True)
                     next_progress = time.monotonic() + 30
@@ -229,16 +254,18 @@ def run_job(command, directory, environment, timeout, started):
                     owned.update(found)
                     record["owned_processes"] = owned.copy()
                     started(record)
-                remaining = timeout - (time.monotonic() - start)
-                if remaining <= 0:
+                remaining = None if timeout is None else timeout - (time.monotonic() - start)
+                if remaining is not None and remaining <= 0:
                     raise subprocess.TimeoutExpired(command[0], timeout)
                 try:
-                    record["returncode"] = process.wait(timeout=min(1, remaining))
+                    record["returncode"] = process.wait(timeout=1 if remaining is None else min(1, remaining))
                     break
                 except subprocess.TimeoutExpired:
                     continue
         except (KeyboardInterrupt, subprocess.TimeoutExpired) as exc:
             record["interrupted"] = isinstance(exc, KeyboardInterrupt)
+            if record["interrupted"]:
+                print("Batch interrupted: stopping the current worker; no further tasks will start (cleanup may take 35 seconds).", flush=True)
             record["timed_out"] = not record["interrupted"]
             record["returncode"] = 130 if record["interrupted"] else 124
             record["forced_termination"], record["cleanup_complete"] = stop_process(process, owned)
@@ -249,25 +276,65 @@ def run_job(command, directory, environment, timeout, started):
             # Also reclaim leaked descendants after a native crash/abrupt exit.
             if any(process_identity(pid) == identity for pid, identity in owned.items()):
                 record["forced_termination"], record["cleanup_complete"] = stop_process(process, owned)
+        finally:
+            mirror.poll(final=True)
     record["wall_time_s"] = time.monotonic() - start
     write_json(directory / "process.json", record)
     return record
 
 
-def inspect_video(path):
+def inspect_video_with_opencv(path):
+    """Use the recorder's decoder when a standalone ffprobe is unavailable."""
+    try:
+        import cv2
+    except ImportError:
+        return {"valid": None, "reason": "video_decoder_unavailable"}
+    capture = cv2.VideoCapture(str(path))
+    try:
+        if not capture.isOpened():
+            return {"valid": False, "reason": "unreadable_video"}
+        declared = int(capture.get(cv2.CAP_PROP_FRAME_COUNT))
+        fps = capture.get(cv2.CAP_PROP_FPS)
+        width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        decoded = 0
+        while True:
+            ok, frame = capture.read()
+            if not ok:
+                break
+            if frame.shape[:2] != (height, width):
+                return {"valid": False, "reason": "inconsistent_frame_dimensions"}
+            decoded += 1
+        valid = decoded > 0 and fps > 0 and decoded == declared
+        return {"valid": valid, "verification": "opencv_full_decode",
+                "width": width, "height": height, "nb_frames": declared,
+                "decoded_frames": decoded, "duration": decoded / fps if fps > 0 else 0,
+                **({} if valid else {"reason": "incomplete_frame_decode"})}
+    except cv2.error:
+        return {"valid": False, "reason": "unreadable_video"}
+    finally:
+        capture.release()
+
+
+def inspect_video(path, expected_frames=None):
     if not path.is_file() or not path.stat().st_size:
         return {"valid": False, "reason": "missing_or_empty"}
     probe = shutil.which("ffprobe")
     if not probe:
-        return {"valid": None, "reason": "ffprobe_unavailable"}
+        result = inspect_video_with_opencv(path)
+        if result["valid"] and expected_frames is not None and result["decoded_frames"] != expected_frames:
+            result.update(valid=False, reason="recorded_frame_count_mismatch", expected_frames=expected_frames)
+        return result
     try:
-        result = subprocess.run([probe, "-v", "error", "-select_streams", "v:0", "-show_entries",
-                                 "stream=width,height,nb_frames,duration", "-of", "json", str(path)],
-                                capture_output=True, text=True, timeout=15, check=False)
+        result = subprocess.run([probe, "-v", "error", "-select_streams", "v:0", "-count_frames", "-show_entries",
+                                 "stream=width,height,nb_frames,nb_read_frames,duration", "-of", "json", str(path)],
+                                capture_output=True, text=True, timeout=120, check=False)
         stream = json.loads(result.stdout).get("streams", [{}])[0]
         valid = (result.returncode == 0 and stream.get("width", 0) > 0
                  and stream.get("height", 0) > 0 and float(stream.get("duration", 0)) > 0)
-        return {"valid": valid, **stream}
+        if expected_frames is not None and int(stream.get("nb_read_frames", -1)) != expected_frames:
+            return {"valid": False, **stream, "reason": "recorded_frame_count_mismatch", "expected_frames": expected_frames}
+        return {"valid": valid, "verification": "ffprobe_frame_count", **stream}
     except (OSError, ValueError, IndexError, subprocess.TimeoutExpired):
         return {"valid": False, "reason": "unreadable_video"}
 
@@ -319,7 +386,8 @@ def collect_result(directory, process, dry_run, cameras):
                         latency += duration
                         latency_samples += 1
     videos = {name: {"path": str(episode / "video" / name / "motion.mp4"),
-                     **inspect_video(episode / "video" / name / "motion.mp4")}
+                     **inspect_video(episode / "video" / name / "motion.mp4",
+                                     result.get("videos", {}).get(name, {}).get("frames"))}
               for name in cameras} if episode and not dry_run else {}
     return {"outcome": outcome, "episode": str(episode) if episode else None,
             "success": result.get("success") if outcome in {"succeeded", "failed"} else None,
@@ -334,7 +402,8 @@ def collect_result(directory, process, dry_run, cameras):
             "wall_time_s": process.get("wall_time_s"), "simulation_time_s": result.get("simulation_time_s"),
             "error": result.get("error") if result else "No unique readable episode result.json was saved",
             "videos": videos,
-            "video_complete": all(v["valid"] is True for v in videos.values()) if videos else None,
+            "video_complete": (False if any(v["valid"] is False for v in videos.values()) else
+                               True if all(v["valid"] is True for v in videos.values()) else None) if videos else None,
             "assessment": result.get("assessment"), "process": process}
 
 
@@ -348,8 +417,9 @@ def summarize(root, manifest, state):
         rows.append(row)
     counts = {key: sum(r["outcome"] == key for r in rows)
               for key in ("succeeded", "failed", "invalid_episode", "infrastructure_error", "timeout", "interrupted", "dry_run", "skipped", "pending")}
-    counts["video_incomplete"] = sum(r["outcome"] not in {"pending", "skipped", "dry_run"}
-                                     and r.get("video_complete") is not True for r in rows)
+    recorded = [r for r in rows if r["outcome"] not in {"pending", "skipped", "dry_run"}]
+    counts["video_incomplete"] = sum(r.get("video_complete") is False for r in recorded)
+    counts["video_unverified"] = sum(r.get("video_complete") is None for r in recorded)
     write_json(root / "summary.json", {"counts": counts, "results": rows})
     fields = ["task_id", "name", "outcome", "success", "first_attempt_success", "model_calls", "usage_samples",
               "wall_time_s", "simulation_time_s", "attempt_count", "reset_count", "action_timeouts",
@@ -359,7 +429,9 @@ def summarize(root, manifest, state):
         writer = csv.DictWriter(stream, fieldnames=fields, extrasaction="ignore")
         writer.writeheader()
         writer.writerows(rows)
-    lines = ["# GPT 批量测评", "", f"模型：{manifest['model']}；每任务最多 {manifest['options']['max_calls']} 次调用。",
+    call_limit = manifest['options']['max_calls']
+    budget_text = f"每任务最多 {call_limit} 次调用" if call_limit else "每任务不限调用次数"
+    lines = ["# GPT 批量测评", "", f"模型：{manifest['model']}；{budget_text}。",
              "", "dry_run 不调用 GPT、不运行物理，也不代表任务成功。Token 为已返回 usage 的请求之和；缺失用量不填零。",
              "", "| 任务 | 结果 | 首次成功 | 调用 | 视频 | 报告 |", "| --- | --- | --- | --- | --- | --- |"]
     for row in rows:
@@ -372,11 +444,14 @@ def summarize(root, manifest, state):
 
 
 def create_batch(root, args, model, runtime):
-    ids = args.tasks or sorted(key for key in TASKS if key.startswith("L"))
+    # Variants are opt-in; --all keeps the original benchmark task pool.
+    ids = args.tasks or sorted(key for key, spec in TASKS.items()
+                              if key.startswith("L") and spec.base_task_id is None)
+    ids = [internal_task_id(key) for key in ids]
     if len(set(ids)) != len(ids) or any(key not in TASKS for key in ids):
         raise ValueError("Task IDs must be registered and unique")
     settings = load_gpt_settings(model)
-    options = {"max_calls": args.max_calls or 100, "wall_time_s": args.wall_time_s or 3600.,
+    options = {"max_calls": args.max_calls if args.max_calls is not None else 100, "wall_time_s": args.wall_time_s if args.wall_time_s is not None else 0.,
                "startup_grace_s": args.startup_grace_s if args.startup_grace_s is not None else 300.,
                "seed": args.seed if args.seed is not None else 0, "reasoning_effort": args.reasoning_effort or settings.reasoning_effort,
                "dry_run": bool(args.dry_run), "gui": bool(args.gui), "depth": args.depth}
@@ -384,12 +459,16 @@ def create_batch(root, args, model, runtime):
     configs = root / "configs"
     configs.mkdir()
     model_copy, workflow = configs / "model.toml", configs / "workflow.toml"
-    shutil.copyfile(model, model_copy)
+    model_data = {k: v for k, v in settings.public_dict().items() if v is not None}
+    model_data["max_calls"] = options["max_calls"]
+    model_copy.write_text(toml_text({"gpt": model_data}), encoding="utf-8")
     shutil.copyfile(PROJECT_ROOT / "configs/workflows/gpt_default.toml", workflow)
     inputs = list((PROJECT_ROOT / "src/robot_tasks").rglob("*.py"))
     inputs += list((PROJECT_ROOT / "configs/robots").glob("*.toml")) + list((PROJECT_ROOT / "configs/cameras").glob("*.toml"))
     inputs += [model, PROJECT_ROOT / "configs/workflows/gpt_default.toml"]
     inputs.append(PROJECT_ROOT / "assets/tuojing/l1_scoring_geometry.json")
+    inputs += [PROJECT_ROOT / "assets/tuojing" / name for name in ("video_20261015.json", "video_scoring_geometry.json")]
+    inputs += list((PROJECT_ROOT / "configs/task_references").glob("*.json"))
     tasks = []
     for key in ids:
         spec = TASKS[key]
@@ -447,7 +526,13 @@ def execute_batch(root, manifest, state, environment):
         def started(process):
             state[task["id"]] = {"status": "running", "directory": str(directory), **process}
             write_json(root / "state.json", state)
-        process = run_job(command, directory, environment, options["wall_time_s"] + options["startup_grace_s"], started)
+        timeout = options["wall_time_s"] + options["startup_grace_s"] if options["wall_time_s"] > 0 else None
+        job_environment = dict(environment)
+        if options["wall_time_s"] > 0:
+            job_environment["GPT_BENCHMARK_WALL_DEADLINE_MONOTONIC"] = str(time.monotonic() + options["wall_time_s"])
+            if options["max_calls"] == 0:
+                job_environment["GPT_BENCHMARK_PERSISTENT_MODEL_RETRY"] = "1"
+        process = run_job(command, directory, job_environment, timeout, started)
         summary = collect_result(directory, process, options["dry_run"], task["cameras"])
         state[task["id"]].update(status="interrupted" if process["interrupted"] else "done", summary=summary)
         write_json(root / "state.json", state)
@@ -466,10 +551,37 @@ def execute_batch(root, manifest, state, environment):
             print("Batch stopped: provider authentication/permission/quota error; fix it before --resume", flush=True)
             return 2
     counts = summarize(root, manifest, state)
-    return 2 if any(counts[key] for key in ("infrastructure_error", "timeout", "interrupted", "pending", "video_incomplete")) else 0
+    return 2 if any(counts[key] for key in ("infrastructure_error", "timeout", "interrupted", "pending", "video_incomplete", "video_unverified")) else 0
+
+
+@contextmanager
+def console_interrupts():
+    """Accept Ctrl+C even when a Windows launcher inherited the ignore flag."""
+    if os.name == "nt":
+        import ctypes
+        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        if not kernel.SetConsoleCtrlHandler(None, False):
+            error = ctypes.get_last_error()
+            if error != 6:  # A detached process has no console to configure.
+                raise ctypes.WinError(error)
+    previous = {}
+    try:
+        for name in ("SIGINT", "SIGBREAK"):
+            number = getattr(signal, name, None)
+            if number is not None:
+                previous[number] = signal.signal(number, signal.default_int_handler)
+        yield
+    finally:
+        for number, handler in previous.items():
+            signal.signal(number, handler)
 
 
 def main(argv=None):
+    with console_interrupts():
+        return _main(argv)
+
+
+def _main(argv=None):
     parser = argparse.ArgumentParser(description="串行运行 GPT 任务并录制视频；默认覆盖全部仿真任务")
     selection = parser.add_mutually_exclusive_group()
     selection.add_argument("--all", action="store_true", help="全部任务；仅真机任务记录为 skipped（默认）")
@@ -480,8 +592,8 @@ def main(argv=None):
     parser.add_argument("--output", type=Path, help="新批次目录，必须尚不存在")
     parser.add_argument("--env-file", type=Path, default=PROJECT_ROOT / ".env")
     parser.add_argument("--model-config", type=Path)
-    parser.add_argument("--max-calls", type=int)
-    parser.add_argument("--wall-time-s", type=float)
+    parser.add_argument("--max-calls", type=int, help="Model-call cap (default 100); 0 disables the cap")
+    parser.add_argument("--wall-time-s", type=float, help="Episode wall-time limit in seconds; default 0 disables the limit")
     parser.add_argument("--startup-grace-s", type=float)
     parser.add_argument("--seed", type=int)
     parser.add_argument("--reasoning-effort", choices=("low", "medium", "high", "xhigh", "max"))
@@ -491,12 +603,12 @@ def main(argv=None):
                         help="本批次开启 RGB-D；默认使用任务配置（RGB），续跑沿用已保存设置")
     args = parser.parse_args(argv)
     try:
-        if args.max_calls is not None and not 1 <= args.max_calls <= 1000:
-            raise ValueError("--max-calls must be in [1, 1000]")
+        if args.max_calls is not None and not 0 <= args.max_calls <= 1000:
+            raise ValueError("--max-calls must be in [0, 1000]; zero disables the cap")
         for name in ("wall_time_s", "startup_grace_s"):
             value = getattr(args, name)
-            if value is not None and (not math.isfinite(value) or value < (0 if name == "startup_grace_s" else .001)):
-                raise ValueError(f"--{name.replace('_', '-')} must be finite and positive (grace may be zero)")
+            if value is not None and (not math.isfinite(value) or value < 0):
+                raise ValueError(f"--{name.replace('_', '-')} must be finite and nonnegative (zero disables the wall-time limit)")
         if args.seed is not None and args.seed < 0:
             raise ValueError("--seed must be nonnegative")
         resuming = args.resume or args.summarize
@@ -545,8 +657,8 @@ def worker_environment(env_file, manifest):
     if not manifest["options"]["dry_run"]:
         settings = load_gpt_settings(Path(manifest["model_config"]))
         if settings.transport == "codex_cli":
-            from .policies.codex_cli import CodexCLIClient
-            CodexCLIClient(settings).require_chatgpt_login()
+            from .policies.codex_bridge import create_codex_client
+            create_codex_client(settings).require_chatgpt_login()
         else:
             environment = load_env(env_file.expanduser().resolve(), environment)
             # Validate without changing the supervisor's environment or writing the key.

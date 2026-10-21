@@ -9,6 +9,7 @@ from .integrationtest.registry import CHECKS
 from .integrationtest.simulation_process import run_check_process
 from .policies.responses import ModelError
 from .registry import TASKS, resolve_task
+from .task_ids import public_task_id
 from .robots.audit import audit_robot
 from .robots.profile import load_robot_profile
 
@@ -24,7 +25,7 @@ def _list(args) -> int:
     else:
         for spec in TASKS.values():
             status = "implemented" if spec.implemented else ("real_only" if spec.evidence == "real_only" else "template_only")
-            print(f"{spec.task_id} | {spec.name} | {status} | {spec.default_config} | {spec.evidence}")
+            print(f"{public_task_id(spec.task_id)} | {spec.name} | {status} | {spec.default_config} | {spec.evidence}")
     return 0
 
 
@@ -56,7 +57,8 @@ def _inspect(args) -> int:
             config = prepare(config)
     audit = audit_robot(config.robot)
     print(json.dumps({
-        "task_id": spec.task_id, "name": spec.name, "config": str(config.source),
+        "task_id": spec.task_id, "public_task_id": public_task_id(spec.task_id),
+        "name": spec.name, "config": str(config.source),
         "default_config": str(spec.default_config),
         "configuration_valid": audit.valid, "task_implemented": spec.implemented,
         "robot": config.robot_model, "available_arms": config.robot.available_arms,

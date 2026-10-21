@@ -119,16 +119,26 @@ def books(e, rows):
               >= p["support_z"] - 0.01}
     adjacent_supported = all(n in on_box and upright(rows[n], 0.45)
                              for n in ("upper_book", "lower_book"))
+    release_required = p.get("release_required", True)
+    support_held = held(rows["upper_book"], p["support_arm"])
+    if p.get("require_top_book_hold"):
+        # A support hand may carry the top book's weight. Requiring a force
+        # chain through the middle book would contradict that valid support.
+        adjacent_supported = bool("lower_book" in on_box and upright(rows["lower_book"], 0.45)
+                                  and support_held and quiet(rows["upper_book"]))
     complete = ("middle_extracted_while_held" in e.flags
                 and travel >= p["minimum_travel_m"] - 0.002
                 and "middle_book" in on_box and adjacent_supported
-                and all(released(r) for r in rows.values()))
+                and (not release_required or all(released(r) for r in rows.values()))
+                and (not p.get("require_top_book_hold") or support_held))
     return complete, {"outward_travel_m": travel, "required_travel_m": p["minimum_travel_m"],
         "middle_extracted": "middle_extracted_while_held" in e.flags,
         "adjacent_books_supported": adjacent_supported,
-        "release_required": True, "complete_extraction_required": False,
+        "release_required": release_required, "top_book_held": support_held,
+        "complete_extraction_required": False,
         "stages": {"visible_extraction": "middle_extracted_while_held" in e.flags,
-                   "released_supported": complete}}, ""
+                   "released_supported": complete and all(released(r) for r in rows.values()),
+                   "supported_pull_complete": complete}}, ""
 
 
 def drawer(e, rows):
@@ -172,7 +182,7 @@ def drawer(e, rows):
         "pulled_while_held" in e.flags
         and "opening_reached" in e.flags
         and returned
-        and released(row)
+        and (released(row) or not p.get("release_required", True))
         and quiet(row)
         and not guide_deviation
         and not beyond_stop
@@ -191,10 +201,12 @@ def drawer(e, rows):
             "returned_to_initial_opening": returned,
             "released": released(row),
             "quiet": bool(quiet(row)),
-            "final_state": "pulled 50 mm, returned to initial opening, released",
+            "final_state": ("pulled 50 mm, returned to initial opening"
+                            + (", released" if p.get("release_required", True) else "")),
             "stages": {"grasped": "drawer" in e.touched,
                        "opened": "opening_reached" in e.flags,
-                       "returned_released": bool(complete)},
+                       "returned_released": bool(complete and released(row)),
+                       "returned": bool(complete)},
             "quality_affects_success": False,
             "impact_speed_reference_m_s": p["max_speed_m_s"],
             "peak_speed_m_s": e.peak_speeds.get("drawer", 0.0),

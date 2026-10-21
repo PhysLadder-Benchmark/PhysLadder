@@ -126,14 +126,18 @@ class OrangeLiftTests(unittest.TestCase):
     def test_task_prompt_physics_and_goal_agree(self):
         entry, cfg = resolve_task("L2-06")
         cfg = entry.factory.prepare_config(cfg)
-        self.assertEqual(cfg.raw["orange_physics"]["dynamic_friction"], 2.0)
+        self.assertNotIn("orange_physics", cfg.raw)  # Retain latest delivered FEM material.
+        from robot_tasks.tasks.bench.arm_selection import resolve_bench_spec
+        current = resolve_bench_spec(cfg.raw['task'], cfg.robot)
         self.assertEqual(
             cfg.raw["task"]["scoring_protocol"],
-            self.spec.parameters["scoring_protocol"],
+            current.parameters["scoring_protocol"],
         )
         self.assertEqual(cfg.arms, ("right",))
         self.assertEqual(cfg.observation_arms, ("left",))
         self.assertTrue(self.spec.design.release)
         self.assertFalse(self.spec.design.fixtures)
-        self.assertIn("5-20 cm", cfg.instruction)
+        self.assertIn("5–20 cm", cfg.instruction)
+        self.assertIn("without damaging it", cfg.instruction)
+        self.assertNotIn("Firm squeezing is allowed", cfg.instruction)
         self.assertAlmostEqual(self.spec.design.articles[0].initial[2], self.spec.parameters["support_z"] + .002)

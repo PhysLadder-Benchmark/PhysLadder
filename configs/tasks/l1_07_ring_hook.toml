@@ -1,14 +1,15 @@
-# Run from the repository root in the Isaac Sim environment; uses the selected model provider.
-# launch_command / launch_command_conda below are documentation, not auto-executed shell code.
 schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_tuojing_lab_l1.toml"
-active_arms = ["left"]
-observation_arms = ["right"]
+profile = "../robots/r5_video_20261015.toml"
+active_arms = ["right"]
+observation_arms = ["left"]
 
 [simulation]
+# Preserve Hym L1 motion settings; L2/L3 keep their own profiles.
+robot_gravity_compensation = false
+cartesian_completion_tolerance_m = 0.005
 environment = "tuojing_lab_v4"
 camera_profile = "../cameras/r5_tuojing_lab.toml"
 asset_directory = "../../build/tuojing_lab"
@@ -28,21 +29,25 @@ solver_velocity_iterations = 4
 model_config = "../models/gpt.toml"
 
 [task]
-verbatim_instruction = true
-prompt_source = "../prompts/feishu_english_20261014.json"
+launch_command = "python tools/launch.py run L1-07 --gui"
+scene_delivery = "video_20261015"
+initial_placement_profile = "baseline"
+prompt_protocol = "feishu_english_20261015_v1"
+reference_document = "https://my.feishu.cn/docx/QK4EdOD3hotgp4x782ycgoyyn6g"
+reference_sheet_id = "KyMjZ7"
+reference_sheet_revision = 324
+reference_sheet_row = 8
 id = "L1-07"
 name = "黄色空顶帽挂上木质挂架"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
 implementation = "household"
-arm_selection = "real_prompt"
-simulation_limitations = "Photo-proportion variant: yellow visor uniformly resized to 80% (about 188 x 238 x 69 mm), with all 208 open band/brim convex pieces, visual meshes, COM/inertia and scoring geometry updated together. Estimated size, not hardware calibration. Fixed 82-cm wooden rack and dimensioned 190 x 200 x 100 mm box unchanged; no cloth deformation. A native free-standing teal box supports the visor on the right; rack on the left."
-launch_command = "python tools/launch.py run L1-07 --gui"
-launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L1-07 --gui"
-instruction = "Pick up the hat with the left arm, hang it on the lowest rod by its opening, and release it."
+simulation_limitations = "Latest complete 2026-10-15 scene. Visible prop meshes and materials are retained. The support box uses five BOX colliders and a 0.6 kg simulation tuning mass (not a measured mass); the visor uses 32 band and 12 brim convex segments with an open centre. Robot joint homes and gripper openings use per-task video estimates. All camera mounts and lens parameters use the shared L3-03 rig; overview is fixed in world space and wrist cameras follow their own arms. Video-guided geometry and illumination remain uncalibrated; rigid flowers/cups/bristles and contact-driven wiping are explicit simulation approximations. Known per-task discrepancies are recorded in reports/reference_alignment_20261015.json."
+instruction = """
+Use the left arm to hang the hat on the lowest rod through its head opening.
+"""
 
-scene_context = "按用户确认的真机照片：固定木架在左、黄色空顶帽在右侧蓝绿色盒面，帽子未固定。左臂拿整顶帽子，使头孔套过最低实际挂杆的圆头，松爪撤开，由该杆独立承托；允许自然晃动，不需要额外静止等待。右臂仅观察，双臂不得干涉。指令中的“另一侧”指上一轮抓点的对侧，但本次是独立初始化，未提供上一轮抓点；不能臆造抓点或据此加隐藏评分条件。应根据当前观测选择可抓且不妨碍穿杆的一侧。"
-
-# Chinese setup/props description; keep this the final task attribute.
-description = "对齐飞书 2026-10-12 场景说明与当轮指令摘要，非完整真机系统提示词。按用户确认的真机照片：固定木架在左、黄色空顶帽在右侧蓝绿色盒面，帽子未固定。左臂拿整顶帽子，使头孔套过最低实际挂杆的圆头，松爪撤开，由该杆独立承托；允许自然晃动，不需要额外静止等待。右臂仅观察，双臂不得干涉。指令中的“另一侧”指上一轮抓点的对侧，但本次是独立初始化，未提供上一轮抓点；不能臆造抓点或据此加隐藏评分条件。应根据当前观测选择可抓且不妨碍穿杆的一侧。 评分依据实际进入、释放承托及指令要求的回位；除挂帽不额外等待外，稳定验证 1 s，允许 5 mm 位移、5 度倾斜变化，回位容差 0.05 rad / 0.05 rad/s。不要求最低抬升高度或额外 TCP 包络间距。这些是仿真验证容差，不是真机操作精度。"
+description = """
+Complete 2026-10-15 assets: room, table, robot mounts, lighting and task props. Robot initial joints and gripper openings follow the per-task video-visible setup. All camera views use the shared L3-03 rig. Prop placements follow the delivered video reconstruction. Task left/right use the robot perspective; overview-image left/right are reversed. No older individual prop is imported. Physical parameters remain uncalibrated.
+"""

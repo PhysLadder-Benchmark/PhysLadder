@@ -202,7 +202,8 @@ class CodexBoundaryTests(unittest.TestCase):
             policy = _gpt_policy(config, model)
         self.assertEqual(policy.settings.transport, "codex_cli")
         self.assertEqual(policy.settings.service_tier, "ultrafast")
-        self.assertEqual(policy.settings.reasoning_effort, "medium")
+        from robot_tasks.policies.model_config import load_gpt_settings
+        self.assertEqual(policy.settings.reasoning_effort, load_gpt_settings(model).reasoning_effort)
         self.assertEqual(policy.settings.max_calls, 100)
         self.assertEqual(policy.run_metadata["provider"]["service_tier"], "ultrafast")
 

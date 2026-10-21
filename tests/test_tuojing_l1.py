@@ -8,7 +8,7 @@ import numpy as np
 
 from robot_tasks.planning.scene import article_surface, capsule_mesh, collider_meshes
 from robot_tasks.tasks.bench.evaluation import BenchEvaluator
-from robot_tasks.tasks.bench.scoring_l1 import cups, flower, insertion
+from robot_tasks.tasks.bench.scoring_l1 import cups, flower, plug
 from robot_tasks.tasks.bench.spec import build_spec
 from robot_tasks.tasks.l1.specs import pose
 from test_household_tasks import measurement
@@ -27,33 +27,33 @@ class NativeTaskScoringTests(unittest.TestCase):
         spec = build_spec("L1-01")
         mug = pose_transform(spec.design.fixture_pose)
         pen = spec.design.articles[0]
-        self.assertEqual(spec.design.fixture_asset, "tuojing:black_ceramic_mug_20261011")
+        self.assertEqual(spec.design.fixture_asset, "tuojing:black_ceramic_mug")
         # From the table front, +X is image right and -Y points toward the viewer.
         self.assertGreater(pen.initial[0], mug[0, 3])
         self.assertAlmostEqual(pen.initial[1], mug[1, 3])
         np.testing.assert_allclose(mug[:3, 0], [0, -1, 0], atol=1e-8)
-        planes, floor, rim = cup_cavity('black_ceramic_mug_20261011')
+        planes, floor, rim = cup_cavity('black_ceramic_mug')
         self.assertAlmostEqual(floor, .007)
         self.assertAlmostEqual(rim, .090)
         # The mug bulges below its mouth. A single cylinder/frustum would lose this.
         bulge = np.array([.045, 0, .045])
         self.assertGreater(np.min(planes[:,3] - planes[:,:3] @ bulge), 0)
-        fit = lambda t: cavity_fit('capped_marker_20261011', t, .001, receptacle='black_ceramic_mug_20261011')[0]
+        fit = lambda t: cavity_fit('whiteboard_marker', t, .001, receptacle='black_ceramic_mug')[0]
         self.assertTrue(fit(pose_transform(pose(0, 0, floor))))
         # Fits this mug, but not the old paper cup. No enlargement of tolerance.
         near_rim = pose_transform(pose(.031, 0, .075))
         self.assertTrue(fit(near_rim))
-        self.assertFalse(cavity_fit('capped_marker_20261011', near_rim, .001)[0])
+        self.assertFalse(cavity_fit('whiteboard_marker', near_rim, .001)[0])
         for xyz in ((0, 0, .004), (0, 0, .10), (.045, 0, .075), (.06, 0, .007)):
             with self.subTest(xyz=xyz):
                 self.assertFalse(fit(pose_transform(pose(*xyz))))
 
     def test_rigid_rose_requires_release_support_and_native_stem_inside_cup(self):
         spec = build_spec("L1-09")
-        article, source_cup, source_guide = spec.design.articles
-        self.assertEqual(article.asset, "tuojing:cream_tulip_20261011")
+        article, = spec.design.articles
+        self.assertEqual(article.asset, "tuojing:artificial_rose")
         self.assertEqual(spec.joints, ())
-        self.assertEqual(spec.design.fixture_asset, "tuojing:ripple_paper_cup_20261011")
+        self.assertEqual(spec.design.fixture_asset, "tuojing:ripple_paper_cup")
         e = BenchEvaluator(spec, {article.name: article.initial})
         rows = measurement(spec)
         r = rows["rose"]
@@ -81,7 +81,7 @@ class NativeTaskScoringTests(unittest.TestCase):
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
         rows = measurement(spec)
         r = rows["rose"]
-        # The new 3.8-mm stem may rest near the inner wall; using its larger
+        # The real 2.1-mm stem may rest near the inner wall; using its larger
         # planner-clearance envelope for scoring would reject this placement.
         r["pose"] = list(pose(spec.parameters["vase_xy"][0] + .024,
                               spec.parameters["vase_xy"][1], spec.parameters["floor"] + .001,
@@ -98,21 +98,21 @@ class NativeTaskScoringTests(unittest.TestCase):
         r = rows["plug"]
         r["pose"] = list(article.goal)
         r["fixture_force_n"], r["bench_force_n"] = .54, 0
-        self.assertTrue(insertion(e, rows)[0])
+        self.assertTrue(plug(e, rows)[0])
         e.grasped.add("plug")
-        self.assertTrue(insertion(e, rows)[0])
+        self.assertTrue(plug(e, rows)[0])
         # The pair is symmetric at 180 degrees, but not 90 degrees.
         for yaw, expected in ((3 * np.pi / 2, True), (0, False)):
             r["pose"] = list(pose(*article.goal[:3], yaw=yaw))
-            self.assertEqual(insertion(e, rows)[0], expected)
+            self.assertEqual(plug(e, rows)[0], expected)
         r["pose"] = list(article.goal)
         r["pose"][0] += .003
-        self.assertFalse(insertion(e, rows)[0])
+        self.assertFalse(plug(e, rows)[0])
         r["pose"] = list(article.goal)
         r["pose"][2] += .01
-        self.assertTrue(insertion(e, rows)[0])
+        self.assertTrue(plug(e, rows)[0])
         r["pose"][2] += .01
-        self.assertFalse(insertion(e, rows)[0])
+        self.assertFalse(plug(e, rows)[0])
 
     def test_charger_in_source_holder_is_incomplete_and_tabletop_recovery_allowed(self):
         spec = build_spec("L1-03")
@@ -138,8 +138,8 @@ class NativeTaskScoringTests(unittest.TestCase):
         np.testing.assert_allclose(charger.initial[:2], base.initial[:2])
         np.testing.assert_allclose(strip[:3, 1], [-1, 0, 0], atol=1e-8)
         np.testing.assert_allclose(pose_transform(charger.initial)[:3, 2], [0, 0, 1])
-        self.assertGreater(charger.initial[2] + .018, base.initial[2] + .045)
-        self.assertLess(charger.initial[2], base.initial[2] + .045)
+        self.assertGreater(charger.initial[2] + .018, base.initial[2] + .020)
+        self.assertLess(charger.initial[2], base.initial[2] + .020)
 
     def test_cup_rim_balancing_and_interpenetration_do_not_count_as_nesting(self):
         spec = build_spec("L1-08")
@@ -177,11 +177,11 @@ class NativeTaskScoringTests(unittest.TestCase):
         top["pose"][0] += .03
         self.assertFalse(cups(e, rows)[0])
 
-    def test_toppled_key_or_cup_on_table_is_not_a_terminal_failure(self):
+    def test_toppled_cup_on_table_is_not_a_terminal_failure(self):
         from robot_tasks.robots.transforms import pose_transform
         from robot_tasks.tasks.l1.specs import local_corners
 
-        for task_id, name in (("L1-05", "key"), ("L1-08", "upper_cup")):
+        for task_id, name in (("L1-08", "upper_cup"),):
             spec = build_spec(task_id)
             rows = measurement(spec)
             article = next(a for a in spec.design.articles if a.name == name)

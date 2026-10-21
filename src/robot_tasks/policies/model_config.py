@@ -19,7 +19,7 @@ class GPTSettings:
     structured_output: bool = True
     max_output_tokens: int | None = None
     history_steps: int = 2
-    max_calls: int = 6
+    max_calls: int = 6  # Zero disables the model-call cap.
     image_max_edge: int = 768
     transport: str = "responses"
     codex_bin: str = "codex"
@@ -51,7 +51,7 @@ class GPTSettings:
             raise ValueError("service_tier must be fast or ultrafast; omit it for the provider default")
         if type(self.structured_output) is not bool:
             raise ValueError("structured_output must be boolean")
-        for name, lower, upper in (("history_steps", 0, 20), ("max_calls", 1, 1000), ("image_max_edge", 64, 2048)):
+        for name, lower, upper in (("history_steps", 0, 20), ("max_calls", 0, 1000), ("image_max_edge", 64, 2048)):
             value = getattr(self, name)
             if type(value) is not int or not lower <= value <= upper:
                 raise ValueError(f"{name} must be an integer in [{lower}, {upper}]")

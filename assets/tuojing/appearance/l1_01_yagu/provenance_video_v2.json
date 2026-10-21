@@ -1,0 +1,24 @@
+{
+  "revision": "yagu_black_h_video_wrap_v2",
+  "texture": "appearance/l1_01_yagu/label_video_v2.png",
+  "bytes": 1424880,
+  "sha256": "a214c809284879d7979606ec898c620c277c2b2248796a0a5b578ccd2cb206bd",
+  "source": "User-supplied 22.17-second marker rotation video; imagegen reconstruction",
+  "limitation": "Complete circumference reconstructed; fine print, pictograms and barcode approximate, not exact manufacturer artwork or a scannable barcode",
+  "geometry_unchanged": true,
+  "video_file": "飞书20261016-004058.qt",
+  "video_sha256": "79b8a25becd0bf6fdc21b273321912ccbcc9537febcc17c7bf10c1d4523bbb9c",
+  "video_duration_s": 22.166667,
+  "reference_frames": "video_references",
+  "readable_text": [
+    "笔王H 成膜好擦",
+    "Model-H",
+    "Whiteboard Marker 成膜H型白板笔",
+    "YAKUDO"
+  ],
+  "material_description": "Black cap; navy printed wrap; clear neck and pale ring; grey ribbed tail collar",
+  "method": "Built-in imagegen texture reconstruction, preserved existing geometry and collision",
+  "required_render_setting": {
+    "/rtx/translucency/worldEps": 1e-05
+  }
+}

@@ -107,12 +107,9 @@ class OptimizationTests(unittest.TestCase):
         self.assertNotIn("uniform cylindrical peg", policy.instructions)
         prepared = TASKS["L1-01"].factory.prepare_config(insertion)
         self.assertNotIn("Insert at least 0.04 m", prepared.instruction)
-        # The real-trial instruction is verbatim, including independent release
-        # and return. Do not reintroduce the old entry-only simulation recipe.
-        self.assertEqual(prepared.instruction, insertion.instruction)
-        self.assertIn("松爪撤离", prepared.instruction)
-        self.assertIn("双臂回位", prepared.instruction)
-        self.assertNotIn("You may keep holding the marker after entry", prepared.instruction)
+        from robot_tasks.tasks.bench.english_reference import reference_tasks
+        self.assertEqual(prepared.instruction.strip(), reference_tasks()['L1-01']['simulation_prompt_en'])
+        self.assertIn("then release it", prepared.instruction)
         self.assertNotIn("one simulation second of released cup support", prepared.instruction)
         self.assertNotIn("Both flat ends are equivalent", prepared.instruction)
         self.assertNotIn("0.36", prepared.instruction)

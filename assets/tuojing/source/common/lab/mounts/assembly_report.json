@@ -1,0 +1,45 @@
+{
+  "max_sampled_intersection_depth_mm": 7.125211729589568e-05,
+  "T_link6_from_cad_m": [
+    [
+      1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      1.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "datum_evidence": "CAD support surface Z=30.3048mm matches native link6 top Z=30.304791mm; X/Y datums preserved",
+  "native_link6_unique_vertices": 6346,
+  "vertices_inside_mount_solid": 51,
+  "inside_bounds_mm": [
+    [
+      4.19495,
+      -26.125,
+      23.60999
+    ],
+    [
+      57.0,
+      20.77533,
+      30.30479
+    ]
+  ],
+  "status": "geometric datum alignment, fastener assembly not physically verified"
+}

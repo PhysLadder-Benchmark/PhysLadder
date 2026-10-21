@@ -4,7 +4,7 @@ schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_tuojing_lab.toml"
+profile = "../robots/r5_video_20261015.toml"
 active_arms = ["right"]
 observation_arms = ["left"]
 
@@ -25,14 +25,6 @@ self_collision = false
 solver_position_iterations = 32
 solver_velocity_iterations = 0
 
-[orange_physics]
-# Engineering FEM contact qualification, not measured orange tissue properties.
-# Original asset: 35 kPa and dynamic friction 0.45. Mass and mesh stay native.
-youngs_modulus_pa = 100000.0
-dynamic_friction = 2.0
-contact_offset_m = 0.003
-rest_offset_m = 0.0015
-
 [policy]
 model_config = "../models/gpt.toml"
 
@@ -40,28 +32,32 @@ model_config = "../models/gpt.toml"
 physics_dt_s = 0.004166666666666667 # 240 Hz, checked in the complete metre-scale laboratory.
 
 [completion]
-return_home = true
+return_home = false
 home_tolerance_rad = 0.05
 
 [task]
-verbatim_instruction = true
-prompt_source = "../prompts/feishu_english_20261014.json"
+scene_delivery = "video_20261015"
+prompt_protocol = "feishu_english_20261015_v1"
+reference_document = "https://my.feishu.cn/docx/QK4EdOD3hotgp4x782ycgoyyn6g"
+reference_sheet_id = "KyMjZ7"
+reference_sheet_revision = 324
+reference_sheet_row = 20
 # Guided visual execution; common information boundaries are appended by BenchTask.
-prompt_protocol = "guided_visual_l2_v3"
-scoring_protocol = "soft_box_lift_return_v7"
+scoring_protocol = "feishu_english_20261015_v1"
 id = "L2-06"
 name = "绿盒橘子抬升并放回"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented_proxy"
 implementation = "household"
-simulation_limitations = "Native 19.2 g GPU FEM orange, 50 x 32.7 x 25.3 mm. Material overrides are engineering estimates. No tissue damage claim. Support and release are measured geometrically for FEM; no grasp attachment."
+simulation_limitations = "Latest complete 2026-10-15 scene. Latest prop geometry, materials and masses are retained. Robot joint homes and gripper openings use per-task video estimates. All camera mounts and lens parameters use the shared L3-03 rig; overview is fixed in world space and wrist cameras follow their own arms. Video-guided geometry and illumination remain uncalibrated; rigid flowers/cups/bristles and contact-driven wiping are explicit simulation approximations. Known per-task discrepancies are recorded in reports/reference_alignment_20261015.json."
 launch_command = "python tools/launch.py run L2-06 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-06 --gui"
-instruction = "Pick up the orange segment with the left arm, lift it 5–20 cm, then place it back on the box and release it."
+instruction = """
+Use the left arm to lift the orange segment 5–20 cm without damaging it,  then place it back on the box and release it.
+"""
 
 # 中文布置和道具说明。
 description = """
-新版三瓣连体软橘子约50×32.7×25.3 mm、19.2 g；横置在固定绿盒凹面中央，长轴沿第三视角左右方向，果肉宽面平放。盒子中心(0.19565,1.30)m、外缘高100 mm、中央凹面高93.5 mm。右臂抓起，物体中心相对初态上升50—200 mm；再放回同一绿盒顶面并完全释放，左臂只观察。无需精确原点、额外持稳计时或组织损伤阈值；允许弹性挤压。FEM使用100 kPa和动摩擦2.0的既有工程覆盖，未做实物材料标定。
-所有道具按要求释放，并且双臂回到初始关节位置，才算完成；关节回位容差0.05 rad。不自动执行回位。资产来源：飞书《GPT6评测任务及资产管理》2026-10-11下载包。
+Complete 2026-10-15 assets: room, table, robot mounts, lighting and task props. Robot initial joints and gripper openings follow the per-task video-visible setup. All camera views use the shared L3-03 rig. Prop placements follow the delivered video reconstruction. Task left/right use the robot perspective; overview-image left/right are reversed. No older individual prop is imported. Physical parameters remain uncalibrated.
 """

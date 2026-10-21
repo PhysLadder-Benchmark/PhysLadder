@@ -1,0 +1,33 @@
+{
+  "asset_id": "arx_arms",
+  "model_id": "r5a",
+  "source": "/vepfs-C\u533a/visuotactile2/asset/robots/manipulators/arx_arms/upstream/ARX_Model/R5/R5a/urdf/R5a.urdf",
+  "prepared_urdf": "/vepfs-C\u533a/visuotactile2/asset/robots/manipulators/arx_arms/isaacsim/generated/r5a/source.urdf",
+  "usd_path": "/vepfs-C\u533a/visuotactile2/asset/robots/manipulators/arx_arms/isaacsim/generated/r5a/asset.usd",
+  "fix_base": true,
+  "missing_references": [],
+  "mesh_resolution_count": 18,
+  "source_links": 9,
+  "source_joints": 8,
+  "status": "validated_converted",
+  "stage_opens": true,
+  "prims": 157,
+  "meshes": 18,
+  "joints": 9,
+  "articulations": [
+    "/R5a/root_joint"
+  ],
+  "bbox_m": [
+    0.5317397750914097,
+    0.17399999499320984,
+    0.25000026248716356
+  ],
+  "meters_per_unit": 1.0,
+  "unresolved_dependencies": [],
+  "isaac_builtin_materials": [
+    "OmniPBR.mdl"
+  ],
+  "removed_empty_importer_visuals": [],
+  "runtime_physics_tested": false,
+  "source_type": "official_urdf_locally_converted_in_isaac_sim_5_1"
+}

@@ -4,11 +4,15 @@ schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_tuojing_lab.toml"
+profile = "../robots/r5_video_20261015.toml"
 active_arms = ["left", "right"]
 observation_arms = []
 
 [simulation]
+# Preserve the established L3 controller profile. GPU selection is a launch option.
+robot_gravity_compensation = false
+cartesian_completion_tolerance_m = 0.005
+gpu_dynamics = true
 environment = "tuojing_lab_v4"
 camera_profile = "../cameras/r5_tuojing_lab.toml"
 asset_directory = "../../build/tuojing_lab"
@@ -32,12 +36,16 @@ physics_dt_s = 0.0005208333333333333
 model_config = "../models/gpt.toml"
 
 [completion]
-return_home = true
+return_home = false
 home_tolerance_rad = 0.05
 
 [task]
-verbatim_instruction = true
-prompt_source = "../prompts/feishu_english_20261014.json"
+scene_delivery = "video_20261015"
+prompt_protocol = "feishu_english_20261015_v1"
+reference_document = "https://my.feishu.cn/docx/QK4EdOD3hotgp4x782ycgoyyn6g"
+reference_sheet_id = "KyMjZ7"
+reference_sheet_revision = 324
+reference_sheet_row = 26
 id = "L3-05"
 name = "绿盒横置螺杆双臂旋下螺母"
 execution_target = "simulation_and_real"
@@ -46,10 +54,15 @@ status = "implemented_proxy"
 implementation = "loose_nut"
 launch_command = "python tools/launch.py run L3-05 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L3-05 --gui"
-instruction = "Pick up and hold the threaded rod steady with the right arm, then unscrew the hex nut counterclockwise with the left arm until it comes off."
-
-# Chinese setup and props; final task attribute.
-description = """
-新版锥尾螺杆长140 mm、螺距2 mm，螺母对边24 mm/厚13 mm；主体约185.6 g，螺母约32.1 g。横置于两臂正中间的绿盒凹面，主体朝画面左侧、螺母朝右；左臂拿主体，右臂旋螺母。初态沿真实螺旋预松14 mm/7圈，保留约5 mm啮合；新资产SDF螺纹接触，不加螺旋关节。完全旋离后两部分放到盒面或桌面并释放。
-所有道具按要求释放，并且双臂回到初始关节位置，才算完成；关节回位容差0.05 rad。不自动执行回位。资产来源：飞书《GPT6评测任务及资产管理》2026-10-11下载包。
+instruction = """
+Pick up and hold the threaded rod steady with the right arm, then unscrew the hex nut counterclockwise with the left arm until it comes off.
 """
+
+# English scene context; task instruction retains source robot-perspective names.
+description = """
+Complete 2026-10-15 assets: room, table, robot mounts, lighting and task props. Robot initial joints and gripper openings follow the per-task video-visible setup. All camera views use the shared L3-03 rig. Prop placements follow the delivered video reconstruction. Task left/right use the robot perspective; overview-image left/right are reversed. No older individual prop is imported. Physical parameters remain uncalibrated.
+"""
+
+[execution]
+model_budget_basis = "completed_generations"
+retry_model_errors = true

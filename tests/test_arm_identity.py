@@ -65,7 +65,11 @@ class ArmIdentityTests(unittest.TestCase):
                     self.assertEqual(next(f for f in frame_info if f["camera"] == arm + "_wrist")["owner_arm"], arm)
                 self.assertEqual(policy.run_metadata["arm_identity_protocol"], ARM_IDENTITY_PROTOCOL)
                 self.assertEqual(policy.run_metadata["arm_identities"], arm_identities(config))
-                self.assertIn("do not swap them again", policy.instructions)
+                if config.raw.get("task", {}).get("scene_delivery"):
+                    self.assertIn("ROBOT'S perspective", policy.instructions)
+                    self.assertIn("LEFT arm is on overview-image RIGHT", policy.instructions)
+                else:
+                    self.assertIn("do not swap them again", policy.instructions)
                 self.assertIn("stationary support or background", policy.instructions)
                 policy.client.generate.assert_not_called()
 
@@ -94,7 +98,7 @@ class ArmIdentityTests(unittest.TestCase):
                 decode_sparse_action(json.dumps({"commands": [{**row, "arm": wrong}], "request_stop": False}), config, observation)
 
     def test_observer_does_not_inherit_real_working_arm_permission(self):
-        config = self.config()
+        config = self.config("L3-11")
         row = {"arm": "left", **dict.fromkeys(FIELDS), "gripper": 0.}
         with self.assertRaisesRegex(ValueError, "Observation arm left"):
             decode_sparse_action(json.dumps({"commands": [row], "request_stop": False}), config,

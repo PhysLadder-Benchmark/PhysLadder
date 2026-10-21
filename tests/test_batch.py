@@ -17,6 +17,39 @@ from robot_tasks.runtime_config import RuntimeConfig
 
 
 class BatchTests(unittest.TestCase):
+    def test_request_log_mirror_handles_partial_and_escaped_lines(self):
+        stream = io.BytesIO()
+        mirror = batch.RequestLogMirror(stream)
+        output = io.StringIO()
+
+        def append(data):
+            position = stream.tell()
+            stream.seek(0, 2)
+            stream.write(data)
+            stream.seek(position)
+
+        with redirect_stdout(output):
+            append(b"native startup\nR5_POLICY_REQUEST 1\\r")
+            mirror.poll()
+            self.assertEqual(output.getvalue(), "")
+            append(b"\\n[request 1] thinking...\r\n[request 1] response received")
+            mirror.poll()
+            mirror.poll(final=True)
+        self.assertEqual(output.getvalue().splitlines(), [
+            "R5_POLICY_REQUEST 1", "[request 1] thinking...", "[request 1] response received"])
+
+    def test_run_job_mirrors_requests_and_keeps_full_log(self):
+        directory = self.root / "mirror"
+        script = "print('startup noise', flush=True); print('R5_POLICY_REQUEST 1', flush=True); print('[request 1] response received', flush=True)"
+        output = io.StringIO()
+        with redirect_stdout(output):
+            result = batch.run_job([sys.executable, "-c", script], directory, dict(os.environ), 15, lambda _: None)
+        self.assertEqual(result["returncode"], 0)
+        self.assertIn("R5_POLICY_REQUEST 1", output.getvalue())
+        self.assertIn("[request 1] response received", output.getvalue())
+        self.assertNotIn("startup noise", output.getvalue())
+        self.assertIn("startup noise", (directory / "process.log").read_text(encoding="utf-8"))
+
     def setUp(self):
         # Reproduce Windows CI's legacy text-file default on every platform.
         # Explicit UTF-8 must work without relying on PYTHONUTF8 or the OS locale.
@@ -73,6 +106,34 @@ class BatchTests(unittest.TestCase):
                 self.assertEqual(manifest["options"]["reasoning_effort"], expected)
                 config = load_config(root / "configs/L1-01.toml")
                 self.assertEqual(config.raw["policy"]["reasoning_effort"], expected)
+
+    def test_default_and_zero_wall_time_disable_both_deadlines(self):
+        original = batch.run_job
+        for name, flags in (("unlimited-default", ()), ("unlimited-zero", ("--wall-time-s", "0"))):
+            with self.subTest(name=name):
+                root = self.root / name
+                with patch.object(batch, "run_job", wraps=original) as run:
+                    self.assertEqual(self.main("--tasks", "L1-01", "--output", str(root),
+                        "--model-config", str(self.model), "--dry-run", *flags), 0)
+                self.assertIsNone(run.call_args.args[3])
+                self.assertEqual(load_config(root / "configs/L1-01.toml").max_wall_time_s, 0)
+                manifest = json.loads((root / "batch.json").read_text(encoding="utf-8"))
+                self.assertEqual(manifest["options"]["wall_time_s"], 0)
+
+    def test_zero_call_cap_and_five_hours_are_frozen_for_each_task(self):
+        root = self.root / "five-hours"
+        with patch.object(batch, "run_job", wraps=batch.run_job) as run:
+            self.assertEqual(self.main("--tasks", "L2-01", "L2-07", "--output", str(root),
+                "--model-config", str(self.model), "--dry-run", "--max-calls", "0",
+                "--wall-time-s", "18000"), 0)
+        self.assertEqual(run.call_count, 2)
+        for call in run.call_args_list:
+            self.assertEqual(call.args[3], 18300)  # Separate deadline plus startup grace for each task.
+        for task in ("L2-01", "L2-07"):
+            config = load_config(root / f"configs/{task}.toml")
+            self.assertEqual(config.max_wall_time_s, 18000)
+            self.assertEqual(config.raw["execution"]["max_decisions"], 0)
+        self.assertIn("不限调用次数", (root / "summary.md").read_text(encoding="utf-8"))
 
     def test_depth_mode_is_frozen_for_batch_and_not_changed_on_resume(self):
         for name, flags, expected in (("rgb", (), False), ("rgbd", ("--depth",), True)):
@@ -199,9 +260,38 @@ class BatchTests(unittest.TestCase):
         with patch.object(batch.shutil, "which", return_value="ffprobe"), \
                 patch.object(batch.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, json.dumps({"streams": [{"width": 640, "height": 480, "duration": "1.2"}]}))):
             self.assertTrue(batch.inspect_video(video)["valid"])
-        with patch.object(batch.shutil, "which", return_value=None):
+        with patch.object(batch.shutil, "which", return_value=None), \
+                patch.object(batch, "inspect_video_with_opencv", return_value={"valid": None, "reason": "video_decoder_unavailable"}):
             self.assertIsNone(batch.inspect_video(video)["valid"])
         self.assertFalse(batch.inspect_video(self.root / "absent.mp4")["valid"])
+
+    def test_video_decode_without_ffprobe_checks_all_recorded_frames(self):
+        try:
+            import cv2
+            import numpy as np
+        except ImportError:
+            self.skipTest("OpenCV is required for this real video fixture")
+        video = self.root / "recording.mp4"
+        writer = cv2.VideoWriter(str(video), cv2.VideoWriter_fourcc(*"mp4v"), 12, (64, 48))
+        self.assertTrue(writer.isOpened())
+        for i in range(12):
+            writer.write(np.full((48, 64, 3), i * 16, dtype=np.uint8))
+        writer.release()
+        with patch.object(batch.shutil, "which", return_value=None):
+            result = batch.inspect_video(video, expected_frames=12)
+            self.assertTrue(result["valid"])
+            self.assertEqual(result["decoded_frames"], 12)
+            self.assertEqual(result["duration"], 1.0)
+            self.assertFalse(batch.inspect_video(video, expected_frames=13)["valid"])
+            broken = self.root / "truncated.mp4"
+            broken.write_bytes(video.read_bytes()[:video.stat().st_size // 2])
+            self.assertFalse(batch.inspect_video(broken, expected_frames=12)["valid"])
+
+    def test_unknown_video_verification_is_not_reported_as_incomplete(self):
+        directory, episode = self.evidence("unknown_video", {"status": "finished", "task_evaluated": True, "success": False})
+        with patch.object(batch, "inspect_video", return_value={"valid": None, "reason": "video_decoder_unavailable"}):
+            row = batch.collect_result(directory, {"returncode": 0}, False, ["overview"])
+        self.assertIsNone(row["video_complete"])
 
     def test_invalid_simulation_is_separate_from_model_failure(self):
         directory, _ = self.evidence('invalid', {'status': 'invalid', 'success': None,
