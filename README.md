@@ -5,7 +5,7 @@ Research software for contact-rich tabletop manipulation on the ARX R5.
 The maintained benchmark contains **16 tasks** across L1–L3, each with an
 independently selectable original setting and a fixed **variant01** setting.
 
-[Interactive project page](site/index.html) · [Installation](docs/release/INSTALL.md) ·
+[Interactive project page](https://tuojingai.github.io/GPT_Benchmark/) · [Installation](docs/release/INSTALL.md) ·
 [Evaluation protocol](docs/release/PROTOCOL.md) · [Release guide](docs/release/RELEASE.md) ·
 [Asset notices](NOTICE) · [Validation report](docs/release/VALIDATION.md)
 
