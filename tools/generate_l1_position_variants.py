@@ -206,8 +206,8 @@ def reach_screen(tid, config, baseline, candidate):
 
 
 def generate(master_seed=20261018):
-    previous = json.loads((OUTPUT.parent / 'l1_position_perturbations_p02_20261018.json').read_text())
-    ledger = json.loads(REJECTIONS.read_text()) if REJECTIONS.exists() else {'master_seed': master_seed, 'rejections': []}
+    previous = json.loads((OUTPUT.parent / 'l1_position_perturbations_p02_20261018.json').read_text(encoding='utf-8'))
+    ledger = json.loads(REJECTIONS.read_text(encoding='utf-8')) if REJECTIONS.exists() else {'master_seed': master_seed, 'rejections': []}
     rejected = {r['candidate_sha256'] for r in ledger['rejections']} if ledger['master_seed'] == master_seed else set()
     result = {
         'id': PROFILE_ID, 'description': 'P03: five independently sampled constrained random initial layouts per L1 task, frozen for reproducibility.',
@@ -273,4 +273,4 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path, default=OUTPUT)
     args = parser.parse_args()
     data = generate(args.seed)
-    args.output.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n')
+    args.output.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')

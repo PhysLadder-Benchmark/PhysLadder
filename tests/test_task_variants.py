@@ -58,14 +58,15 @@ class TaskVariantTests(unittest.TestCase):
                 self.assertTrue(directory.name.startswith(tid + '_dry_run_'))
                 self.assertEqual(result['task_id'], tid)
                 self.assertEqual(result['base_task_id'], base)
-                manifest = json.loads((directory / 'manifest.json').read_text())
+                manifest = json.loads((directory / 'manifest.json').read_text(encoding='utf-8'))
                 self.assertEqual(manifest['task_id'], tid)
                 self.assertEqual(manifest['base_task_id'], base)
-                self.assertEqual(json.loads((directory / 'initial_layout.json').read_text()),
+                self.assertEqual(json.loads((directory / 'initial_layout.json').read_text(encoding='utf-8')),
                                  layout(config.raw['task']))
                 with self.assertRaisesRegex(ValueError, 'mismatch'):
                     resolve_task(base, path)
-                path.write_text(path.read_text().replace('"l2_p01"', '"unknown"'))
+                path.write_text(path.read_text(encoding='utf-8').replace('"l2_p01"', '"unknown"'),
+                                encoding='utf-8')
                 with self.assertRaisesRegex(ValueError, 'variant_id'):
                     resolve_task(tid, path)
 

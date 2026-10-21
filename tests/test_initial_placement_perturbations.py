@@ -141,7 +141,7 @@ class InitialPlacementTests(unittest.TestCase):
 
     def test_p03_all_twenty_five_layouts_are_bounded_reproducible_and_independent(self):
         from tools.generate_l1_position_variants import geometry_screen
-        profile = json.loads(PROFILES['l1_xy_random_p03_20261018'].read_text())
+        profile = json.loads(PROFILES['l1_xy_random_p03_20261018'].read_text(encoding='utf-8'))
         seeds = set()
         for tid in TASKS:
             _, config = resolve_task(tid + "_v3")
@@ -204,7 +204,7 @@ class InitialPlacementTests(unittest.TestCase):
         from tools.generate_l1_position_variants import generate
         from contextlib import redirect_stdout
         from io import StringIO
-        saved = json.loads(PROFILES['l1_xy_random_p03_20261018'].read_text())
+        saved = json.loads(PROFILES['l1_xy_random_p03_20261018'].read_text(encoding='utf-8'))
         with redirect_stdout(StringIO()):
             regenerated = generate(saved['master_seed'])
         for tid in TASKS:
