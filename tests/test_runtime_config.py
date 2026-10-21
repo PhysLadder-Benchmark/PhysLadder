@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from robot_tasks.runtime_config import load_runtime
-from robot_tasks.runtime import configure_windows_storage, snapshot_storage_config, snapshot_runtime_config
+from robot_tasks.runtime import configure_windows_storage, snapshot_storage_config, snapshot_runtime_config, storage_report
 
 
 class RuntimeConfigTests(unittest.TestCase):
@@ -109,6 +109,32 @@ class RuntimeConfigTests(unittest.TestCase):
         with patch('robot_tasks.runtime.sys.platform', 'win32'), patch('robot_tasks.runtime.STORAGE_CONFIG', source):
             snapshot_storage_config(self.root)
         self.assertEqual(source.read_bytes(), (self.root / 'storage_config.json').read_bytes())
+
+    def test_legacy_storage_uses_the_configured_root_without_a_drive_restriction(self):
+        source = self.root / 'windows.json'
+        cache = self.root / 'chosen cache'
+        source.write_text(json.dumps({'root': str(cache), 'kit_root': 'kit',
+                                      'environment': {'TEMP': 'tmp', 'PYTHONPYCACHEPREFIX': 'bytecode'},
+                                      'junctions': []}))
+        with patch('robot_tasks.runtime.sys.platform', 'win32'), \
+                patch('robot_tasks.runtime.STORAGE_CONFIG', source), \
+                patch('tempfile.tempdir'), patch('sys.pycache_prefix'):
+            storage = configure_windows_storage()
+            report = storage_report(storage)
+        self.assertTrue(storage.legacy)
+        self.assertEqual(storage.root, cache)
+        self.assertEqual(Path(storage.environment['TEMP']), cache / 'tmp')
+        self.assertEqual(report['configured_drive'], cache.drive.upper())
+        self.assertNotIn('all_research_paths_on_d', report)
+
+    def test_legacy_storage_still_rejects_a_cache_path_escaping_its_root(self):
+        source = self.root / 'windows.json'
+        source.write_text(json.dumps({'root': str(self.root / 'cache'), 'kit_root': 'kit',
+                                      'environment': {'TEMP': '../escape'}, 'junctions': []}))
+        with patch('robot_tasks.runtime.sys.platform', 'win32'), \
+                patch('robot_tasks.runtime.STORAGE_CONFIG', source), \
+                self.assertRaisesRegex(ValueError, 'escapes configured root'):
+            configure_windows_storage()
 
     def test_snapshot_records_actual_python_and_omits_credentials(self):
         import sys

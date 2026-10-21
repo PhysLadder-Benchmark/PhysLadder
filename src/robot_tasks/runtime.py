@@ -1,4 +1,4 @@
-"""Portable runtime storage with optional legacy Windows D-drive configuration."""
+"""Portable runtime storage with optional Windows storage configuration."""
 
 from dataclasses import dataclass
 import json
@@ -67,8 +67,6 @@ def configure_windows_storage() -> RuntimeStorage | None:
         return RuntimeStorage(root, kit, environment, legacy=False)
     data = json.loads(STORAGE_CONFIG.read_text(encoding="utf-8"))
     root = Path(data["root"]).resolve()
-    if root.drive.upper() != "D:":
-        raise ValueError("Research runtime storage must be on D:")
 
     def directory(relative: str) -> Path:
         path = (root / relative).resolve()
@@ -113,12 +111,16 @@ def storage_report(storage: RuntimeStorage | None, *, kit_started: bool = False)
             paths[f"kit_{name}"] = str(Path(resolved).resolve())
         if warp.config.kernel_cache_dir is not None:
             paths["actual_warp_cache"] = str(Path(warp.config.kernel_cache_dir).resolve())
-    off_drive = {name: value for name, value in paths.items() if Path(value).drive.upper() != "D:"}
+    configured_drive = storage.root.drive.upper()
+    off_drive = {name: value for name, value in paths.items()
+                 if Path(value).drive.upper() != configured_drive}
     exceptions = {entry["source"]: {"resolved_path": str((Path(os.environ[entry["base"]]) / entry["source"]).resolve()),
                                     "reason": entry["reason"]}
                   for entry in data.get("shared_system_cache_exceptions", [])}
     return {"platform": sys.platform, "windows_storage_configured": True,
-            "runtime_root": str(storage.root), "paths": paths, "all_research_paths_on_d": not off_drive,
+            "runtime_root": str(storage.root), "paths": paths,
+            "configured_drive": configured_drive,
+            "all_research_paths_on_configured_drive": not off_drive,
             "off_drive_research_paths": off_drive, "shared_system_cache_exceptions": exceptions}
 
 

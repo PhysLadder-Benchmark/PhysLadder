@@ -7,7 +7,7 @@ from pathlib import Path
 import subprocess
 import sys
 
-ROOT=Path(__file__).resolve().parents[2]
+ROOT=Path(__file__).resolve().parents[3]
 p=argparse.ArgumentParser();p.add_argument('--task',default='L2-02');a=p.parse_args()
 out=ROOT/'runs/remote_validation'/os.uname().nodename/a.task
 out.mkdir(parents=True,exist_ok=True)

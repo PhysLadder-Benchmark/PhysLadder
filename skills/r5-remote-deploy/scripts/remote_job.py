@@ -10,7 +10,7 @@ import subprocess
 import sys
 import time
 
-ROOT=Path(__file__).resolve().parents[2]
+ROOT=Path(__file__).resolve().parents[3]
 STATE=ROOT/'runs'/'remote'/os.uname().nodename
 
 
@@ -35,8 +35,8 @@ def save(data):
 
 def require_other_deployment_idle():
     """An isolated directory is not permission to double-book the same GPU."""
-    base = ROOT.parent / 'GPT_Benchmark_remote_mengjq'
-    for project in (base, base.with_name(base.name + '_v3')):
+    for name in json.loads(os.environ.get('GPT_BENCHMARK_GUARD_PROJECTS', '[]')):
+        project = Path(name).resolve()
         if project == ROOT:
             continue
         path = project / 'runs/remote' / os.uname().nodename / 'job.json'

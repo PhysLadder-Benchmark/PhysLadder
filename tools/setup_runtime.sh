@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-project_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
+project_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 runtime_root="${GPT_BENCHMARK_RUNTIME_ROOT:-$(dirname "$project_root")/runtime_combined}"
 shared_framework="${GPT_BENCHMARK_SHARED_FRAMEWORK:-}"
 mkdir -p "$runtime_root"
@@ -56,7 +56,7 @@ export PYTHONUNBUFFERED=1
 # distro libraries for this process; Isaac adds its own bundled libs afterward.
 export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:${{LD_LIBRARY_PATH:-}}
 if [[ ! -x {q(str(isaac/'python.sh'))} ]]; then
-    echo 'Isaac Sim launcher is missing; rerun tools/remote/bootstrap.sh with a valid GPT_BENCHMARK_ISAAC_ROOT.' >&2
+    echo 'Isaac Sim launcher is missing; rerun tools/setup_runtime.sh with a valid GPT_BENCHMARK_ISAAC_ROOT.' >&2
     exit 127
 fi
 exec {q(str(isaac/'python.sh'))} "$@"

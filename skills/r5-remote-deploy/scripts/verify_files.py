@@ -5,7 +5,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
-ROOT=Path(__file__).resolve().parents[2]
+ROOT=Path(__file__).resolve().parents[3]
 p=argparse.ArgumentParser();p.add_argument('manifest',type=Path);p.add_argument('--output',type=Path);a=p.parse_args()
 rows=json.loads(a.manifest.read_text());bad=[]
 for r in rows:

@@ -48,7 +48,7 @@ For a portable Linux wrapper deployment:
 export GPT_BENCHMARK_ISAAC_ROOT=/absolute/path/to/isaac-sim
 export GPT_BENCHMARK_PLANNER_ROOT=/absolute/path/to/runtime/r5-curobo
 export GPT_BENCHMARK_RUNTIME_ROOT=/absolute/path/to/runtime/r5-benchmark
-bash tools/remote/bootstrap.sh --wrappers-only
+bash tools/setup_runtime.sh --wrappers-only
 export GPT_BENCHMARK_PYTHON="$GPT_BENCHMARK_RUNTIME_ROOT/bin/isaac-python"
 export GPT_BENCHMARK_PLANNER_PYTHON="$GPT_BENCHMARK_RUNTIME_ROOT/bin/planner-python"
 export GPT_BENCHMARK_PLANNER_REFERENCE="$PWD/assets/r5/planner_reference/geometry.json"
@@ -63,6 +63,26 @@ Alternatively copy `configs/runtime/local.example.toml` to `local.toml` and
 `planner.example.toml` to `planner.local.toml`, then configure your own interpreter
 and output/cache paths. Local files are ignored by Git. No developer drive or
 cluster address is required.
+
+For Windows, the existing default interpreter example is
+`D:/conda/envs/isaac51/python.exe`. Set `[isaacsim].python` in `local.toml` or
+`GPT_BENCHMARK_PYTHON` to your actual interpreter. `[paths].cache_dir` and
+`output_dir` accept other drives and directories, for example:
+
+```toml
+[isaacsim]
+python = "E:/conda/envs/isaacsim/python.exe"
+[paths]
+cache_dir = "E:/research_runtime/gpt_benchmark"
+output_dir = "E:/experiments/runs"
+```
+
+The optional legacy `windows.example.json` template defaults to
+`D:/research_runtime/gpt_benchmark`. Copy it to ignored `windows.json` only if you
+need its detailed cache mapping, then edit `root` to use any absolute directory;
+there is no D-drive restriction. An explicit `cache_dir` in `local.toml` takes
+precedence over this legacy mapping. With neither mapping configured, cache
+storage uses the operating system's per-user cache directory.
 
 ## Verify actual initial states
 
@@ -111,9 +131,8 @@ guarantee a finalized MP4 or a recoverable physics state.
 
 ## Optional remote control
 
-Copy `tools/remote/fleet.json` to ignored `fleet.local.json`; fill in your host,
-SSH port, project/runtime directories and bridge port. Authentication stays in
-SSH configuration. All commands are standard Linux commands on the server.
-`fleet.py` prefers `GPT_BENCHMARK_FLEET_CONFIG`, then the local file. The example
-host is a placeholder, never a deployment destination. Do not deploy over active
-experiments. See `AGENTS.local.md` for this maintained checkout's private rule.
+Local execution is the default. Optional SSH setup, deployment and model
+forwarding are documented in the repository's
+[remote-deployment skill](../../skills/r5-remote-deploy/SKILL.md).
+Its helpers and example configuration live with that skill. The old
+`tools/remote/fleet.py` command remains a compatibility entrypoint.

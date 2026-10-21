@@ -149,6 +149,31 @@ raise SystemExit(m.main())
 @unittest.skipUnless(os.name == 'nt' and (shutil.which('pwsh') or shutil.which('powershell')),
                      'Requires native Windows PowerShell')
 class PowerShellFallbackTests(unittest.TestCase):
+    def test_storage_mapping_accepts_the_callers_absolute_directory(self):
+        shell = shutil.which('pwsh') or shutil.which('powershell')
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            tools = root / 'tools'
+            tools.mkdir()
+            runtime = root / 'configs/runtime'
+            runtime.mkdir(parents=True)
+            shutil.copyfile(PROJECT_ROOT / 'tools/research_storage.ps1', tools / 'research_storage.ps1')
+            cache = root / 'custom cache'
+            (runtime / 'windows.json').write_text(json.dumps({
+                'root': str(cache), 'environment': {'TEMP': 'tmp'}}))
+            probe = tools / 'probe.ps1'
+            probe.write_text('''. "$PSScriptRoot/research_storage.ps1"
+$ErrorActionPreference = 'Stop'
+$previous = Set-ResearchStorageEnvironment
+try { @{ temp = $env:TEMP } | ConvertTo-Json -Compress }
+finally { Restore-ResearchStorageEnvironment $previous }
+''')
+            completed = subprocess.run([shell, '-NoProfile', '-ExecutionPolicy', 'Bypass',
+                                        '-File', str(probe)], capture_output=True, text=True, timeout=20)
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            self.assertEqual(Path(json.loads(completed.stdout)['temp']).resolve(), (cache / 'tmp').resolve())
+            self.assertTrue((cache / 'tmp').is_dir())
+
     def test_legacy_default_bootstraps_without_path_python_and_respects_local_selection(self):
         shell = shutil.which('pwsh') or shutil.which('powershell')
         with tempfile.TemporaryDirectory() as directory:

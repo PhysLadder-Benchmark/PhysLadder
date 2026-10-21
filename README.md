@@ -33,6 +33,14 @@ Configure the simulator, planner and model as described in [Installation](docs/r
 then add `--execute` to run that plan. Use `--dry-run` for an offline lifecycle
 check. It does not run physics or demonstrate task success.
 
+The default workflow runs locally. Machine paths belong in ignored
+`configs/runtime/local.toml`; the optional Windows storage template defaults to
+D: and accepts another drive or directory. SSH and a cluster are not required.
+For remote deployment, readers or coding agents can follow the optional
+[remote-deployment skill](skills/r5-remote-deploy/SKILL.md), which contains its
+own examples and helpers. This deployment skill is not supplied to the robot's
+decision model and does not change the evaluation protocol.
+
 ## Task configurations
 
 | Level | Tasks | Fixed alternative settings |
@@ -83,6 +91,7 @@ python tools/release/package.py --output dist
 - `configs/tasks/`: independent original and alternative configurations.
 - `assets/runtime.lock.json`: complete runtime input inventory and SHA-256 hashes.
 - `tools/release/`: behavior/asset checks, packaging and initial-state rendering.
+- `skills/r5-remote-deploy/`: optional SSH deployment guide and helpers.
 - `site/`: responsive, buildless project page; GitHub Pages workflow included.
 - `runs/`, `reports/`, caches and private host settings remain unversioned.
 

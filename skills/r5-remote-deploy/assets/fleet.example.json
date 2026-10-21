@@ -10,5 +10,10 @@
   "default_machine": "cluster",
   "direct_machines": [
     "cluster"
-  ]
+  ],
+  "isaac_root": "/opt/isaac-sim",
+  "planner_root": "/srv/r5/r5-curobo",
+  "use_local_codex": false,
+  "max_concurrent": 5,
+  "guard_projects": []
 }

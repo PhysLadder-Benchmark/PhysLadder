@@ -13,7 +13,7 @@ from robot_tasks.policies.codex_bridge import CodexBridgeClient
 from robot_tasks.policies.model_config import GPTSettings
 from robot_tasks.policies.responses import ModelReply, ModelError
 
-spec=importlib.util.spec_from_file_location('bridge_server',Path(__file__).resolve().parents[1]/'tools/remote/codex_bridge_server.py')
+spec=importlib.util.spec_from_file_location('bridge_server',Path(__file__).resolve().parents[1]/'skills/r5-remote-deploy/scripts/codex_bridge_server.py')
 module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
 
 

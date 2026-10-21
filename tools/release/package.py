@@ -14,7 +14,8 @@ TOP_FILES = {
     "README.md", "LICENSE", "NOTICE", "CITATION.bib", "AGENTS.md",
     "pyproject.toml", "environment.yml", ".gitignore", ".gitattributes",
 }
-TOP_DIRS = {"src", "configs", "tests", "tools", "site", ".github"}
+TOP_DIRS = {"src", "configs", "tests", "tools", "skills", "site", ".github"}
+PRIVATE_DIRS = {"__pycache__", ".git", ".venv", "venv", ".conda", ".cache", "node_modules"}
 
 
 def source_files():
@@ -28,9 +29,11 @@ def source_files():
             continue
         if rel.parts[0] not in TOP_DIRS and rel.as_posix() not in TOP_FILES and not rel.as_posix().startswith("docs/release/"):
             continue
-        if ("__pycache__" in rel.parts
+        if (PRIVATE_DIRS.intersection(rel.parts)
                 or any(part.endswith((".egg-info", ".dist-info")) for part in rel.parts)
-                or path.suffix in {".pyc", ".log", ".tmp"}
+                or path.suffix in {".pyc", ".log", ".tmp", ".pem", ".key", ".p12", ".pfx"}
+                or (path.name.startswith(".env") and path.name != ".env.example")
+                or path.name in {"auth.json", "credentials.json", "AGENTS.local.md"}
                 or ".local." in path.name or rel.as_posix() in
                 {"configs/runtime/windows.json", "configs/runtime/local.toml"}):
             continue
