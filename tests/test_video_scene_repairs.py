@@ -17,8 +17,8 @@ class VideoSceneRepairs(unittest.TestCase):
     def test_hat_support_is_free_and_open_after_contact_simplification(self):
         from scipy.spatial import ConvexHull
         from robot_tasks.tasks.bench.native_geometry import verify_stage
-        stage = self.stage('L1-07')
-        original = Usd.Stage.Open(str(PROJECT_ROOT/'assets/tuojing'/scenes()['L1-07']['path']))
+        stage = self.stage('L1-03')
+        original = Usd.Stage.Open(str(PROJECT_ROOT/'assets/tuojing'/scenes()['L1-03']['path']))
         root = '/World/Household'
         box = stage.GetPrimAtPath(root+'/source_box')
         hat = stage.GetPrimAtPath(root+'/hat')
@@ -91,7 +91,7 @@ class VideoSceneRepairs(unittest.TestCase):
                          scenes()['L1-01']['runtime_sha256'])
 
     def test_latest_boxes_are_the_only_active_fixed_supports(self):
-        for task in ['L2-01','L2-03','L2-06','L2-07','L3-05','L3-15']:
+        for task in ['L2-01','L2-02','L2-04','L2-05','L3-02','L3-05']:
             with self.subTest(task=task):
                 stage=self.stage(task)
                 self.assertFalse(stage.GetPrimAtPath('/World/ReviewAssets/MeasuredBox'))
@@ -120,7 +120,7 @@ class VideoSceneRepairs(unittest.TestCase):
         self.assertLessEqual(end,cap_min+1e-7, 'New barrel must not penetrate the cap lip')
 
     def test_l2_measured_box_has_a_physical_ten_mm_recess(self):
-        for task in ('L2-01', 'L2-03', 'L2-06', 'L2-07'):
+        for task in ('L2-01', 'L2-02', 'L2-04', 'L2-05'):
             with self.subTest(task=task):
                 row = scenes()[task]
                 support = row['l2_support_measurement']
@@ -142,10 +142,10 @@ class VideoSceneRepairs(unittest.TestCase):
 
     def test_l2_supported_items_and_scoring_follow_the_correct_surface(self):
         from test_video_delivery import scene
-        for task, expected in (('L2-01', .94), ('L2-03', .95), ('L2-06', .94)):
+        for task, expected in (('L2-01', .94), ('L2-02', .95), ('L2-04', .94)):
             spec, _, _ = scene(task)
             self.assertAlmostEqual(spec.parameters['support_z'], expected, places=7)
-        books = scenes()['L2-03']['tracked']
+        books = scenes()['L2-02']['tracked']
         from robot_tasks.robots.transforms import pose_transform
         lower = books['lower_book']
         lo, hi = lower['bounds']
@@ -160,13 +160,13 @@ class VideoSceneRepairs(unittest.TestCase):
         self.assertGreater(upper[2, 0], .05, 'Image-right edge should be raised')
         self.assertLess(abs(upper[2, 1]), .01, 'Do not tilt the stack mainly fore/aft')
         self.assertTrue(all(not r['kinematic'] for r in books.values()))
-        orange = scenes()['L2-06']['orange']
+        orange = scenes()['L2-04']['orange']
         self.assertAlmostEqual(orange['pose'][2], .940075, places=7)
-        self.assertAlmostEqual(scenes()['L2-07']['fixtures'][0]['pose'][2], .95, places=7)
+        self.assertAlmostEqual(scenes()['L2-05']['fixtures'][0]['pose'][2], .95, places=7)
 
     def test_lower_book_bend_has_matching_dynamic_collision_and_real_rim_clearance(self):
-        stage = self.stage('L2-03')
-        path = scenes()['L2-03']['tracked']['lower_book']['path']
+        stage = self.stage('L2-02')
+        path = scenes()['L2-02']['tracked']['lower_book']['path']
         self.assertFalse(stage.GetPrimAtPath(path + '/Colliders/Envelope'))
         cache = UsdGeom.XformCache()
         cells = []
@@ -190,12 +190,12 @@ class VideoSceneRepairs(unittest.TestCase):
         from robot_tasks.cameras.geometry import project_world
         from robot_tasks.robots.transforms import pose_transform
         from robot_tasks.tasks.bench.pearl_pouring import cup_contains
-        config = json.loads((PROJECT_ROOT / 'configs/task_references/l2_layout_refinement_20261015.json').read_text())['tasks']['L2-04']
-        tracked = scenes()['L2-04']['tracked']
+        config = json.loads((PROJECT_ROOT / 'configs/task_references/l2_layout_refinement_20261015.json').read_text())['tasks']['L2-03']
+        tracked = scenes()['L2-03']['tracked']
         for name, target in config['cup_base_centres_target_px'].items():
             actual = project_world([tracked[name]['pose'][:3]], config['camera_pose_used'], config['intrinsics_used'])[0]
             np.testing.assert_allclose(actual, target, atol=.01)
-        stage = self.stage('L2-04')
+        stage = self.stage('L2-03')
         loads = [row for name, row in tracked.items() if name.startswith('load_')]
         self.assertEqual(len(loads), 12)
         source_inverse = np.linalg.inv(pose_transform(tracked['source_cup']['pose']))
@@ -219,24 +219,24 @@ class VideoSceneRepairs(unittest.TestCase):
 
     def test_measured_support_patch_is_idempotent_and_l2_only(self):
         from tools.l2_measured_support import apply
-        for task in ('L2-03', 'L3-05'):
+        for task in ('L2-02', 'L3-02'):
             stage = self.stage(task)
             before = stage.GetRootLayer().ExportToString()
             result = apply(stage, task, scenes()[task])
             self.assertEqual(stage.GetRootLayer().ExportToString(), before)
-            self.assertEqual(result is None, task == 'L3-05')
+            self.assertEqual(result is None, task == 'L3-02')
 
     def test_bottle_fixed_in_asset_and_active_scoring(self):
         from test_video_delivery import scene
-        stage=self.stage('L3-03');spec,rows,e=scene('L3-03')
-        self.assertTrue(UsdPhysics.RigidBodyAPI(stage.GetPrimAtPath(scenes()['L3-03']['tracked']['bottle']['path'])).GetKinematicEnabledAttr().Get())
+        stage=self.stage('L3-01');spec,rows,e=scene('L3-01')
+        self.assertTrue(UsdPhysics.RigidBodyAPI(stage.GetPrimAtPath(scenes()['L3-01']['tracked']['bottle']['path'])).GetKinematicEnabledAttr().Get())
         self.assertTrue(spec.parameters['body_fixed'])
         self.assertIn('fixed',spec.design.instruction)
 
     def test_whiteboard_scoring_uses_rotated_physical_fixture(self):
         from test_video_delivery import scene
         from robot_tasks.robots.transforms import pose_transform
-        spec,_,_=scene('L3-11');row=scenes()['L3-11']['fixtures'][0]
+        spec,_,_=scene('L3-03');row=scenes()['L3-03']['fixtures'][0]
         np.testing.assert_allclose(spec.parameters['board_pose'],row['pose'])
         self.assertGreater(pose_transform(row['pose'])[0,0],.99)
 

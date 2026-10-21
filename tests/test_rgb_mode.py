@@ -64,7 +64,7 @@ class RGBModeTests(unittest.TestCase):
                 self.assertEqual(config.raw["observation"]["include_depth"], depth)
                 self.assertEqual(config.save_depth, depth)
             with redirect_stdout(StringIO()) as output:
-                self.assertEqual(main(["inspect", "L2-03", *flag]), 0)
+                self.assertEqual(main(["inspect", "L2-02", *flag]), 0)
             inspected = json.loads(output.getvalue())
             self.assertEqual("depth" in inspected["workflow"]["observation_modalities"], depth)
             self.assertEqual(inspected["workflow"]["grasp_check"], "contact_inspection_no_lift_gate")

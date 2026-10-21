@@ -34,7 +34,7 @@ class PushTriangleTests(unittest.TestCase):
         self.assertAlmostEqual(self.a.mass * 9.81, .0154 * 9.81)
         self.assertEqual(len(self.s.design.fixtures), 3)
         self.assertTrue(all(not x.collision for x in self.s.design.fixtures))
-        b, c = resolve_task("L3-14")
+        b, c = resolve_task("L3-04")
         self.assertEqual(
             b.factory.prepare_config(c).grasp_check_mode, "contact_inspection"
         )

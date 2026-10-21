@@ -222,4 +222,4 @@ def drawer(e, rows):
 
 from .pearl_pouring import score as pearl_pouring
 
-RULES = {"L2-01": marker, "L2-03": books, "L2-04": pearl_pouring, "L2-07": drawer}
+RULES = {"L2-01": marker, "L2-02": books, "L2-03": pearl_pouring, "L2-05": drawer}

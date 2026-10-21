@@ -24,11 +24,11 @@ reproduce = module("reproduce", "tools/reproduce.py")
 
 class ReleaseToolTests(unittest.TestCase):
     def test_reproduction_preserves_nonuniform_budgets(self):
-        rows = reproduce.plan(["L2-04_variant01", "L3-14", "L3-14_variant01"],
+        rows = reproduce.plan(["L2-03_variant01", "L3-04", "L3-04_variant01"],
                               ROOT / "configs/models/gpt.toml")
         self.assertEqual([(r["max_calls"], r["wall_time_s"]) for r in rows],
                          [(100, 0), (0, 18000), (150, 18000)])
-        self.assertEqual(rows[0]["record_id"], "L2-04_v3")
+        self.assertEqual(rows[0]["record_id"], "L2-03_v3")
         self.assertEqual(rows[2]["model_budget_basis"], "completed_generations")
 
     def test_asset_delivery_is_checked_before_overwrite(self):

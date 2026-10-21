@@ -27,14 +27,14 @@
       "package": "photo_props",
       "path": "assets/wooden_rack/wooden_rack.usda",
       "role": "prop",
-      "notes": "L1-07: native fixed 82 cm rack, lowest diagonal peg; existing project handled cup retained."
+      "notes": "L1-03: native fixed 82 cm rack, lowest diagonal peg; existing project handled cup retained."
     },
     {
       "id": "power_strip",
       "package": "photo_props",
       "path": "assets/power_strip/power_strip.usda",
       "role": "prop",
-      "notes": "L1-03: fixed native strip; middle two-slot socket, zero fixture friction; 0.55 mm minimum side clearance."
+      "notes": "L1-02: fixed native strip; middle two-slot socket, zero fixture friction; 0.55 mm minimum side clearance."
     },
     {
       "id": "whiteboard_marker",
@@ -48,21 +48,21 @@
       "package": "photo_props",
       "path": "assets/ripple_paper_cup/ripple_paper_cup.usda",
       "role": "prop",
-      "notes": "L1-01 pen holder, L1-08 two movable nesting cups, and L1-09 fixed flower holder; native hollow colliders, no deformation."
+      "notes": "L1-01 pen holder, L1-04 two movable nesting cups, and L1-05 fixed flower holder; native hollow colliders, no deformation."
     },
     {
       "id": "usb_charger",
       "package": "photo_props",
       "path": "assets/usb_charger/usb_charger.usda",
       "role": "prop",
-      "notes": "L1-03: starts upright in native black storage base; two-blade geometry and entry-only scoring; housing/blade payload samples."
+      "notes": "L1-02: starts upright in native black storage base; two-blade geometry and entry-only scoring; housing/blade payload samples."
     },
     {
       "id": "artificial_rose",
       "package": "photo_props",
       "path": "assets/artificial_rose/artificial_rose.usda",
       "role": "prop",
-      "notes": "L1-09: native rigid artificial rose; grasp wider bud/calyx, insert stem into fixed ripple cup. No bending or damage model."
+      "notes": "L1-05: native rigid artificial rose; grasp wider bud/calyx, insert stem into fixed ripple cup. No bending or damage model."
     },
     {
       "id": "yellow_visor",
@@ -243,7 +243,7 @@
       "package": "desktop_additions_20261009",
       "path": "assets/cylindrical_pedestal/cylindrical_pedestal.usda",
       "role": "prop",
-      "notes": "130 mm tall, 68 mm flat top, 313.9 g. L2-06 fixes the native support in the scene; source remains movable."
+      "notes": "130 mm tall, 68 mm flat top, 313.9 g. L2-04 fixes the native support in the scene; source remains movable."
     },
     {
       "id": "black_ceramic_mug",
@@ -257,7 +257,7 @@
       "package": "desktop_additions_20261009",
       "path": "assets/plug_storage_base/plug_storage_base.usda",
       "role": "prop",
-      "notes": "L1-03 native free-standing pickup holder; 20.8 g, hollow pocket and central through-hole; not the electrical target socket."
+      "notes": "L1-02 native free-standing pickup holder; 20.8 g, hollow pocket and central through-hole; not the electrical target socket."
     },
     {
       "id": "green_support_box",

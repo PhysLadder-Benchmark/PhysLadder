@@ -38,7 +38,7 @@ def measurement(spec):
                 b.name: 0.0 for b in spec.design.articles if b.name != a.name and (not a.name.startswith("load_") or b.name in spec.parameters.get("load_container_names", ()))
             },
         }
-    if spec.design.task_id == "L3-11":
+    if spec.design.task_id == "L3-03":
         from robot_tasks.tasks.bench.wiping import WipeLedger
         result["eraser"]["wiping"] = WipeLedger(spec.parameters["board_pose"]).metrics()
     return result
@@ -66,11 +66,16 @@ class HouseholdTests(unittest.TestCase):
                 )
                 self.assertFalse(prepared.include_depth)
                 self.assertTrue(prepared.raw["task"]["description"])
-        self.assertTrue(resolve_task("L3-11")[0].implemented)
+        self.assertTrue(resolve_task("L3-03")[0].implemented)
         self.assertNotIn("L3-16", TASKS)
         with self.assertRaises(ValueError):
             resolve_task("L3-16")
-        for removed in ("L1-05", "L1-05_v3"):
+        # The old key task was removed. Its former number now belongs to the
+        # flower task in the sequential catalogue; task identity is the check.
+        self.assertIn("rose", {a.name for a in build_spec("L1-05").design.articles})
+        self.assertFalse(any(a.name == "key" for i in IDS
+                             for a in build_spec(i).design.articles))
+        for removed in ("L1-99", "L1-99_v3"):
             self.assertNotIn(removed, TASKS)
             with self.assertRaisesRegex(ValueError, "Unknown task ID"):
                 resolve_task(removed)
@@ -79,7 +84,7 @@ class HouseholdTests(unittest.TestCase):
 
     def test_every_initial_state_is_incomplete_without_robot_evidence(self):
         # FEM tasks use OrangeEvaluator and have dedicated initial-state tests.
-        for task_id in (i for i in IDS if i not in {"L2-06", "L2-08"}):
+        for task_id in (i for i in IDS if i not in {"L2-04", "L2-06"}):
             with self.subTest(task=task_id):
                 spec = build_spec(task_id)
                 json.dumps(asdict(spec), allow_nan=False)
@@ -150,7 +155,7 @@ class HouseholdTests(unittest.TestCase):
                 self.assertEqual(e.update(.1, rows).status, "running")
 
     def test_nested_cups_require_support_and_lift_only_for_upper_cup(self):
-        spec = build_spec("L1-08")
+        spec = build_spec("L1-04")
         rows = measurement(spec)
         evaluator = BenchEvaluator(
             spec, {a.name: a.initial for a in spec.design.articles}
@@ -236,7 +241,7 @@ class HouseholdTests(unittest.TestCase):
                 )
                 for a in spec.design.articles:
                     rows[a.name]["pose"] = list(a.goal)
-                if task_id == "L3-03":
+                if task_id == "L3-01":
                     rows["cap"]["pose"] = [0.50, 0, 0.03, 1, 0, 0, 0]
                     rows["cap"]["bench_force_n"] = 0.25
                 for i in range(1, 30):
@@ -246,7 +251,7 @@ class HouseholdTests(unittest.TestCase):
 
 
     def test_drawer_speed_warning_does_not_replace_rail_and_opening_checks(self):
-        spec = build_spec("L2-07")
+        spec = build_spec("L2-05")
         rows = measurement(spec)
         row = rows["drawer"]
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
@@ -276,7 +281,7 @@ class HouseholdTests(unittest.TestCase):
         self.assertEqual(e.update(.4, rows).status, "invalid")
 
     def test_sweeping_allows_incidental_touch_but_not_direct_block_manipulation(self):
-        spec = build_spec("L3-15")
+        spec = build_spec("L3-05")
         rows = measurement(spec)
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
         block = rows["block_0"]
@@ -325,7 +330,7 @@ class HouseholdTests(unittest.TestCase):
             evaluator.update(0.2, bad)
 
     def test_drawer_requires_grasped_opening_then_return_and_release(self):
-        spec = build_spec("L2-07")
+        spec = build_spec("L2-05")
         rows = measurement(spec)
         row = rows["drawer"]
         initial = {a.name: a.initial for a in spec.design.articles}
@@ -342,7 +347,7 @@ class HouseholdTests(unittest.TestCase):
         self.assertEqual(BenchEvaluator(spec, initial).update(.1, rows).status, "running")
 
     def test_books_retain_dynamic_neighbours_and_require_released_support(self):
-        spec = build_spec("L2-03")
+        spec = build_spec("L2-02")
         self.assertEqual([a.name for a in spec.design.articles], ["lower_book", "middle_book", "upper_book"])
         rows = measurement(spec)
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
@@ -360,7 +365,7 @@ class HouseholdTests(unittest.TestCase):
         self.assertTrue(result.metrics["criteria"]["release_required"])
 
     def test_books_require_box_anchored_support_not_airborne_contact_or_table_drop(self):
-        spec = build_spec("L2-03")
+        spec = build_spec("L2-02")
         rows = measurement(spec)
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
         middle = rows["middle_book"]
@@ -450,7 +455,7 @@ class HouseholdTests(unittest.TestCase):
                 self.assertEqual(result.status, "succeeded", result.metrics["criteria"])
 
     def test_native_hat_succeeds_on_selected_peg_release_without_sway_wait(self):
-        spec=build_spec("L1-07"); article=spec.design.articles[0]
+        spec=build_spec("L1-03"); article=spec.design.articles[0]
         rows=measurement(spec); e=BenchEvaluator(spec,{article.name:article.initial})
         self.assertEqual(e.update(.1,rows).status,"running")
         r=rows["hat"]; r["pose"]=list(article.goal)

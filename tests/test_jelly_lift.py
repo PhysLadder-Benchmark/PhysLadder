@@ -1,4 +1,4 @@
-"""L2-08 uses the same held lift/return criterion with its own FEM object."""
+"""L2-06 uses the same held lift/return criterion with its own FEM object."""
 import unittest
 from copy import deepcopy
 from robot_tasks.registry import resolve_task
@@ -8,7 +8,7 @@ from test_native_l2_scoring import soft_row
 
 class JellyLiftTests(unittest.TestCase):
     def test_release_on_original_box_is_required(self):
-        spec=build_spec('L2-08');e=OrangeEvaluator(spec)
+        spec=build_spec('L2-06');e=OrangeEvaluator(spec)
         def sample(**kw):return {'jelly':soft_row(spec,**kw)['orange']}
         self.assertEqual(e.update(0,sample()).status,'running')
         self.assertEqual(e.update(.1,sample(lifted=True,touching=True)).status,'running')
@@ -18,7 +18,7 @@ class JellyLiftTests(unittest.TestCase):
         self.assertEqual(e.update(.3,sample()).status,'succeeded')
 
     def test_observer_contact_is_not_a_grasp(self):
-        spec=build_spec('L2-08');e=OrangeEvaluator(spec)
+        spec=build_spec('L2-06');e=OrangeEvaluator(spec)
         e.update(0,{'jelly':soft_row(spec)['orange']})
         row=soft_row(spec,lifted=True)['orange'];row['finger_distances_m']=[.001,.001,.1,.1]
         self.assertEqual(e.update(.1,{'jelly':row}).status,'running')
@@ -26,23 +26,23 @@ class JellyLiftTests(unittest.TestCase):
 
     def test_configuration_preserves_operator_and_shared_rig(self):
         from robot_tasks.video_delivery import effective_cameras,setup_for,verified_scene
-        factory,c=resolve_task('L2-08');c=factory.factory.prepare_config(c)
+        factory,c=resolve_task('L2-06');c=factory.factory.prepare_config(c)
         self.assertEqual(c.arms,('right',));self.assertIn('jelly from the green box',c.instruction)
         self.assertNotIn('orange',c.instruction)
-        self.assertEqual(effective_cameras('L2-08'),effective_cameras('L2-06'))
-        self.assertEqual(setup_for('L2-08')['arms'],setup_for('L2-06')['arms'])
-        self.assertTrue(verified_scene('L2-08').exists())
+        self.assertEqual(effective_cameras('L2-06'),effective_cameras('L2-04'))
+        self.assertEqual(setup_for('L2-06')['arms'],setup_for('L2-04')['arms'])
+        self.assertTrue(verified_scene('L2-06').exists())
         from robot_tasks.backends.settings import SimulationSettings
         self.assertEqual(SimulationSettings.from_config(c).renderer, 'PathTracing')
-        _, orange_config = resolve_task('L2-06')
+        _, orange_config = resolve_task('L2-04')
         self.assertEqual(SimulationSettings.from_config(orange_config).renderer, 'RaytracedLighting')
 
     def test_prompt_and_scoring_follow_the_reviewed_english_row(self):
         from robot_tasks.tasks.bench.jelly import jelly_reference
         reference = jelly_reference()
-        entry, config = resolve_task('L2-08')
+        entry, config = resolve_task('L2-06')
         prepared = entry.factory.prepare_config(config)
-        spec = build_spec('L2-08')
+        spec = build_spec('L2-06')
         expected = ('Pick up the jelly from the green box with the left arm, '
                     'lift it 5–20 cm, then place it back and release it.')
         self.assertEqual(reference['source_prompt_en'], expected)
@@ -56,7 +56,7 @@ class JellyLiftTests(unittest.TestCase):
         self.assertEqual(spec.observers, ('left',))
 
     def test_held_lift_has_the_source_five_to_twenty_centimetre_bounds(self):
-        spec = build_spec('L2-08')
+        spec = build_spec('L2-06')
         for rise, qualifies in ((.049, False), (.05, True), (.20, True), (.201, False)):
             with self.subTest(rise=rise):
                 e = OrangeEvaluator(spec)
@@ -74,7 +74,7 @@ class JellyLiftTests(unittest.TestCase):
                                  'succeeded' if qualifies else 'running')
 
     def test_released_above_the_real_box_is_not_returned(self):
-        spec = build_spec('L2-08')
+        spec = build_spec('L2-06')
         e = OrangeEvaluator(spec)
         initial = {'jelly': soft_row(spec)['orange']}
         e.update(0., initial)
@@ -87,7 +87,7 @@ class JellyLiftTests(unittest.TestCase):
         self.assertEqual(e.update(.3, initial).status, 'succeeded')
 
     def test_holding_on_the_box_is_not_release_and_damage_is_not_an_extra_gate(self):
-        spec = build_spec('L2-08')
+        spec = build_spec('L2-06')
         e = OrangeEvaluator(spec)
         e.update(0., {'jelly': soft_row(spec)['orange']})
         e.update(.1, {'jelly': soft_row(spec, lifted=True, touching=True)['orange']})

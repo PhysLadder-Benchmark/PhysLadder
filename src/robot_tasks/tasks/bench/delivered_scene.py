@@ -49,7 +49,7 @@ class DeliveredScene(NativeL2Scene):
         self.backend, self.config, self.spec, self.design = backend, config, spec, spec.design
         self.stage = backend.world.stage
         self.root = ("/World/Household" if config.task_id.startswith("L1-") else
-                     "/World/L3Wiping" if config.task_id == "L3-11" else "/World/L2")
+                     "/World/L3Wiping" if config.task_id == "L3-03" else "/World/L2")
         self.bench = bench_geometry(config)
         from ...initial_layout import scene_record, apply_record_to_stage
         row = scene_record(config.raw['task'])
@@ -70,7 +70,7 @@ class DeliveredScene(NativeL2Scene):
         self.fixture_paths = contact_filter_paths(self.stage,fixture_roots)
         for n, path in self.paths.items():
             prim = self.stage.GetPrimAtPath(path)
-            if config.task_id == "L3-03" and n == "bottle":
+            if config.task_id == "L3-01" and n == "bottle":
                 # The user clarified that the bottle is a fixed fixture.
                 UsdPhysics.RigidBodyAPI(prim).CreateKinematicEnabledAttr(True)
                 PhysxSchema.PhysxRigidBodyAPI.Apply(prim).CreateEnableCCDAttr(False)
@@ -158,13 +158,13 @@ class DeliveredScene(NativeL2Scene):
             "object_attachment": False, "older_props_imported": bool(spec.parameters.get("stacked_book_names")),
             "arm_roles": config.arm_roles,
             "ground_truth_use": "independent scoring and collision planner; privileged smoke controller only when explicitly invoked",
-            "physics_overrides": {"bottle_fixed_by_task_setup": config.task_id == "L3-03",
+            "physics_overrides": {"bottle_fixed_by_task_setup": config.task_id == "L3-01",
                                   "marker_contact_groups_refreshed": marker_filters},
             "reset_auxiliary_dynamic_bodies": [str(body.prim_path) for body,_ in self.aux_bodies],
             "fixture_contact_filters":self.fixture_paths,
         }
         self.hook_contact = None
-        if config.task_id == "L1-07":
+        if config.task_id == "L1-03":
             self.hook_contact = RigidPrim(self.paths["hat"], name="delivered_hook_support",
                 reset_xform_properties=False, track_contact_forces=True,
                 contact_filter_prim_paths_expr=["/World/Household/Fixture/Colliders/Hook0"],
@@ -229,7 +229,7 @@ class DeliveredScene(NativeL2Scene):
                     from .stacked_books import grasp_contact
                     gripping = grasp_contact(row, arm)
                 if gripping:
-                    flower = self.config.task_id == 'L1-09' and name == 'rose'
+                    flower = self.config.task_id == 'L1-05' and name == 'rose'
                     points = flower_payload_surface(row['pose'], row.get('flexible_parts')).tolist() if flower else row['corners']
                     payloads.append({"surface_points_world": points,
                                      "source": "current delivered collider surfaces, measured bilateral contact"
@@ -316,7 +316,7 @@ class DeliveredWipingScene(DeliveredScene):
         self.centers = centres
         resistance = json.loads((PROJECT_ROOT / "configs/task_references/l3_wiping_resistance.json").read_text())
         self.wiping_revision = resistance.pop("revision")
-        backend.scene_report["l3_11_ink_wear"] = {"revision": self.wiping_revision, **resistance}
+        backend.scene_report["l3_03_ink_wear"] = {"revision": self.wiping_revision, **resistance}
         self.ledger = ResistantWipeLedger(spec.parameters["board_pose"], centres,
                                  pad_z=spec.parameters["pad_z"],
                                  half_extents=spec.parameters["pad_half_extents"], weights=weights,

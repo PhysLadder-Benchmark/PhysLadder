@@ -71,7 +71,7 @@ def book_incline(stage, row, reference):
 
 
 def apply(stage, tid, row):
-    if tid not in ('L2-03', 'L2-04', 'L2-06', 'L2-07'):
+    if tid not in ('L2-02', 'L2-03', 'L2-04', 'L2-05'):
         return None
     config = json.loads(REFERENCE.read_text(encoding='utf-8'))
     reference = config['tasks'][tid]
@@ -83,9 +83,9 @@ def apply(stage, tid, row):
         if result['revision'] != revision:
             raise ValueError('Rebuild from immutable source before changing the L2 placement revision')
         return result
-    if tid == 'L2-03':
+    if tid == 'L2-02':
         result = book_incline(stage, row, reference)
-    elif tid == 'L2-06':
+    elif tid == 'L2-04':
         path = row['orange']['path']
         matrix = world(stage, path)
         # Rotate the full FEM hierarchy about its support-plane origin. Keep
@@ -97,7 +97,7 @@ def apply(stage, tid, row):
                   'yaw_delta_deg': reference['yaw_delta_deg'],
                   'shared_camera_changed': False,
                   'fem_geometry_and_physics_preserved': True}
-    elif tid == 'L2-07':
+    elif tid == 'L2-05':
         delta = np.asarray(reference['translation_world_m'], dtype=float)
         # Translate the entire assembly, including loose contents and both
         # joint frames. The drawer opening and support contact stay unchanged.
@@ -146,13 +146,13 @@ def update_runtime_files():
     setup = json.loads(setup_bytes)
     history = setup_path.parent / 'video_visual_setup_history' / (hashlib.sha256(setup_bytes).hexdigest() + '.json')
     history.write_bytes(setup_bytes)
-    for tid in ('L2-03', 'L2-04', 'L2-06', 'L2-07'):
+    for tid in ('L2-02', 'L2-03', 'L2-04', 'L2-05'):
         row = manifest['tasks'][tid]
         path = ROOT / 'assets/tuojing' / row['runtime_path']
         stage = Usd.Stage.Open(str(path))
         row['video_placement_refinement'] = apply(stage, tid, row)
         refresh(stage, row)
-        if tid == 'L2-04':
+        if tid == 'L2-03':
             for name in list(row.get('derived_contents', {}).get('added', {})):
                 stage.RemovePrim(row['tracked'].pop(name)['path'])
             from video_scene_contents import apply as add_contents

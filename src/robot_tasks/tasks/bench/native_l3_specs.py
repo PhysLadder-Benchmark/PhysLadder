@@ -42,7 +42,7 @@ def bottle():
     ]
     return BenchSpec(
         replace(
-            design("L3-03", "固定瓶身旋下瓶盖", articles),
+            design("L3-01", "固定瓶身旋下瓶盖", articles),
             version="l3-03-real-left-overview-right-v9",
             release=False,
             provenance="Delivered Oriental Leaf 335 ml body/cap, pre-loosened initial state",
@@ -83,7 +83,7 @@ def wiping():
     a = _article("eraser", "board_eraser", eraser, 0.0154,
                  ((-0.06, -0.03, 0), (0.06, 0.03, 0.020)))
     return BenchSpec(
-        replace(design("L3-11", "抓板擦擦除原生字迹", [a]),
+        replace(design("L3-03", "抓板擦擦除原生字迹", [a]),
                 version="l3-11-any-ink-removal-v6", release=False),
         arms=("right",), mechanism="native_contact_wiping",
         limitations="Original photo-derived GPT6 mask, rigid eraser and contact-driven single-pass removal. Cleaning proxy, not real ink chemistry. No scripted grasp or automatic cleaning motion.",
@@ -122,7 +122,7 @@ def sweeping():
         instances.append({"name": a.name, "asset": "blue_square", "pose": a.initial,
                           "tracked": {a.name: ""}})
     return BenchSpec(
-        replace(design("L3-15", "持刷扫两块入固定簸箕", articles),
+        replace(design("L3-05", "持刷扫两块入固定簸箕", articles),
                 version="l3-15-overview-right-brush-v6", release=True),
         arms=("right",), mechanism="native_rigid_brush_sweeping",
         limitations="Rigid native bristle contact, not flexible fibers. Pan/green box anchored. Brush is free and rests against the box, no attachment. Real setup's pan fixation was not measured.",

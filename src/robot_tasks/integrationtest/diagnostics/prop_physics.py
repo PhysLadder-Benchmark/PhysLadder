@@ -23,7 +23,7 @@ def _advance(scene, seconds):
 def run(scene):
     """Return measurements, failing if a claimed passive mechanism is absent."""
     task = scene.config.task_id
-    if task == "L2-06":
+    if task == "L2-04":
         from .orange_probe import run as probe_orange
 
         return probe_orange(scene)
@@ -32,17 +32,17 @@ def run(scene):
 
         return probe_native(scene)
     result = {"task": task, "scope": "fixture-only, no robot policy or success score"}
-    if task == "L1-03":
+    if task == "L1-02":
         from .plug_holder_probe import run as probe_holder
 
         result["source_holder"] = probe_holder(scene)
-    if task in {"L1-01", "L1-03", "L1-07", "L1-08", "L1-09"}:
+    if task in {"L1-01", "L1-02", "L1-03", "L1-04", "L1-05"}:
         article = (next(a for a in scene.design.articles if a.name == "plug")
-                   if task == "L1-03" else scene.design.articles[-1])
+                   if task == "L1-02" else scene.design.articles[-1])
         goal = list(article.goal)
         # Native socket clearance is a seating check, not an impact-drop test.
-        goal[2] += 0.0005 if task == "L1-03" else 0.008
-        if task == "L1-08":
+        goal[2] += 0.0005 if task == "L1-02" else 0.008
+        if task == "L1-04":
             # Check a reachable release *inside* the mouth before fingers on
             # the narrower lower body would hit the other cup's rim. This is a
             # gravity/contact diagnostic, not a scripted robot grasp or success.
@@ -51,7 +51,7 @@ def run(scene):
             goal[:3] = [lower[0], lower[1], lower[2] + p["cup_height"] - p["entry_depth"]]
             result["release_entry_depth_m"] = p["entry_depth"]
         _pose(scene, article.name, goal)
-        _advance(scene, 4 if task == "L1-09" else 2)
+        _advance(scene, 4 if task == "L1-05" else 2)
         row = scene.measure()[article.name]
         support = row["fixture_force_n"] + sum(row["pair_forces"].values())
         drift = float(np.linalg.norm(np.array(row["pose"][:2]) - goal[:2]))
@@ -68,22 +68,22 @@ def run(scene):
         result["geometry_criteria"] = criteria
         key = {
             "L1-01": "inside_holder",
-            "L1-03": "inside_socket",
-            "L1-07": "hook_through_head_opening",
-            "L1-08": "nested",
-            "L1-09": "stem_end_inside",
+            "L1-02": "inside_socket",
+            "L1-03": "hook_through_head_opening",
+            "L1-04": "nested",
+            "L1-05": "stem_end_inside",
         }[task]
         if not criteria[key]:
             raise RuntimeError(
                 "Physical resting pose rejected by geometry scorer: " + str(result)
             )
-        if task == "L1-07" and not criteria["target_hook_supported"]:
+        if task == "L1-03" and not criteria["target_hook_supported"]:
             raise RuntimeError("Hat is not carried by the selected lowest peg: " + str(result))
         drift_limit = 0.02
-        if task == "L1-09":
+        if task == "L1-05":
             # A rigid rose can lean until its tip rests at the cup's inner wall.
             drift_limit = scene.spec.parameters["radius"] + scene.spec.parameters["stem_radius"]
-        if task == "L1-07":
+        if task == "L1-03":
             # A hanging visor naturally slides inward along a sloping peg and
             # pivots around its rear band. Bound that excursion by the actual peg
             # and visor span, not the old miniature J-hook's 8-cm heuristic.

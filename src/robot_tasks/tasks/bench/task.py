@@ -43,15 +43,15 @@ class BenchTask:
             )
         constrained = config.task_id in {
             "L2-01",
+            "L2-02",
             "L2-03",
             "L2-04",
+            "L2-05",
             "L2-06",
-            "L2-07",
-            "L2-08",
+            "L3-01",
             "L3-03",
-            "L3-11",
-            "L3-14",
-            "L3-15",
+            "L3-04",
+            "L3-05",
         }
         return replace(
             config,
@@ -76,7 +76,7 @@ class BenchTask:
             self.scene = JellyScene(backend, config, self.spec)
         elif enabled(config) and self.spec.mechanism != "native_fem_orange_lift":
             from .delivered_scene import DeliveredScene, DeliveredWipingScene
-            cls = DeliveredWipingScene if config.task_id == "L3-11" else DeliveredScene
+            cls = DeliveredWipingScene if config.task_id == "L3-03" else DeliveredScene
             self.scene = cls(backend, config, self.spec)
         elif self.spec.mechanism == "native_fem_orange_lift":
             from .orange_scene import OrangeScene
@@ -126,7 +126,7 @@ class BenchTask:
             issue = initial_state_issue(self.spec, self.scene.measure())
             if issue:
                 raise RuntimeError(issue)
-        if (self.spec.design.task_id == "L1-09"
+        if (self.spec.design.task_id == "L1-05"
                 and not self.spec.parameters.get("rose_source_cup")):
             from .startup_settling import settle_rose
 

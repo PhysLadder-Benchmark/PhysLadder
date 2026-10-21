@@ -38,7 +38,7 @@ class PouringAcceptanceTests(unittest.TestCase):
         return config, spec, rows, evaluator
 
     def test_six_and_seven_succeed_with_empty_source_still_held(self):
-        for task_id in ('L2-04', 'L2-04_v3'):
+        for task_id in ('L2-03', 'L2-03_v3'):
             for received in (6, 7, 12):
                 with self.subTest(task=task_id, received=received):
                     _, spec, rows, evaluator = self.scene(task_id, received)
@@ -53,7 +53,7 @@ class PouringAcceptanceTests(unittest.TestCase):
                     self.assertEqual(result.metrics['scoring_protocol'], 'empty_source_half_received_v1')
 
     def test_five_received_residue_and_unsettled_balls_do_not_succeed(self):
-        for task_id in ('L2-04', 'L2-04_v3'):
+        for task_id in ('L2-03', 'L2-03_v3'):
             for received, remaining, moving in ((5, 0, False), (6, 1, False), (6, 0, True)):
                 with self.subTest(task=task_id, state=(received, remaining, moving)):
                     _, _, rows, evaluator = self.scene(task_id, received, remaining, moving)
@@ -62,7 +62,7 @@ class PouringAcceptanceTests(unittest.TestCase):
                     self.assertEqual(result.metrics['criteria']['remaining_source'], remaining)
 
     def test_initial_state_does_not_succeed_and_prompt_is_unchanged(self):
-        for tid in ('L2-04', 'L2-04_v3'):
+        for tid in ('L2-03', 'L2-03_v3'):
             entry, config = resolve_task(tid)
             spec = resolve_bench_spec(config.raw['task'], config.robot)
             e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})

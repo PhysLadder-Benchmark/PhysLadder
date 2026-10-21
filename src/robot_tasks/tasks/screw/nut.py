@@ -43,7 +43,7 @@ def nut_spec():
     )
     return BenchSpec(
         replace(
-            design("L3-05", "双臂旋下预松螺母", articles),
+            design("L3-02", "双臂旋下预松螺母", articles),
             version="l3-05-native-stud-right-nut-v4",
             release=True,
             provenance="2026-10-11 Feishu independent conical stud/nut with SDF thread contact",
@@ -214,7 +214,7 @@ class NutTask:
             config = replace(config, robot=robot_profile(config.robot, config.scene_id))
         if config.arms != ("left", "right") or config.observation_arms:
             raise ValueError(
-                "L3-05 nut removal requires both manipulation arms and no observation-only arm"
+                "L3-02 nut removal requires both manipulation arms and no observation-only arm"
             )
         if config.physics_dt_s > 1 / 1920 + 1e-12:
             raise ValueError("Native fine threads require physics_dt_s <= 1/1920")

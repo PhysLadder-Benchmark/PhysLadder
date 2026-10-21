@@ -14,7 +14,7 @@ from robot_tasks.tasks.bench.arm_selection import resolve_bench_spec
 from robot_tasks.tasks.bench.initial_placement import scene_record, apply_to_stage, PROFILES, yaw_about_pivot
 from robot_tasks.video_delivery import scenes
 
-TASKS = ('L1-01', 'L1-03', 'L1-07', 'L1-08', 'L1-09')
+TASKS = ('L1-01', 'L1-02', 'L1-03', 'L1-04', 'L1-05')
 
 
 class InitialPlacementTests(unittest.TestCase):
@@ -92,16 +92,16 @@ class InitialPlacementTests(unittest.TestCase):
 
     def test_p02_matches_reviewed_five_centimetre_plan_and_hat_yaw(self):
         expected = {'L1-01': [(-.04,-.03,0.),(0.,.03,0.)],
-                    'L1-03': [(-.04,-.03,0.),(0.,.03,0.)],
-                    'L1-07': [(0.,-.05,0.),(0.,0.,0.)],
-                    'L1-08': [(-.04,-.02,0.),(.04,-.03,0.)],
-                    'L1-09': [(-.04,-.03,0.),(0.,.03,0.)]}
+                    'L1-02': [(-.04,-.03,0.),(0.,.03,0.)],
+                    'L1-03': [(0.,-.05,0.),(0.,0.,0.)],
+                    'L1-04': [(-.04,-.02,0.),(.04,-.03,0.)],
+                    'L1-05': [(-.04,-.03,0.),(0.,.03,0.)]}
         for tid, deltas in expected.items():
             _, config = resolve_task(tid + "_v3")
             row = scene_record({**config.raw['task'], 'initial_placement_profile': 'l1_xy_5cm_hat15_p02_20261018'})
             plan = row['initial_placement_perturbation']
             self.assertEqual([tuple(g['delta_m']) for g in plan['groups']], deltas)
-            if tid == 'L1-07':
+            if tid == 'L1-03':
                 self.assertEqual(plan['rotations'][0]['yaw_deg'], 15.)
             else:
                 self.assertEqual(plan['rotations'], [])
@@ -120,17 +120,17 @@ class InitialPlacementTests(unittest.TestCase):
             self.assertEqual(spec.observers, baseline_spec.observers)
             if row['fixtures']:
                 np.testing.assert_array_equal(spec.design.fixture_pose, row['fixtures'][0]['pose'])
-            if tid == 'L1-08':
+            if tid == 'L1-04':
                 np.testing.assert_array_equal(spec.parameters['centre_xy'], baseline_spec.parameters['centre_xy'])
-            if tid == 'L1-09':
+            if tid == 'L1-05':
                 self.assertEqual(spec.parameters['fixed_articles'], ('source_cup', 'target_cup'))
                 np.testing.assert_array_equal(spec.parameters['vase_xy'], row['tracked']['target_cup']['pose'][:2])
 
     def test_unknown_profile_and_changed_baseline_are_rejected(self):
-        _, config = resolve_task('L1-09_v3')
+        _, config = resolve_task('L1-05_v3')
         with self.assertRaisesRegex(ValueError, 'Unknown initial placement'):
             scene_record({**config.raw['task'], 'initial_placement_profile': 'unknown'})
-        row = scenes()['L1-09']
+        row = scenes()['L1-05']
         previous = row['runtime_sha256']
         try:
             row['runtime_sha256'] = '0' * 64
@@ -169,7 +169,7 @@ class InitialPlacementTests(unittest.TestCase):
                     self.assertTrue(variant['reachability_screen']['passed'])
                     for check in variant['reachability_screen']['checks']:
                         self.assertLessEqual(check['position_error_m'], .003)
-                    if tid == 'L1-07':
+                    if tid == 'L1-03':
                         self.assertGreaterEqual(abs(variant['rotations'][0]['yaw_deg']), 10.)
                         self.assertLessEqual(abs(variant['rotations'][0]['yaw_deg']), 25.)
                     else:
@@ -177,19 +177,19 @@ class InitialPlacementTests(unittest.TestCase):
                     spec = resolve_bench_spec(raw, config.robot)
                     for article in spec.design.articles:
                         np.testing.assert_array_equal(article.initial, row['tracked'][article.name]['pose'])
-                    if tid == 'L1-08':
+                    if tid == 'L1-04':
                         cups = row['tracked']
                         right, left = cups['lower_cup']['pose'], cups['upper_cup']['pose']
                         self.assertGreater(right[0] - left[0], .09)
                         self.assertGreaterEqual(abs(right[1] - left[1]), .01)
                         self.assertLessEqual(abs(right[1] - left[1]), .05)
-                    if tid == 'L1-09':
+                    if tid == 'L1-05':
                         self.assertEqual(spec.parameters['fixed_articles'], ('source_cup','target_cup'))
                         self.assertGreater(row['tracked']['source_cup']['pose'][0], row['tracked']['target_cup']['pose'][0])
         self.assertEqual(len(seeds), 25)
 
     def test_p03_selection_validation_and_stage_identity_include_variant(self):
-        _, config = resolve_task('L1-09_v3')
+        _, config = resolve_task('L1-05_v3')
         for invalid in (0, 6, True, 1.5, '2', None):
             with self.subTest(variant=invalid), self.assertRaises(ValueError):
                 scene_record({**config.raw['task'], 'initial_placement_variant': invalid})

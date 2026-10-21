@@ -151,7 +151,7 @@ class AssetLayoutTests(unittest.TestCase):
                 path = verified_scene(task)
                 self.assertTrue(path.is_file())
                 continue
-            spec = nut_spec() if task == "L3-05" else build_spec(task)
+            spec = nut_spec() if task == "L3-02" else build_spec(task)
             assets = {a.asset.split(":", 1)[1] for a in spec.design.articles
                       if a.asset.startswith("tuojing:")}
             if spec.design.fixture_asset.startswith("tuojing:"):

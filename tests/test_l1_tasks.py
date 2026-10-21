@@ -10,12 +10,12 @@ class L1ProtocolTests(unittest.TestCase):
     def test_all_l1_tasks_use_shared_workflow_and_declared_roles(self):
         _, reference = resolve_task("GPT-PICK-PLACE")
         from robot_tasks.tasks.bench.task import BenchTask
-        for name in ("L1-01", "L1-03", "L1-07", "L1-08", "L1-09"):
+        for name in ("L1-01", "L1-02", "L1-03", "L1-04", "L1-05"):
             spec, config = resolve_task(name)
             self.assertTrue(spec.implemented)
             self.assertEqual(config.robot.source.name, "r5_video_20261015.toml")
             self.assertEqual(config.cameras, reference.cameras)
-            arms = ("left", "right") if name == "L1-08" else ("right",)
+            arms = ("left", "right") if name == "L1-04" else ("right",)
             observers = tuple(a for a in ("left", "right") if a not in arms)
             self.assertEqual(config.arm_roles, {a: "manipulation" if a in arms else "observation"
                                                for a in ("left", "right")})

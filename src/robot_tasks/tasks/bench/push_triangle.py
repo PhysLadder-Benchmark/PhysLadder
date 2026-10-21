@@ -40,7 +40,7 @@ def build():
         )
     return BenchSpec(
         replace(
-            design("L3-14", "夹爪推板擦入宽容目标区", [a], outline),
+            design("L3-04", "夹爪推板擦入宽容目标区", [a], outline),
             version="l3-14-overview-right-eraser-push-v6",
             release=True,
             provenance="2026-10-11 delivered blue eraser, original geometry and mass",

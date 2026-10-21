@@ -28,13 +28,13 @@ from robot_tasks.video_delivery import scenes, effective_cameras
 PROFILE_ID = 'l1_xy_random_p03_20261018'
 OUTPUT = PROJECT_ROOT / 'configs/task_references/l1_position_perturbations_p03_20261018.json'
 REJECTIONS = OUTPUT.with_name('l1_position_perturbations_p03_rejections_20261018.json')
-TASKS = ('L1-01', 'L1-03', 'L1-07', 'L1-08', 'L1-09')
+TASKS = ('L1-01', 'L1-02', 'L1-03', 'L1-04', 'L1-05')
 RANGES = {
     'L1-01': ((.03, .07), (.02, .05)),
-    'L1-03': ((.03, .07), (.02, .05)),
-    'L1-07': ((.03, .07), (0., .03)),
-    'L1-08': ((.03, .06), (.03, .06)),
-    'L1-09': ((.03, .07), (.03, .07)),
+    'L1-02': ((.03, .07), (.02, .05)),
+    'L1-03': ((.03, .07), (0., .03)),
+    'L1-04': ((.03, .06), (.03, .06)),
+    'L1-05': ((.03, .07), (.03, .07)),
 }
 
 
@@ -63,7 +63,7 @@ def candidate_poses(baseline, candidate):
 def rack_collider_vertices():
     """Actual separate rack segments, avoiding treating empty leg gaps as solid."""
     from pxr import Usd, UsdGeom, UsdPhysics
-    baseline = scenes()['L1-07']
+    baseline = scenes()['L1-03']
     stage = Usd.Stage.Open(str(PROJECT_ROOT / 'assets/tuojing' / baseline['runtime_path']))
     cache = UsdGeom.XformCache()
     result = []
@@ -109,7 +109,7 @@ def geometry_screen(tid, config, baseline, candidate):
             world = local @ t[:3, :3].T + t[:3, 3]
             # The rack top is cropped in the original framing. Require all other
             # moved props (not merely their centres) to fit the unchanged view.
-            if not (tid == 'L1-07' and path.endswith('/Fixture')):
+            if not (tid == 'L1-03' and path.endswith('/Fixture')):
                 view = world @ inverse_camera[:3, :3].T + inverse_camera[:3, 3]
                 uv = np.column_stack((cx + fx * view[:, 0] / -view[:, 2],
                                       cy - fy * view[:, 1] / -view[:, 2]))
@@ -124,7 +124,7 @@ def geometry_screen(tid, config, baseline, candidate):
         boxes.append((lo, hi))
         group_points.append(points)
     # Deliberately conservative XY AABBs prevent separate groups starting in contact.
-    if tid == 'L1-07':
+    if tid == 'L1-03':
         top = max((poses[path] @ np.r_[point, 1.])[2]
                   for path in candidate['groups'][0]['paths']
                   for point in product(*zip(*records[path]['bounds'])))
@@ -140,13 +140,13 @@ def geometry_screen(tid, config, baseline, candidate):
     shifts = [np.array(g['delta_m']) for g in candidate['groups']]
     if np.linalg.norm(shifts[0] - shifts[1]) < .015:
         return 'relative_offset_change_under_15mm'
-    if tid == 'L1-08':
+    if tid == 'L1-04':
         right, left = (poses['/World/Household/' + n][:3, 3] for n in ('lower_cup', 'upper_cup'))
         if right[0] - left[0] < .09:
             return 'cups_overlap_or_exchange_sides'
         if not .01 <= abs(right[1] - left[1]) <= .05:
             return 'cup_front_back_difference_outside_1_to_5cm'
-    if tid == 'L1-09':
+    if tid == 'L1-05':
         if poses['/World/Household/source_cup'][0, 3] <= poses['/World/Household/target_cup'][0, 3] + .09:
             return 'flower_must_stay_on_overview_right'
     return None
@@ -160,15 +160,15 @@ def reach_targets(tid, baseline, candidate):
     if tid == 'L1-01':
         return [('marker_grasp', 'right', at('marker', [0, 0, .125])),
                 ('mug_approach', 'right', at('Fixture', [0, 0, .13]))]
-    if tid == 'L1-03':
+    if tid == 'L1-02':
         return [('plug_grasp', 'right', at('plug', [0, 0, .048])),
                 ('socket_approach', 'right', at('Fixture', [0, 0, .10]))]
-    if tid == 'L1-07':
+    if tid == 'L1-03':
         from robot_tasks.robots.transforms import transform_pose
         a, b, _ = hook_geometry(transform_pose(poses['/World/Household/Fixture']), 'video:wooden_rack')
         return [('hat_band_region', 'right', at('hat', [.085, 0, .04])),
                 ('lowest_hook_region', 'right', (a + b) / 2)]
-    if tid == 'L1-08':
+    if tid == 'L1-04':
         centre = np.mean([r['pose'][:2] for r in baseline['tracked'].values()], axis=0)
         return [('right_cup_grasp', 'right', at('lower_cup', [0, 0, .055])),
                 ('left_cup_grasp', 'left', at('upper_cup', [0, 0, .055])),
@@ -206,6 +206,7 @@ def reach_screen(tid, config, baseline, candidate):
 
 
 def generate(master_seed=20261018):
+    from robot_tasks.task_numbering import to_legacy
     previous = json.loads((OUTPUT.parent / 'l1_position_perturbations_p02_20261018.json').read_text(encoding='utf-8'))
     ledger = json.loads(REJECTIONS.read_text(encoding='utf-8')) if REJECTIONS.exists() else {'master_seed': master_seed, 'rejections': []}
     rejected = {r['candidate_sha256'] for r in ledger['rejections']} if ledger['master_seed'] == master_seed else set()
@@ -215,9 +216,9 @@ def generate(master_seed=20261018):
         'master_seed': master_seed, 'variant_count': 5,
         'sampling': {'translation': 'uniform area on each group annulus; independent direction and radius',
                      'hat_yaw': 'equal probability of each sign; magnitude uniform in [10,25] degrees',
-                     'rejection': ['10mm tabletop margin', '5mm separation of independent group XY bounds; L1-07 uses actual separate rack segment polygons',
+                     'rejection': ['10mm tabletop margin', '5mm separation of independent group XY bounds; L1-03 uses actual separate rack segment polygons',
                                    'relative translation change >=15mm', 'preserve cup sides',
-                                   'L1-08 cup front/back difference 10..50mm', 'whole moved props fit overview with 8px margin (rack top exempt)',
+                                   'L1-04 cup front/back difference 10..50mm', 'whole moved props fit overview with 8px margin (rack top exempt)',
                                    'position-only URDF IK <=3mm', 'recorded passive-physics rejections'],
                      'runtime_resampling': False, 'reset_policy': 'reuse selected frozen variant; select 1..5 explicitly'},
         'physical_rejections': ledger['rejections'] if ledger['master_seed'] == master_seed else [],
@@ -230,8 +231,10 @@ def generate(master_seed=20261018):
         row = {'baseline_runtime_sha256': baseline['runtime_sha256'],
                'translation_ranges_m': [list(v) for v in RANGES[tid]], 'variants': []}
         for number in range(1, 6):
-            # Task IDs participate in the seed, avoiding shared directions across tasks.
-            seed = int.from_bytes(hashlib.sha256(f'{master_seed}:{tid}:{number}'.encode()).digest()[:8], 'little')
+            # Preserve the frozen sampling identity across catalogue renumbering.
+            # Changing this label would generate different physical placements.
+            seed_id = to_legacy(tid)
+            seed = int.from_bytes(hashlib.sha256(f'{master_seed}:{seed_id}:{number}'.encode()).digest()[:8], 'little')
             rng = np.random.default_rng(seed)
             rejections = {}
             for attempt in range(1, 2001):
@@ -239,7 +242,7 @@ def generate(master_seed=20261018):
                 for group, limits in zip(groups, RANGES[tid]):
                     group['delta_m'] = sample_delta(rng, limits)
                 candidate = {'variant': number, 'seed': seed, 'sampling_attempt': attempt, 'groups': groups}
-                if tid == 'L1-07':
+                if tid == 'L1-03':
                     rotations = deepcopy(old['rotations'])
                     rotations[0]['yaw_deg'] = round(float(rng.choice([-1, 1]) * rng.uniform(10., 25.)), 4)
                     candidate['rotations'] = rotations

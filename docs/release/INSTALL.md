@@ -72,7 +72,7 @@ GPU, capture the actual scene and normal initialization without model calls:
 ```bash
 export PYTHONPATH="$PWD/src"
 "$GPT_BENCHMARK_PYTHON" tools/release/render_initial.py \
-  L2-03_variant01 --gpu 0 --output build/initial/L2-03_variant01
+  L2-02_variant01 --gpu 0 --output build/initial/L2-02_variant01
 ```
 
 `--gpu` is the physical Vulkan GPU index. For multi-GPU containers also set
@@ -94,15 +94,15 @@ credentials nor sessions are shipped. Changing model/effort/transport is a new
 experimental condition and must be recorded.
 
 ```bash
-python tools/reproduce.py --tasks L2-03 L2-03_variant01  # plan only
-python tools/reproduce.py --tasks L2-03_variant01 --dry-run
-python tools/reproduce.py --tasks L2-03_variant01 --execute
+python tools/reproduce.py --tasks L2-02 L2-02_variant01  # plan only
+python tools/reproduce.py --tasks L2-02_variant01 --dry-run
+python tools/reproduce.py --tasks L2-02_variant01 --execute
 ```
 
 For ad hoc explicit budgets, e.g. 150 calls and 5 hours:
 
 ```bash
-python tools/batch_run.py --tasks L2-03_variant01 --max-calls 150 --wall-time-s 18000
+python tools/batch_run.py --tasks L2-02_variant01 --max-calls 150 --wall-time-s 18000
 ```
 
 This is a budget override, not a claim about historical experiments. A Ctrl+C

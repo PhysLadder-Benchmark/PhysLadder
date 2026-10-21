@@ -9,104 +9,119 @@
       "props": {
         "marker": "whiteboard_marker",
         "mug": "black_ceramic_mug"
-      }
+      },
+      "directory": "L1-01"
     },
-    "L1-03": {
+    "L1-02": {
       "name": "插头插接",
       "props": {
         "plug": "usb_charger",
         "power_strip": "power_strip",
         "plug_base": "plug_storage_base"
-      }
+      },
+      "directory": "L1-03"
     },
-    "L1-07": {
+    "L1-03": {
       "name": "遮阳帽挂架",
       "props": {
         "hat": "yellow_visor",
         "rack": "wooden_rack"
-      }
+      },
+      "directory": "L1-07"
     },
-    "L1-08": {
+    "L1-04": {
       "name": "纸杯套叠",
       "props": {
         "cup": "ripple_paper_cup"
-      }
+      },
+      "directory": "L1-08"
     },
-    "L1-09": {
+    "L1-05": {
       "name": "玫瑰插杯",
       "props": {
         "rose": "artificial_rose",
         "cup": "ripple_paper_cup"
-      }
+      },
+      "directory": "L1-09"
     },
     "L2-01": {
       "name": "双臂拔笔帽",
       "props": {
         "marker": "pullable_marker",
         "support_box": "green_support_box"
-      }
+      },
+      "directory": "L2-01"
     },
-    "L2-03": {
+    "L2-02": {
       "name": "中层书本抽取",
       "props": {
         "book": "closed_book",
         "support_box": "green_support_box"
-      }
+      },
+      "directory": "L2-03"
     },
-    "L2-04": {
+    "L2-03": {
       "name": "杯间倒珍珠",
       "props": {
         "cup": "ripple_paper_cup",
         "pearl": "pearl_8mm"
-      }
+      },
+      "directory": "L2-04"
     },
-    "L2-06": {
+    "L2-04": {
       "name": "橘子抬升并放回绿盒",
       "props": {
         "orange": "orange_segment",
         "support_box": "green_support_box"
-      }
+      },
+      "directory": "L2-06"
     },
-    "L2-07": {
+    "L2-05": {
       "name": "拉开化妆抽屉",
       "props": {
         "drawer": "desk_organizer"
-      }
+      },
+      "directory": "L2-07"
     },
-    "L3-03": {
+    "L3-01": {
       "name": "双臂旋拧瓶盖",
       "props": {
         "bottle": "oriental_leaf_335ml"
-      }
+      },
+      "directory": "L3-03"
     },
-    "L3-05": {
+    "L3-02": {
       "name": "双臂旋出螺母",
       "props": {
         "bolt": "anchor_removable_nut",
         "support_box": "green_support_box"
-      }
+      },
+      "directory": "L3-05"
     },
-    "L3-11": {
+    "L3-03": {
       "name": "擦除绿板字迹",
       "props": {
         "board": "green_board_20261008",
         "eraser": "board_eraser"
-      }
+      },
+      "directory": "L3-11"
     },
-    "L3-14": {
+    "L3-04": {
       "name": "夹爪推板擦入目标区",
       "props": {
         "eraser": "board_eraser"
-      }
+      },
+      "directory": "L3-14"
     },
-    "L3-15": {
+    "L3-05": {
       "name": "扫块入簸箕",
       "props": {
         "brush": "hand_brush",
         "dustpan": "dustpan",
         "block": "blue_square",
         "support_box": "green_support_box"
-      }
+      },
+      "directory": "L3-15"
     }
   },
   "bundles": {

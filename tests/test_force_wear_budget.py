@@ -60,7 +60,7 @@ class ForceWearTests(unittest.TestCase):
 class UnlimitedBudgetTests(unittest.TestCase):
     def run_budget(self, *, fail=False, external=False):
         cfg=robot_config()
-        cfg=replace(cfg,task_id='L3-11',max_steps=0,max_wall_time_s=18000,
+        cfg=replace(cfg,task_id='L3-03',max_steps=0,max_wall_time_s=18000,
             raw={**cfg.raw,'execution':{'max_decisions':0,'max_action_steps':1,'completion_samples':1}})
         self.assertEqual(ExecutionSettings.from_config(cfg).max_decisions,0)
         clock=[0.]
@@ -106,11 +106,11 @@ class UnlimitedBudgetTests(unittest.TestCase):
             root=Path(d); model=root/'model.toml'
             model.write_text('[gpt]\nbase_url="https://example.invalid"\nmodel="fixture"\n')
             runtime=RuntimeConfig('/unused',root,root,root/'runtime.toml',True)
-            args=Mock(tasks=['L3-11'],max_calls=0,wall_time_s=18000,startup_grace_s=120,
+            args=Mock(tasks=['L3-03'],max_calls=0,wall_time_s=18000,startup_grace_s=120,
                       seed=0,reasoning_effort='xhigh',dry_run=False,gui=False,depth=None)
             manifest,_=batch.create_batch(root/'batch',args,model,runtime)
             self.assertEqual(manifest['options']['max_calls'],0)
-            cfg=load_config(root/'batch/configs/L3-11.toml')
+            cfg=load_config(root/'batch/configs/L3-03.toml')
             self.assertEqual(cfg.max_wall_time_s,18000)
             self.assertEqual(ExecutionSettings.from_config(cfg).max_decisions,0)
             self.assertEqual(load_gpt_settings(root/'batch/configs/model.toml').max_calls,0)
@@ -120,7 +120,7 @@ class UnlimitedBudgetTests(unittest.TestCase):
             root=Path(d)
             manifest={'python':'unused','options':{'max_calls':0,'wall_time_s':18000.,
                 'startup_grace_s':60.,'dry_run':False,'gui':False},
-                'tasks':[{'id':'L3-11','config':'unused','cameras':[]}]}
+                'tasks':[{'id':'L3-03','config':'unused','cameras':[]}]}
             environment={'KEPT':'yes'}
             captured={}
             def job(command,directory,env,timeout,started):

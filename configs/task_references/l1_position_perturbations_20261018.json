@@ -11,28 +11,28 @@
         {"name": "固定马克杯", "delta_m": [-0.010, 0.006, 0.0], "paths": ["/World/Household/Fixture"]}
       ]
     },
-    "L1-03": {
+    "L1-02": {
       "baseline_runtime_sha256": "616d8f7f1e143f8e936abb26fd1402ab5644c4a68cfab4f40f8a51befa9df485",
       "groups": [
         {"name": "插头和黑色底座", "delta_m": [0.012, -0.006, 0.0], "paths": ["/World/Household/plug", "/World/Household/plug_storage_base"]},
         {"name": "桌面插排", "delta_m": [-0.008, 0.008, 0.0], "paths": ["/World/Household/Fixture"]}
       ]
     },
-    "L1-07": {
+    "L1-03": {
       "baseline_runtime_sha256": "3935f39f6fb561726dfcd0232c5adb5fcf3729ad6bce1ad80d722cc135da38c8",
       "groups": [
         {"name": "帽子和蓝色盒子", "delta_m": [0.010, -0.006, 0.0], "paths": ["/World/Household/hat", "/World/Household/source_box"]},
         {"name": "挂帽架", "delta_m": [-0.010, 0.008, 0.0], "paths": ["/World/Household/Fixture"]}
       ]
     },
-    "L1-08": {
+    "L1-04": {
       "baseline_runtime_sha256": "f31ac428f045e82b2c552740057c7a31e98b311442ab979c39967f5101115cac",
       "groups": [
         {"name": "画面右杯", "delta_m": [0.010, 0.006, 0.0], "paths": ["/World/Household/lower_cup"]},
         {"name": "画面左杯", "delta_m": [-0.012, 0.004, 0.0], "paths": ["/World/Household/upper_cup"]}
       ]
     },
-    "L1-09": {
+    "L1-05": {
       "baseline_runtime_sha256": "4f5786655464c7c3c1f07d92c2052b4446e73f6ec50bbadc2df71cf82f971398",
       "groups": [
         {"name": "源杯、花和充电头", "delta_m": [-0.012, 0.006, 0.0], "paths": ["/World/Household/source_cup", "/World/Household/rose", "/World/Household/source_charger", "/World/Household/rose/LeafBodies/Leaf0", "/World/Household/rose/LeafBodies/Leaf1"]},

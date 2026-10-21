@@ -12,11 +12,11 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCES = {
     "whiteboard_marker": ("L1-01", "/World/Household/marker"),
     "black_ceramic_mug": ("L1-01", "/World/Household/Fixture"),
-    "usb_charger": ("L1-03", "/World/Household/plug"),
-    "ripple_paper_cup": ("L1-08", "/World/Household/lower_cup"),
-    "artificial_rose": ("L1-09", "/World/Household/rose"),
-    "yellow_visor": ("L1-07", "/World/Household/hat"),
-    "wooden_rack": ("L1-07", "/World/Household/Fixture"),
+    "usb_charger": ("L1-02", "/World/Household/plug"),
+    "ripple_paper_cup": ("L1-04", "/World/Household/lower_cup"),
+    "artificial_rose": ("L1-05", "/World/Household/rose"),
+    "yellow_visor": ("L1-03", "/World/Household/hat"),
+    "wooden_rack": ("L1-03", "/World/Household/Fixture"),
 }
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--prop', choices=tuple(SOURCES), action='append')
@@ -27,7 +27,7 @@ manifest = json.loads((ROOT / 'assets/tuojing/video_20261015.json').read_text())
 for name, (tid, root) in SOURCES.items():
     if args.prop and name not in args.prop:
         continue
-    scene_file = ROOT / 'assets/tuojing/source' / tid / 'scene.usdz'
+    scene_file = ROOT / 'assets/tuojing' / manifest['tasks'][tid]['path']
     if name in {'black_ceramic_mug', 'wooden_rack', 'artificial_rose', 'yellow_visor'}:
         scene_file = ROOT / 'assets/tuojing' / manifest['tasks'][tid]['runtime_path']
     stage = Usd.Stage.Open(str(scene_file))
@@ -67,7 +67,7 @@ for name, (tid, root) in SOURCES.items():
         else:
             raise ValueError(str(prim.GetPath()) + ": " + prim.GetTypeName())
         shapes.append(row)
-    source = ROOT / "assets/tuojing/source" / tid / "scene.usdz"
+    source = ROOT / "assets/tuojing" / manifest['tasks'][tid]['path']
     result["props"]["video:" + name] = {"task": tid, "root": root, "shapes": shapes,
         "source_scene_sha256": hashlib.sha256(source.read_bytes()).hexdigest()}
     if name in {'black_ceramic_mug', 'wooden_rack', 'artificial_rose', 'yellow_visor'}:

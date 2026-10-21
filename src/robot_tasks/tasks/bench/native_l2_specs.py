@@ -88,7 +88,7 @@ def books():
         {"name": a.name, "asset": "closed_book", "pose": a.initial,
          "tracked": {a.name: ""}} for a in articles]
     return BenchSpec(
-        replace(design("L2-03", "双臂支撑并抽取中层书", articles),
+        replace(design("L2-02", "双臂支撑并抽取中层书", articles),
                 version="l2-03-photo-offset-right-pull-v7", release=True),
         arms=("left", "right"), mechanism="native_book_free_neighbours",
         limitations="Native rigid closed books, 378.9 g each; no page flex. All books are dynamic. Support box anchored as a passive fixture. Friction uncalibrated.",
@@ -107,7 +107,7 @@ def orange():
         asset="tuojing:orange_segment",
         asset_bounds=((-0.025, -0.00740, 0), (0.025, 0.02530, 0.02530)))
     return BenchSpec(
-        replace(design("L2-06", "绿盒橘子抬升并放回", [article]),
+        replace(design("L2-04", "绿盒橘子抬升并放回", [article]),
                 version="l2-06-overview-right-lift-return-v11", release=True),
         arms=("right",),
         mechanism="native_fem_orange_lift",
@@ -138,7 +138,7 @@ def drawer():
     offsets = {"Drawer1": (0, -opening, 0)}
     offsets.update({f"Contents/Cube{i:02}": (0, -opening, 0) for i in range(1, 6)})
     return BenchSpec(
-        replace(design("L2-07", "预开抽屉拉出并推回", [a]),
+        replace(design("L2-05", "预开抽屉拉出并推回", [a]),
                 version="l2-07-overview-right-pull-return-v10", release=True),
         arms=("right",), mechanism="native_prismatic_drawer_pull_return",
         limitations="Delivered cabinet fixed, lower drawer fixed; original upper rail and passive resistance retained. Five dynamic 20 mm cubes remain loose in the upper drawer. Friction and cabinet dimensions uncalibrated.",

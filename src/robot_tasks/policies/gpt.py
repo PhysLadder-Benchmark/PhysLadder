@@ -96,10 +96,10 @@ class GPTPolicy:
                 "manipulation. This includes uncertainty about whether an object is still held after "
                 "lifting, or why an approach or insertion failed. You choose whether and where to inspect. "
             )
-            if (config.task_id == "L1-03"
+            if (config.task_id == "L1-02"
                     and config.raw.get("task", {}).get("prompt_protocol") != "feishu_english_20261015_v1"):
                 observation_advice = (
-                    "For L1-03, distinguish uncertain holding from an occluded blade end. If holding "
+                    "For L1-02, distinguish uncertain holding from an occluded blade end. If holding "
                     "is unverified, actively reposition an observation arm or use the permitted grasp "
                     "recovery; if automatic grasp feedback is enabled, its motion bounds still apply. If holding is verified and "
                     "current images support a safe clearance move, seeing both blades is not a "

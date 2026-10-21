@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "revision": "combined_l1_l2_l3_original_and_v3_20261020",
-  "basis": "One shared camera rig inferred from the real L3-03 background and table framing; no per-task camera fit. Task-specific joints, props and color remain unchanged.",
+  "basis": "One shared camera rig inferred from the real L3-01 background and table framing; no per-task camera fit. Task-specific joints, props and color remain unchanged.",
   "source_videos_document": "https://my.feishu.cn/docx/Q7StdW6q3oXDAkxMakScReukn2d",
   "tasks": {
     "L1-01": {
@@ -411,7 +411,7 @@
         "/World/Furniture/ThirdCameraStand": "invisible"
       }
     },
-    "L1-03": {
+    "L1-02": {
       "runtime_scene_sha256": "616d8f7f1e143f8e936abb26fd1402ab5644c4a68cfab4f40f8a51befa9df485",
       "arms": {
         "left": {
@@ -428,7 +428,7 @@
           "source_target_residual_rad": 1.9605768007511904e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L1-03",
+            "task": "L1-02",
             "arm": "left",
             "before_clearance_m": -0.004166202548148604,
             "after_clearance_m": 0.0029999999938209593,
@@ -489,7 +489,7 @@
           "source_target_residual_rad": 1.6866881223918916e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L1-03",
+            "task": "L1-02",
             "arm": "right",
             "before_clearance_m": -0.0017872861833827108,
             "after_clearance_m": 0.0029999999999947152,
@@ -798,7 +798,7 @@
         "/World/Furniture/ThirdCameraStand": "invisible"
       }
     },
-    "L1-07": {
+    "L1-03": {
       "runtime_scene_sha256": "3935f39f6fb561726dfcd0232c5adb5fcf3729ad6bce1ad80d722cc135da38c8",
       "arms": {
         "left": {
@@ -815,7 +815,7 @@
           "source_target_residual_rad": 1.960576396849937e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L1-07",
+            "task": "L1-03",
             "arm": "left",
             "before_clearance_m": -0.0037787173431885757,
             "after_clearance_m": 0.0029999999977680103,
@@ -870,7 +870,7 @@
           "source_target_residual_rad": 1.6866881223918916e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L1-07",
+            "task": "L1-03",
             "arm": "right",
             "before_clearance_m": 0.00014070469571177482,
             "after_clearance_m": 0.003000000000032095,
@@ -1188,7 +1188,7 @@
         "/World/Furniture/ThirdCameraStand": "invisible"
       }
     },
-    "L1-08": {
+    "L1-04": {
       "runtime_scene_sha256": "f31ac428f045e82b2c552740057c7a31e98b311442ab979c39967f5101115cac",
       "arms": {
         "left": {
@@ -1205,7 +1205,7 @@
           "source_target_residual_rad": 1.960576396849937e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L1-08",
+            "task": "L1-04",
             "arm": "left",
             "before_clearance_m": 0.0004437052948932235,
             "after_clearance_m": 0.0029999999994197724,
@@ -1279,7 +1279,7 @@
           "source_target_residual_rad": 1.6866881223918916e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L1-08",
+            "task": "L1-04",
             "arm": "right",
             "before_clearance_m": -0.0071492552778437,
             "after_clearance_m": 0.0029999999992496307,
@@ -1598,7 +1598,7 @@
         "/World/Furniture/ThirdCameraStand": "invisible"
       }
     },
-    "L1-09": {
+    "L1-05": {
       "runtime_scene_sha256": "4f5786655464c7c3c1f07d92c2052b4446e73f6ec50bbadc2df71cf82f971398",
       "arms": {
         "left": {
@@ -1615,7 +1615,7 @@
           "source_target_residual_rad": 1.960576396849937e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L1-09",
+            "task": "L1-05",
             "arm": "left",
             "before_clearance_m": -0.0043174554250963865,
             "after_clearance_m": 0.0029999999995957566,
@@ -1676,7 +1676,7 @@
           "source_target_residual_rad": 1.6866881223918916e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L1-09",
+            "task": "L1-05",
             "arm": "right",
             "before_clearance_m": -0.004422349682915702,
             "after_clearance_m": 0.002999999999898792,
@@ -1998,10 +1998,10 @@
             -0.11379777942180551
           ],
           "gripper_width_m": 0.0017,
-          "method": "User requested the same neutral initial arm posture as the other L2 tasks; copy the validated L2-03 joint home and gripper opening.",
-          "reference_task": "L2-03",
+          "method": "User requested the same neutral initial arm posture as the other L2 tasks; copy the validated L2-02 joint home and gripper opening.",
+          "reference_task": "L2-02",
           "initial_self_collision_clearance": {
-            "task": "L2-03",
+            "task": "L2-02",
             "arm": "left",
             "before_clearance_m": 0.0001776023896337131,
             "after_clearance_m": 0.0029999999993214205,
@@ -2036,10 +2036,10 @@
             -0.042511889367648784
           ],
           "gripper_width_m": 0.02292682990898565,
-          "method": "User requested the same neutral initial arm posture as the other L2 tasks; copy the validated L2-03 joint home and gripper opening.",
-          "reference_task": "L2-03",
+          "method": "User requested the same neutral initial arm posture as the other L2 tasks; copy the validated L2-02 joint home and gripper opening.",
+          "reference_task": "L2-02",
           "initial_self_collision_clearance": {
-            "task": "L2-03",
+            "task": "L2-02",
             "arm": "right",
             "before_clearance_m": 0.0006532469909833194,
             "after_clearance_m": 0.002999999999387659,
@@ -2323,7 +2323,7 @@
         "fit_evidence": "build/color_alignment_20261015/fits/L2-01/color_fit.json"
       }
     },
-    "L2-03": {
+    "L2-02": {
       "runtime_scene_sha256": "8ab152a7e835b1cf02a77f39cc06da85621681eb4fc91c63000bf2af6ff6bbd8",
       "arms": {
         "left": {
@@ -2340,7 +2340,7 @@
           "source_target_residual_rad": 0.031497858096760166,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L2-03",
+            "task": "L2-02",
             "arm": "left",
             "before_clearance_m": 0.0001776023896337131,
             "after_clearance_m": 0.0029999999993214205,
@@ -2411,7 +2411,7 @@
           "source_target_residual_rad": 0.034705751493035696,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L2-03",
+            "task": "L2-02",
             "arm": "right",
             "before_clearance_m": 0.0006532469909833194,
             "after_clearance_m": 0.002999999999387659,
@@ -2727,7 +2727,7 @@
         "fit_evidence": "build/color_alignment_20261015/fits/L2-03/color_fit.json"
       }
     },
-    "L2-04": {
+    "L2-03": {
       "runtime_scene_sha256": "b190d773e057f083c96511e661e8cb85708bf7a03cc1eb74cc68e31b50dc8371",
       "arms": {
         "left": {
@@ -2744,7 +2744,7 @@
           "source_target_residual_rad": 0.0063610586692288825,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L2-04",
+            "task": "L2-03",
             "arm": "left",
             "before_clearance_m": -0.008867432830731908,
             "after_clearance_m": 0.002999999999972039,
@@ -2815,7 +2815,7 @@
           "source_target_residual_rad": 0.03044725027260905,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L2-04",
+            "task": "L2-03",
             "arm": "right",
             "before_clearance_m": -0.008818785754674083,
             "after_clearance_m": 0.0029999999999613253,
@@ -3131,7 +3131,7 @@
         "fit_evidence": "build/color_alignment_20261015/fits/L2-04/color_fit.json"
       }
     },
-    "L2-06": {
+    "L2-04": {
       "runtime_scene_sha256": "e8438198a3363e7840aa17f1025a4dd124aa8d53a50df915b53db971b080d194",
       "arms": {
         "left": {
@@ -3148,7 +3148,7 @@
           "source_target_residual_rad": 0.042023985190067184,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L2-06",
+            "task": "L2-04",
             "arm": "left",
             "before_clearance_m": -0.00393538552100367,
             "after_clearance_m": 0.0029999999998981397,
@@ -3219,7 +3219,7 @@
           "source_target_residual_rad": 0.025339717603392882,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L2-06",
+            "task": "L2-04",
             "arm": "right",
             "before_clearance_m": 0.002049769955905126,
             "after_clearance_m": 0.0029999999999303084,
@@ -3535,7 +3535,7 @@
         "fit_evidence": "build/color_alignment_20261015/fits/L2-06/color_fit.json"
       }
     },
-    "L2-07": {
+    "L2-05": {
       "runtime_scene_sha256": "fcdc25acce380539287aff2dca76bfb692006907521c213cda9fd495fb2ff11e",
       "arms": {
         "left": {
@@ -3552,7 +3552,7 @@
           "source_target_residual_rad": 0.015699770921621555,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L2-07",
+            "task": "L2-05",
             "arm": "left",
             "before_clearance_m": 0.0006417636792104137,
             "after_clearance_m": 0.002999999999987124,
@@ -3613,7 +3613,7 @@
           "source_target_residual_rad": 0.007808158334890943,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L2-07",
+            "task": "L2-05",
             "arm": "right",
             "before_clearance_m": -0.0021012717265117414,
             "after_clearance_m": 0.00299999999999874,
@@ -3932,7 +3932,7 @@
         "fit_evidence": "build/color_alignment_20261015/fits/L2-07/color_fit.json"
       }
     },
-    "L3-03": {
+    "L3-01": {
       "runtime_scene_sha256": "931ae1fe781e20b1b01ca5e2c20a28be3125dfa7d33e1ddccd960711e2f2d23c",
       "arms": {
         "left": {
@@ -3949,7 +3949,7 @@
           "source_target_residual_rad": 1.9681320455488786e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L3-03",
+            "task": "L3-01",
             "arm": "left",
             "before_clearance_m": -0.0007187236883935966,
             "after_clearance_m": 0.00299999999978752,
@@ -4010,7 +4010,7 @@
           "source_target_residual_rad": 1.6687113684812574e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L3-03",
+            "task": "L3-01",
             "arm": "right",
             "before_clearance_m": -0.0016857204576338908,
             "after_clearance_m": 0.0029999999994543697,
@@ -4316,7 +4316,7 @@
         "fit_evidence": "build/color_alignment_20261015/fits/L3-03/color_fit.json"
       }
     },
-    "L3-05": {
+    "L3-02": {
       "runtime_scene_sha256": "1599ce0302949b2e55cd193142b144b3302531ad91dd6fbeecc3427f539cda87",
       "arms": {
         "left": {
@@ -4333,7 +4333,7 @@
           "source_target_residual_rad": 1.9681320455488786e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L3-05",
+            "task": "L3-02",
             "arm": "left",
             "before_clearance_m": -0.003698173855385928,
             "after_clearance_m": 0.0029999999999879984,
@@ -4404,7 +4404,7 @@
           "source_target_residual_rad": 1.6687113684812574e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L3-05",
+            "task": "L3-02",
             "arm": "right",
             "before_clearance_m": 0.0037253559293017324,
             "after_clearance_m": 0.0037253559293017324,
@@ -4720,7 +4720,7 @@
         "fit_evidence": "build/color_alignment_20261015/fits/L3-05/color_fit.json"
       }
     },
-    "L3-11": {
+    "L3-03": {
       "runtime_scene_sha256": "cfbabcedc741d5c6b29cc1212ce05be71afb1f50bb17f761e0649b2467417f87",
       "arms": {
         "left": {
@@ -4737,7 +4737,7 @@
           "source_target_residual_rad": 1.9681320455488786e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L3-11",
+            "task": "L3-03",
             "arm": "left",
             "before_clearance_m": -0.002227620945582473,
             "after_clearance_m": 0.0029999999999751475,
@@ -4798,7 +4798,7 @@
           "source_target_residual_rad": 1.6687113684812574e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L3-11",
+            "task": "L3-03",
             "arm": "right",
             "before_clearance_m": -0.00015628390113581192,
             "after_clearance_m": 0.0029999999994736737,
@@ -5095,27 +5095,27 @@
           1.008553837448225,
           1.2755102040816326
         ],
-        "method": "Shared median appearance correction from the other fourteen tasks; no separate L3-11 warm matching, per user instruction.",
+        "method": "Shared median appearance correction from the other fourteen tasks; no separate L3-03 warm matching, per user instruction.",
         "shared_correction_source_tasks": [
           "L1-01",
+          "L1-02",
           "L1-03",
-          "L1-07",
-          "L1-08",
-          "L1-09",
+          "L1-04",
+          "L1-05",
           "L2-01",
+          "L2-02",
           "L2-03",
           "L2-04",
-          "L2-06",
-          "L2-07",
-          "L3-03",
-          "L3-05",
-          "L3-14",
-          "L3-15"
+          "L2-05",
+          "L3-01",
+          "L3-02",
+          "L3-04",
+          "L3-05"
         ],
         "reference_setup_sha256": "809b18f85e0e9a4a15ff16e51ac8b33d8c5c8dcc3d1644d2a57a614b206160c0"
       }
     },
-    "L3-14": {
+    "L3-04": {
       "runtime_scene_sha256": "86921655b4690014c0b8d97d1fa6db84f48d1606a974a421b40a2a78319d42a4",
       "arms": {
         "left": {
@@ -5132,7 +5132,7 @@
           "source_target_residual_rad": 1.9681320455488786e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L3-14",
+            "task": "L3-04",
             "arm": "left",
             "before_clearance_m": -0.003905396963127139,
             "after_clearance_m": 0.002999999999823949,
@@ -5193,7 +5193,7 @@
           "source_target_residual_rad": 1.6687113684812574e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L3-14",
+            "task": "L3-04",
             "arm": "right",
             "before_clearance_m": -0.0036616321863922607,
             "after_clearance_m": 0.0029999999996730697,
@@ -5499,7 +5499,7 @@
         "fit_evidence": "build/color_alignment_20261015/fits/L3-14/color_fit.json"
       }
     },
-    "L3-15": {
+    "L3-05": {
       "runtime_scene_sha256": "0cd40b180c7955836a53dff32b8dc147615d8bccd7f1e697f75506bb8be8f76a",
       "arms": {
         "left": {
@@ -5516,7 +5516,7 @@
           "source_target_residual_rad": 1.9681320455488786e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L3-15",
+            "task": "L3-05",
             "arm": "left",
             "before_clearance_m": -0.006810140790529731,
             "after_clearance_m": 0.002999999999999989,
@@ -5577,7 +5577,7 @@
           "source_target_residual_rad": 1.6687113684812574e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L3-15",
+            "task": "L3-05",
             "arm": "right",
             "before_clearance_m": 0.0015101747440639524,
             "after_clearance_m": 0.00299999999992083,
@@ -5893,7 +5893,7 @@
         "fit_evidence": "build/color_alignment_20261015/fits/L3-15/color_fit.json"
       }
     },
-    "L2-08": {
+    "L2-06": {
       "runtime_scene_sha256": "e4e56fae752f6860a45016c8eeff0c904996f72b66b8662b3d33f39941871b4e",
       "arms": {
         "left": {
@@ -5910,7 +5910,7 @@
           "source_target_residual_rad": 0.042023985190067184,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L2-06",
+            "task": "L2-04",
             "arm": "left",
             "before_clearance_m": -0.00393538552100367,
             "after_clearance_m": 0.0029999999998981397,
@@ -5981,7 +5981,7 @@
           "source_target_residual_rad": 0.025339717603392882,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L2-06",
+            "task": "L2-04",
             "arm": "right",
             "before_clearance_m": 0.002049769955905126,
             "after_clearance_m": 0.0029999999999303084,
@@ -6296,11 +6296,11 @@
         "method": "Video tabletop color fit with task-specific light intensity and cool window fill; native scene render, no video postprocessing",
         "fit_evidence": "build/color_alignment_20261015/fits/L2-06/color_fit.json"
       },
-      "derived_from_task": "L2-06",
+      "derived_from_task": "L2-04",
       "renderer": "PathTracing",
       "object_material_revision": "jelly-subtle-rose-soft-reflections-20261016"
     },
-    "L3-03_v3": {
+    "L3-01_v3": {
       "runtime_scene_sha256": "700d088f80a349e16b8ae5e71cab38884f7c454eee995278e7a818332072c87a",
       "arms": {
         "left": {
@@ -6317,7 +6317,7 @@
           "source_target_residual_rad": 1.9681320455488786e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L3-03",
+            "task": "L3-01",
             "arm": "left",
             "before_clearance_m": -0.0007187236883935966,
             "after_clearance_m": 0.00299999999978752,
@@ -6378,7 +6378,7 @@
           "source_target_residual_rad": 1.6687113684812574e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L3-03",
+            "task": "L3-01",
             "arm": "right",
             "before_clearance_m": -0.0016857204576338908,
             "after_clearance_m": 0.0029999999994543697,
@@ -6684,7 +6684,7 @@
         "fit_evidence": "build/color_alignment_20261015/fits/L3-03/color_fit.json"
       }
     },
-    "L3-05_v3": {
+    "L3-02_v3": {
       "runtime_scene_sha256": "4814f0fcedbfec5ac919c51b9beeb7a6cfa884cc50b35ce6bfe74c4fccaa90cf",
       "arms": {
         "left": {
@@ -6701,7 +6701,7 @@
           "source_target_residual_rad": 1.9681320455488786e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L3-05",
+            "task": "L3-02",
             "arm": "left",
             "before_clearance_m": -0.003698173855385928,
             "after_clearance_m": 0.0029999999999879984,
@@ -6772,7 +6772,7 @@
           "source_target_residual_rad": 1.6687113684812574e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L3-05",
+            "task": "L3-02",
             "arm": "right",
             "before_clearance_m": 0.0037253559293017324,
             "after_clearance_m": 0.0037253559293017324,
@@ -7088,7 +7088,7 @@
         "fit_evidence": "build/color_alignment_20261015/fits/L3-05/color_fit.json"
       }
     },
-    "L3-11_v3": {
+    "L3-03_v3": {
       "runtime_scene_sha256": "95dbcb16dacf2668634f86e03f40c0a53f7021b1a472ba8feff4a43f63d484d5",
       "arms": {
         "left": {
@@ -7105,7 +7105,7 @@
           "source_target_residual_rad": 1.9681320455488786e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L3-11",
+            "task": "L3-03",
             "arm": "left",
             "before_clearance_m": -0.002227620945582473,
             "after_clearance_m": 0.0029999999999751475,
@@ -7166,7 +7166,7 @@
           "source_target_residual_rad": 1.6687113684812574e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L3-11",
+            "task": "L3-03",
             "arm": "right",
             "before_clearance_m": -0.00015628390113581192,
             "after_clearance_m": 0.0029999999994736737,
@@ -7463,27 +7463,27 @@
           1.008553837448225,
           1.2755102040816326
         ],
-        "method": "Shared median appearance correction from the other fourteen tasks; no separate L3-11 warm matching, per user instruction.",
+        "method": "Shared median appearance correction from the other fourteen tasks; no separate L3-03 warm matching, per user instruction.",
         "shared_correction_source_tasks": [
           "L1-01",
+          "L1-02",
           "L1-03",
-          "L1-07",
-          "L1-08",
-          "L1-09",
+          "L1-04",
+          "L1-05",
           "L2-01",
+          "L2-02",
           "L2-03",
           "L2-04",
-          "L2-06",
-          "L2-07",
-          "L3-03",
-          "L3-05",
-          "L3-14",
-          "L3-15"
+          "L2-05",
+          "L3-01",
+          "L3-02",
+          "L3-04",
+          "L3-05"
         ],
         "reference_setup_sha256": "809b18f85e0e9a4a15ff16e51ac8b33d8c5c8dcc3d1644d2a57a614b206160c0"
       }
     },
-    "L3-14_v3": {
+    "L3-04_v3": {
       "runtime_scene_sha256": "6702469c55ef4ad148e1bb820f991b5f5eae2679c77255226dc23fa5d8ddaf82",
       "arms": {
         "left": {
@@ -7500,7 +7500,7 @@
           "source_target_residual_rad": 1.9681320455488786e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L3-14",
+            "task": "L3-04",
             "arm": "left",
             "before_clearance_m": -0.003905396963127139,
             "after_clearance_m": 0.002999999999823949,
@@ -7561,7 +7561,7 @@
           "source_target_residual_rad": 1.6687113684812574e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L3-14",
+            "task": "L3-04",
             "arm": "right",
             "before_clearance_m": -0.0036616321863922607,
             "after_clearance_m": 0.0029999999996730697,
@@ -7867,7 +7867,7 @@
         "fit_evidence": "build/color_alignment_20261015/fits/L3-14/color_fit.json"
       }
     },
-    "L3-15_v3": {
+    "L3-05_v3": {
       "runtime_scene_sha256": "f522c163163e8d866209286187bde0084ede5b9b9936b3a47835dcf8fcd98f56",
       "arms": {
         "left": {
@@ -7884,7 +7884,7 @@
           "source_target_residual_rad": 1.9681320455488786e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L3-15",
+            "task": "L3-05",
             "arm": "left",
             "before_clearance_m": -0.006810140790529731,
             "after_clearance_m": 0.002999999999999989,
@@ -7945,7 +7945,7 @@
           "source_target_residual_rad": 1.6687113684812574e-06,
           "method": "video-guided wrist orientation and opening; legal URDF inverse kinematics of the supplied visual wrist pose, not independent body transforms",
           "initial_self_collision_clearance": {
-            "task": "L3-15",
+            "task": "L3-05",
             "arm": "right",
             "before_clearance_m": 0.0015101747440639524,
             "after_clearance_m": 0.00299999999992083,
@@ -8262,18 +8262,18 @@
       }
     }
   },
-  "camera_reference_task": "L3-03",
+  "camera_reference_task": "L3-01",
   "camera_policy": {
-    "overview": "All tasks use one native overview fitted directly to the exact user-supplied L3-03 image. Shared world pose, projection and sensor raster; no per-task camera changes and no output-image warp.",
-    "wrists": "Fixed link6-relative mounts and projections shared from L3-03; cameras follow their own arms.",
+    "overview": "All tasks use one native overview fitted directly to the exact user-supplied L3-01 image. Shared world pose, projection and sensor raster; no per-task camera changes and no output-image warp.",
+    "wrists": "Fixed link6-relative mounts and projections shared from L3-01; cameras follow their own arms.",
     "per_task_camera_overrides": false,
-    "source": "Latest user instruction: make L3-03 match the supplied image and use this exact view for all tasks; this supersedes the earlier original-no-turn choice.",
-    "static_environment": "Same table/room geometry; use L3-03 wall-strip transform and the reference invisibility of the external camera stand. Keep task props and robot initial states."
+    "source": "Latest user instruction: make L3-01 match the supplied image and use this exact view for all tasks; this supersedes the earlier original-no-turn choice.",
+    "static_environment": "Same table/room geometry; use L3-01 wall-strip transform and the reference invisibility of the external camera stand. Keep task props and robot initial states."
   },
   "overview_reference_image_fit": {
     "path": "configs/task_references/user_l303_camera_fit_20261015.json",
-    "sha256": "fee672a2732de39f044340998f8df0801fc7dbf2d615dced0e05a92505d40c9d",
-    "image": "configs/task_references/images/user_L3-03_camera_reference_20261015.png",
+    "sha256": "d84fda2fc41eb108353765c226cbb8e7f6fc9210f8853366f262aa36b2ffd199",
+    "image": "configs/task_references/images/user_L3-01_camera_reference_20261015.png",
     "image_sha256": "ae7bb59e476cec162d1597e26bfb78ac87c45ce2e8b987cbf58c344ef71ae913",
     "target_size": [
       594,
@@ -8286,7 +8286,7 @@
     "runtime_image_warp": false
   },
   "historical_real_video_edge_annotations": {
-    "method": "Original L3-03 framing restored exactly. Real-image edge deviations are diagnostic only; no camera re-fit or horizontal turn.",
+    "method": "Original L3-01 framing restored exactly. Real-image edge deviations are diagnostic only; no camera re-fit or horizontal turn.",
     "source_video_sha256": "77e1de7d2c295f46dbc92a2b7af8e72c4ffd0e0f548cc6a83487a0f1c3104326",
     "observed_edges_at_1280x960": {
       "left": [
@@ -8346,5 +8346,6 @@
     },
     "strict_edge_identity_claimed": false,
     "table_geometry_modified": false
-  }
+  },
+  "task_numbering": "sequential_20261021"
 }

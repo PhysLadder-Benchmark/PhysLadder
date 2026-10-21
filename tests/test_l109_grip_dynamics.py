@@ -7,7 +7,7 @@ from robot_tasks.video_delivery import scenes
 
 class FlowerGripDynamicsTests(unittest.TestCase):
     def test_mass_distribution_and_geometry_preserve_the_original_free_flower(self):
-        row=scenes()['L1-09']
+        row=scenes()['L1-05']
         stage=Usd.Stage.Open(str(PROJECT_ROOT/'assets/tuojing'/row['runtime_path']))
         native=Usd.Stage.Open(str(PROJECT_ROOT/'assets/tuojing'/row['path']))
         root='/World/Household/rose';body=stage.GetPrimAtPath(root);mass=UsdPhysics.MassAPI(body)
@@ -31,7 +31,7 @@ class FlowerGripDynamicsTests(unittest.TestCase):
                     UsdGeom.Mesh(native.GetPrimAtPath(prim.GetPath())).GetPointsAttr().Get())
 
     def test_passive_leaves_preserve_visuals_mass_and_contactable_rounded_veins(self):
-        row=scenes()['L1-09'];root='/World/Household/rose'
+        row=scenes()['L1-05'];root='/World/Household/rose'
         stage=Usd.Stage.Open(str(PROJECT_ROOT/'assets/tuojing'/row['runtime_path']))
         native=Usd.Stage.Open(str(PROJECT_ROOT/'assets/tuojing'/row['path']))
         parts=row['physical_repairs']['flower_passive_leaves']['leaf_bodies']
@@ -67,7 +67,7 @@ class FlowerGripDynamicsTests(unittest.TestCase):
                 self.assertLess(drive.GetMaxForceAttr().Get(),.01)
 
     def test_grip_glass_and_cup_contacts_keep_distinct_material_behavior(self):
-        row=scenes()['L1-09']
+        row=scenes()['L1-05']
         stage=Usd.Stage.Open(str(PROJECT_ROOT/'assets/tuojing'/row['runtime_path']))
         root='/World/Household/'
         def material(path):

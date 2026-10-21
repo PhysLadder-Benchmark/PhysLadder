@@ -32,7 +32,7 @@ def main():
     from ...robots.kinematics import R5Kinematics
     from ...planning.trajectory import JointPath
 
-    spec, config = resolve_task("L3-15")
+    spec, config = resolve_task("L3-05")
     config = spec.factory.prepare_config(config)
     backend, robot, task = IsaacSimBackend(), R5Adapter(), spec.factory()
     result = {"gpt_called": False, "baseline": args.baseline, "passed": False,

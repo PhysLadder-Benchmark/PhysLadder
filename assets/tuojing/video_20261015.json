@@ -517,7 +517,7 @@
         }
       }
     },
-    "L1-03": {
+    "L1-02": {
       "path": "source/L1-03/scene.usdz",
       "bytes": 68344758,
       "sha256": "b644074bd7f765641f8b4a7e0e2a01417f7e15389db8357bb498020fb96123a5",
@@ -1097,7 +1097,7 @@
         }
       }
     },
-    "L1-07": {
+    "L1-03": {
       "path": "source/L1-07/scene.usdz",
       "bytes": 74051349,
       "sha256": "849fb4ba2fff3b5ce207cd5e4e9217603cb26aba325345f2d60a6d16582e690b",
@@ -1662,7 +1662,7 @@
         }
       }
     },
-    "L1-08": {
+    "L1-04": {
       "path": "source/L1-08/scene.usdz",
       "bytes": 68334484,
       "sha256": "ba3c2026560d58ef9ac2d7a75cb99f88a162c32dab7f28f8e9c06909a2c8883f",
@@ -2144,7 +2144,7 @@
         }
       }
     },
-    "L1-09": {
+    "L1-05": {
       "path": "source/L1-09/scene.usdz",
       "bytes": 69682323,
       "sha256": "b27bfcc952642d20f8b5fbe4db159f7fc10af6782b2748bd8ef1c3424caea328",
@@ -4111,11 +4111,11 @@
           "minimum_centre_distance_m": 0.016499999999999952,
           "physics_settling_required": true
         },
-        "source_task": "L2-04",
+        "source_task": "L2-03",
         "source_path": "source/L2-04/scene.usdz",
         "source_sha256": "c03d4a85b5eb38f497942eedc3aa96f0b31cec953249f5752dae78dd1b48c970",
         "source_bytes": 68959533,
-        "evidence": "PR #19 L1 real-alignment record confirms ten glass balls; L2-04 real video inspection shows at least ten. Native saved scenes omitted these counts.",
+        "evidence": "PR #19 L1 real-alignment record confirms ten glass balls; L2-03 real video inspection shows at least ten. Native saved scenes omitted these counts.",
         "limits": "Native 16 mm size/mass retained; real size and hidden packing are not measured. No white pearls are invented."
       },
       "flower_collision_repair": {
@@ -4962,7 +4962,7 @@
         }
       }
     },
-    "L2-03": {
+    "L2-02": {
       "path": "source/L2-03/scene.usdz",
       "bytes": 82581443,
       "sha256": "1950eee6e5480e050dea807022689252f093a533f3fd99e87c883f7b592e6ccc",
@@ -5806,7 +5806,7 @@
         "revision": "l2-book-straight-rim-slope-v4"
       }
     },
-    "L2-04": {
+    "L2-03": {
       "path": "source/L2-04/scene.usdz",
       "bytes": 68959533,
       "sha256": "c03d4a85b5eb38f497942eedc3aa96f0b31cec953249f5752dae78dd1b48c970",
@@ -7371,11 +7371,11 @@
           "minimum_centre_distance_m": 0.016499999999999952,
           "physics_settling_required": true
         },
-        "source_task": "L2-04",
+        "source_task": "L2-03",
         "source_path": "source/L2-04/scene.usdz",
         "source_sha256": "c03d4a85b5eb38f497942eedc3aa96f0b31cec953249f5752dae78dd1b48c970",
         "source_bytes": 68959533,
-        "evidence": "User confirmed 12 glass balls for L2-04, 2026-10-15.",
+        "evidence": "User confirmed 12 glass balls for L2-03, 2026-10-15.",
         "limits": "Native 16 mm size/mass retained; real size and hidden packing are not measured. No white pearls are invented.",
         "contact_solver": {
           "position_iterations": 64,
@@ -7421,7 +7421,7 @@
         "shared_camera_changed": false
       }
     },
-    "L2-06": {
+    "L2-04": {
       "path": "source/L2-06/scene.usdz",
       "bytes": 95841268,
       "sha256": "1a5eadeb6f516a65d588d1ffd53ba45fb09abb277367200fa517ff91b0ddf846",
@@ -8088,7 +8088,7 @@
         "revision": "l2-orange-original-horizontal-v2"
       }
     },
-    "L2-07": {
+    "L2-05": {
       "path": "source/L2-07/scene.usdz",
       "bytes": 77578560,
       "sha256": "6e681099c334df7adcc1281f324371d9bc94fa4bfe0ca7afcb90609adc3298b3",
@@ -8874,7 +8874,7 @@
         "revision": "l2-drawer-fixed-camera-placement-v1"
       }
     },
-    "L3-03": {
+    "L3-01": {
       "path": "source/L3-03/scene.usdz",
       "bytes": 67646751,
       "sha256": "fa36946df9a82a161f9247a9bc4da09b7cf2c984c4918144ee05f250963cfcb0",
@@ -9348,7 +9348,7 @@
         "revision": "latest-prop-bindings-fixed-bottle-board-v1",
         "source_modified": false,
         "bottle_fixed": true,
-        "l3_03_visual_alignment_20261016": {
+        "l3_01_visual_alignment_20261016": {
           "reference_document": "https://my.feishu.cn/docx/U1KUdzvJuonmX7xoujpcpuzznze",
           "method": "Approximate fit of bottle cap centre and front base edge to real video first frame; camera, bottle size and table height fixed.",
           "white_backing_z_m": [
@@ -9361,7 +9361,7 @@
           "white_tape_surface": "flat bottom patch, 0.5 mm thick; no side-wall wrap",
           "front_label_visibility_restored": true
         },
-        "l3_03_transparency_20261016": {
+        "l3_01_transparency_20261016": {
           "white_tape_z_m": [
             0.00025,
             0.00075
@@ -9375,7 +9375,7 @@
           "max_specular_transmission_bounces": 16,
           "physics_and_poses_unchanged": true
         },
-        "l3_03_bottom_edge_20261016": {
+        "l3_01_bottom_edge_20261016": {
           "shape": "flat bottom patch, no side-wall wrap",
           "white_tape_z_m": [
             0.00025,
@@ -9419,7 +9419,7 @@
             1.0
           ]
         ],
-        "source_variant": "L3-03_v3"
+        "source_variant": "L3-01_v3"
       },
       "runtime_dependencies": [
         {
@@ -9429,7 +9429,7 @@
         }
       ]
     },
-    "L3-05": {
+    "L3-02": {
       "path": "source/L3-05/scene.usdz",
       "bytes": 78544963,
       "sha256": "5f66249a90cd000e2757516810a1968f9a287e6f50946adacebdc435be50ca93",
@@ -9996,7 +9996,7 @@
             1.0
           ]
         ],
-        "source_variant": "L3-05_v3"
+        "source_variant": "L3-02_v3"
       },
       "runtime_dependencies": [
         {
@@ -10006,7 +10006,7 @@
         }
       ]
     },
-    "L3-11": {
+    "L3-03": {
       "path": "source/L3-11/scene.usdz",
       "bytes": 67188416,
       "sha256": "56c64d6604ec5769e037e5bc7b97f3f314df13ffcc0fbcc3ab0fab0317dfc475",
@@ -10438,7 +10438,7 @@
           "face_up": "blue_back_with_dark_patches",
           "mass_unchanged": true
         },
-        "l3_11_initial_placement_20261016": {
+        "l3_03_initial_placement_20261016": {
           "method": "Fit only board XY/yaw at fixed tabletop height to approximate first-frame landmarks; eraser center projected at mid-height. Dimensions/camera unchanged.",
           "reference_document": "https://my.feishu.cn/docx/U1KUdzvJuonmX7xoujpcpuzznze",
           "board_yaw_rad": 0.03481417747196121,
@@ -10474,7 +10474,7 @@
             1.0
           ]
         ],
-        "source_variant": "L3-11_v3"
+        "source_variant": "L3-03_v3"
       },
       "runtime_dependencies": [
         {
@@ -10484,7 +10484,7 @@
         }
       ]
     },
-    "L3-14": {
+    "L3-04": {
       "path": "source/L3-14/scene.usdz",
       "bytes": 79254994,
       "sha256": "56b16d3b56845d1afa1b9adf96b284e754e2cfdebce17259394e1937865d0815",
@@ -11006,7 +11006,7 @@
           "mass_unchanged": true
         },
         "real_alignment_20261019": {
-          "reference_video": "20261019的L3最后两个任务/L3-14",
+          "reference_video": "20261019的L3最后两个任务/L3-04",
           "fit": {
             "book": {
               "xy_yaw": [
@@ -11088,8 +11088,8 @@
             ]
           },
           "camera_unchanged": true,
-          "book_source": "L2-03",
-          "validation": "Passed Isaac Sim 5.1 GPU scene/reset, three cameras, initial nonterminal scoring and settling/support checks; L3-14 also passed dual-arm cuRobo planning. Model task success not established."
+          "book_source": "L2-02",
+          "validation": "Passed Isaac Sim 5.1 GPU scene/reset, three cameras, initial nonterminal scoring and settling/support checks; L3-04 also passed dual-arm cuRobo planning. Model task success not established."
         },
         "real_prompt_20261020": {
           "two_rectangles": true,
@@ -11140,7 +11140,7 @@
         "shared_edge_length_m": 0.12983459118664073
       }
     },
-    "L3-15": {
+    "L3-05": {
       "path": "source/L3-15/scene.usdz",
       "bytes": 77846690,
       "sha256": "c25b0a9d14c965241953bbc4cbf459ec55213c37b26c6a7060d124771e138d10",
@@ -11917,7 +11917,7 @@
           "geometry_and_materials": "latest complete delivery, unchanged"
         },
         "real_alignment_20261019": {
-          "reference_video": "20261019的L3最后两个任务/L3-15",
+          "reference_video": "20261019的L3最后两个任务/L3-05",
           "fit": {
             "box": {
               "xy_yaw": [
@@ -11990,11 +11990,11 @@
           },
           "camera_unchanged": true,
           "book_source": null,
-          "validation": "Passed Isaac Sim 5.1 GPU scene/reset, three cameras, initial nonterminal scoring and settling/support checks; L3-14 also passed dual-arm cuRobo planning. Model task success not established."
+          "validation": "Passed Isaac Sim 5.1 GPU scene/reset, three cameras, initial nonterminal scoring and settling/support checks; L3-04 also passed dual-arm cuRobo planning. Model task success not established."
         }
       }
     },
-    "L2-08": {
+    "L2-06": {
       "path": "source/L2-06/scene.usdz",
       "bytes": 95841268,
       "sha256": "1a5eadeb6f516a65d588d1ffd53ba45fb09abb277367200fa517ff91b0ddf846",
@@ -12690,9 +12690,9 @@
           "prior_runtime_sha256": "06a65a5d1f1828c8b7af3d42a3e8936300fee14a89868135469ec81b0fe08c5c"
         }
       },
-      "variant_of": "L2-06"
+      "variant_of": "L2-04"
     },
-    "L3-03_v3": {
+    "L3-01_v3": {
       "path": "source/L3-03/scene.usdz",
       "bytes": 67646751,
       "sha256": "fa36946df9a82a161f9247a9bc4da09b7cf2c984c4918144ee05f250963cfcb0",
@@ -13166,7 +13166,7 @@
         "revision": "latest-prop-bindings-fixed-bottle-board-v1",
         "source_modified": false,
         "bottle_fixed": true,
-        "l3_03_visual_alignment_20261016": {
+        "l3_01_visual_alignment_20261016": {
           "reference_document": "https://my.feishu.cn/docx/U1KUdzvJuonmX7xoujpcpuzznze",
           "method": "Approximate fit of bottle cap centre and front base edge to real video first frame; camera, bottle size and table height fixed.",
           "white_backing_z_m": [
@@ -13179,7 +13179,7 @@
           "white_tape_surface": "flat bottom patch, 0.5 mm thick; no side-wall wrap",
           "front_label_visibility_restored": true
         },
-        "l3_03_transparency_20261016": {
+        "l3_01_transparency_20261016": {
           "white_tape_z_m": [
             0.00025,
             0.00075
@@ -13193,7 +13193,7 @@
           "max_specular_transmission_bounces": 16,
           "physics_and_poses_unchanged": true
         },
-        "l3_03_bottom_edge_20261016": {
+        "l3_01_bottom_edge_20261016": {
           "shape": "flat bottom patch, no side-wall wrap",
           "white_tape_z_m": [
             0.00025,
@@ -13220,7 +13220,7 @@
         "scope": "Translate complete bottle assembly; retain cap-body relative pose, orientation, fixed body and physics"
       }
     },
-    "L3-05_v3": {
+    "L3-02_v3": {
       "path": "source/L3-05/scene.usdz",
       "bytes": 78544963,
       "sha256": "5f66249a90cd000e2757516810a1968f9a287e6f50946adacebdc435be50ca93",
@@ -13791,7 +13791,7 @@
         ]
       }
     },
-    "L3-11_v3": {
+    "L3-03_v3": {
       "path": "source/L3-11/scene.usdz",
       "bytes": 67188416,
       "sha256": "56c64d6604ec5769e037e5bc7b97f3f314df13ffcc0fbcc3ab0fab0317dfc475",
@@ -14223,7 +14223,7 @@
           "face_up": "blue_back_with_dark_patches",
           "mass_unchanged": true
         },
-        "l3_11_initial_placement_20261016": {
+        "l3_03_initial_placement_20261016": {
           "method": "Fit only board XY/yaw at fixed tabletop height to approximate first-frame landmarks; eraser center projected at mid-height. Dimensions/camera unchanged.",
           "reference_document": "https://my.feishu.cn/docx/U1KUdzvJuonmX7xoujpcpuzznze",
           "board_yaw_rad": 0.03481417747196121,
@@ -14263,7 +14263,7 @@
         ]
       }
     },
-    "L3-14_v3": {
+    "L3-04_v3": {
       "path": "source/L3-14/scene.usdz",
       "bytes": 79254994,
       "sha256": "56b16d3b56845d1afa1b9adf96b284e754e2cfdebce17259394e1937865d0815",
@@ -14785,7 +14785,7 @@
           "mass_unchanged": true
         },
         "real_alignment_20261019": {
-          "reference_video": "20261019的L3最后两个任务/L3-14",
+          "reference_video": "20261019的L3最后两个任务/L3-04",
           "fit": {
             "book": {
               "xy_yaw": [
@@ -14867,8 +14867,8 @@
             ]
           },
           "camera_unchanged": true,
-          "book_source": "L2-03",
-          "validation": "Passed Isaac Sim 5.1 GPU scene/reset, three cameras, initial nonterminal scoring and settling/support checks; L3-14 also passed dual-arm cuRobo planning. Model task success not established."
+          "book_source": "L2-02",
+          "validation": "Passed Isaac Sim 5.1 GPU scene/reset, three cameras, initial nonterminal scoring and settling/support checks; L3-04 also passed dual-arm cuRobo planning. Model task success not established."
         },
         "real_prompt_20261020": {
           "two_rectangles": true,
@@ -14919,7 +14919,7 @@
         "shared_edge_length_m": 0.12983459118664073
       },
       "trial3_initial_perturbation": {
-        "task": "L3-14",
+        "task": "L3-04",
         "changed_body": "upper_book",
         "old_pose": [
           0.20075249752150406,
@@ -14954,7 +14954,7 @@
         "boundary_rule": "Lower-book footprint determines start and target rectangle containment; upper-book overhang is diagnostic only; stacking and support still required"
       }
     },
-    "L3-15_v3": {
+    "L3-05_v3": {
       "path": "source/L3-15/scene.usdz",
       "bytes": 77846690,
       "sha256": "c25b0a9d14c965241953bbc4cbf459ec55213c37b26c6a7060d124771e138d10",
@@ -15731,7 +15731,7 @@
           "geometry_and_materials": "latest complete delivery, unchanged"
         },
         "real_alignment_20261019": {
-          "reference_video": "20261019的L3最后两个任务/L3-15",
+          "reference_video": "20261019的L3最后两个任务/L3-05",
           "fit": {
             "box": {
               "xy_yaw": [
@@ -15804,11 +15804,11 @@
           },
           "camera_unchanged": true,
           "book_source": null,
-          "validation": "Passed Isaac Sim 5.1 GPU scene/reset, three cameras, initial nonterminal scoring and settling/support checks; L3-14 also passed dual-arm cuRobo planning. Model task success not established."
+          "validation": "Passed Isaac Sim 5.1 GPU scene/reset, three cameras, initial nonterminal scoring and settling/support checks; L3-04 also passed dual-arm cuRobo planning. Model task success not established."
         }
       },
       "trial3_initial_perturbation": {
-        "task": "L3-15",
+        "task": "L3-05",
         "changed_body": "block_0",
         "old_pose": [
           0.09539826138296495,

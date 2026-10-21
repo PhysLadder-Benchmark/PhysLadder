@@ -1,5 +1,9 @@
 # Release-preparation validation · 2026-10-21
 
+The table below records the original release-preparation checks at commit
+`6adaa49b8b7a2986b469df451716350f34de0aa8`, before sequential renumbering.
+Task labels in this document use the current [numbering map](TASK_NUMBERING.md).
+
 The reference task state was captured before release edits. The public naming
 change was validated against this baseline rather than regenerating the baseline
 after changing tasks. Derived-float fingerprints use 12 significant digits (magnitudes below 1e-12 treated as zero);
@@ -31,7 +35,7 @@ tests skip in addition to the five conditional skips in the working environment.
 Those two fixtures were exercised by the working-checkout suite. Environment
 versions are recorded in `cpu_test_environment.json` and `reference_runtimes.json`.
 
-GPU FEM states in L2-06 and L2-08 (original and alternative) and rendered pixels
+GPU FEM states in L2-04 and L2-06 (original and alternative) and rendered pixels
 can vary numerically across initializations. Their configured initial placement,
 asset geometry, materials, physics parameters and scoring code are unchanged.
 The four FEM startup checks passed. Bit-identical rendered pixels or GPU FEM
@@ -44,3 +48,15 @@ was called during release validation.
 
 Detailed local before/after images and machine-generated evidence are kept in
 `exports/release_validation_20261021/`, outside the published source package.
+
+## Sequential numbering validation
+
+The renumbering was checked against all 256 effective component values captured
+from the preceding commit (32 configurations × 8 components). After translating
+identity labels and the independently verified placement-profile hash, no
+behavioral differences remain. All 320 non-metadata asset files retain identical
+SHA-256 values; five asset manifests/documentation files update identities only.
+The 22 USD scene entry points still resolve. Historical visual-setup records and
+raw experiment directories retain their original bytes and source identities.
+
+The migration does not repeat live model experiments or claim new task successes.

@@ -9,7 +9,7 @@ import json
 import numpy as np
 from pxr import Gf, Sdf, Usd, UsdGeom, UsdPhysics
 
-TASKS = ('L2-01', 'L2-03', 'L2-06', 'L2-07')
+TASKS = ('L2-01', 'L2-02', 'L2-04', 'L2-05')
 REVISION = 'l2-user-measured-box-200x200x70-rim10-v1'
 OLD_FLOOR, OLD_TOP = .070125, .075
 FLOOR, TOP = .060, .070
@@ -155,9 +155,9 @@ def apply(stage, tid, row):
     # their original contact clearance. Only episode initialization changes.
     if tid == 'L2-01':
         shifts = {'/World/L2/marker': FLOOR - OLD_FLOOR}
-    elif tid == 'L2-03':
+    elif tid == 'L2-02':
         shifts = {r['path']: TOP - OLD_TOP for r in row['tracked'].values()}
-    elif tid == 'L2-06':
+    elif tid == 'L2-04':
         shifts = {row['orange']['path']: FLOOR - OLD_FLOOR}
     else:
         shifts = {'/World/L2/organizer': TOP - OLD_TOP}

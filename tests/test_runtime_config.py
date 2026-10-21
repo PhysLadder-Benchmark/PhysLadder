@@ -16,7 +16,7 @@ class RuntimeConfigTests(unittest.TestCase):
         from robot_tasks.backends.settings import SimulationSettings
         from robot_tasks.registry import resolve_task
 
-        _, config = resolve_task('L2-03')
+        _, config = resolve_task('L2-02')
         with patch.dict(os.environ, {}, clear=True):
             baseline = asdict(SimulationSettings.from_config(config))
         for machine in ('worker_3', 'worker_7'):

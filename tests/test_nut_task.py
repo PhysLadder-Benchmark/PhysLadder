@@ -55,7 +55,7 @@ def sample(turn=0.0, rise=0.0, lifted=True, hands=True, body_pose=None, contact=
 
 class NutTaskTests(unittest.TestCase):
     def test_shared_workflow_two_hands_and_local_physics_override(self):
-        entry, cfg = resolve_task("L3-05")
+        entry, cfg = resolve_task("L3-02")
         self.assertIs(entry.factory, NutTask)
         cfg = entry.factory.prepare_config(cfg)
         self.assertEqual(cfg.arms, ("left", "right"))
@@ -64,7 +64,7 @@ class NutTaskTests(unittest.TestCase):
         self.assertEqual(cfg.raw["execution"]["max_decisions"], 100)
         self.assertEqual(cfg.robot.gripper.width_limits_m, (0.0, 0.070))
         self.assertEqual(cfg.grasp_check_mode, "contact_inspection")
-        _, other = resolve_task("L3-03")
+        _, other = resolve_task("L3-01")
         self.assertAlmostEqual(other.physics_dt_s, 1 / 240)
         self.assertEqual(other.robot.gripper.width_limits_m, (0.0, 0.070))
         with self.assertRaises(ValueError):
@@ -140,7 +140,7 @@ class NutTaskTests(unittest.TestCase):
         from unittest.mock import Mock
 
         task = NutTask()
-        task.config = resolve_task("L3-05")[1]
+        task.config = resolve_task("L3-02")[1]
         task.scene = SimpleNamespace(
             spec=nut_spec(), reset=Mock(), measure=Mock(return_value=sample())
         )

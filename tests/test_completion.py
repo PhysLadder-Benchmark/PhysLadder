@@ -8,12 +8,12 @@ from robot_tasks.registry import resolve_task
 from robot_tasks.tasks.completion import completion_instruction, require_home
 from robot_tasks.types import ArmState, Assessment
 
-IDS = ("L2-03", "L2-04", "L2-06", "L2-07", "L3-05", "L3-14", "L3-15")
+IDS = ("L2-02", "L2-03", "L2-04", "L2-05", "L3-02", "L3-04", "L3-05")
 
 
 class CompletionTests(unittest.TestCase):
     def test_immediate_goal_tasks_do_not_wait_for_release_or_home(self):
-        for task_id in ("L2-01", "L3-03", "L3-11"):
+        for task_id in ("L2-01", "L3-01", "L3-03"):
             with self.subTest(task=task_id):
                 entry, config = resolve_task(task_id)
                 prepared = entry.factory.prepare_config(config)
@@ -24,7 +24,7 @@ class CompletionTests(unittest.TestCase):
                 self.assertIs(require_home(done, {}, prepared), done)
 
     def setUp(self):
-        _, self.config = resolve_task("L2-06")
+        _, self.config = resolve_task("L2-04")
         # Keep testing the optional home gate independently of current task goals.
         self.config = replace(self.config, raw={**self.config.raw, "completion": {
             "return_home": True, "home_tolerance_rad": 0.05}})

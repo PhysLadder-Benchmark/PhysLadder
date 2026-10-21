@@ -236,4 +236,4 @@ def flower(e, rows):
                   'stability':'position and tilt; axial spin ignored if containment persists'}, ''
 
 
-RULES={'L1-01':marker,'L1-03':plug,'L1-07':hat,'L1-08':cups,'L1-09':flower}
+RULES={'L1-01':marker,'L1-02':plug,'L1-03':hat,'L1-04':cups,'L1-05':flower}

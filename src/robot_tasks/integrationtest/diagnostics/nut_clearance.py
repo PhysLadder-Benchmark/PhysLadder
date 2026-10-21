@@ -15,7 +15,7 @@ from ...tasks.screw.nut import nut_spec
 
 
 def check():
-    _, config = resolve_task("L3-05")
+    _, config = resolve_task("L3-02")
     s = nut_spec()
     if s.parameters["shaft_tip_z"] != 0.09:
         raise ValueError("This retired 90 mm clearance fixture does not validate the current 140 mm asset")
@@ -127,7 +127,7 @@ def check():
         lift_joints[arm] = g.solve(arm, transform_pose(target), q).tolist()
     return {
         "passed": True,
-        "task": "L3-05",
+        "task": "L3-02",
         "gpt_called": False,
         "samples": samples,
         "held_body_pose": [*b, *transform_pose(body_transform)[3:]],

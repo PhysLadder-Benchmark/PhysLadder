@@ -1,4 +1,4 @@
-"""Export the installed measured L1-03 holder with its native collision shell."""
+"""Export the installed measured L1-02 holder with its native collision shell."""
 from pathlib import Path
 import json
 from pxr import Gf, Sdf, Usd, UsdGeom, UsdShade, UsdUtils
@@ -23,7 +23,7 @@ def main():
     file=out/'plug_holder_measured.usdc';stage.GetRootLayer().Export(str(file));package=file.with_suffix('.usdz')
     if package.exists():package.unlink()
     if not UsdUtils.CreateNewUsdzPackage(Sdf.AssetPath(str(file)),str(package)):raise RuntimeError('USDZ export failed')
-    r=json.loads((ROOT/'assets/tuojing/video_20261015.json').read_text())['tasks']['L1-03']['physical_repairs']['measured_holder']
+    r=json.loads((ROOT/'assets/tuojing/video_20261015.json').read_text())['tasks']['L1-02']['physical_repairs']['measured_holder']
     (out/'dimensions_and_provenance.json').write_text(json.dumps(r,ensure_ascii=False,indent=2)+'\n')
     print(package)
 

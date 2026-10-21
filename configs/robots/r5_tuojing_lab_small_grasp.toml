@@ -31,7 +31,7 @@ tcp_source = "Designed R5a simulation control point from URDF finger origins and
 joint_names = ["joint7", "joint8"]
 # At local fingertip x > 0.04 m, opposing inner y surfaces are about +/-0.024898 m.
 # Combined with URDF joint origins +/-0.024898 m, q=0 gives approximately zero gap.
-# L3-05 small-part variant: 10 mm closure equals existing 5 mm/finger operating lower limit.
+# L3-02 small-part variant: 10 mm closure equals existing 5 mm/finger operating lower limit.
 # Provides compression margin for the native 12 mm sleeve; requires contact validation.
 calibration_source = "R5a STL distal inner-face bounds (local x > 0.04 m) plus joint7/8 origins; approximate simulation mapping only."
 width_limits_m = [0.010, 0.070]

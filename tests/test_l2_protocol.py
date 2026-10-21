@@ -53,10 +53,10 @@ class ValidityTests(unittest.TestCase):
 class ObserverTests(unittest.TestCase):
     def test_repeated_task_frame_reuses_score_and_observer_checks(self):
         task = BenchTask()
-        task.spec = build_spec("L2-06")
+        task.spec = build_spec("L2-04")
         from robot_tasks.registry import resolve_task
         from types import SimpleNamespace
-        task.config = resolve_task("L2-06")[1]
+        task.config = resolve_task("L2-04")[1]
         homes = {m.name: SimpleNamespace(joint_positions_rad=m.home_positions_rad) for m in task.config.robot.mounts}
         task.scene = Mock()
         task.scene.measure.return_value = soft_row(task.spec)
@@ -83,7 +83,7 @@ class ObserverTests(unittest.TestCase):
         from robot_tasks.registry import resolve_task
         from robot_tasks.tasks.bench.l2_protocol import OPERATING_NOTES
 
-        for task_id in ("L2-01", "L2-03", "L2-04", "L2-06", "L2-07"):
+        for task_id in ("L2-01", "L2-02", "L2-03", "L2-04", "L2-05"):
             spec, config = resolve_task(task_id)
             config = spec.factory.prepare_config(config)
             self.assertNotIn(OPERATING_NOTES, config.instruction)
@@ -130,7 +130,7 @@ class ObserverTests(unittest.TestCase):
         self.assertEqual(result.reason, "Nonfinite readback")
 
     def test_inverted_soft_element_is_recorded_and_allows_lift(self):
-        spec = build_spec("L2-06")
+        spec = build_spec("L2-04")
         evaluator = OrangeEvaluator(spec)
         rows = soft_row(spec, strain=0.8)
         rows["orange"]["minimum_volume_ratio"] = -0.1

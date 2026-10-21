@@ -7,7 +7,7 @@ See docs/release/INSTALL.md for simulator/planner setup and model transport.
 3. Install the project and external runtimes on that host.
 4. From the local machine, `python tools/remote/fleet.py status` checks jobs.
 5. `connect` establishes an authenticated loopback bridge for the local Codex CLI.
-6. `start --machine cluster --tasks L2-03_variant01 --max-calls 150 --wall-time-s 18000`
+6. `start --machine cluster --tasks L2-02_variant01 --max-calls 150 --wall-time-s 18000`
    launches a task with explicit budgets. It uses the configured model account.
 
 The placeholder fleet.json is not a real machine. An explicit

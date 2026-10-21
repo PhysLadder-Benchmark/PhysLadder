@@ -195,8 +195,8 @@ def sweeping(e, rows):
 from .wiping import score as wiping
 
 RULES = {
-    "L3-11": wiping,
-    "L3-03": bottle,
-    "L3-14": pushing,
-    "L3-15": sweeping,
+    "L3-03": wiping,
+    "L3-01": bottle,
+    "L3-04": pushing,
+    "L3-05": sweeping,
 }

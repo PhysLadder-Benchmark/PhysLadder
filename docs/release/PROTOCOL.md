@@ -2,17 +2,21 @@
 
 The software contains 16 task families and 32 independently selectable settings.
 A new public suffix, `_variant01`, names the previously registered `_v3` setting.
-Resolution returns the identical configuration and implementation. Legacy scene
-IDs, TOML names, run IDs and recorded snapshots remain unchanged. Selecting both
-aliases of one task in the same batch is rejected as a duplicate.
+Resolution returns the same setting for either suffix. Tasks use consecutive
+numbers as listed in the [numbering map](TASK_NUMBERING.md); configuration names
+and public media follow those numbers. Delivered asset directories, historical
+run IDs and recorded snapshots retain their original identities. Selecting both
+suffix aliases of one current task in the same batch is rejected as a duplicate.
 
 ## What remains fixed
 
-The release preparation changes no task TOML, prompt, scene/texture/mesh, physical
+The renumbering changes identity fields and filenames, preserving prompts,
+task parameters, scene/texture/mesh bytes, physical
 material, collision geometry, initial pose, camera calibration/appearance,
-scoring implementation or controller setting. The pre-change contract in
-`configs/benchmark/task_contract.json` captures 32 configurations and hashes
-247 protected files. Derived numeric fingerprints use 12 significant digits (magnitudes below 1e-12 treated as zero) to
+scoring behavior and controller settings. After comparing the full effective
+values against the preceding revision, `configs/benchmark/task_contract.json`
+pins 32 configurations and 253 protected files under their current names.
+Derived numeric fingerprints use 12 significant digits (magnitudes below 1e-12 treated as zero) to
 avoid Python/NumPy last-bit differences; the protected source/configuration
 files still require exact SHA-256 equality. This normalization is only in the
 checker and never changes a runtime value or model prompt. `tools/release/check_task_contract.py` recomputes effective
@@ -25,11 +29,11 @@ robot, simulation, execution, layout, instruction and scoring fingerprints.
 |---|---|
 | L1 (5 tasks) | Original placement and fixed selected P03 placement. The stored selection indices are 3, 3, 2, 1, 1 in task-ID order. |
 | L2 (6 tasks) | Original placement and fixed P01 placement; existing task rules are retained. |
-| L3-03 / 05 / 11 | Separate delivered scene settings, with their existing prompts, cameras and implementations. |
-| L3-14 | Original scores containment of both books; alternative uses the lower book boundary. This is a protocol difference, not just a pose change. |
-| L3-15 | Separate delivered alternative scene. Existing success criterion requires all three blocks. |
+| L3-01 / L3-02 / L3-03 | Separate delivered scene settings, with their existing prompts, cameras and implementations. |
+| L3-04 | Original scores containment of both books; alternative uses the lower book boundary. This is a protocol difference, not just a pose change. |
+| L3-05 | Separate delivered alternative scene. Existing success criterion requires all three blocks. |
 
-L2-04 requires the source cup to be empty and at least **6 of 12** beads to be in
+L2-03 requires the source cup to be empty and at least **6 of 12** beads to be in
 the receiving cup. It does not succeed merely because six beads have arrived
 while others are still in the source cup.
 
@@ -46,9 +50,9 @@ this software version, not reconstructed historical records.
 |---|---:|---:|---|
 | L1 originals / variants | 100 | disabled | all requests |
 | L2 originals / variants | 100 | disabled | all requests |
-| L3-03 / 05 / 11 originals / variants | 100 | disabled | completed generations |
-| L3-14 / 15 originals | disabled | 18,000 s | completed generations |
-| L3-14 / 15 alternatives | 150 | 18,000 s | completed generations |
+| L3-01 / L3-02 / L3-03 originals / variants | 100 | disabled | completed generations |
+| L3-04 / L3-05 originals | disabled | 18,000 s | completed generations |
+| L3-04 / L3-05 alternatives | 150 | 18,000 s | completed generations |
 
 A zero cap means disabled. `tools/reproduce.py` passes the preserved per-task
 limits explicitly so that `batch_run.py` defaults cannot replace them. CLI

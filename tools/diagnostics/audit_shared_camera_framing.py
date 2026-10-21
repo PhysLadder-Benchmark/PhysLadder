@@ -96,7 +96,7 @@ def main():
                      'old_external_camera_stand_hidden': True, 'rendered_edges': edges,
                      'edge_errors_px_against_user_image': errors, 'edge_max_errors_px': max_errors,
                      'framing_edge_check_passed': all(v <= 2 for v in max_errors.values()), 'strict_image_identity_claimed': False})
-    native_match = compare_native(ROOT/'build/video_visual_fit_20261015/aligned_initial/L3-03/overview.png', ROOT/'reports/reference_image_camera_20261015.jpg')
+    native_match = compare_native(ROOT/'build/video_visual_fit_20261015/aligned_initial/L3-01/overview.png', ROOT/'reports/reference_image_camera_20261015.jpg')
     (ROOT/'reports/reference_image_camera_20261015.json').write_text(json.dumps(native_match, indent=2)+'\n')
     assert native_match['framing_passed'], native_match
     report = {'visual_setup_sha256': setup_digest(), 'reference_task': reference_task,
@@ -104,7 +104,7 @@ def main():
               'tasks': len(rows), 'shared_geometry_verified': len(rows),
               'rendered_framing_edges_passed': sum(r['framing_edge_check_passed'] for r in rows),
               'reference_edges': reference_edges, 'reference_image_native_match': native_match,
-              'scope': 'Native camera matched to the exact user-supplied L3-03 image, then shared across all tasks. Edge errors use the 594x442 reference dimensions. Table footprint excludes object occlusion. Common camera/table/background geometry is verified; task props and arm poses remain task-specific. No runtime image warp or byte-identical-pixel claim.',
+              'scope': 'Native camera matched to the exact user-supplied L3-01 image, then shared across all tasks. Edge errors use the 594x442 reference dimensions. Table footprint excludes object occlusion. Common camera/table/background geometry is verified; task props and arm poses remain task-specific. No runtime image warp or byte-identical-pixel claim.',
               'table_geometry_modified_for_fit': False, 'rows': rows}
     (ROOT/'reports/shared_camera_framing_20261015.json').write_text(json.dumps(report, ensure_ascii=False, indent=2)+'\n')
     print(json.dumps({k: v for k, v in report.items() if k not in ('rows', 'reference_edges', 'reference_image_native_match')}, indent=2))

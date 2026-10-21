@@ -28,7 +28,7 @@ def check(output, *, tilt_degrees=120.0, count=None, minimum_drained_fraction=0.
 
     os.environ.setdefault("OMNI_KIT_ACCEPT_EULA", "YES")
     output.mkdir(parents=True, exist_ok=True)
-    entry, config = resolve_task("L2-04")
+    entry, config = resolve_task("L2-03")
     config = entry.factory.prepare_config(config)
     spec = pouring()
     p = deepcopy(spec.parameters)

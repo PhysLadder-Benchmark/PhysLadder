@@ -90,7 +90,7 @@ class TaskOverviewLayoutTests(unittest.TestCase):
         from robot_tasks.registry import resolve_task
         from robot_tasks.tasks.bench.spec import build_spec
 
-        for task in ("L2-04", "L2-07"):
+        for task in ("L2-03", "L2-05"):
             with self.subTest(task=task):
                 entry, cfg = resolve_task(task)
                 entry.factory.prepare_config(cfg)
@@ -114,7 +114,7 @@ class TaskOverviewLayoutTests(unittest.TestCase):
                 self.assertEqual(cfg.arms, ("right",))
                 self.assertEqual(cfg.observation_arms, ("left",))
                 primary = spec.design.articles[0].initial[:3]
-                if task == "L2-04":
+                if task == "L2-03":
                     receiver = spec.design.articles[1].initial[:3]
                     self.assertGreater(screen_x(primary), screen_x(receiver))
                 else:

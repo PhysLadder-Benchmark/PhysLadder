@@ -1,4 +1,4 @@
-"""L2-03 image-fit layout with a fixed bent lower book and matching collision.
+"""L2-02 image-fit layout with a fixed bent lower book and matching collision.
 
 The lower book remains one dynamic rigid body. Its fixed bent shape represents
 visible paper flex at reset; this does not claim deformable-page simulation.

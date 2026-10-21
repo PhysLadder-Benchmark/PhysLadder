@@ -147,7 +147,7 @@ def main():
     def hook(backend, task, output):
         return run(backend, task, output, fixture)
 
-    return check("L3-05", args.output, prepare=False, capture_hook=hook)
+    return check("L3-02", args.output, prepare=False, capture_hook=hook)
 
 
 if __name__ == "__main__":

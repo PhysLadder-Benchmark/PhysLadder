@@ -13,28 +13,28 @@ import shutil
 
 ROOTS = {
     "L1-01": {"marker": "/World/Household/marker"},
-    "L1-03": {"plug": "/World/Household/plug", "plug_storage_base": "/World/Household/plug_storage_base"},
-    "L1-07": {"hat": "/World/Household/hat", "source_box": "/World/Household/source_box"},
-    "L1-08": {"lower_cup": "/World/Household/lower_cup", "upper_cup": "/World/Household/upper_cup"},
-    "L1-09": {n: "/World/Household/" + n for n in ("rose", "source_cup", "target_cup", "source_charger")},
+    "L1-02": {"plug": "/World/Household/plug", "plug_storage_base": "/World/Household/plug_storage_base"},
+    "L1-03": {"hat": "/World/Household/hat", "source_box": "/World/Household/source_box"},
+    "L1-04": {"lower_cup": "/World/Household/lower_cup", "upper_cup": "/World/Household/upper_cup"},
+    "L1-05": {n: "/World/Household/" + n for n in ("rose", "source_cup", "target_cup", "source_charger")},
     "L2-01": {"body": "/World/L2/marker/Body", "cap": "/World/L2/marker/Cap"},
-    "L2-03": {n: "/World/L2/" + n for n in ("lower_book", "middle_book", "upper_book")},
-    "L2-04": {n: "/World/L2/" + n for n in ("source_cup", "receiver_cup", *[f"load_{i}" for i in range(5)])},
-    "L2-07": {"drawer": "/World/L2/organizer/Drawer1"},
-    "L3-03": {"bottle": "/World/L2/bottle_assembly/Body", "cap": "/World/L2/bottle_assembly/Cap"},
-    "L3-05": {"anchor": "/World/L2/anchor_assembly/AnchorBody", "nut": "/World/L2/anchor_assembly/Nut"},
-    "L3-11": {"eraser": "/World/L3Wiping/eraser"},
-    "L3-14": {"eraser": "/World/L2/eraser"},
-    "L3-15": {n: "/World/L2/" + n for n in ("dustpan", "broom", "block_0", "block_1")},
+    "L2-02": {n: "/World/L2/" + n for n in ("lower_book", "middle_book", "upper_book")},
+    "L2-03": {n: "/World/L2/" + n for n in ("source_cup", "receiver_cup", *[f"load_{i}" for i in range(5)])},
+    "L2-05": {"drawer": "/World/L2/organizer/Drawer1"},
+    "L3-01": {"bottle": "/World/L2/bottle_assembly/Body", "cap": "/World/L2/bottle_assembly/Cap"},
+    "L3-02": {"anchor": "/World/L2/anchor_assembly/AnchorBody", "nut": "/World/L2/anchor_assembly/Nut"},
+    "L3-03": {"eraser": "/World/L3Wiping/eraser"},
+    "L3-04": {"eraser": "/World/L2/eraser"},
+    "L3-05": {n: "/World/L2/" + n for n in ("dustpan", "broom", "block_0", "block_1")},
 }
 
 FIXTURES = {
-    **{t: ["/World/Household/Fixture"] for t in ("L1-01", "L1-03", "L1-07")},
-    "L1-08": [], "L1-09": [],
-    **{t: ["/World/L2/support_box"] for t in ("L2-01", "L2-03", "L3-05", "L3-15")},
-    "L2-04": [], "L2-06": ["/World/L2/Pedestal"],
-    "L2-07": ["/World/L2/organizer/Body", "/World/L2/organizer/Drawer0", "/World/L2/support_box"],
-    "L3-03": [], "L3-11": ["/World/L3Wiping/board"], "L3-14": [],
+    **{t: ["/World/Household/Fixture"] for t in ("L1-01", "L1-02", "L1-03")},
+    "L1-04": [], "L1-05": [],
+    **{t: ["/World/L2/support_box"] for t in ("L2-01", "L2-02", "L3-02", "L3-05")},
+    "L2-03": [], "L2-04": ["/World/L2/Pedestal"],
+    "L2-05": ["/World/L2/organizer/Body", "/World/L2/organizer/Drawer0", "/World/L2/support_box"],
+    "L3-01": [], "L3-03": ["/World/L3Wiping/board"], "L3-04": [],
 }
 
 
@@ -42,6 +42,7 @@ def install(delivery, root):
     import numpy as np
     from pxr import Usd, UsdGeom, UsdPhysics
     from robot_tasks.robots.transforms import transform_pose
+    from robot_tasks.task_numbering import from_legacy
 
     delivery, root = delivery.resolve(), root.resolve()
     destination = root / "assets/tuojing/source"
@@ -51,7 +52,10 @@ def install(delivery, root):
     previous = json.loads(manifest_path.read_text()) if manifest_path.exists() else {"tasks": {}}
     manifest = {"schema_version": 1, "delivery": "L1-L3_assets_20261015", "tasks": {}}
     for path in sorted(delivery.glob("*.usdz")):
-        tid = path.stem
+        # Vendor archives keep their original labels; manifest keys use the
+        # current catalogue. Never infer an asset directory from a new ID.
+        source_id = path.stem
+        tid = from_legacy(source_id)
         s = Usd.Stage.Open(str(path))
         cache = UsdGeom.XformCache()
         bbox = UsdGeom.BBoxCache(Usd.TimeCode.Default(), ["default", "render"])
@@ -60,7 +64,7 @@ def install(delivery, root):
         def record(prim_path):
             return body_record(s, prim_path)
 
-        task = {"path": f"source/{tid}/scene.usdz", "bytes": path.stat().st_size,
+        task = {"path": f"source/{source_id}/scene.usdz", "bytes": path.stat().st_size,
                 "sha256": hashlib.file_digest(path.open("rb"), "sha256").hexdigest(),
                 "source_units_metadata": {"up": UsdGeom.GetStageUpAxis(s), "meters_per_unit": UsdGeom.GetStageMetersPerUnit(s)},
                 "effective_units": {"up": "Z", "meters_per_unit": 1.0},
@@ -82,9 +86,9 @@ def install(delivery, root):
             task["cameras"][name] = {"path": prim_path, "parent": parent, "pose": list(transform_pose(matrix)),
                                      "resolution": resolution, "intrinsics": [resolution[0]*f/w, resolution[1]*f/h, resolution[0]/2, resolution[1]/2],
                                      "clipping_m": list(camera.GetClippingRangeAttr().Get())}
-        if tid == "L2-06":
+        if tid == "L2-04":
             task["orange"] = record("/World/L2/orange")
-        if tid == "L1-09":
+        if tid == "L1-05":
             task["cup_contents"] = [str(p.GetPath()) for p in s.Traverse()
                                     if str(p.GetPath()).startswith("/World/Household/") and any(x in str(p.GetPath()).lower() for x in ("pearl", "marble", "charger", "filler"))]
         from video_scene_metadata import enrich
@@ -95,7 +99,7 @@ def install(delivery, root):
                          or k in ('visual_overlay','effective_tracked_overrides','derived_contents')})
             task['tracked'].update(task.get('effective_tracked_overrides',{}))
             task['tracked'].update(task.get('derived_contents',{}).get('added',{}))
-        folder = staging / tid
+        folder = staging / source_id
         folder.mkdir(exist_ok=True)
         shutil.copy2(path, folder / "scene.usdz")
         manifest["tasks"][tid] = task
@@ -106,7 +110,7 @@ def install(delivery, root):
     if destination.exists():
         if backup.exists():
             for tid, row in manifest["tasks"].items():
-                installed = destination / tid / "scene.usdz"
+                installed = root / "assets/tuojing" / row["path"]
                 if not installed.is_file() or hashlib.sha256(installed.read_bytes()).hexdigest() != row["sha256"]:
                     raise ValueError("Existing latest source differs; preserved backup and local source: " + tid)
             shutil.rmtree(staging)

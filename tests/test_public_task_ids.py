@@ -27,12 +27,12 @@ class PublicTaskIdTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             with self.assertRaisesRegex(ValueError, "unique"):
                 create_batch(Path(tmp) / "batch",
-                             SimpleNamespace(tasks=["L2-04_v3", "L2-04_variant01"]),
+                             SimpleNamespace(tasks=["L2-03_v3", "L2-03_variant01"]),
                              None, None)
 
     def test_unknown_variants_and_config_mismatches_fail(self):
-        for name in ("L1-05_variant01", "L2-04_variant02", "UNKNOWN_variant01"):
+        for name in ("L1-99_variant01", "L2-03_variant02", "UNKNOWN_variant01"):
             with self.subTest(task=name), self.assertRaises(ValueError):
                 resolve_task(name)
         with self.assertRaisesRegex(ValueError, "mismatch"):
-            resolve_task("L2-04_variant01", TASKS["L2-04"].default_config)
+            resolve_task("L2-03_variant01", TASKS["L2-03"].default_config)

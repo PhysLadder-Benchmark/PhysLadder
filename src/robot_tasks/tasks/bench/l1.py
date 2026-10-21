@@ -71,7 +71,7 @@ def plug():
     base = Article("plug_storage_base", (), base_pose, base_pose, 0.0208,
                    asset="tuojing:plug_storage_base",
                    asset_bounds=((-0.0507, -0.0507, 0), (0.0507, 0.0507, 0.055)))
-    d = replace(design("L1-03", "USB 充电器插入固定插线板", [a, base], (), friction=0),
+    d = replace(design("L1-02", "USB 充电器插入固定插线板", [a, base], (), friction=0),
                 fixture_asset="tuojing:power_strip", fixture_pose=pose(*socket_xy, table_z, yaw=strip_yaw),
                 version="l1-03-tuojing-charger-holder-v4-entry-only",
                 release=False,
@@ -123,7 +123,7 @@ def hat():
         rotation=(0.,0.,-rack_yaw))
         for i,(sx,sy) in enumerate(((-1,-1),(1,-1),(-1,1),(1,1))))
     return BenchSpec(
-        replace(design('L1-07','黄色空顶帽挂上木质挂架',[article],supports),
+        replace(design('L1-03','黄色空顶帽挂上木质挂架',[article],supports),
                 fixture_asset='tuojing:wooden_rack', fixture_pose=rack_pose,
                 version='l1-07-tuojing-native-visor-v4-left-facing-layout',
                 provenance='Locked native yellow visor and wooden rack; no scaling, cloth approximation remains rigid'),
@@ -150,7 +150,7 @@ def cups():
     upper = Article("upper_cup", parts, pose(*source_xy, table_z + 0.001), pose(*receiver_xy, table_z + 0.025),
                     0.014, asset="tuojing:ripple_paper_cup", asset_bounds=bounds)
     return BenchSpec(
-        replace(design("L1-08", "两个波纹纸杯套叠", [lower, upper]),
+        replace(design("L1-04", "两个波纹纸杯套叠", [lower, upper]),
                 version="l1-08-tuojing-identical-cups-v4-photo-layout",
                 provenance="Two native hollow ripple paper cups; photo-proportional left-source/right-receiver layout, receiver slightly toward the table front; not calibrated; no resizing"),
         facts="Two identical empty red-brown ripple cups start upright. Viewed from the table front toward the robots, move the initially LEFT cup into the initially RIGHT cup, which starts slightly toward the table front. Both are movable. Each is 107.5 mm tall, outer mouth about 85 mm wide, lower-body diameter about 56-67 mm within the bottom 40 mm. Gripper opening is nominally 0-70 mm: the full mouth is too wide. A shallow pinch across one rigid wall near the rim is possible from above with vertical fingers, one distal pad inside and one outside. Alternatively grip opposite outer sides of the narrower lower body, with both finger tips clear of the table. Lift and verify support, carry upright, and centre its bottom over the other cup's mouth. A recommended release point is with the cup bottom 5-8 mm INSIDE the mouth and before any finger reaches the rim. Open separately and inspect settling. Opening does not prove detachment; choose a small clear withdrawal probe and inspect whether the cup follows before a full retreat. If release_check feedback is enabled, it is advisory; the model chooses recovery. Gravity may finish settling the entered cup onto the taper. A 20-35 mm rim separation is typical, not a hard scoring band. Completion uses geometric cavity fit and stable support, without a 3 mm centre cutoff or fixed small-angle gate. No yaw target is required. Temporary tilt or a missed placement can be recovered in the same scene without reset.",
@@ -180,7 +180,7 @@ def flower():
         asset_bounds=((-0.0178, -0.0178, -0.000014), (0.0179, 0.0179, 0.3018)),
     )
     d = replace(
-        design("L1-09", "刚体玫瑰插花", [rose], ()),
+        design("L1-05", "刚体玫瑰插花", [rose], ()),
         fixture_asset="tuojing:ripple_paper_cup", fixture_pose=pose(*holder_xy, table_z),
         version="l1-09-tuojing-rigid-rose-v4-settled-reset",
         provenance="Native locked Tuojing rigid artificial rose and fixed ripple paper cup; no scaling or bending joints",
@@ -200,8 +200,8 @@ def flower():
 
 BUILDERS = {
     "L1-01": marker,
-    "L1-03": plug,
-    "L1-07": hat,
-    "L1-08": cups,
-    "L1-09": flower,
+    "L1-02": plug,
+    "L1-03": hat,
+    "L1-04": cups,
+    "L1-05": flower,
 }

@@ -195,7 +195,7 @@ class CodexBoundaryTests(unittest.TestCase):
         model = self.root / "ultrafast.toml"
         model.write_text((root / "configs/models/gpt.toml").read_text(encoding="utf-8")
                          + '\nservice_tier = "ultrafast"\n', encoding="utf-8")
-        _, config = resolve_task("L1-03")
+        _, config = resolve_task("L1-02")
         with patch("robot_tasks.policies.codex_cli.CodexProcess"), \
                 patch.object(CodexCLIClient, "require_chatgpt_login"), \
                 patch("robot_tasks.execution.read_api_key", side_effect=AssertionError("No API key")):

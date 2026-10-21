@@ -55,7 +55,7 @@ def enrich(stage, task, tid):
     task['sdf_colliders'] = [str(p.GetPath()) for p in stage.Traverse()
                              if p.GetAttribute('physics:approximation')
                              and p.GetAttribute('physics:approximation').Get() == 'sdf']
-    if tid == "L3-05" and "body" in task["tracked"]:
+    if tid == "L3-02" and "body" in task["tracked"]:
         task["tracked"]["anchor"] = task["tracked"].pop("body")
     for n, row in list(task["tracked"].items()):
         task["tracked"][n] = record(stage, row["path"])
@@ -70,12 +70,12 @@ def enrich(stage, task, tid):
         row["intrinsics"] = [w*cam.GetFocalLengthAttr().Get()/ha,
                              h*cam.GetFocalLengthAttr().Get()/va, w*(.5-ox/ha), h*(.5+oy/va)]
         row["aperture_offsets"] = [ox, oy]
-    if tid == "L1-03":
+    if tid == "L1-02":
         # Socket0's two openings measured in the delivered strip frame. These
         # values describe this hash-locked scene, not a hardware measurement.
         task["slot_centres"] = [[-.01, -.05735], [-.01, -.04365]]
         task["socket_frame_z"] = .02215
-    if tid == "L3-14":
+    if tid == "L3-04":
         cache = UsdGeom.XformCache()
         lines = []
         for i in range(4):
@@ -89,7 +89,7 @@ def enrich(stage, task, tid):
         task["target_vertices_world"] = vertices
         task["target_centre_xy"] = np.mean(vertices,axis=0).tolist()
         task["target_outline_centres"] = [point.tolist() for point,_ in lines]
-    if tid == 'L3-15':
+    if tid == 'L3-05':
         from scipy.spatial import ConvexHull
         from robot_tasks.robots.transforms import pose_transform
         pan=task['tracked']['dustpan'];inverse=np.linalg.inv(pose_transform(pan['pose']))

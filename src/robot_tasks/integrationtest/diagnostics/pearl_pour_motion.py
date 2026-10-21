@@ -1,4 +1,4 @@
-"""Engineering motion fixture for L2-04; never imported by a task/policy.
+"""Engineering motion fixture for L2-03; never imported by a task/policy.
 
 Uses measured cup-to-hand geometry to qualify physical reach, grip, pouring and
 release through the production planner. It does NOT test a model's perception

@@ -44,7 +44,7 @@ tools/
 
 | 脚本 | 用途与输入 |
 | --- | --- |
-| [diagnostics/audit_reference_image_camera.py](diagnostics/audit_reference_image_camera.py) | 对锁定的 L3-03 用户参考图检查原生渲染误差；默认读取旧对齐目录下的 `overview.png`，需要 OpenCV。 |
+| [diagnostics/audit_reference_image_camera.py](diagnostics/audit_reference_image_camera.py) | 对锁定的 L3-01 用户参考图检查原生渲染误差；默认读取旧对齐目录下的 `overview.png`，需要 OpenCV。 |
 | [diagnostics/audit_shared_camera_framing.py](diagnostics/audit_shared_camera_framing.py) | 检查公共机位、桌面／背景边缘和逐任务构图；需要已有初态图片、USD 和 OpenCV。 |
 | [diagnostics/audit_view_pose_alignment.py](diagnostics/audit_view_pose_alignment.py) | 检查真机／仿真视角与机械臂物理复位；可指定 `--initial-root`、`--output`，仍需对应真机证据。 |
 | [diagnostics/preview_l2_initial_layouts.py](diagnostics/preview_l2_initial_layouts.py) | 渲染 L2 原版／P01 初态并合成对照图；需 Isaac 与中文字体。`--compose-only` 仅合成已有图片。 |
@@ -55,7 +55,7 @@ tools/
 
 ```bash
 PYTHONPATH=src python tools/diagnostics/preview_l2_initial_layouts.py \
-  --tasks L2-03 L2-04 --output build/l2_initial_preview
+  --tasks L2-02 L2-03 --output build/l2_initial_preview
 ```
 
 ## 资产安装、构建与校验入口：14 个
@@ -66,7 +66,7 @@ PYTHONPATH=src python tools/diagnostics/preview_l2_initial_layouts.py \
 | --- | --- |
 | [verify_runtime_assets.py](verify_runtime_assets.py) | 默认校验当前运行输入；`--usd` 检查 USD 引用，`--write-lock` 才改写资产锁。 |
 | [prepare_video_scenes.py](prepare_video_scenes.py) | 从原始 USDZ 生成运行层，串联外观、碰撞体和摆放修订；会改资产和元数据。 |
-| [prepare_combined_original_scenes.py](prepare_combined_original_scenes.py) | 从记录的可逆变换重建 L3-03／05／11 原版覆盖层；会更新场景及元数据。 |
+| [prepare_combined_original_scenes.py](prepare_combined_original_scenes.py) | 从记录的可逆变换重建 L3-01／05／11 原版覆盖层；会更新场景及元数据。 |
 | [build_video_scoring_geometry.py](build_video_scoring_geometry.py) | 从完整场景提取评分几何，写入 `video_scoring_geometry.json`。 |
 | [build_l1_scoring_geometry.py](build_l1_scoring_geometry.py) | 从旧锁定 L1 道具提取评分几何，写入 `l1_scoring_geometry.json`；保留旧代理用途。 |
 | [install_video_scenes.py](install_video_scenes.py) | 安装 10 月 15 日完整场景包；会替换场景和清单，不是日常任务前置步骤。 |
@@ -77,7 +77,7 @@ PYTHONPATH=src python tools/diagnostics/preview_l2_initial_layouts.py \
 | [fetch_appearance_assets.py](fetch_appearance_assets.py) | 恢复锁定的房间贴图与机器人外观。 |
 | [convert_camera_cad.py](convert_camera_cad.py) | STEP 相机外壳转可视 USD；需独立 CadQuery 环境，配置见 [camera_assets_environment.yml](camera_assets_environment.yml)。 |
 | [export_yagu_marker.py](export_yagu_marker.py) | 从 L1-01 当前运行层导出马克笔 USDZ；会写入 `appearance/`。 |
-| [export_l103_measured_holder.py](export_l103_measured_holder.py) | 导出 L1-03 实测托盒及尺寸来源；会写入 `appearance/`。 |
+| [export_l103_measured_holder.py](export_l103_measured_holder.py) | 导出 L1-02 实测托盒及尺寸来源；会写入 `appearance/`。 |
 
 ## 资产构建依赖模块：19 个
 
@@ -89,14 +89,14 @@ PYTHONPATH=src python tools/diagnostics/preview_l2_initial_layouts.py \
 | [video_scene_repairs.py](video_scene_repairs.py) | 场景物理绑定和修订入口。 |
 | [video_scene_contents.py](video_scene_contents.py) | 玻璃球等任务内容数量及初态。 |
 | [video_visual_r3.py](video_visual_r3.py) | 房间、桌面、背景外观修订。 |
-| [l1_03_measured_base.py](l1_03_measured_base.py) | 实测插头托盒。 |
-| [l1_03_height_spacer.py](l1_03_height_spacer.py) | 按真机画面估计的场景垫高件。 |
-| [l1_07_contact_geometry.py](l1_07_contact_geometry.py) | 帽圈／支撑盒碰撞几何。 |
-| [l1_07_initial_layout.py](l1_07_initial_layout.py) | 帽子任务初始摆放。 |
-| [l1_09_flower_collision.py](l1_09_flower_collision.py) | 花头接触外壳。 |
-| [l1_09_grip_dynamics.py](l1_09_grip_dynamics.py) | 花茎抓取摩擦和质量参数。 |
-| [l1_09_passive_leaves.py](l1_09_passive_leaves.py) | 被动叶片和花茎接触近似。 |
-| [l1_09_supported_layout.py](l1_09_supported_layout.py) | 花／充电器在杯内的支撑初态。 |
+| [l1_02_measured_base.py](l1_02_measured_base.py) | 实测插头托盒。 |
+| [l1_02_height_spacer.py](l1_02_height_spacer.py) | 按真机画面估计的场景垫高件。 |
+| [l1_03_contact_geometry.py](l1_03_contact_geometry.py) | 帽圈／支撑盒碰撞几何。 |
+| [l1_03_initial_layout.py](l1_03_initial_layout.py) | 帽子任务初始摆放。 |
+| [l1_05_flower_collision.py](l1_05_flower_collision.py) | 花头接触外壳。 |
+| [l1_05_grip_dynamics.py](l1_05_grip_dynamics.py) | 花茎抓取摩擦和质量参数。 |
+| [l1_05_passive_leaves.py](l1_05_passive_leaves.py) | 被动叶片和花茎接触近似。 |
+| [l1_05_supported_layout.py](l1_05_supported_layout.py) | 花／充电器在杯内的支撑初态。 |
 | [l2_measured_support.py](l2_measured_support.py) | 实测公共方盒尺寸。 |
 | [l2_book_rim_fit.py](l2_book_rim_fit.py) | 书本与盒沿贴合、弯曲外观和碰撞近似。 |
 | [l2_marker_asset.py](l2_marker_asset.py) | L2-01 可分离笔杆／笔帽外观。 |

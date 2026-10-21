@@ -48,7 +48,7 @@ class NativeL2ScoringTests(unittest.TestCase):
 
 
     def test_drawer_passive_final_millimetres_do_not_erase_pull_but_need_return(self):
-        spec = build_spec("L2-07")
+        spec = build_spec("L2-05")
         rows = measurement(spec)
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
         row = rows["drawer"]
@@ -65,7 +65,7 @@ class NativeL2ScoringTests(unittest.TestCase):
         self.assertEqual(e.update(.4, rows).status, "succeeded")
 
     def test_drawer_touch_or_small_oscillations_do_not_fake_a_grasped_pull(self):
-        spec = build_spec("L2-07")
+        spec = build_spec("L2-05")
         axis = np.asarray(spec.parameters["outward_axis_world"])
         for oscillate in (False, True):
             rows = measurement(spec)
@@ -82,7 +82,7 @@ class NativeL2ScoringTests(unittest.TestCase):
             self.assertNotIn("pulled_while_held", e.flags)
 
     def test_drawer_preopened_layout_scores_absolute_opening_return_and_native_stop(self):
-        spec = build_spec("L2-07")
+        spec = build_spec("L2-05")
         rows = measurement(spec)
         row = rows["drawer"]
         axis = np.asarray(spec.parameters["outward_axis_world"])
@@ -116,7 +116,7 @@ class NativeL2ScoringTests(unittest.TestCase):
         self.assertTrue(all(criteria["placed"].values()))
         self.assertFalse(criteria["stages"]["barrel_placed"])
         self.assertFalse(criteria["stages"]["cap_placed"])
-        spec = build_spec("L2-06")
+        spec = build_spec("L2-04")
         result = OrangeEvaluator(spec).update(0.1, soft_row(spec))
         self.assertFalse(result.metrics["stages"]["lifted_50mm"])
 
