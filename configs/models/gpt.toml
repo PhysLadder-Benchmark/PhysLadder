@@ -8,9 +8,9 @@ codex_bin = "codex"
 base_url = "https://api.openai.com/v1"
 api_key_env = "OPENAI_API_KEY"
 model = "gpt-6-astra"
-reasoning_effort = "medium"
+reasoning_effort = "xhigh"
 # Omit service_tier for normal speed. Uncomment only when explicitly needed.
-# service_tier = "ultrafast"
+# service_tier = ""
 # Per-request timeout, in seconds; this preserves the existing 150-minute limit.
 timeout_s = 9000.0
 structured_output = true

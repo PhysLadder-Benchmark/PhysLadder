@@ -3,7 +3,7 @@ schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_tuojing_lab.toml"
+profile = "../robots/r5_video_20261015.toml"
 active_arms = ["right"]
 observation_arms = ["left"]
 
@@ -27,100 +27,31 @@ solver_velocity_iterations = 0
 model_config = "../models/gpt.toml"
 
 [completion]
-return_home = true
+return_home = false
 home_tolerance_rad = 0.05
 
 [task]
-prompt_protocol = "guided_visual_l2_v3"
-scoring_protocol = "cup_received_count_fixed_receiver_v2"
+scene_delivery = "video_20261015"
+prompt_protocol = "feishu_english_20261015_v1"
+reference_document = "https://my.feishu.cn/docx/QK4EdOD3hotgp4x782ycgoyyn6g"
+reference_sheet_id = "KyMjZ7"
+reference_sheet_revision = 324
+reference_sheet_row = 18
+scoring_protocol = "feishu_english_20261015_v1"
 id = "L2-04"
 name = "纸杯间倒珍珠"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
 implementation = "household"
-simulation_limitations = "Existing rigid paper cups: no crushing. Receiver fixed to the table; source remains dynamic. Native hollow colliders; 200 native 8 mm pearls, approximately half-height fill, with outer-sphere collision and explicit 0.03 friction. Estimated physical parameters, not real trial calibration."
+simulation_limitations = "Latest complete 2026-10-15 scene. Latest prop geometry, materials and masses are retained. Robot joint homes and gripper openings use per-task video estimates. All camera mounts and lens parameters use the shared L3-03 rig; overview is fixed in world space and wrist cameras follow their own arms. Video-guided geometry and illumination remain uncalibrated; rigid flowers/cups/bristles and contact-driven wiping are explicit simulation approximations. Known per-task discrepancies are recorded in reports/reference_alignment_20261015.json."
 launch_command = "python tools/launch.py run L2-04 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-04 --gui"
 instruction = """
-In the shared OVERVIEW IMAGE, pour from the loaded cup on the RIGHT into the
-fixed empty cup on the LEFT, then put the source cup down. Use the RIGHT arm
-(the robot on image-right). The LEFT arm is an optional camera observer:
-keep it outside the right wrist's travel and pouring space; move it
-only when an important detail is occluded. Do not touch the props with it.
-
-Both cups stand side-by-side about 200 mm apart. The loaded source is in the
-right arm's forward workspace; the fixed receiver is to its image-left. Identify them by contents: the source contains 200 free 8 mm pearls,
-initially about half a cup high, and weighs about 76 g including the cup.
-The receiver is fixed upright to the table. Do not grasp or reposition it.
-
-Plan briefly: grasp and test-lift; raise and align with clearance; tilt to pour;
-restore upright; place and release. Use observed results to advance stages.
-A verified grasp or unchanged view does not need repeated camera checks.
-
-GRASP. Cups are about 108 mm tall, 56 mm across the base and 85 mm across the
-rim. The gripper opens to 70 mm, so approach the LOWER BODY from the SIDE,
-about 40 mm above the base where the diameter is about 67 mm. Open fully and
-approach slightly downward, approximately 15-25 degrees, keeping the fingers
-above the table. Close the opposing pads in a separate action. Do not surround
-the wide rim from above or pinch the 3 mm wall. Lift 20-30 mm and verify the
-cup and pearls follow. Blocked closure alone is not grasp confirmation.
-Maintain the closing target while carrying and tilting; do not loosen the
-grasp merely because the measured width cannot reach the closed target.
-
-CLEARANCE BEFORE POURING. Raise the held cup while it is still upright and
-away from the receiver. Begin with the source mouth centre roughly 150 mm
-ABOVE the receiving rim, then move toward the pouring position. This is an
-initial clearance guide, not an exact pose or a scoring target. Judge the
-whole wrist, camera mount, both fingers and cup in 3D using complementary camera views. A clear lip
-does not imply a clear wrist: the lower side of the gripper swings downward
-as the cup tilts. Leave several centimetres of clearance rather than grazing
-the receiving rim. Do not lower the wrist just to shorten the pearl fall.
-
-POUR. Tilt toward the receiver and translate the wrist at the same time to
-keep the pouring mouth and actual stream aligned with the receiving opening.
-Pearls also move FORWARD as they leave the lip: mouth-over-centre can overshoot
-the far rim. Start with the mouth several centimetres back toward the source
-side of the receiver, and use the first falling pearls to adjust the landing
-point. The mouth itself need not be directly above the receiver centre; the
-STREAM must enter the opening. Do not hold TCP position
-fixed and keep rotating: that sweeps the cup mouth and lower wrist toward the
-receiver wall. Think of rotating around the pouring mouth, compensating with
-TCP translation. Use observed cup pose and the held cup-to-hand relationship;
-TCP orientation alone is not the cup's tilt angle.
-
-With clearance established, increase cup tilt in about 15-25 degree increments.
-No flow at 30-50 degrees is normal and is not a reason to wait repeatedly.
-Continue toward horizontal, and if needed beyond it, approximately 100-120
-degrees from upright, subject to actual reach and collision feedback. These
-angles are guidance, not a guarantee or limit. Observe after each action;
-when flow starts, hold briefly and keep the stream inside the receiver. If it
-overshoots the far side, reduce tilt to stop flow, shift the source mouth back
-toward the source side, and reassess; if it falls short, shift forward. Reduce
-drop height only while preserving wrist/finger clearance. Do not continue a
-large transfer while the visible stream misses. Do not make one blind
-large rotation or repeat an unchanged empty action expecting static geometry
-to change. If a plan is rejected, use the returned reason: goal failures call
-for a revised target, while start-state collisions require clearance recovery
-and must not be described as successful movement. Do not open over empty air.
-
-FINISH. At least 160 of 200 pearls (80%) must settle inside the receiver.
-Residue and some spills are allowed; the task does not require complete
-emptying or zero spills. Restore the source upright while maintaining
-clearance, move to a clear tabletop area, lower until supported, then open
-and withdraw sideways along the approach direction so the fingers do not snag
-the wider upper wall. Any clear placement area is acceptable; no exact return pose
-is required. Inspect the transfer and released placement, then request stop.
-The evaluator counts actual received pearls independently. Do not count
-particles in flight as received or invent force readings. No scene resets.
+Pick up the left cup with the left arm, pour its contents into the right cup until empty, then place it back and release it.
 """
 
 # 中文布置、道具和判据；不属于额外的模型输入。
 description = """
-道具：复用现有波纹纸杯原生资产两只、8 mm 小珍珠 200 颗。纸杯约高 108 mm，底部直径 56 mm，杯口 85 mm；每杯 14 g，200 颗珍珠合计约 61.79 g，装料杯约 75.79 g。杯体保留原生中空碰撞，不使用可压瘪版本；珍珠保留外观和质量，碰撞采用外球面，摩擦系数明确为 0.03。
-布置：拓境实验室 R5 双臂与三路相机，以公共第三视角为准，右侧杯装料、左侧杯为空的固定接收杯，中心相距 200 mm；装料杯靠近画面右臂；接收杯固定在桌面，不滑动、不倾倒，源杯保持可抓取和移动。右臂从右往左倾倒，左臂仅在遮挡时移动观察，并留在倾倒操作区之外，无需扶杯。初始珍珠顶面距杯底约 54 mm，约占有效杯腔高度的 48%，静置后会重新堆积；此处“半杯”指料面高度，不指珍珠实体体积。保留杯口余量，避免满杯搬运。
-抓取：R5 最大开口 70 mm，不能包住 85 mm 杯口；全开后从侧面略朝下接近，夹在距杯底约 40 mm 处（直径约 67 mm），检查夹指与桌面净空，再短距离试提确认。无吸附、无抓取绑定、不另加把手。
-倾倒：先在接收杯外抬高，源杯杯口中心初始高于接收杯口约 150 mm，检查腕部、完整夹指和支架的净空；增加倾角时同步平移 TCP，尽量围绕倒料杯口转动，避免固定低 TCP 原地转腕。珍珠离口后仍向前运动，源杯口可偏向来料侧，依据实际落点修正，不能仅将两杯中心对齐；流束越过远侧杯沿时先减小倾角停流，再后移调整。没有出料可继续逐步倾至水平或略超过水平，不能只在小倾角反复等待。该高度和角度是操作建议，不是评分条件。
-成功：提示目标仍为 160/200 颗；独立评分沿用至少 10 颗的宽容验收，不提高要求。先实际抓起装料杯，再让珍珠落入固定接收杯并停留；源杯放回任意空桌面并松手，竖立、独立受桌面支撑约 0.5 秒。接收杯校验固定位置，不要求其产生桌面支撑力读数。允许少量残留，不要求零洒落；报告实际接收、残留、杯外及曾洒落数量，不能把本任务成功解释为全部转移。
-参考：真实杯间倒珍珠流程；当前 v8 仅调整左右布局、操作臂及对应方向提示，保留 200 颗和既有验收阈值；不与旧布局回合混合统计。
+Complete 2026-10-15 assets: room, table, robot mounts, lighting and task props. Robot initial joints and gripper openings follow the per-task video-visible setup. All camera views use the shared L3-03 rig. Prop placements follow the delivered video reconstruction. Task left/right use the robot perspective; overview-image left/right are reversed. No older individual prop is imported. Physical parameters remain uncalibrated.
 """

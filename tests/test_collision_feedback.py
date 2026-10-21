@@ -137,6 +137,78 @@ class CollisionFeedbackTests(unittest.TestCase):
         self.assertIsNone(result["success"])
         self.assertTrue(any(e["event"] == "collision_blocked" for e in events))
 
+    def monitor_with_actor_recovery(self):
+        m = self.monitor()
+        m.allow_actor_recovery = True
+        return m
+
+    def test_release_only_can_finish_opening_but_new_or_growing_contacts_stop(self):
+        contact = {'arm':'right','robot_collider':'/Robot/link6',
+                   'other_collider':'/Flower/Stem','impulse_ns':.0003,'separation_m':0.}
+        for change,expected in (({},False),({'other_collider':'/NewObstacle'},True),
+                                ({'impulse_ns':.0015},False),({'impulse_ns':.0021},True),
+                                ({'separation_m':-.0006},True)):
+            with self.subTest(change=change):
+                monitor=self.monitor_with_actor_recovery();monitor.pending=[dict(contact)];monitor.after_step(.001)
+                monitor.begin_action(release_arm='right')
+                monitor.after_step(1.)
+                monitor.pending=[{**contact,**change}];monitor.after_step(.001)
+                self.assertEqual(monitor.blocked is not None,expected)
+        monitor=self.monitor_with_actor_recovery();monitor.pending=[dict(contact)];monitor.after_step(.001)
+        monitor.begin_action(release_arm='left')
+        monitor.pending=[dict(contact)];monitor.after_step(.001)
+        self.assertIsNotNone(monitor.blocked)
+        monitor.begin_action(release_arm='right');monitor.after_step(2.)
+        monitor.pending=[dict(contact)];monitor.after_step(.001)
+        self.assertIsNotNone(monitor.blocked)
+
+
+    def test_release_tracks_one_rigid_actor_pair_across_adjacent_faces_only(self):
+        contact={'arm':'right','robot_collider':'/Robot/Camera/Housing','other_collider':'/Rose/Leaf0',
+                 'robot_actor':'/Robot/link6','other_actor':'/Rose','impulse_ns':.0003,'separation_m':0.}
+        for change,blocked in (({'other_collider':'/Rose/Petal'},False),
+                               ({'other_actor':'/Cup','other_collider':'/Cup/Wall'},True),
+                               ({'robot_actor':'/Robot/link5','robot_collider':'/Robot/link5/Shape'},True),
+                               ({'other_collider':'/Rose/Petal','impulse_ns':.003},True)):
+            with self.subTest(change=change):
+                m=self.monitor_with_actor_recovery();m.pending=[dict(contact)];m.after_step(.001)
+                m.begin_action(release_arm='right')
+                m.pending=[{**contact,**change}];m.after_step(.001)
+                self.assertEqual(m.blocked is not None,blocked)
+
+
+    def test_completed_release_hands_only_fresh_contacts_to_short_retreat(self):
+        row={'arm':'right','robot_collider':'/Robot/Housing','other_collider':'/Rose/Leaf',
+             'robot_actor':'/Robot/link6','other_actor':'/Rose','impulse_ns':.0003,'separation_m':0.}
+        for fresh in (True,False):
+            with self.subTest(fresh=fresh):
+                m=self.monitor_with_actor_recovery();m.pending=[dict(row)];m.after_step(.001)
+                m.begin_action(release_arm='right')
+                m.pending=[dict(row)] if fresh else [];m.after_step(.001)
+                m.begin_action(allow_retreat=True)
+                self.assertEqual(m.recovery_window_s,.25)
+                self.assertFalse(m.release_recovery)
+                m.pending=[{**row,'other_collider':'/Rose/Petal'}];m.after_step(.001)
+                self.assertEqual(m.blocked is None,fresh)
+                if fresh:
+                    m.after_step(.25);m.pending=[dict(row)];m.after_step(.001)
+                    self.assertIsNotNone(m.blocked)
+
+
+    def test_other_levels_keep_pair_only_recovery(self):
+        row = {'arm':'right', 'robot_collider':'/Robot/Camera', 'other_collider':'/Rose/Leaf',
+               'robot_actor':'/Robot/link6', 'other_actor':'/Rose',
+               'impulse_ns':.0003, 'separation_m':0.}
+        m = self.monitor()
+        m.pending = [dict(row)]; m.after_step(.001)
+        m.begin_action(release_arm='right')
+        self.assertFalse(m.release_recovery)
+        m.pending = [dict(row)]; m.after_step(.001)
+        self.assertIsNotNone(m.blocked)
+        m.begin_action(allow_retreat=True)
+        m.pending = [{**row, 'other_collider':'/Rose/OtherFace'}]; m.after_step(.001)
+        self.assertIsNotNone(m.blocked)
+
 
 if __name__ == "__main__":
     unittest.main()

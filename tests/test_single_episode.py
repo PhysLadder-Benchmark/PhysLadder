@@ -99,12 +99,13 @@ class SingleEpisodeTests(unittest.TestCase):
         self.assertTrue(all(o is policy.observations[0] for o in policy.observations))
         self.assertEqual(result["termination_reason"], "task_terminal")
 
-    def test_generation_retry_exhaustion_is_an_error_without_reset(self):
+    def test_generation_failures_beyond_three_resume_without_scene_reset(self):
         result = self.run_case(TerminalTask(), TrialPolicy(generation_failures=4))
-        self.assertEqual(result["model_calls"], 4)
-        self.assertEqual(result["model_retry_attempts"], 3)
-        self.assertEqual(result["status"], "error")
-        self.assertIsNone(result["success"])
+        self.assertEqual(result["model_calls"], 5)
+        self.assertEqual(result["model_retry_attempts"], 4)
+        self.assertEqual(result["status"], "finished")
+        self.assertEqual(result["termination_reason"], "task_terminal")
+        self.assertFalse(result["success"])
 
     def test_all_launchable_tasks_have_no_physical_retry_switch(self):
         for task in TASKS.values():

@@ -47,17 +47,25 @@ def bottle(e, rows):
     if detached and cap_held:
         e.flags.add("cap_detached")
     on_table = cap["bench_force_n"] > 0.005 and released(cap)
-    complete = detached and "cap_detached" in e.flags
-    return complete, {"bottle_fixed": True, "cap_detached_now": detached,
+    required_lift = p.get("cap_lift_min_m", 0.0)
+    body_held = held(body, p["body_arm"])
+    lift_ok = (required_lift <= gap <= p["cap_lift_max_m"]
+               and cap_held and (p.get("body_fixed", True) or body_held)) if required_lift else True
+    complete = detached and "cap_detached" in e.flags and lift_ok
+    return complete, {"bottle_fixed": p.get("body_fixed", True), "cap_detached_now": detached,
+        "bottle_held": body_held, "cap_held": cap_held,
         "cap_removal_observed": "cap_detached" in e.flags,
         "cap_released_on_table": on_table, "neck_clearance_m": gap,
-        "extra_lift_required_m": 0.0,
+        "extra_lift_required_m": required_lift,
         "release_required": False, "placement_required": False}, ""
 
 
 def pushing(e, rows):
     from .push_triangle import containment_margin
 
+    if e.spec.parameters.get("stacked_book_names"):
+        from .stacked_books import score
+        return score(e, rows)
     block = rows["eraser"]
     article = e.spec.design.articles[0]
     p = e.spec.parameters
@@ -106,8 +114,8 @@ def pushing(e, rows):
             "gripper_push_witness": "gripper_pushed_block" in e.flags,
             "table_supported": supported,
             "released": released(block),
-            "target_width_m": 0.32,
-            "target_depth_m": 0.28,
+            "target_width_m": float(np.ptp(np.asarray(p["target_vertices"])[:,0])),
+            "target_depth_m": float(np.ptp(np.asarray(p["target_vertices"])[:,1])),
             "orientation_requirement": "none",
             "timed_hold_s": 0,
         },
@@ -134,10 +142,19 @@ def sweeping(e, rows):
             & (y <= 0.044)
             & ((y >= 0) | (x * x + y * y <= 0.069**2))
         )
+        height_min,height_max=-.001,.009
+        if 'pan_floor_vertices' in e.spec.parameters:
+            polygon=np.asarray(e.spec.parameters['pan_floor_vertices'])
+            edges=np.roll(polygon,-1,axis=0)-polygon
+            offset=corners[:,None,:2]-polygon[None,:,:]
+            side=edges[None,:,0]*offset[:,:,1]-edges[None,:,1]*offset[:,:,0]
+            footprint=np.all(side>=-1e-9,axis=1)
+            low,high=e.spec.parameters['pan_floor_height_range']
+            height_min,height_max=low-.001,high+.005
         contained = bool(
             np.all(footprint)
-            and corners[:, 2].min() >= -0.001
-            and corners[:, 2].min() <= 0.009
+            and corners[:, 2].min() >= height_min
+            and corners[:, 2].min() <= height_max
         )
         support = block["pair_forces"].get("dustpan", 0) > 0.005
         inside.append(contained and support)
@@ -154,7 +171,7 @@ def sweeping(e, rows):
     witness = any(swept)
     brush_placed = released(broom) and (
         broom["bench_force_n"] + broom["fixture_force_n"] > 0.02)
-    complete = sum(inside) >= e.spec.parameters["required"] and witness and brush_placed
+    complete = sum(inside) >= e.spec.parameters["required"] and witness and (brush_placed or not e.spec.parameters.get("require_brush_release", True))
     return (
         complete,
         {

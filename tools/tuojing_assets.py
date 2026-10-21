@@ -14,7 +14,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1] / "assets" / "tuojing"
 sys.path.insert(0, str(ROOT.parents[1] / "src"))
-from robot_tasks.asset_layout import bundles, install_layout, verify_files as verify_bundle_files
+from robot_tasks.asset_layout import bundles, install_layout, current_scene_tasks, verify_files as verify_bundle_files
 
 
 def sha256(path):
@@ -105,7 +105,7 @@ def verify_usd(path, source_root, require_component=False):
 
     layers, assets, unresolved = UsdUtils.ComputeAllDependencies(str(path))
     # This shader ships with Isaac; plain usd-core does not register its resolver.
-    builtins = {"OmniPBR.mdl", "OmniGlass.mdl"}
+    builtins = {"OmniPBR.mdl", "OmniGlass.mdl", "OmniSurface.mdl"}
     missing = sorted(set(unresolved) - builtins)
     if missing:
         raise ValueError(f"Unresolved USD dependencies in {path.name}: {missing}")
@@ -167,7 +167,32 @@ def organize(root, package_ids=None):
     return install_layout(root, packages)
 
 
+def verify_complete_scenes(root,usd=False):
+    manifest=json.loads((root/'video_20261015.json').read_text(encoding='utf-8'))
+    tasks={}
+    for tid,row in manifest['tasks'].items():
+        files={row['path']:{'bytes':row['bytes'],'sha256':row['sha256']},
+               row['runtime_path']:{'bytes':row['runtime_bytes'],'sha256':row['runtime_sha256']}}
+        verify_bundle_files(root,files)
+        tasks[tid]={'files':len(files),'raw_sha256':row['sha256'],'runtime_sha256':row['runtime_sha256'],
+            'usd':verify_usd(root/relative_path(row['runtime_path']),root,require_component=True) if usd else 'not_checked'}
+    textures=manifest.get('visual_textures',{})
+    if any(row.get('visual_overlay',{}).get('applied') for row in manifest['tasks'].values()) and not textures:
+        raise ValueError('Current PR visual textures are not locked')
+    verify_bundle_files(root,textures)
+    layout_path=root/'task_assets.json'
+    legacy=set(json.loads(layout_path.read_text(encoding='utf-8'))['tasks']) if layout_path.exists() else set()
+    return {'delivery':manifest['delivery'],'task_assets':tasks,
+            'visual_textures_verified':len(manifest.get('visual_textures',{})),
+            'not_in_current_delivery':sorted(legacy-tasks.keys()),
+            'legacy_task_copies_used':False,'usd_composition_checked':usd,
+            'physics_tested':False,'rendering_tested':False,'task_workflow_integrated':False}
+
+
 def verify(root, usd=False, package_ids=None):
+    complete=current_scene_tasks(root)
+    if complete and package_ids is None:
+        return verify_complete_scenes(root,usd)
     lock = json.loads((root / "source.lock.json").read_text(encoding="utf-8"))
     packages = select_packages(lock, package_ids)
     counts = {key: verify_files(root / "packages" / relative_path(p["directory"]), p)
@@ -188,6 +213,8 @@ def verify(root, usd=False, package_ids=None):
     task_assets = {}
     if (root / "task_assets.json").is_file():
         for item in bundles(root):
+            if item.destination.parent.name in complete or (complete and item.destination.parent.name=='common'):
+                continue
             if item.package not in packages:
                 continue
             count = verify_bundle_files(item.destination, item.files)

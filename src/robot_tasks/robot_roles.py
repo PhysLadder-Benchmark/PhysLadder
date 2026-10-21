@@ -6,8 +6,8 @@ from .config import TaskConfig
 from .types import Assessment, ArmState
 
 
-ARM_IDENTITY_PROTOCOL = "tuojing_overview_ids_v2"
-REAL_SKILL_REVISION = "2a722748fa2adedd096c8fd7f9461d2b2ba48af6"
+ARM_IDENTITY_PROTOCOL = "tuojing_base_ids_v3"
+REAL_SKILL_REVISION = "1765230ca26ec951f6837ef8759d146f579fec04"
 
 
 def arm_identities(config: TaskConfig) -> dict[str, dict[str, str]]:
@@ -15,16 +15,20 @@ def arm_identities(config: TaskConfig) -> dict[str, dict[str, str]]:
 
     The real skill names arms from the robot's perspective; this lab's USD and
     existing commands use the fixed overview's left/right. Convert source task
-    roles once when authoring a task, never again when decoding its actions.
+    roles once in control permissions. Current task prose keeps robot-perspective
+    names and the system notes explain their mapping to command IDs.
     Other robot layouts do not inherit this lab-specific correspondence.
     """
     if config.raw.get("simulation", {}).get("environment") != "tuojing_lab_v4":
         return {}
     real_arm = {"left": "right", "right": "left"}
     real_camera = {"left": "gemini_right", "right": "gemini"}
+    from .video_delivery import enabled
+    robot_prompt = enabled(config)
     return {
         arm: {"command_arm": arm, "overview_base_side": arm,
-              "real_arm": real_arm[arm], "wrist_camera": arm + "_wrist",
+              "real_arm": real_arm[arm], "prompt_arm": real_arm[arm] if robot_prompt else arm,
+              "prompt_frame": "robot" if robot_prompt else "command", "wrist_camera": arm + "_wrist",
               "real_wrist_camera_key": real_camera[arm], "role": role}
         for arm, role in config.arm_roles.items()
     }

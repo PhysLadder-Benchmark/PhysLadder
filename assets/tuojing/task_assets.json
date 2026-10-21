@@ -19,13 +19,6 @@
         "plug_base": "plug_storage_base"
       }
     },
-    "L1-05": {
-      "name": "钥匙插锁",
-      "props": {},
-      "generated": {
-        "key_and_lock": "src/robot_tasks/tasks/bench/l1.py"
-      }
-    },
     "L1-07": {
       "name": "遮阳帽挂架",
       "props": {

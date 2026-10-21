@@ -1,7 +1,6 @@
 """Open hollow solids made of convex pieces; no hull seals a visible aperture."""
 
 import math
-from dataclasses import replace
 
 import numpy as np
 
@@ -74,13 +73,6 @@ def cup_parts(
             )
         )
     return tuple(parts)
-
-
-def translated(parts, xyz, prefix=""):
-    return tuple(
-        replace(p, name=prefix + p.name, position=tuple(np.asarray(p.position) + xyz))
-        for p in parts
-    )
 
 
 def design(task_id, name, articles, fixtures=(), *, friction=0.35):

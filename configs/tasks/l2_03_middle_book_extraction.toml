@@ -4,7 +4,7 @@ schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_tuojing_lab.toml"
+profile = "../robots/r5_video_20261015.toml"
 active_arms = ["left", "right"]
 observation_arms = []
 
@@ -28,30 +28,32 @@ solver_velocity_iterations = 0
 model_config = "../models/gpt.toml"
 
 [completion]
-return_home = true
+return_home = false
 home_tolerance_rad = 0.05
 
 [task]
+scene_delivery = "video_20261015"
+prompt_protocol = "feishu_english_20261015_v1"
+reference_document = "https://my.feishu.cn/docx/QK4EdOD3hotgp4x782ycgoyyn6g"
+reference_sheet_id = "KyMjZ7"
+reference_sheet_revision = 324
+reference_sheet_row = 16
 # Guided visual execution; common information boundaries are appended by BenchTask.
-prompt_protocol = "guided_visual_l2_v3"
-scoring_protocol = "native_l2_validity_v2"
+scoring_protocol = "feishu_english_20261015_v1"
 id = "L2-03"
 name = "双臂支撑并抽取中层书"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
 implementation = "household"
-simulation_limitations = "Native rigid closed books, 378.9 g each; no page flex. All books are dynamic. Support box anchored as a passive fixture. Friction uncalibrated."
+simulation_limitations = "Latest complete 2026-10-15 scene. Latest prop geometry, materials and masses are retained. Robot joint homes and gripper openings use per-task video estimates. All camera mounts and lens parameters use the shared L3-03 rig; overview is fixed in world space and wrist cameras follow their own arms. Video-guided geometry and illumination remain uncalibrated; rigid flowers/cups/bristles and contact-driven wiping are explicit simulation approximations. Known per-task discrepancies are recorded in reports/reference_alignment_20261015.json."
 launch_command = "python tools/launch.py run L2-03 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-03 --gui"
 instruction = """
-Three 220 x 140 x 19.6 mm books lie flat on a green box centred between both arms, farther forward on the table. The stack is offset 35 mm toward overview-image RIGHT and 20 mm toward the arms relative to the box centre, exposing box top on the left and front. The middle book protrudes another 40 mm to image-right (world +X). All books can move. RIGHT pinches the exposed middle book across its thickness, LEFT steadies the upper book. Pull the middle book visibly farther toward image-right; 20 mm of measured displacement operationalizes the real task's relaxed pull-out-a-little goal. Complete extraction is not required. Slight neighbouring-book movement is allowed, but they must remain supported on the stack/box. Release the books after the pull; do not let them drop off the support.
-
-Use current RGB views and measured robot feedback. First identify the objects and make a short plan, then execute and verify each physical subgoal. If an object did not follow the gripper, correct the grasp before continuing. Reobserve after contact; do not infer success from a commanded pose. There is no automatic grasp, reset, release or return-home action. The common completion instructions appended below are mandatory.
+Hold the top book steady with the right arm and pull the middle book out 5 cm with the left arm.
 """
 
 # 中文布置和道具说明。
 description = """
-参照真机图片：绿盒居中、较上一版向桌前移100 mm，中心(0.19565,1.20)m；三本书平叠，整体相对盒心向画面右侧偏35 mm、向机械臂侧偏20 mm，左侧和前侧露出盒面。每本220×140×19.6 mm、378.9 g。中层再向画面右侧突出40 mm，右臂夹突出边向右抽，左臂扶上书。盒子固定，三本书均可动；向右再抽至少20 mm，允许相邻书轻微随动，不要求完全抽离。抽后书本仍有书堆/盒面承托，全部松手。
-所有道具按要求释放，并且双臂回到初始关节位置，才算完成；关节回位容差0.05 rad。不自动执行回位。资产来源：飞书《GPT6评测任务及资产管理》2026-10-11下载包。
+Complete 2026-10-15 assets: room, table, robot mounts, lighting and task props. Robot initial joints and gripper openings follow the per-task video-visible setup. All camera views use the shared L3-03 rig. Prop placements follow the delivered video reconstruction. Task left/right use the robot perspective; overview-image left/right are reversed. No older individual prop is imported. Physical parameters remain uncalibrated.
 """

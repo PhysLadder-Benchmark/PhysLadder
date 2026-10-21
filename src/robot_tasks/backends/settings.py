@@ -12,6 +12,11 @@ from ..config import TaskConfig
 class SimulationSettings:
     asset_directory: Path
     headless: bool = True
+    renderer: str = "RaytracedLighting"
+    active_gpu: int = 0
+    physics_gpu: int = 0
+    robot_gravity_compensation: bool = True
+    cartesian_completion_tolerance_m: float = 0.001
     graphics_backend: str = "d3d12" if os.name == "nt" else "vulkan"
     width: int = 960
     height: int = 720
@@ -53,6 +58,11 @@ class SimulationSettings:
         directory = data.pop("asset_directory", "../../build/r5")
         if not isinstance(directory, str) or not directory:
             raise ValueError("simulation.asset_directory must be a path")
+        # Host-local generated USD/planner caches must not race when several
+        # workers share one project checkout. Task assets remain read-only.
+        directory = os.environ.get("GPT_BENCHMARK_ASSET_CACHE", directory)
+        if not directory.strip():
+            raise ValueError("GPT_BENCHMARK_ASSET_CACHE must not be empty")
         result = cls(asset_directory=(config.source.parent / directory).resolve(), **data)
         if result.environment not in {"plain", "lab_room_v1", "tuojing_lab_v4"}:
             raise ValueError("simulation.environment must be plain, lab_room_v1 or tuojing_lab_v4")
@@ -66,7 +76,12 @@ class SimulationSettings:
             raise ValueError("capture_render_passes must be in [1, 8]")
         if result.graphics_backend not in {"vulkan", "d3d12"}:
             raise ValueError("graphics_backend must be vulkan or d3d12")
-        for name in ("headless", "self_collision", "gpu_dynamics"):
+        if result.renderer not in {"RaytracedLighting", "PathTracing"}:
+            raise ValueError("renderer must be RaytracedLighting or PathTracing")
+        for name in ("active_gpu", "physics_gpu"):
+            if type(getattr(result, name)) is not int or getattr(result, name) < 0:
+                raise ValueError(f"simulation.{name} must be a nonnegative integer")
+        for name in ("headless", "self_collision", "gpu_dynamics", "robot_gravity_compensation"):
             if type(getattr(result, name)) is not bool:
                 raise ValueError(f"simulation.{name} must be boolean")
         for name in ("width", "height", "fps"):
@@ -77,7 +92,7 @@ class SimulationSettings:
             value = getattr(result, name)
             if type(value) is not int or not minimum <= value <= 255:
                 raise ValueError(f"simulation.{name} must be an integer in [{minimum}, 255]")
-        for name in ("arm_stiffness", "arm_damping", "finger_stiffness", "finger_damping", "finger_max_acceleration", "finger_closing_lead", "finger_effort_limit"):
+        for name in ("arm_stiffness", "arm_damping", "finger_stiffness", "finger_damping", "finger_max_acceleration", "finger_closing_lead", "finger_effort_limit", "cartesian_completion_tolerance_m"):
             value = getattr(result, name)
             if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0:
                 raise ValueError(f"simulation.{name} must be finite and positive")
@@ -111,7 +126,11 @@ class SimulationSettings:
     def application_config(self) -> dict:
         return {
             "headless": self.headless, "width": self.width, "height": self.height,
-            "active_gpu": 0, "physics_gpu": 0, "multi_gpu": False,
+            "renderer": self.renderer,
+            **({"samples_per_pixel_per_frame": 64, "max_bounces": 12,
+                "max_specular_transmission_bounces": 12, "denoiser": True}
+               if self.renderer == "PathTracing" else {}),
+            "active_gpu": self.active_gpu, "physics_gpu": self.physics_gpu, "multi_gpu": False,
             # Kit runs in an isolated worker; fast shutdown avoids Windows DLL teardown crashes.
             "fast_shutdown": True,
             "extra_args": [f"--/app/vulkan={'true' if self.graphics_backend == 'vulkan' else 'false'}"],

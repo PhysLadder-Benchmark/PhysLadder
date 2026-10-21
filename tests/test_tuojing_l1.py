@@ -8,7 +8,7 @@ import numpy as np
 
 from robot_tasks.planning.scene import article_surface, capsule_mesh, collider_meshes
 from robot_tasks.tasks.bench.evaluation import BenchEvaluator
-from robot_tasks.tasks.bench.scoring_l1 import cups, flower, insertion
+from robot_tasks.tasks.bench.scoring_l1 import cups, flower, plug
 from robot_tasks.tasks.bench.spec import build_spec
 from robot_tasks.tasks.l1.specs import pose
 from test_household_tasks import measurement
@@ -98,21 +98,21 @@ class NativeTaskScoringTests(unittest.TestCase):
         r = rows["plug"]
         r["pose"] = list(article.goal)
         r["fixture_force_n"], r["bench_force_n"] = .54, 0
-        self.assertTrue(insertion(e, rows)[0])
+        self.assertTrue(plug(e, rows)[0])
         e.grasped.add("plug")
-        self.assertTrue(insertion(e, rows)[0])
+        self.assertTrue(plug(e, rows)[0])
         # The pair is symmetric at 180 degrees, but not 90 degrees.
         for yaw, expected in ((3 * np.pi / 2, True), (0, False)):
             r["pose"] = list(pose(*article.goal[:3], yaw=yaw))
-            self.assertEqual(insertion(e, rows)[0], expected)
+            self.assertEqual(plug(e, rows)[0], expected)
         r["pose"] = list(article.goal)
         r["pose"][0] += .003
-        self.assertFalse(insertion(e, rows)[0])
+        self.assertFalse(plug(e, rows)[0])
         r["pose"] = list(article.goal)
         r["pose"][2] += .01
-        self.assertTrue(insertion(e, rows)[0])
+        self.assertTrue(plug(e, rows)[0])
         r["pose"][2] += .01
-        self.assertFalse(insertion(e, rows)[0])
+        self.assertFalse(plug(e, rows)[0])
 
     def test_charger_in_source_holder_is_incomplete_and_tabletop_recovery_allowed(self):
         spec = build_spec("L1-03")
@@ -177,11 +177,11 @@ class NativeTaskScoringTests(unittest.TestCase):
         top["pose"][0] += .03
         self.assertFalse(cups(e, rows)[0])
 
-    def test_toppled_key_or_cup_on_table_is_not_a_terminal_failure(self):
+    def test_toppled_cup_on_table_is_not_a_terminal_failure(self):
         from robot_tasks.robots.transforms import pose_transform
         from robot_tasks.tasks.l1.specs import local_corners
 
-        for task_id, name in (("L1-05", "key"), ("L1-08", "upper_cup")):
+        for task_id, name in (("L1-08", "upper_cup"),):
             spec = build_spec(task_id)
             rows = measurement(spec)
             article = next(a for a in spec.design.articles if a.name == name)

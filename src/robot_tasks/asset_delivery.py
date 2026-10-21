@@ -18,6 +18,11 @@ def verified_package(package_id):
 
 def verified_shared(name):
     bundle = find_bundle(ROOT, "common", name)
+    if not bundle.destination.exists():
+        # Standalone laboratory checks can use the immutable source package
+        # when its shared copy has not been installed.
+        verify_files(bundle.source, bundle.files)
+        return bundle.source / bundle.entry
     verify_files(bundle.destination, bundle.files)
     return bundle.destination / bundle.entry
 

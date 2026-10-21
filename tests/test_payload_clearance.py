@@ -106,5 +106,36 @@ class PayloadClearanceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'bud_obstruction'):
             self.worker.check_payload('left', self.path, request, {})
 
+    def delivered_flower_pickup(self, direction=1):
+        from robot_tasks.tasks.bench.delivered_scene import flower_payload_surface
+        # L1-09 2026-10-16 formal run, step 6. The whole-body AABB reached
+        # z=.8651 despite the actual collider remaining above z=.8829.
+        pose = [.39672160148620605, 1.1641508340835571, .8823432922363281,
+                -.8336890339851379, -.1822560876607895, .1780846267938614, -.4899296760559082]
+        points = flower_payload_surface(pose)
+        self.assertGreater(points[:,2].min(), .880)
+        request = self.request(points.tolist())
+        request['scene']['table_surface_z_m'] = .880
+        request['scene']['obstacles']['mesh'] = {}
+        self.worker.kin = SimpleNamespace(forward=lambda q, arm: (0,0,q[0],1,0,0,0))
+        self.path = SimpleNamespace(duration_s=.1, sample=lambda t:[direction*.25*t])
+        return request
+
+    def test_delivered_flower_lift_passes_without_weakening_table_guard(self):
+        request = self.delivered_flower_pickup()
+        self.worker.check_payload('left', self.path, request, {})
+        request = self.delivered_flower_pickup(-1)
+        with self.assertRaisesRegex(ValueError, 'intersects table'):
+            self.worker.check_payload('left', self.path, request, {})
+
+    def test_delivered_flower_head_is_still_checked_for_fixture_collision(self):
+        request = self.delivered_flower_pickup()
+        point = max(request['scene']['payloads']['left'][0]['surface_points_world'],key=lambda p:p[2])
+        block = self.request([point])['scene']['obstacles']['mesh']['box']
+        block['pose'][:3] = point
+        request['scene']['obstacles']['mesh']['head_obstruction'] = block
+        with self.assertRaisesRegex(ValueError, 'head_obstruction'):
+            self.worker.check_payload('left', self.path, request, {})
+
 
 if __name__=='__main__':unittest.main()

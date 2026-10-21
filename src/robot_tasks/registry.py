@@ -10,6 +10,7 @@ from .tasks.bench.spec import build_spec
 from .tasks.bench.task import BenchTask
 from .tasks.pick_place import SingleArmPickPlace
 from .tasks.screw.nut import NutTask
+from .task_ids import internal_task_id, public_task_id
 
 
 @dataclass(frozen=True)
@@ -21,6 +22,7 @@ class TaskSpec:
     implemented: bool
     evidence: str
     default_config: Path
+    base_task_id: str | None = None
 
 
 def catalogue(directory: Path) -> dict[str, TaskSpec]:
@@ -32,7 +34,7 @@ def catalogue(directory: Path) -> dict[str, TaskSpec]:
         with path.open("rb") as stream:
             data = tomllib.load(stream)
         task = data["task"]
-        task_id = task["id"]
+        task_id = task.get("variant_id", task["id"])
         if task_id in result:
             raise ValueError(f"Duplicate task ID: {task_id}")
         if task.get("simulation_enabled") is False:
@@ -51,11 +53,15 @@ def catalogue(directory: Path) -> dict[str, TaskSpec]:
             "Local physical scene; independent measured scoring",
         )
         if key == "household":
-            design = build_spec(task_id)
-            if task.get("arm_selection", "fixed") != "fixed":
+            design = build_spec(task["id"])
+            if (task.get("arm_selection", "fixed") != "fixed"
+                    or task.get("prompt_protocol") == "feishu_english_20261015_v1"):
                 # Loading resolves automatic roles and validates observer cameras.
                 resolved = load_config(path)
                 arms = len(resolved.arms)
+                if task.get("prompt_protocol") == "feishu_english_20261015_v1":
+                    from .tasks.bench.arm_selection import resolve_bench_spec
+                    design = resolve_bench_spec(task, resolved.robot)
             elif tuple(data["robot"]["active_arms"]) != design.arms:
                 raise ValueError(
                     f"{task_id}: configured arms do not match physical task"
@@ -63,7 +69,8 @@ def catalogue(directory: Path) -> dict[str, TaskSpec]:
             evidence = design.mechanism + "; " + design.limitations
         implemented = task.get("status") in {"implemented", "implemented_proxy"}
         result[task_id] = TaskSpec(
-            task_id, task["name"], factories[key], (arms,), implemented, evidence, path
+            task_id, task["name"], factories[key], (arms,), implemented, evidence, path,
+            task["id"] if "variant_id" in task else None,
         )
     return result
 
@@ -82,9 +89,11 @@ TASKS["GPT-PICK-PLACE"] = TaskSpec(
 
 
 def get_spec(config: TaskConfig) -> TaskSpec:
-    if config.task_id not in TASKS:
-        raise ValueError(f"Unknown task ID: {config.task_id}")
-    spec = TASKS[config.task_id]
+    if config.experiment_id not in TASKS:
+        raise ValueError(f"Unknown task ID: {config.experiment_id}")
+    spec = TASKS[config.experiment_id]
+    if config.task_id != (spec.base_task_id or spec.task_id):
+        raise ValueError("Variant/base task mismatch")
     if len(config.arms) not in spec.active_arm_counts:
         raise ValueError(
             f"{spec.task_id} permits active arm counts {spec.active_arm_counts}"
@@ -95,15 +104,17 @@ def get_spec(config: TaskConfig) -> TaskSpec:
 def resolve_task(
     task_id: str | None = None, config_path: Path | None = None, *, depth: bool | None = None
 ) -> tuple[TaskSpec, TaskConfig]:
+    if task_id is not None:
+        task_id = internal_task_id(task_id)
     if task_id is not None and task_id not in TASKS:
-        raise ValueError(f"Unknown task ID: {task_id}; available: {', '.join(TASKS)}")
+        raise ValueError(f"Unknown task ID: {task_id}; available: {', '.join(map(public_task_id, TASKS))}")
     if task_id is None and config_path is None:
         raise ValueError("Provide a task ID or --config; use 'list' to see tasks")
     config = load_config(
         config_path if config_path is not None else TASKS[task_id].default_config, depth=depth
     )
-    if task_id is not None and config.task_id != task_id:
+    if task_id is not None and config.experiment_id != task_id:
         raise ValueError(
-            f"Task/config mismatch: selected {task_id}, config declares {config.task_id}"
+            f"Task/config mismatch: selected {task_id}, config declares {config.experiment_id}"
         )
     return get_spec(config), config

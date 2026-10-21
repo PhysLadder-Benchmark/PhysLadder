@@ -1,6 +1,8 @@
 """Common episode lifecycle. It does not know any task-specific success rule."""
 
 import math
+import os
+from .policies.responses import ModelError
 import json
 from collections.abc import Callable
 import time
@@ -15,7 +17,7 @@ from .robot_roles import FixedArmMonitor, validate_role_command
 from .types import Action, Assessment, EvaluationState, Feedback, InvalidPolicyAction, InvalidSimulationState, Observation, PolicyInput, RetryablePolicyError
 
 
-GENERATION_RETRY_DELAYS_S = (2., 4., 8.)  # Fixed: three retries after the initial request.
+GENERATION_RETRY_DELAYS_S = (2., 4., 8.)  # Repeat the last delay within episode budgets.
 
 
 def validate_action(action: Action, config: TaskConfig, *, require_control_duration: bool = True) -> None:
@@ -64,6 +66,7 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                 policy: Policy, output_root: Path, *, dry_run: bool = False,
                 step_limit: int | None = None, run_directory: Path | None = None,
                 record_video: bool = False,
+                recovery=None,
                 preparation: Action | None = None,
                 summarize: Callable[[dict], dict] | None = None) -> tuple[Path, dict]:
     """One fresh run. Task truth is evaluated separately from policy inputs.
@@ -79,13 +82,19 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
     if dry_run and not limit:
         raise ValueError("Dry-run requires a finite step_limit")
     options = ExecutionSettings() if dry_run else ExecutionSettings.from_config(config)
+    legacy_persistent = (not dry_run and config.task_id.startswith("L3-")
+                         and os.environ.get("GPT_BENCHMARK_PERSISTENT_MODEL_RETRY") == "1")
+    completed_budget = options.model_budget_basis == "completed_generations" or legacy_persistent
+    retry_model_errors = options.retry_model_errors or legacy_persistent
     from .grasp_guard import GraspGuard
     grasp_guard = None if dry_run or not config.include_depth or config.grasp_check_mode == "contact_inspection" else GraspGuard(config)
     role_monitor = FixedArmMonitor(config, options.fixed_arm_tolerance_rad)
     mode = "dry_run" if dry_run else "simulation"
     recorder = EpisodeRecorder(output_root, config, mode, limit, run_directory=run_directory)
     backend.run_directory = recorder.directory
-    start = time.monotonic()
+    start = time.monotonic() - (recovery.used_wall if recovery is not None else 0.0)
+    # Batch deadline includes simulator startup, before this runner was entered.
+    external_deadline = float(os.environ.get("GPT_BENCHMARK_WALL_DEADLINE_MONOTONIC", "inf"))
     assessment = Assessment("not_evaluated", "Episode has not been evaluated")
     ticks = decisions = executed = timeouts = rejected = invalid_model_actions = 0
     rejected_stops = 0
@@ -99,7 +108,10 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
     model_thread_cleanup_complete = True
 
     def budget():
-        if config.max_wall_time_s > 0 and time.monotonic() - start >= config.max_wall_time_s:
+        now = time.monotonic()
+        if now >= external_deadline:
+            raise EpisodeLimit("wall_time_limit")
+        if config.max_wall_time_s > 0 and now - start >= config.max_wall_time_s:
             raise EpisodeLimit("wall_time_limit")
         if limit and ticks >= limit:
             raise EpisodeLimit("max_steps")
@@ -183,7 +195,16 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
         task.reset(backend, config.seed)
         robot.reset(config.seed)
         policy.reset(config.seed)
+        policy.generation_failure_calls = 0
         feedback = robot.feedback()
+        if recovery is not None:
+            if dry_run:
+                raise ValueError("Physical recovery is not a dry run")
+            feedback = recovery.restore(backend, robot, task, policy, role_monitor)
+            decisions = recovery.used
+            ticks = recovery.snapshot.get("tick", 0)
+            generation_failures = recovery.failures
+            recovery.record(recorder)
         if record_video and not dry_run:
             from .backends.settings import SimulationSettings
             from .video import MotionVideo
@@ -194,10 +215,11 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                 directory = recorder.directory / "video" / frame.camera
                 directory.mkdir(parents=True)
                 videos[frame.camera] = MotionVideo(directory, replace(settings, width=frame.width, height=frame.height))
-        for _ in range(options.settle_steps):
-            tick(phase="settle", score=False)
-        prepare_robot()
-        initialize_task()
+        if recovery is None:
+            for _ in range(options.settle_steps):
+                tick(phase="settle", score=False)
+            prepare_robot()
+            initialize_task()
         initial = {k: asdict(v) for k, v in robot.state().items()}
         if not dry_run:
             evaluate()  # Establish evaluator reference state after settling, before any model action.
@@ -211,9 +233,13 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
         observation = observe()
         recorder.event({"event": "reset", "observation": recorder.observation(observation, 0)})
         status, reason = "finished", "model_call_limit"
+        if recovery is not None and recovery.probe:
+            raise EpisodeLimit("recovery_probe_complete")
         policy_limit = getattr(getattr(policy, "settings", None), "max_calls", config.max_steps or 100)
-        decision_limit = min(options.max_decisions or policy_limit, policy_limit)
-        for step in range(1, decision_limit + 1):
+        limits = [n for n in (options.max_decisions, policy_limit) if n]
+        decision_limit = min(limits) if limits else None
+        while decision_limit is None or decisions < decision_limit:
+            step = decisions + 1
             if assessment.status in {"succeeded", "failed", "invalid"}:
                 reason = "task_terminal"
                 break
@@ -242,25 +268,32 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                                 if model_thread_cleanup_complete else None)
                     if exchange:
                         recorder.event({"event": "model_exchange", "step": step, "exchange": exchange})
-            except RetryablePolicyError as exc:
+            except (RetryablePolicyError, ModelError) as exc:
+                if not retry_model_errors and not isinstance(exc, RetryablePolicyError):
+                    raise
                 generation_failures += 1
                 consecutive_generation_failures += 1
-                can_retry = (consecutive_generation_failures <= len(GENERATION_RETRY_DELAYS_S)
-                             and decisions < decision_limit)
+                can_retry = completed_budget or decision_limit is None or decisions < decision_limit
                 recorder.event({"event": "model_retry" if can_retry else "model_retry_exhausted",
                                 "step": step, "error": str(exc),
                                 "failure_number": consecutive_generation_failures,
-                                "retry_limit": len(GENERATION_RETRY_DELAYS_S),
-                                "remaining_decisions": decision_limit - decisions,
+                                "retry_limit": None,
+                                "remaining_decisions": (None if decision_limit is None else decision_limit - decisions),
                                 "policy_time_s": time.monotonic() - t0,
                                 "simulation_time_s": observation.time_s,
-                                "retry_exhaustion": (None if can_retry else
-                                    "retry_limit" if consecutive_generation_failures > len(GENERATION_RETRY_DELAYS_S)
-                                    else "model_call_limit")})
+                                "retry_exhaustion": None if can_retry else "model_call_limit"})
                 if not can_retry:
                     raise
-                delay = GENERATION_RETRY_DELAYS_S[consecutive_generation_failures - 1]
-                print(f"R5_MODEL_RETRY {consecutive_generation_failures}/3 in {delay:g}s: {exc}", flush=True)
+                if completed_budget:
+                    policy.generation_failure_calls += 1
+                    decisions -= 1  # Failed generations do not consume the completed-decision budget.
+                    delay = (2., 4., 8., 16., 30.)[min(consecutive_generation_failures - 1, 4)]
+                else:
+                    delay = GENERATION_RETRY_DELAYS_S[min(consecutive_generation_failures - 1, 2)]
+                if config.max_wall_time_s > 0:
+                    delay = min(delay, max(0., start + config.max_wall_time_s - time.monotonic()))
+                delay = min(delay, max(0., external_deadline - time.monotonic()))
+                print(f"R5_MODEL_RETRY {consecutive_generation_failures}/unlimited in {delay:g}s: {exc}", flush=True)
                 budget()
                 deadline = time.monotonic() + delay
                 pump = getattr(backend, "pump_events", None)
@@ -329,7 +362,7 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
                     "Your stop request was rejected and consumed one decision. The scene and history are retained "
                     "for this single episode. Inspect the current images and measured state, "
                     "then continue or correct the task. No object pose or detailed score is supplied.",
-                    {"task_complete": False, "remaining_decisions": decision_limit - decisions})
+                    {"task_complete": False, "remaining_decisions": (None if decision_limit is None else decision_limit - decisions)})
                 observation = observe()
                 recorder.event({"event": "stop_rejected", "step": step, "action": asdict(action),
                                 "observation": recorder.observation(observation, step),
@@ -443,12 +476,14 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
         if assessment.status == "invalid" and status == "finished":
             status = "invalid"
             reason = assessment.metrics.get("invalid_reason", "simulation_invalid")
-        evaluated = (not dry_run and ready and status == "finished"
+        evaluated = (not dry_run and not (recovery is not None and recovery.probe)
+                     and ready and status == "finished"
                      and assessment.status in {"running", "succeeded", "failed"})
         if evaluated and assessment.status == "running":
             assessment = Assessment("failed", f"Episode ended before success: {reason}", assessment.metrics)
         result = {
-            "task_id": config.task_id, "mode": mode, "status": status,
+            "task_id": config.experiment_id, "mode": mode, "status": status,
+            **({"base_task_id": config.task_id} if config.experiment_id != config.task_id else {}),
             "termination_reason": reason, "completed_steps": ticks, "decisions": decisions,
             "model_calls": getattr(policy, "calls", 0), "executed_actions": executed,
             "model_thread_cleanup_complete": model_thread_cleanup_complete,
@@ -456,7 +491,10 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
             "invalid_model_actions": invalid_model_actions,
             "generation_failures": generation_failures,
             "model_retry_attempts": model_retry_attempts,
-            "generation_retry_limit": len(GENERATION_RETRY_DELAYS_S),
+            "generation_retry_limit": None,
+            "persistent_model_retry": True,
+            "model_budget_basis": "completed_generations" if completed_budget else "all_requests",
+            "retry_model_errors": retry_model_errors,
             "rejected_stop_requests": rejected_stops,
             "grasp_check_rejections": grasp_guard.rejections if grasp_guard is not None else 0,
             "grasp_visual_verifications": grasp_guard.verifications if grasp_guard is not None else 0,
@@ -477,6 +515,11 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
             "videos": {name: {"path": f"video/{name}/motion.mp4", "frames": video.count}
                        for name, video in videos.items()},
         }
+        if recovery is not None:
+            recovery.record(recorder)
+            result["recovery"] = recovery.report
+            result["segment_wall_time_s"] = max(0., result["wall_time_s"] - recovery.used_wall)
+            result["evaluation_protocol"] = "interrupted_episode_measured_state_continuation"
         if summarize is not None:
             result = summarize(result)
         result = json.loads(json.dumps(result, allow_nan=False))

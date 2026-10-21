@@ -11,7 +11,7 @@ from robot_tasks.tasks.bench.pearl_pouring import cup_contains, packing, pouring
 
 
 class PearlPouringTests(unittest.TestCase):
-    def test_l2_04_replaces_bowl_and_has_no_duplicate_l2_08_entry(self):
+    def test_l2_04_is_pouring_and_l2_08_is_a_distinct_jelly_task(self):
         from robot_tasks.registry import TASKS, resolve_task
 
         entry, config = resolve_task("L2-04")
@@ -20,7 +20,9 @@ class PearlPouringTests(unittest.TestCase):
         self.assertEqual(prepared.observation_arms, ("left",))
         self.assertEqual(config.raw["task"]["name"], "纸杯间倒珍珠")
         self.assertEqual(pouring().design.task_id, "L2-04")
-        self.assertNotIn("L2-08", TASKS)
+        _, jelly = resolve_task("L2-08")
+        from robot_tasks.tasks.bench.arm_selection import resolve_bench_spec
+        self.assertEqual(resolve_bench_spec(jelly.raw["task"], jelly.robot).mechanism, "native_fem_jelly_lift")
 
     def setUp(self):
         self.spec = pouring()

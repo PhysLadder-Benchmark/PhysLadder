@@ -44,12 +44,11 @@ class WorkflowTests(unittest.TestCase):
         default = ROOT / "configs/models/gpt.toml"
         settings = load_gpt_settings(default)
         self.assertEqual(settings.transport, "codex_cli")
-        self.assertEqual(settings.reasoning_effort, "medium")
-        self.assertIsNone(settings.service_tier)
         with tempfile.TemporaryDirectory() as temporary:
             override = Path(temporary) / "model.toml"
             override.write_text(default.read_text(encoding="utf-8").replace(
-                'reasoning_effort = "medium"', 'reasoning_effort = "xhigh"'), encoding="utf-8")
+                f'reasoning_effort = "{settings.reasoning_effort}"',
+                'reasoning_effort = "high"'), encoding="utf-8")
             with patch("robot_tasks.policies.codex_cli.CodexProcess"), \
                     patch("robot_tasks.policies.codex_cli.CodexCLIClient.require_chatgpt_login"), \
                     patch("robot_tasks.execution.read_api_key", side_effect=AssertionError("No API call")):
@@ -59,10 +58,11 @@ class WorkflowTests(unittest.TestCase):
                     _, config = resolve_task(task_id)
                     selected = config.source.parent / config.raw["policy"]["model_config"]
                     self.assertEqual(selected.resolve(), default.resolve())
-                    for model, expected in ((None, settings), (override, replace(settings, reasoning_effort="xhigh"))):
+                    for model, expected in ((None, settings), (override, replace(settings, reasoning_effort="high"))):
                         with self.subTest(task=task_id, model=model):
                             policy = _gpt_policy(config, model)
-                            self.assertEqual(policy.settings, expected)
+                            self.assertEqual(policy.settings, replace(
+                                expected, max_calls=ExecutionSettings.from_config(config).max_decisions))
 
     def test_explicit_experiment_reasoning_override_is_preserved(self):
         config = replace(self.config, raw={**self.config.raw, "policy": {

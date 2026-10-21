@@ -96,7 +96,8 @@ class GPTPolicy:
                 "manipulation. This includes uncertainty about whether an object is still held after "
                 "lifting, or why an approach or insertion failed. You choose whether and where to inspect. "
             )
-            if config.task_id == "L1-03":
+            if (config.task_id == "L1-03"
+                    and config.raw.get("task", {}).get("prompt_protocol") != "feishu_english_20261015_v1"):
                 observation_advice = (
                     "For L1-03, distinguish uncertain holding from an occluded blade end. If holding "
                     "is unverified, actively reposition an observation arm or use the permitted grasp "
@@ -318,7 +319,7 @@ class GPTPolicy:
 
     def act(self, context: PolicyInput) -> Action:
         self.last_exchange = {}  # Input validation errors must not re-log an earlier API call.
-        if self.calls >= self.settings.max_calls:
+        if self.settings.max_calls > 0 and self.calls - getattr(self, "generation_failure_calls", 0) >= self.settings.max_calls:
             raise ModelError("Episode model-call budget exhausted")
         message, frame_info, comparisons, image_sizes = self.observation_message(context)
         observation = context.observation

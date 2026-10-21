@@ -5,9 +5,15 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "contact-rich-robot-tasks"
 version = "0.1.0"
-description = "Scaffold for complete contact-rich robot task episodes"
+description = "Paired sim-real contact-rich manipulation evaluation on the ARX R5"
+readme = "README.md"
+license = {file = "LICENSE"}
 requires-python = ">=3.11"
-dependencies = ["numpy>=1.26,<3", "Pillow>=10,<12"]
+dependencies = ["numpy>=1.26,<3", "Pillow>=10,<12", "scipy>=1.11,<2"]
+
+[project.optional-dependencies]
+# CPU geometry/asset checks; Isaac and cuRobo remain separately configured runtimes.
+test = ["usd-core>=25.5,<27", "trimesh>=4,<5", "rtree>=1,<2", "networkx>=3,<4"]
 
 [project.scripts]
 robot-tasks = "robot_tasks.cli:main"

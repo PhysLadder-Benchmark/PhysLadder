@@ -25,11 +25,14 @@ class CompletionTests(unittest.TestCase):
 
     def setUp(self):
         _, self.config = resolve_task("L2-06")
+        # Keep testing the optional home gate independently of current task goals.
+        self.config = replace(self.config, raw={**self.config.raw, "completion": {
+            "return_home": True, "home_tolerance_rad": 0.05}})
         self.home = {m.name: ArmState(joint_positions_rad=m.home_positions_rad)
                      for m in self.config.robot.mounts}
         self.done = Assessment("succeeded", "physical goal and release", {"goal_complete": True})
 
-    def test_all_updated_tasks_instruct_release_and_measured_home(self):
+    def test_english_tasks_do_not_inject_legacy_release_and_home_protocol(self):
         from types import SimpleNamespace
         from robot_tasks.policies.gpt import GPTPolicy
 
@@ -38,13 +41,11 @@ class CompletionTests(unittest.TestCase):
                 entry, config = resolve_task(task_id)
                 prepared = entry.factory.prepare_config(config)
                 prompt = prepared.instruction
-                self.assertTrue(config.raw["completion"]["return_home"])
-                self.assertIn("RELEASE", prompt)
-                self.assertIn("BOTH arms back", prompt)
-                self.assertIn("measured joint state", prompt)
-                self.assertEqual(prompt.count("Final completion protocol:"), 1)
+                self.assertFalse(config.raw["completion"]["return_home"])
+                self.assertNotIn("Final completion protocol:", prompt)
+                self.assertEqual(prompt, config.instruction)
                 policy = GPTPolicy(prepared, SimpleNamespace(), client=object())
-                self.assertIn("joint_positions_rad",
+                self.assertNotIn("joint_positions_rad",
                               policy.schema["properties"]["commands"]["items"]["required"])
 
     def test_model_can_command_both_home_targets_through_existing_joint_planner_channel(self):

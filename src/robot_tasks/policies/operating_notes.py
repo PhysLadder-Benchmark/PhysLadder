@@ -136,6 +136,9 @@ def operating_notes(config) -> dict:
             "by_command_arm": arm_identities(config),
             "coordinate_rule": "Converting real arm names does not mirror object positions or motion coordinates. Both simulation arms use the same absolute world frame; the real robot's two base frames and historical CAN labels are not command frames here. An arm crossing the image centre retains its ID, role and wrist camera.",
         }
+        from ..video_delivery import enabled, PROMPT_FRAME
+        if enabled(config):
+            notes["arm_naming"]["commands_and_cameras"] = PROMPT_FRAME
         notes["real_skill_observation_guidance"] = (
             "Use the overview to identify robot bases and the entire approach corridor, "
             "then wrist views to inspect fingers and contact. Include the camera housing, "

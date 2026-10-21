@@ -1,0 +1,42 @@
+{
+  "origin_world_xyz_m": [
+    -0.8064503915423707,
+    0.7376504171222011,
+    0.0
+  ],
+  "coordinate_definition": "table left-front corner projected on floor; X right, Y toward rear, Z up",
+  "positions_m": {
+    "R5_Left": [
+      0.7817466748474062,
+      0.8252483998162394,
+      0.79
+    ],
+    "R5_Right": [
+      1.2224565392428444,
+      0.8252483998162394,
+      0.79
+    ],
+    "stand_xyz_m": [
+      1.02,
+      -0.25,
+      0.0
+    ],
+    "eye_xyz_m": [
+      1.02,
+      -0.21499999999999997,
+      1.35
+    ]
+  },
+  "table_size_m": [
+    1.7,
+    0.9,
+    0.78
+  ],
+  "robot_axis_spacing_m": 0.440709864395438,
+  "robot_axis_rear_edge_distance_m": 0.07475160018376059,
+  "base_fore_aft_gap_m": 0,
+  "camera_stand_front_setback_m": 0.25,
+  "camera_eye_height_m": 1.35,
+  "camera_pitch_deg": 34.09448906169132,
+  "status": "Default placement chosen from supplied visual/CAD evidence and user-authorized judgment: preserve symmetric arm axis positions and rear setback; use measured stand setback and height. Coordinates are estimates, not surveyed."
+}

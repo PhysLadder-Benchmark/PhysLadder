@@ -4,11 +4,14 @@ schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_tuojing_lab.toml"
-active_arms = ["right"]
-observation_arms = ["left"]
+profile = "../robots/r5_video_20261015.toml"
+active_arms = ["right", "left"]
+observation_arms = []
 
 [simulation]
+# Preserve the established L3 controller profile. GPU selection is a launch option.
+robot_gravity_compensation = false
+cartesian_completion_tolerance_m = 0.005
 environment = "tuojing_lab_v4"
 camera_profile = "../cameras/r5_tuojing_lab.toml"
 asset_directory = "../../build/tuojing_lab"
@@ -28,12 +31,18 @@ solver_velocity_iterations = 0
 model_config = "../models/gpt.toml"
 
 [completion]
-return_home = true
+return_home = false
 home_tolerance_rad = 0.05
 
 [task]
+scene_delivery = "video_20261015"
+prompt_protocol = "feishu_english_20261015_v1"
+reference_document = "https://my.feishu.cn/docx/QK4EdOD3hotgp4x782ycgoyyn6g"
+reference_sheet_id = "KyMjZ7"
+reference_sheet_revision = 324
+reference_sheet_row = 30
 id = "L3-14"
-name = "夹爪推板擦入三角区"
+name = "双臂推叠书旋转360度移框"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented_proxy"
@@ -41,13 +50,19 @@ implementation = "household"
 launch_command = "python tools/launch.py run L3-14 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L3-14 --gui"
 instruction = """
-Use RIGHT gripper exterior to PUSH the loose blue board eraser into the large triangular outline. LEFT observes. The eraser starts above-right of the outline in overview; target is below-left. Eraser 120 x 60 x 20 mm; target 320 x 280 mm. Do not grasp, lift or carry. The complete footprint must enter the outline on the tabletop; any in-plane orientation is allowed. Withdraw without moving it back out.
-
-Use current RGB views and measured robot feedback. First identify the objects and make a short plan, then execute and verify each physical subgoal. If an object did not follow the gripper, correct the grasp before continuing. Reobserve after contact; do not infer success from a commanded pose. There is no automatic grasp, reset, release or return-home action. The common completion instructions appended below are mandatory.
+Use both grippers to push the two stacked books from one black rectangle fully into the other, rotating the stack one full turn along the way. Keep the books stacked on the table without grasping or lifting them.
 """
 
 # Chinese setup/props description; final task attribute.
 description = """
-用新版蓝色板擦替换三角刚体，120×60×20 mm，清洁面朝下。初态在目标区右上方；桌面红色大三角区约320×280 mm，位于左下方，无碰撞。右夹爪直接推板擦，左臂观察；整个板擦投影进入目标区、仍由桌面承托且撤爪即可，不限制最终朝向，不能夹起搬运。
-所有道具按要求释放，并且双臂回到初始关节位置，才算完成；关节回位容差0.05 rad。不自动执行回位。资产来源：飞书《GPT6评测任务及资产管理》2026-10-11下载包。
+双臂协作推叠书转移。两本书叠放在桌面的一个黑色矩形框内，另一个黑色矩形框为目标区域。左右臂使用夹爪共同推动整叠书，从起始框移至目标框，并在移动过程中使整叠书沿桌面旋转一整圈（360°）。全程保持两本书叠放且由桌面承托，禁止抓取或抬起。最终两本书均完全进入目标框，不要求居中或固定朝向。
 """
+
+# Time-only experiment budget: zero disables the decision/request-count cap.
+[runtime]
+max_wall_time_s = 18000.0
+
+[execution]
+model_budget_basis = "completed_generations"
+retry_model_errors = true
+max_decisions = 0

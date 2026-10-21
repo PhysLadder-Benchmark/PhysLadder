@@ -36,13 +36,14 @@ def ink_centers():
 
 
 class WipeLedger:
-    def __init__(self, board_pose, centers=None, *, pad_z=0.018, half_extents=(0.0495, 0.0245), weights=None):
+    def __init__(self, board_pose, centers=None, *, pad_z=0.018, half_extents=(0.0495, 0.0245), weights=None, facing_direction=-1):
         t = pose_transform(board_pose)
         self.centers = ink_centers() if centers is None else np.asarray(centers)
         self.world = self.centers @ t[:3, :3].T + t[:3, 3]
         self.normal = t[:3, 2]
         self.dirty = np.ones(len(self.centers), dtype=bool)
         self.pad_z, self.half_extents = pad_z, half_extents
+        self.facing_direction = facing_direction
         self.weights = np.ones(len(self.centers)) if weights is None else np.asarray(weights)
         self.previous = None
         self.last_time = None
@@ -53,7 +54,7 @@ class WipeLedger:
         self.last_time = now
         t = pose_transform(eraser_pose)
         center = t[:3, 3] + self.pad_z * t[:3, 2]
-        facing = float(t[:3, 2] @ self.normal) < -0.5
+        facing = float(t[:3, 2] @ self.normal) * self.facing_direction > 0.5
         active = held and pad_contact_n > 0.005 and facing
         old = self.previous
         self.previous = (center, active)
@@ -89,7 +90,8 @@ class WipeLedger:
 def score(e, rows):
     m = rows["eraser"]["wiping"]
     removed = m["initial_cells"] - m["remaining_cells"]
-    required = e.spec.parameters["required_clean_cells"]
+    required = (m["initial_cells"] if e.spec.parameters.get("require_all_writing")
+                else e.spec.parameters["required_clean_cells"])
     return (
         removed >= required,
         {**m, "removed_cells": removed, "required_clean_cells": required,

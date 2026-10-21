@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="General-Purpose Foundation Models for Contact-Rich Manipulation: A Paired Sim–Real Evaluation of GPT-6 Astra. Explore 16 ARX R5 tasks and their fixed alternative settings.">
+  <meta name="theme-color" content="#101715">
+  <title>Contact-Rich Manipulation · Paired Sim–Real Evaluation</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="tasks.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="nav">
+  <a class="wordmark" href="#" aria-label="R5 Benchmark home"><span class="mark">r5<span>↗</span></span><span>CONTACT / RICH<br><small>MANIPULATION BENCHMARK</small></span></a>
+  <nav aria-label="Main navigation"><a href="#explore">Tasks</a><a href="#protocol">Protocol</a><a href="#reproduce">Reproduce</a><a class="source-link" href="https://github.com/TuojingAI/GPT_Benchmark">Code <span aria-hidden="true">↗</span></a></nav>
+</header>
+<main id="main">
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="eyebrow"><span class="dot"></span> PAIRED SIM–REAL EVALUATION</p>
+      <h1>General-Purpose<br>Foundation Models<br>for <em>Contact-Rich<br>Manipulation.</em></h1>
+      <p class="subtitle">A Paired Sim–Real Evaluation of GPT-6 Astra</p>
+      <p class="intro">A familiar tabletop. A demanding test of contact.<br>Explore the tasks, inspect the initial conditions,<br>and reproduce the evaluation.</p>
+      <div class="actions"><a class="button light" href="#explore">Explore the benchmark <span>↓</span></a><a class="text-link" href="#reproduce">Start reproducing ↗</a></div>
+    </div>
+    <div class="hero-visual">
+      <img src="media/L3-03-original-overview.webp" alt="Initial simulation view of two ARX R5 robot arms and a capped bottle on a wooden tabletop" width="1100" height="820" fetchpriority="high">
+      <div class="image-corner top"><span class="dot"></span> SIMULATION / INITIAL STATE</div>
+      <div class="image-caption"><span><small>L3-03</small>Unscrew a bottle cap</span><a href="#explore" data-select="L3-03" aria-label="Explore the bottle cap task">↗</a></div>
+      <div class="cross cross-a"></div><div class="cross cross-b"></div>
+    </div>
+  </section>
+  <div class="facts" aria-label="Benchmark scope">
+    <div><strong>16</strong><span>contact-rich tasks</span></div><div><strong>3</strong><span>task levels</span></div><div><strong>32</strong><span>fixed configurations</span></div><div><strong>R5</strong><span>dual-arm platform</span></div>
+  </div>
+
+  <section id="explore" class="explorer section">
+    <div class="section-heading"><div><p class="eyebrow">01 / THE TASKS</p><h2>Small motions.<br><em>Meaningful differences.</em></h2></div><p>From insertion to pouring, wiping and sweeping.<br>Inspect actual simulator initial states and switch<br>between independently selectable settings.</p></div>
+    <div class="filters" role="group" aria-label="Filter tasks by level"><button class="active" data-level="all" aria-pressed="true">All tasks <span>16</span></button><button data-level="L1" aria-pressed="false">Level 1 <span>5</span></button><button data-level="L2" aria-pressed="false">Level 2 <span>6</span></button><button data-level="L3" aria-pressed="false">Level 3 <span>5</span></button></div>
+    <div class="workspace">
+      <div id="task-list" class="task-list" role="group" aria-label="Select a task"></div>
+      <div class="inspector">
+        <div class="inspector-head"><div><span id="task-id" class="mono">L2-03</span><h3 id="task-title">Extract the middle book</h3></div><span class="initial-label">INITIAL STATE</span></div>
+        <div class="viewer">
+          <div class="view-tabs" role="group" aria-label="Camera view"><button class="active" data-view="overview" aria-pressed="true">Overview</button><button data-view="left_wrist" aria-pressed="false">Left wrist</button><button data-view="right_wrist" aria-pressed="false">Right wrist</button></div>
+          <div id="comparison" class="comparison">
+            <img id="original-image" src="media/L2-03-original-overview.webp" alt="Original initial simulation state of the middle book extraction task" width="1100" height="820">
+            <div class="variant-layer" id="variant-layer"><img id="variant-image" src="media/L2-03-variant01-overview.webp" alt="Alternative initial simulation state of the middle book extraction task" width="1100" height="820"></div>
+            <span class="state-tag before">Original</span><span class="state-tag after">Variant 01</span><div class="divider" id="divider"><span>↔</span></div>
+            <input id="comparison-slider" type="range" min="0" max="100" value="50" aria-label="Compare original and variant initial states">
+          </div>
+          <div class="viewer-foot"><span>Drag to compare initial settings</span><span>SIMULATION · SAME TASK FAMILY</span></div>
+        </div>
+        <div class="detail">
+          <div class="detail-top"><span class="eyebrow">TASK INSTRUCTION</span><div class="setting-tabs" role="group" aria-label="Instruction and command setting"><button data-setting="original" class="active" aria-pressed="true">Original</button><button data-setting="variant01" aria-pressed="false">Variant 01</button></div></div>
+          <p id="task-prompt"></p>
+          <div class="command-line"><code id="task-command"></code><button id="copy-command" aria-label="Copy task planning command">Copy <span>↗</span></button></div>
+          <div class="detail-meta"><span id="budget"></span><a id="config-link" href="https://github.com/TuojingAI/GPT_Benchmark">Inspect configuration ↗</a></div>
+        </div>
+      </div>
+    </div>
+    <p class="caption">These are initial-state renderings, not success demonstrations. Variant 01 names a preserved alternative configuration; some Level 3 variants also differ in scoring or budget. The task command shows a plan without calling a model.</p>
+    <noscript><p>Enable JavaScript to explore the 16 task pairs, or <a href="tasks.json">download the complete task catalogue</a>.</p></noscript>
+  </section>
+
+  <section id="protocol" class="protocol section">
+    <div class="section-heading"><div><p class="eyebrow">02 / THE PROTOCOL</p><h2>Make the conditions<br><em>part of the result.</em></h2></div><p>Language and images drive the policy.<br>Motion planning executes actions.<br>Physical measurements evaluate the outcome.</p></div>
+    <div class="pipeline"><div><span>01</span><h3>Observe</h3><p>Task instruction, camera images, robot state and execution feedback.</p></div><i aria-hidden="true">→</i><div><span>02</span><h3>Act</h3><p>Structured model commands, validated and executed through the shared robot stack.</p></div><i aria-hidden="true">→</i><div><span>03</span><h3>Evaluate</h3><p>Independent task-specific criteria, recorded with calls, timing and outcomes.</p></div></div>
+    <div class="protocol-bottom"><p>The planner and evaluator use simulator geometry. Model input is a separate interface; the system should not be described as a policy without execution or task-specific evaluation machinery.</p><p>Original and alternative settings remain separate. Real-robot conditions, including skill and history access, must be recorded independently for a paired comparison.</p><a href="https://github.com/TuojingAI/GPT_Benchmark/blob/main/docs/release/PROTOCOL.md">Read the full protocol <span>↗</span></a></div>
+  </section>
+
+  <section id="reproduce" class="reproduce section">
+    <div><p class="eyebrow">03 / REPRODUCE</p><h2>From a clean checkout<br><em>to a checked scene.</em></h2><p class="intro">Versioned configurations. Verified assets.<br>A shared execution stack for all 32 settings.</p><a class="button dark" href="https://github.com/TuojingAI/GPT_Benchmark/blob/main/docs/release/INSTALL.md">Installation guide <span>↗</span></a></div>
+    <div class="terminal"><div class="terminal-head"><span>QUICK START / LINUX</span><button id="copy-setup">Copy commands</button></div><pre><code id="setup-command">python -m pip install -e '.[test]'
+python tools/verify_runtime_assets.py --usd
+python tools/release/check_task_contract.py
+python tools/reproduce.py --tasks L2-03_variant01</code></pre><p>This prints a plan. Configure Isaac Sim 5.1, cuRobo and model access before adding <code>--execute</code>.</p></div>
+  </section>
+  <section class="citation section"><div><p class="eyebrow">RESEARCH SOFTWARE</p><h2>A shared starting point.</h2></div><div><p>General-Purpose Foundation Models for Contact-Rich Manipulation:<br>A Paired Sim–Real Evaluation of GPT-6 Astra</p><div class="citation-links"><a href="https://github.com/TuojingAI/GPT_Benchmark">Source repository ↗</a><a href="citation.bib" download>Software citation ↓</a><a href="https://github.com/TuojingAI/GPT_Benchmark/blob/main/NOTICE">Asset provenance ↗</a></div></div></section>
+</main>
+<footer><a class="wordmark" href="#"><span class="mark">r5<span>↗</span></span><span>CONTACT / RICH</span></a><span>Research software · 2026</span><a href="https://github.com/TuojingAI/GPT_Benchmark/blob/main/LICENSE">Apache-2.0 · third-party notices apply ↗</a></footer>
+<div id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

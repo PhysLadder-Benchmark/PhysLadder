@@ -1,14 +1,15 @@
-# Run from the repository root in the Isaac Sim environment; uses the selected model provider.
-# launch_command / launch_command_conda below are documentation, not auto-executed shell code.
 schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_tuojing_lab_l1.toml"
-active_arms = ["left"]
-observation_arms = ["right"]
+profile = "../robots/r5_video_20261015.toml"
+active_arms = ["right"]
+observation_arms = ["left"]
 
 [simulation]
+# Preserve Hym L1 motion settings; L2/L3 keep their own profiles.
+robot_gravity_compensation = false
+cartesian_completion_tolerance_m = 0.005
 environment = "tuojing_lab_v4"
 camera_profile = "../cameras/r5_tuojing_lab.toml"
 asset_directory = "../../build/tuojing_lab"
@@ -28,52 +29,25 @@ solver_velocity_iterations = 4
 model_config = "../models/gpt.toml"
 
 [task]
+launch_command = "python tools/launch.py run L1-07 --gui"
+scene_delivery = "video_20261015"
+initial_placement_profile = "baseline"
+prompt_protocol = "feishu_english_20261015_v1"
+reference_document = "https://my.feishu.cn/docx/QK4EdOD3hotgp4x782ycgoyyn6g"
+reference_sheet_id = "KyMjZ7"
+reference_sheet_revision = 324
+reference_sheet_row = 8
 id = "L1-07"
 name = "黄色空顶帽挂上木质挂架"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented"
 implementation = "household"
-simulation_limitations = "Native rigid yellow visor with 208 open band/brim convex pieces and fixed 82-cm wooden rack. No cloth deformation or scaling. Four passive pickup pads expose the brim underside."
-launch_command = "python tools/launch.py run L1-07 --gui"
-launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L1-07 --gui"
+simulation_limitations = "Latest complete 2026-10-15 scene. Visible prop meshes and materials are retained. The support box uses five BOX colliders and a 0.6 kg simulation tuning mass (not a measured mass); the visor uses 32 band and 12 brim convex segments with an open centre. Robot joint homes and gripper openings use per-task video estimates. All camera mounts and lens parameters use the shared L3-03 rig; overview is fixed in world space and wrist cameras follow their own arms. Video-guided geometry and illumination remain uncalibrated; rigid flowers/cups/bristles and contact-driven wiping are explicit simulation approximations. Known per-task discrepancies are recorded in reports/reference_alignment_20261015.json."
 instruction = """
-Use the LEFT R5 arm for manipulation. The RIGHT arm is an observation arm:
-it may move its wrist camera when a grasp, opening or contact is obscured, but
-must not touch or support the props. Keep the left arm steady while changing
-view. Choose grasp points, poses and motion from current images and available
-robot feedback; no object coordinates or successful action sequence is supplied.
-Pick up the yellow OPEN-TOP VISOR and hang its oval HEAD OPENING on the LOWEST
-sloping peg of the fixed wooden rack. Higher pegs and the trunk are not targets.
-The native rack is 0.82 m tall; the peg is 20 mm thick with a rounded tip.
-The visor is one rigid prop about 232 x 295 x 85 mm, with an open head band about
-176 x 196 mm. Do not assume a cup or a small ring. The band and brim alone are
-only 2-3 mm thick. The nominal gripper range is now 0-70 mm. Passive source
-pads leave clearance under the brim. You may pinch the upper edge of the band
-from ABOVE, with vertical distal fingers, one just inside and one outside; or
-pinch an exposed brim edge. Avoid driving the bulky finger body sideways through
-the curved band. Keep the peg insertion region of the oval opening free.
-Verify a short lift and use current images to check that the whole hat follows.
-Rotate the opening toward the lowest peg, keeping the wide brim and both fingers
-clear of the trunk and higher pegs. Pass the rounded tip fully through the band,
-move slightly inward and lower so the rear inner band bears on the selected peg.
-Open separately and withdraw. Balancing on a tip, laying on the rack, or hanging
-on another peg is insufficient. Completion requires release and measured support
-from the LOWEST peg with the whole hat above the table. Passive sway is allowed;
-there is no stability waiting period.
-
-Inspect the actual released or completed state before requesting stop. A
-commanded pose, blocked gripper, or completion claim is not evidence of success.
-If a grasp is lost, use new observations and reassess rather
-than continuing with stale object positions. Do not invent force measurements
-or assume a force-control tool that the interface does not expose.
+Use the left arm to hang the hat on the lowest rod through its head opening.
 """
 
-# Chinese setup/props description; keep this the final task attribute.
 description = """
-道具：交付原生黄色空顶帽（约 232×295×85 mm、65 g，帽圈开口约 176×196 mm）和木质挂架（高 82 cm，最低杆直径 20 mm）。
-布置：挂架向左臂方向移近，最低斜挂杆朝向左臂操作区；帽子放在挂架左侧，帽檐转向远离立柱的空旷侧。四个 45 mm 高被动支撑垫托住帽圈，帽檐下方留出约 25 mm 抓取空间。
-操作：左臂从上方轻夹帽圈上沿（夹指一内一外），或夹住露出的帽檐，并验证抬升，留出帽圈开口；转向最低挂杆圆头，套入并放低到后部内圈承重；右臂仅观察。
-完成：指定最低杆穿过原生帽圈，帽子已释放并由该杆提供向上承托，整帽离开桌面；不要求等待静止。
-边界：不缩放帽子或挂架，不封闭帽圈，不模拟布料形变；夹爪名义开口为 0–70 mm，可轻夹帽檐，须通过短距离提起确认抓持。
+Complete 2026-10-15 assets: room, table, robot mounts, lighting and task props. Robot initial joints and gripper openings follow the per-task video-visible setup. All camera views use the shared L3-03 rig. Prop placements follow the delivered video reconstruction. Task left/right use the robot perspective; overview-image left/right are reversed. No older individual prop is imported. Physical parameters remain uncalibrated.
 """

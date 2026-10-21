@@ -18,9 +18,9 @@ COUNT = 200
 PROMPT_RECEIVED_TARGET = math.ceil(COUNT * 0.8)
 
 
-def cup_contains(point, radius=PEARL_RADIUS, tolerance=0.0003):
+def cup_contains(point, radius=PEARL_RADIUS, tolerance=0.0003, receptacle="ripple_paper_cup"):
     """Whole sphere within the delivered cup's 48 inner planes and floor/rim."""
-    planes, floor, rim = cup_cavity()
+    planes, floor, rim = cup_cavity(receptacle)
     point = np.asarray(point)
     return bool(
         floor - tolerance <= point[2] - radius
@@ -120,8 +120,8 @@ def score(e, rows):
               "outside_cups": 0, "airborne": 0}
     for i in range(p["count"]):
         row = rows[f"load_{i}"]
-        inside = cup_contains(relative(row, receiver)[:3, 3])
-        remaining = cup_contains(relative(row, source)[:3, 3])
+        inside = cup_contains(relative(row, receiver)[:3, 3], radius=p.get("ball_radius_m",PEARL_RADIUS), receptacle=p.get("cup_geometry","ripple_paper_cup"))
+        remaining = cup_contains(relative(row, source)[:3, 3], radius=p.get("ball_radius_m",PEARL_RADIUS), receptacle=p.get("cup_geometry","ripple_paper_cup"))
         slow = np.linalg.norm(row["linear_velocity"]) < 0.04
         counts["inside_receiver"] += int(inside)
         counts["received"] += int(inside and slow)
@@ -129,7 +129,7 @@ def score(e, rows):
         counts["outside_cups"] += int(not inside and not remaining)
         counts["airborne"] += int(not inside and not remaining and row["bench_force_n"] < 0.0001
                                   and row["pose"][2] > p["table_z"])
-        spilled = (row["bench_force_n"] > PEARL_MASS * 9.81 * 0.2
+        spilled = (row["bench_force_n"] > p.get('ball_mass_kg',PEARL_MASS) * 9.81 * 0.2
                    or row["pose"][2] < p["table_z"] - 0.02)
         if sustained(e, f"pearl_spill_{i}", spilled, seconds=0.15):
             e.flags.add(f"pearl_spilled_{i}")
@@ -149,16 +149,29 @@ def score(e, rows):
         pose_transform(receiver["pose"]), pose_transform(e.initial["receiver_cup"]),
         atol=1e-5, rtol=0))
     placed = {"source": source_placed, "receiver": receiver_fixed and released(receiver)}
-    complete = ("loaded_source_lifted" in e.flags
-                and counts["received"] >= p["required_received"] and all(placed.values()))
+    source_empty = counts["remaining_source"] == 0
+    enough_received = counts["received"] >= p["required_received"]
+    pouring_only = p.get("pouring_success_rule") == "empty_source_half_received_v1"
+    if pouring_only:
+        # Finish at the measured pouring result, even while the empty source is
+        # still held/tilted. Lift history and placement remain diagnostics.
+        complete = source_empty and enough_received and receiver_fixed
+    else:
+        complete = ("loaded_source_lifted" in e.flags
+                    and enough_received and all(placed.values())
+                    and (not p.get("require_source_empty") or source_empty))
     details = {**counts, "total": p["count"], "required_received": p["required_received"],
+               "source_empty": source_empty,
+               "success_rule": p.get("pouring_success_rule", "lift_pour_place"),
+               "source_placement_required": not pouring_only,
                "received_fraction": counts["received"] / p["count"],
                "ever_spilled": sum(f"pearl_spilled_{i}" in e.flags for i in range(p["count"])),
                "receiver_fixed_to_table": True,
                "receiver_fixture_in_place": receiver_fixed,
                "placed_upright": placed,
                "stages": {"loaded_cup_lifted": "loaded_source_lifted" in e.flags,
-                          "enough_received": counts["received"] >= p["required_received"],
+                          "enough_received": enough_received,
+                          "source_empty": source_empty,
                           "source_released_on_table": source_placed,
                           "receiver_fixture_in_place": receiver_fixed}}
     return bool(complete), details, ""

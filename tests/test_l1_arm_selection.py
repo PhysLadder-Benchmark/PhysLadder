@@ -2,6 +2,7 @@
 
 from dataclasses import replace
 import unittest
+import numpy as np
 from unittest.mock import patch
 
 from robot_tasks.registry import resolve_task
@@ -14,6 +15,8 @@ from robot_tasks.tasks.bench.spec import build_spec
 class ArmSelectionTests(unittest.TestCase):
     def setUp(self):
         self.binding, self.config = resolve_task("L1-01")
+        self.nearest_task = {**self.config.raw["task"], "prompt_protocol": "legacy",
+                             "arm_selection": "nearest_initial_object", "manipulation_object": "marker"}
 
     def test_current_layout_selects_right_and_updates_model_roles(self):
         config = self.config
@@ -23,13 +26,20 @@ class ArmSelectionTests(unittest.TestCase):
         self.assertEqual(config.raw["robot"]["active_arms"], ["right"])
         self.assertEqual(spec.arms, config.arms)
         self.assertEqual(spec.observers, config.observation_arms)
-        audit = spec.parameters["arm_selection"]
-        self.assertAlmostEqual(audit["distances_m"]["right"], .16035, places=4)
-        self.assertAlmostEqual(audit["distances_m"]["left"], .39108, places=4)
+        self.assertNotIn("arm_selection", spec.parameters)
+        legacy = resolve_bench_spec(self.nearest_task, config.robot)
+        audit = legacy.parameters["arm_selection"]
+        from robot_tasks.tasks.l1.specs import local_corners
+        from robot_tasks.robots.transforms import pose_transform
+        article = legacy.design.articles[0]
+        transform = pose_transform(article.initial)
+        point = transform[:3,:3] @ local_corners(article).mean(axis=0) + transform[:3,3]
+        for arm in ('left', 'right'):
+            expected = np.linalg.norm(np.asarray(R5Kinematics(config.robot).forward((0.,)*6, arm)[:3])-point)
+            self.assertAlmostEqual(audit['distances_m'][arm], expected)
         self.assertTrue(audit["roles_fixed_for_episode"])
         prepared = self.binding.factory.prepare_config(config)
-        self.assertIn("use the RIGHT arm for manipulation", prepared.instruction)
-        self.assertIn("LEFT arm for observation only", prepared.instruction)
+        self.assertIn("with the left arm", prepared.instruction)
         self.assertNotIn(str(audit["distances_m"]["left"]), prepared.instruction)
 
     def test_moving_initial_marker_near_left_changes_config_and_prompt(self):
@@ -39,17 +49,16 @@ class ArmSelectionTests(unittest.TestCase):
         moved = replace(marker, initial=(*tcp[:3], *marker.initial[3:]))
         spec = replace(spec, design=replace(spec.design, articles=(moved,)))
         with patch("robot_tasks.tasks.bench.arm_selection.build_spec", return_value=spec):
-            binding, config = resolve_task("L1-01")
-            prepared = binding.factory.prepare_config(config)
-        self.assertEqual(config.arms, ("left",))
-        self.assertEqual(config.observation_arms, ("right",))
-        self.assertIn("use the LEFT arm for manipulation", prepared.instruction)
-        self.assertIn("RIGHT arm for observation only", prepared.instruction)
+            selected = resolve_bench_spec(self.nearest_task, self.config.robot)
+            fixed = resolve_bench_spec(self.config.raw["task"], self.config.robot)
+        self.assertEqual(selected.arms, ("left",))
+        self.assertEqual(selected.observers, ("right",))
+        self.assertEqual(fixed.arms, ("right",))
 
     def test_equal_distance_is_deterministic_even_if_mount_order_changes(self):
         robot = replace(self.config.robot, mounts=tuple(reversed(self.config.robot.mounts)))
         with patch.object(R5Kinematics, "forward", return_value=(0., 0., 1., 1., 0., 0., 0.)):
-            spec = resolve_bench_spec(self.config.raw["task"], robot)
+            spec = resolve_bench_spec(self.nearest_task, robot)
         self.assertEqual(spec.arms, ("left",))
         self.assertEqual(spec.observers, ("right",))
 
@@ -62,30 +71,32 @@ class ArmSelectionTests(unittest.TestCase):
     def test_invalid_initial_geometry_cannot_silently_choose_an_arm(self):
         with patch.object(R5Kinematics, "forward", return_value=(float("nan"), 0., 1.)):
             with self.assertRaisesRegex(ValueError, "Nonfinite"):
-                resolve_bench_spec(self.config.raw["task"], self.config.robot)
+                resolve_bench_spec(self.nearest_task, self.config.robot)
 
     def test_invalid_mode_target_and_non_l1_are_rejected(self):
         for update, message in (({"arm_selection": "typo"}, "Unknown"),
                                 ({"manipulation_object": "missing"}, "movable task article"),
                                 ({"id": "L2-01"}, "single-arm L1")):
             with self.subTest(update=update), self.assertRaisesRegex(ValueError, message):
-                resolve_bench_spec({**self.config.raw["task"], **update}, self.config.robot)
+                resolve_bench_spec({**self.nearest_task, **update}, self.config.robot)
 
     def test_fixed_tasks_keep_existing_roles(self):
-        for task_id in ("L1-05", "L1-07", "L1-08", "L1-09"):
+        for task_id in ("L1-07", "L1-08", "L1-09"):
             with self.subTest(task=task_id):
                 binding, config = resolve_task(task_id)
                 prepared = binding.factory.prepare_config(config)
-                self.assertEqual(prepared.arms, ("left",))
-                self.assertEqual(prepared.observation_arms, ("right",))
+                expected = {"L1-07": ("right",),
+                            "L1-08": ("left", "right"), "L1-09": ("right",)}[task_id]
+                self.assertEqual(prepared.arms, expected)
+                self.assertEqual(prepared.observation_arms, tuple(a for a in ("left", "right") if a not in expected))
 
     def test_charger_photo_layout_selects_nearby_right_arm(self):
         binding, config = resolve_task("L1-03")
         prepared = binding.factory.prepare_config(config)
-        self.assertEqual(config.raw["task"]["manipulation_object"], "plug")
+        self.assertNotIn("arm_selection", config.raw["task"])
         self.assertEqual(prepared.arms, ("right",))
         self.assertEqual(prepared.observation_arms, ("left",))
-        self.assertIn("standing upright in the black storage base", prepared.instruction)
+        self.assertIn("align its prongs", prepared.instruction)
 
 
 if __name__ == "__main__":

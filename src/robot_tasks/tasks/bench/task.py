@@ -8,6 +8,9 @@ from .arm_selection import resolve_bench_spec
 class BenchTask:
     @staticmethod
     def prepare_config(config):
+        from ...video_delivery import enabled, robot_profile
+        if enabled(config):
+            config = replace(config, robot=robot_profile(config.robot, config.scene_id))
         spec = resolve_bench_spec(config.raw["task"], config.robot)
         from ..completion import completion_instruction
 
@@ -19,7 +22,11 @@ class BenchTask:
                      "Keep these roles for this episode; the observation arm may move its camera "
                      "but must not touch or support props. Proximity is not proof of reachability; "
                      "use current observations and planner feedback to choose feasible actions.")
-        if config.task_id.startswith("L2-"):
+        from .english_reference import uses_reference
+        reference = (uses_reference(config.raw["task"])
+                     or config.raw["task"].get("prompt_protocol") in {
+                         "user_jelly_variant_20261016_v1", "feishu_jelly_20261016_v1"})
+        if config.task_id.startswith("L2-") and not reference:
             from .l2_protocol import OPERATING_NOTES
 
             notes = OPERATING_NOTES
@@ -40,6 +47,7 @@ class BenchTask:
             "L2-04",
             "L2-06",
             "L2-07",
+            "L2-08",
             "L3-03",
             "L3-11",
             "L3-14",
@@ -48,7 +56,7 @@ class BenchTask:
         return replace(
             config,
             instruction=config.instruction + (
-                "" if spec.facts in config.instruction
+                "" if reference or spec.facts in config.instruction
                 else "\nDeclared prop facts and guidance:\n" + spec.facts
             ) + notes + completion_instruction(config),
             grasp_check_mode="contact_inspection" if constrained else "lift",
@@ -62,7 +70,15 @@ class BenchTask:
         self.spec = resolve_bench_spec(config.raw["task"], config.robot)
         if config.arms != self.spec.arms or config.observation_arms != self.spec.observers:
             raise ValueError("Scene arm roles differ from the prepared task configuration")
-        if self.spec.mechanism == "native_fem_orange_lift":
+        from ...video_delivery import enabled
+        if self.spec.mechanism == "native_fem_jelly_lift":
+            from .jelly import JellyScene
+            self.scene = JellyScene(backend, config, self.spec)
+        elif enabled(config) and self.spec.mechanism != "native_fem_orange_lift":
+            from .delivered_scene import DeliveredScene, DeliveredWipingScene
+            cls = DeliveredWipingScene if config.task_id == "L3-11" else DeliveredScene
+            self.scene = cls(backend, config, self.spec)
+        elif self.spec.mechanism == "native_fem_orange_lift":
             from .orange_scene import OrangeScene
 
             self.scene = OrangeScene(backend, config, self.spec)
@@ -91,7 +107,7 @@ class BenchTask:
 
         self.observer_monitor = ObserverContactMonitor()
         self._last_evaluation_time = self._last_assessment = None
-        if self.spec.mechanism == "native_fem_orange_lift":
+        if self.spec.mechanism in {"native_fem_orange_lift", "native_fem_jelly_lift"}:
             from .orange_evaluation import OrangeEvaluator
 
             self.evaluator = OrangeEvaluator(self.spec)
@@ -99,7 +115,19 @@ class BenchTask:
             self.evaluator = BenchEvaluator(self.spec, self.scene.initial)
 
     def initialize_episode(self, backend, robot, tick):
-        if self.spec.design.task_id == "L1-09":
+        from .english_reference import initial_state_issue
+        if self.spec.parameters.get("rose_source_cup"):
+            issue = initial_state_issue(self.spec, self.scene.measure())
+            if issue:
+                raise RuntimeError(issue)
+            from .startup_settling import settle_cup_flower
+
+            backend.scene_report["household"]["initial_prop_settling"] = settle_cup_flower(self.scene, tick)
+            issue = initial_state_issue(self.spec, self.scene.measure())
+            if issue:
+                raise RuntimeError(issue)
+        if (self.spec.design.task_id == "L1-09"
+                and not self.spec.parameters.get("rose_source_cup")):
             from .startup_settling import settle_rose
 
             backend.scene_report["household"]["initial_prop_settling"] = settle_rose(self.scene, tick)

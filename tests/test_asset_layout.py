@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 from robot_tasks import asset_delivery
 from robot_tasks.asset_layout import bundles, find_bundle, install_layout, verify_files
-from tools.tuojing_assets import install_package, organize
+from tools.tuojing_assets import install_package, organize, verify
 
 
 class AssetLayoutTests(unittest.TestCase):
@@ -57,6 +57,31 @@ class AssetLayoutTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             install_layout(self.root)
         self.assertEqual((first.destination / first.entry).read_bytes(), b'local edit')
+
+    def test_complete_scenes_prevent_old_prop_and_environment_repopulation(self):
+        self.layout['shared']={'lab':'marker'}
+        self.write_json('task_assets.json',self.layout)
+        self.write_json('video_20261015.json',{'tasks':{'L1-01':{}}})
+        scene=self.root/'source/L1-01/scene.usdz'
+        scene.parent.mkdir(parents=True);scene.write_bytes(b'latest complete scene')
+        install_layout(self.root)
+        self.assertEqual({p.name for p in scene.parent.iterdir()},{'scene.usdz'})
+        self.assertFalse((self.root/'source/common').exists())
+        self.assertTrue((self.root/'source/L2-01/pen/marker/asset.usda').exists())
+
+    def test_latest_verification_needs_no_old_packages_and_rejects_modified_runtime(self):
+        import shutil
+        row={}
+        for prefix,name in [('', 'scene.usdz'),('runtime_','runtime_aligned.usdc')]:
+            path=self.root/'source/L1-01'/name;path.parent.mkdir(parents=True,exist_ok=True)
+            path.write_bytes(name.encode())
+            row.update({prefix+'path':path.relative_to(self.root).as_posix(),prefix+'bytes':path.stat().st_size,
+                        prefix+'sha256':hashlib.sha256(path.read_bytes()).hexdigest()})
+        self.write_json('video_20261015.json',{'delivery':'L1-L3_assets_20261015','tasks':{'L1-01':row}})
+        shutil.rmtree(self.root/'packages')
+        self.assertEqual(verify(self.root)['delivery'],'L1-L3_assets_20261015')
+        path.write_bytes(b'modified')
+        with self.assertRaises(ValueError):verify(self.root)
 
     def test_runtime_reads_requested_copy_and_does_not_fall_back(self):
         install_layout(self.root)
@@ -113,6 +138,7 @@ class AssetLayoutTests(unittest.TestCase):
         from robot_tasks.paths import PROJECT_ROOT
         from robot_tasks.tasks.bench.spec import build_spec
         from robot_tasks.tasks.screw.nut import nut_spec
+        from robot_tasks.video_delivery import scenes, verified_scene
         import tomllib
 
         root = PROJECT_ROOT / "assets/tuojing"
@@ -121,6 +147,10 @@ class AssetLayoutTests(unittest.TestCase):
             mapped.setdefault(bundle.destination.parent.name, set()).add(bundle.asset)
         for config in (PROJECT_ROOT / "configs/tasks").glob("*.toml"):
             task = tomllib.loads(config.read_text(encoding="utf-8"))["task"]["id"]
+            if task in scenes():
+                path = verified_scene(task)
+                self.assertTrue(path.is_file())
+                continue
             spec = nut_spec() if task == "L3-05" else build_spec(task)
             assets = {a.asset.split(":", 1)[1] for a in spec.design.articles
                       if a.asset.startswith("tuojing:")}

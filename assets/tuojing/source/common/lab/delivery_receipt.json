@@ -1,0 +1,78 @@
+{
+  "version": "V4 user-confirmed 1.70 x 0.90 x 0.78m table and provisional placements",
+  "source_resources_sha256_verified": 17,
+  "usd_missing_dependencies_in_isaac": [],
+  "isaac_builtin_module": "OmniPBR.mdl (resolved by Isaac Sim; absent in standalone usd-core)",
+  "verified_table_mesh_extent_m": [
+    1.7000000476837158,
+    0.8999999761581421,
+    0.02500000037252903
+  ],
+  "table_size_m": [
+    1.7,
+    0.9,
+    0.78
+  ],
+  "placement_status": "Default placement chosen from supplied visual/CAD evidence and user-authorized judgment: preserve symmetric arm axis positions and rear setback; use measured stand setback and height. Coordinates are estimates, not surveyed.",
+  "symmetry": {
+    "base_y_m": 1.5628988169384406,
+    "pair_center_x_m": 0.19565121550275455,
+    "axis_spacing_x_m": 0.440709864395438,
+    "shared_joint1_to_joint5_rad": [
+      0.0,
+      -0.08088586905054927,
+      -0.07962149385043675,
+      0.012571612754717354,
+      0.0
+    ],
+    "wrist_rolls_rad": [
+      1.5707963267948966,
+      -1.5707963267948966
+    ],
+    "source": "User explicitly requested symmetric arms with no fore-aft stagger."
+  },
+  "base_yaws_deg": [
+    -90,
+    -90
+  ],
+  "cad_units": "mm converted to m",
+  "cad_mesh_watertight": true,
+  "delivery_checks": [
+    {
+      "case": "motion",
+      "status": "passed",
+      "steps": 240
+    },
+    {
+      "case": "axis51",
+      "status": "passed",
+      "steps": 60
+    },
+    {
+      "case": "fov60",
+      "status": "passed",
+      "steps": 60
+    },
+    {
+      "case": "fov85",
+      "status": "passed",
+      "steps": 60
+    },
+    {
+      "case": "wrist_left",
+      "status": "passed",
+      "steps": 120
+    },
+    {
+      "case": "wrist_right",
+      "status": "passed",
+      "steps": 120
+    },
+    {
+      "case": "main",
+      "status": "passed",
+      "steps": 120
+    }
+  ],
+  "limitations": "axis spacing interpretation, optical intrinsics/extrinsics, wrist roll, sensor housing and added dynamics remain estimated"
+}

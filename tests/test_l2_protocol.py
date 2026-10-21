@@ -79,16 +79,17 @@ class ObserverTests(unittest.TestCase):
         # A new episode cannot inherit the cached result or previous lift.
         self.assertEqual(task.evaluate(state, Feedback("completed")).status, "running")
 
-    def test_all_l2_runtime_prompts_disclose_information_and_control_scope(self):
+    def test_l2_source_prompts_are_not_extended_with_legacy_task_notes(self):
         from robot_tasks.registry import resolve_task
         from robot_tasks.tasks.bench.l2_protocol import OPERATING_NOTES
 
         for task_id in ("L2-01", "L2-03", "L2-04", "L2-06", "L2-07"):
             spec, config = resolve_task(task_id)
             config = spec.factory.prepare_config(config)
-            self.assertEqual(config.instruction.count(OPERATING_NOTES), 1)
-            self.assertEqual(config.raw["task"]["prompt_protocol"], "guided_visual_l2_v3")
-            self.assertIn("no direct force, torque", config.instruction)
+            self.assertNotIn(OPERATING_NOTES, config.instruction)
+            self.assertEqual(config.raw["task"]["prompt_protocol"], "feishu_english_20261015_v1")
+            from robot_tasks.tasks.bench.english_reference import reference_tasks
+            self.assertEqual(config.instruction.strip(), reference_tasks()[task_id]['simulation_prompt_en'])
 
     def test_transient_contact_does_not_fail_but_sustained_contact_does(self):
         monitor = ObserverContactMonitor()

@@ -8,7 +8,7 @@ import sys
 import time
 
 # Keep CUDA/JIT artifacts with the installed research environment, not the OS disk.
-_cache = Path(sys.prefix) / "cache"
+_cache = Path(os.environ.get("GPT_BENCHMARK_PLANNER_CACHE", str(Path(sys.prefix) / "cache")))
 
 import numpy as np
 from .assets import TCP_FRAME, build_assets
@@ -53,7 +53,12 @@ class CuroboWorker:
         from curobo.motion_planner import MotionPlanner, MotionPlannerCfg
 
         self.torch = torch
-        self.assets, self.kin = build_assets(profile, directory, attachments)
+        reference = os.environ.get("GPT_BENCHMARK_PLANNER_REFERENCE")
+        if reference:
+            from .reference_assets import build_reference_assets
+            self.assets, self.kin = build_reference_assets(profile, directory, attachments, reference)
+        else:
+            self.assets, self.kin = build_assets(profile, directory, attachments)
         self.profile = profile
         self.planner = MotionPlanner(
             MotionPlannerCfg.create(
@@ -233,26 +238,44 @@ class CuroboWorker:
                 result = self.planner.plan_cspace(goal, start, max_attempts=3)
             else:
                 raise ValueError("Unsupported motion channel")
+            contact_exit = None
+            retreat = None
             if result is None or not bool(result.success.any()):
-                raise diagnose_failure(
+                diagnostic = diagnose_failure(
                     self.planner, arm, command["kind"], start, goal, result,
                     goal_distance_m=(float(np.linalg.norm(local[:3]))
                                      if command["kind"] == "cartesian_pose" else None),
                     reach_bound_m=(self.kin.reach_bound_m
                                    if command["kind"] == "cartesian_pose" else None),
                 )
-            trajectory = result.get_interpolated_plan()
-            q = (
-                trajectory.position.detach()
-                .cpu()
-                .numpy()
-                .reshape(-1, len(trajectory.joint_names))
-            )
-            indices = [
-                trajectory.joint_names.index(n) for n in self.profile.joint_names
-            ]
-            q = q[:, indices]
-            path = JointPath.from_waypoints(q, state["joint_positions_rad"], bounds)
+                if diagnostic.diagnostic["code"] != "start_collision":
+                    raise diagnostic
+                if request["scene"].get("allow_start_collision_retreat", False):
+                    from .recovery import SceneOverlap, try_retreat
+                    try:
+                        diagnostic.diagnostic["start_overlap_pairs"] = SceneOverlap(self, arm, request).describe(reference)
+                        q, retreat = try_retreat(self, arm, command, request, start, goal, diagnostic.diagnostic)
+                        path = JointPath.from_waypoints(q, state["joint_positions_rad"], bounds)
+                        path = path.stretched(max(path.duration_s, 1.,
+                            float(np.sum(np.max(np.abs(np.diff(q, axis=0)), axis=1)) / .1)))
+                    except (ValueError, RuntimeError) as exc:
+                        diagnostic.diagnostic["retreat_rejection"] = str(exc)
+                        raise diagnostic from exc
+                elif command["kind"] == "cartesian_pose":
+                    from .contact_exit import plan_contact_exit
+                    try:
+                        path, contact_exit = plan_contact_exit(self, arm, request, start, goal, world, bounds)
+                    except (ValueError, RuntimeError) as exc:
+                        diagnostic.diagnostic["contact_exit_rejection"] = str(exc)
+                        raise diagnostic from exc
+                else:
+                    raise diagnostic
+            else:
+                trajectory = result.get_interpolated_plan()
+                q = trajectory.position.detach().cpu().numpy().reshape(-1, len(trajectory.joint_names))
+                indices = [trajectory.joint_names.index(n) for n in self.profile.joint_names]
+                q = q[:, indices]
+                path = JointPath.from_waypoints(q, state["joint_positions_rad"], bounds)
             if command["kind"] == "cartesian_pose":
                 error = pose_errors(self.kin.forward(path.positions[-1], arm), world)
                 if error[0] > 0.002 or error[1] > 0.02:
@@ -260,6 +283,8 @@ class CuroboWorker:
             paths[arm] = {"positions": path.positions, "times_s": path.times_s}
             diagnostics[arm] = {
                 "waypoints": len(path.positions),
+                **({"contact_exit": contact_exit} if contact_exit else {}),
+                **({"start_collision_retreat": retreat} if retreat else {}),
                 "duration_s": path.duration_s,
                 "collision_checked": True,
                 "payload_guard": "no held object",

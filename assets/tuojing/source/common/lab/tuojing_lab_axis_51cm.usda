@@ -1,0 +1,39 @@
+#usda 1.0
+(
+    customLayerData = {
+        string hypothesis = "51cm is assumed to mean rotation-axis spacing; original photo endpoints do not establish this."
+    }
+    subLayers = [
+        @./tuojing_lab.usda@
+    ]
+)
+
+over "World"
+{
+    over "Robots"
+    {
+        over "R5_Left"
+        {
+            double3 xformOp:translate = (-0.059348784497245455, 1.5628988169384406, 0.79)
+        }
+
+        over "R5_Right"
+        {
+            double3 xformOp:translate = (0.45065121550275455, 1.5628988169384406, 0.79)
+        }
+    }
+
+    over "Furniture"
+    {
+        over "R5_Left_Mount"
+        {
+            double3 xformOp:translate = (-0.059348784497245455, 1.5628988169384406, 0.785)
+        }
+
+        over "R5_Right_Mount"
+        {
+            double3 xformOp:translate = (0.45065121550275455, 1.5628988169384406, 0.785)
+        }
+    }
+}
+

@@ -14,12 +14,16 @@ def workflow_metadata(config=None) -> dict:
     constrained = config is not None and config.grasp_check_mode == "contact_inspection"
     guard = depth and not constrained
     return {
-        "version": 13, "action_interface": "sparse_eef_normalized_gripper", "ik": "curobo",
-        "generation_retries": "3 after initial failure; unchanged observation; shared total call budget",
+        "version": 14, "action_interface": "sparse_eef_normalized_gripper", "ik": "curobo",
+        "generation_retries": "unlimited retries; 2/4/8s backoff then 8s; unchanged observation; shared configured call and wall-time budgets; user cancellation supported",
         "motion": "collision_checked_joint_trajectory",
         "stop_protocol": "evaluator_gated_continue_within_total_call_budget",
         "planner_information": "privileged collision geometry; no task goal or score",
         "prompt_protocol": "shared_observe_plan_verify_task_goal_v6",
+        "task_prompt_protocol": (config.raw.get("task", {}).get("prompt_protocol")
+                                 if config is not None else None),
+        "task_reference": ({key: value for key, value in config.raw.get("task", {}).items()
+                            if key.startswith("reference_")} if config is not None else {}),
         "grasp_check": ("rgbd_surface_comotion_v3_tracking_recovery" if guard else
                         "contact_inspection_no_lift_gate" if constrained else "model_visual_inspection"),
         "release_check": "rgbd_stationary_vs_following_advisory_v1" if guard else None,

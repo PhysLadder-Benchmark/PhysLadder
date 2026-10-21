@@ -21,6 +21,14 @@ class BenchScene(L1Scene):
         self.spec = spec
         settings = ResetSettings()
         super().__init__(backend, config, settings, design=spec.design)
+        if spec.parameters.get("fixed_articles"):
+            from pxr import PhysxSchema, UsdPhysics
+            for name in spec.parameters["fixed_articles"]:
+                prim = self.stage.GetPrimAtPath(self.root + "/" + name)
+                UsdPhysics.RigidBodyAPI(prim).CreateKinematicEnabledAttr(True)
+                PhysxSchema.PhysxRigidBodyAPI.Apply(prim).CreateEnableCCDAttr(False)
+                prefix = self.root + "/" + name + "/"
+                backend.planning_fixture_paths += tuple(path for path in self.colliders if path.startswith(prefix))
         if spec.design.task_id == "L1-01":
             self.configure_marker_contacts()
         if spec.design.task_id in {"L1-01", "L1-03", "L1-07", "L1-08", "L1-09"}:
@@ -87,7 +95,8 @@ class BenchScene(L1Scene):
             limitations=spec.limitations,
             public_facts=spec.facts,
             parameters=spec.parameters,
-            goal_rule=("marker end inside the main cup cavity; release, support and stability are diagnostic only"
+            goal_rule=(spec.design.instruction if spec.parameters.get("scoring_protocol") == "feishu_english_20261015_v1" else
+                       "marker end inside the main cup cavity; release, support and stability are diagnostic only"
                        if spec.design.task_id == "L1-01" else
                        "task-specific physical geometry, contact/process evidence and stable final state"),
             joints=[asdict(j) for j in spec.joints],
@@ -229,6 +238,8 @@ class BenchScene(L1Scene):
         rows = self.measure()
         payloads = {a: [] for a in self.config.arms}
         for article in self.design.articles:
+            if article.name in self.spec.parameters.get("fixed_articles", ()):
+                continue
             row = rows[article.name]
             t = pose_transform(row["pose"])
             for arm in self.config.arms:

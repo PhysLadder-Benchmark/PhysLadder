@@ -4,11 +4,14 @@ schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_tuojing_lab.toml"
+profile = "../robots/r5_video_20261015.toml"
 active_arms = ["right"]
 observation_arms = ["left"]
 
 [simulation]
+# Preserve the established L3 controller profile. GPU selection is a launch option.
+robot_gravity_compensation = false
+cartesian_completion_tolerance_m = 0.005
 environment = "tuojing_lab_v4"
 camera_profile = "../cameras/r5_tuojing_lab.toml"
 asset_directory = "../../build/tuojing_lab"
@@ -31,8 +34,14 @@ model_config = "../models/gpt.toml"
 return_home = false
 
 [task]
+scene_delivery = "video_20261015"
+prompt_protocol = "feishu_english_20261015_v1"
+reference_document = "https://my.feishu.cn/docx/QK4EdOD3hotgp4x782ycgoyyn6g"
+reference_sheet_id = "KyMjZ7"
+reference_sheet_revision = 324
+reference_sheet_row = 28
 id = "L3-11"
-name = "抓板擦擦除原生字迹"
+name = "抓板擦擦除白板字迹"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented_proxy"
@@ -40,13 +49,14 @@ implementation = "household"
 launch_command = "python tools/launch.py run L3-11 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L3-11 --gui"
 instruction = """
-The board lies flat, fixed, in front of the arms; its original red GPT6 writing is upside-down from overview. The loose blue eraser lies pad-down to image-right of the board in the overview camera. RIGHT must pick it up; LEFT observes only. Eraser dimensions 120 x 60 x 20 mm: pinch the 60 mm width with the cleaning pad unobstructed below. Its cloth face is opposite the blue plastic back. Contact and sweep the cloth over the writing; each covered mark disappears on the first genuine wipe, no repeated scrubbing or exact force required. The task succeeds as soon as a genuine contact wipe removes any part of the original writing. No percentage target, further wiping, placement, release or return home is required.
-
-Use current RGB views and measured robot feedback. First identify the objects and make a short plan, then execute and verify each physical subgoal. If an object did not follow the gripper, correct the grasp before continuing. Reobserve after contact; do not infer success from a commanded pose. There is no automatic grasp, reset, release or return-home action.
+Pick up the board eraser with the left arm and erase the writing on the whiteboard.
 """
 
-# Chinese setup and props; final task attribute.
+# English scene context; task instruction retains source robot-perspective names.
 description = """
-更新绿板及120×60×20 mm蓝色板擦。绿板固定平放，保留资产自带红色GPT6字迹，第三视角看上下颠倒；板擦清洁面朝下放在第三视角画面中黑板的右侧，右臂自主拿擦，左臂观察，不预置持擦。实际接触扫过的字迹一次消除；实际擦掉任意一点原始字迹即成功（至少一个字迹单元），不设置擦除比例门槛。原生静态字迹改成依据原字迹mask的1 mm接触擦除代理，不声称真实去污化学过程。
-擦除被确认后立即结束，不要求继续擦拭、放下板擦、释放或双臂回位。资产来源：飞书《GPT6评测任务及资产管理》2026-10-11下载包。
+Complete 2026-10-15 assets: room, table, robot mounts, lighting and task props. Robot initial joints and gripper openings follow the per-task video-visible setup. All camera views use the shared L3-03 rig. Prop placements follow the delivered video reconstruction. Task left/right use the robot perspective; overview-image left/right are reversed. No older individual prop is imported. Physical parameters remain uncalibrated.
 """
+
+[execution]
+model_budget_basis = "completed_generations"
+retry_model_errors = true

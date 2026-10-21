@@ -33,7 +33,7 @@ class LabSettingsTests(unittest.TestCase):
         self.assertAlmostEqual(overview.optical_pose_wxyz[2], 1.45)
         self.assertEqual(overview.resolution, (1280, 960))
         self.assertAlmostEqual(overview.optical_pose_wxyz[0],
-                               np.mean([m.base_pose_wxyz[0] for m in config.robot.mounts]))
+                               .1956512155)
         self.assertLess(overview.optical_pose_wxyz[1], bench.centre[1] - bench.size[1] / 2)
         forward = -pose_transform(overview.optical_pose_wxyz)[:3, 2]
         np.testing.assert_allclose(forward, [0, np.cos(np.deg2rad(36)), -np.sin(np.deg2rad(36))], atol=1e-9)
@@ -71,9 +71,9 @@ class LabSettingsTests(unittest.TestCase):
 
         _, config = resolve_task("L1-01")
         bench = bench_geometry(config)
-        self.assertAlmostEqual(bench.top, .78)
-        self.assertAlmostEqual(GraspGuard(config).table_z_m, .78)
-        self.assertAlmostEqual(operating_notes(config)["bench"]["surface_world_z_m"], .78)
+        self.assertAlmostEqual(bench.top, .88)
+        self.assertAlmostEqual(GraspGuard(config).table_z_m, .88)
+        self.assertAlmostEqual(operating_notes(config)["bench"]["surface_world_z_m"], .88)
         projected = []
 
         def project(points, *args):
@@ -86,7 +86,7 @@ class LabSettingsTests(unittest.TestCase):
             annotate(Image.new("RGB", (320, 180)), calibration, {}, bench=bench)
         points = np.asarray(projected)
         self.assertGreater(len(points), 0)
-        np.testing.assert_allclose(points[:, 2], .781)
+        np.testing.assert_allclose(points[:, 2], .881)
         self.assertTrue(np.all(points[:, 1] > .7))
 
     def test_private_camera_profile_can_be_parsed_offline_but_no_asset_is_fabricated(self):

@@ -1,0 +1,14 @@
+{
+  "host": "cluster.example.org",
+  "user": "researcher",
+  "project": "/srv/r5/GPT_Benchmark_combined",
+  "runtime": "/srv/r5/runtime_combined",
+  "bridge_port": 18469,
+  "machines": {
+    "cluster": 22
+  },
+  "default_machine": "cluster",
+  "direct_machines": [
+    "cluster"
+  ]
+}

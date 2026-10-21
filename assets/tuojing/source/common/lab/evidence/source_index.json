@@ -1,0 +1,104 @@
+[
+  {
+    "path": "/Users/jingbowen/Downloads/拓境小型实验室/视频图片资源/IMG_3276.MOV",
+    "bytes": 21820458,
+    "sha256": "23b567309875fbcd2d1e7ab143b322c6f932b4ead9ac60d5467f40d0ce79efd2",
+    "usage": "earlier layout visual cross-check; latest video takes priority"
+  },
+  {
+    "path": "/Users/jingbowen/Downloads/拓境小型实验室/视频图片资源/IMG_3333.JPG",
+    "bytes": 682908,
+    "sha256": "4b0348547705c1f860452505409640dc5909ac0f6df41247bdcc11c4957ab615",
+    "usage": "multi-view SfM / constraints / visual audit"
+  },
+  {
+    "path": "/Users/jingbowen/Downloads/拓境小型实验室/视频图片资源/IMG_3334.JPG",
+    "bytes": 560025,
+    "sha256": "e0328fc4595dcf5147d8bd0eedcff2c0ec4baf1f423c751ed87775abfccd690c",
+    "usage": "multi-view SfM / constraints / visual audit"
+  },
+  {
+    "path": "/Users/jingbowen/Downloads/拓境小型实验室/视频图片资源/IMG_3335.JPG",
+    "bytes": 654141,
+    "sha256": "d9a5798dd1c8a93d47fa0678be0da6135953bd5ac6d7d2f1478b8654b98dfb01",
+    "usage": "multi-view SfM / constraints / visual audit"
+  },
+  {
+    "path": "/Users/jingbowen/Downloads/拓境小型实验室/视频图片资源/IMG_3336.JPG",
+    "bytes": 624834,
+    "sha256": "525f79666c4eac51d0207c7cedc6664eff934fdf3bbac39b2f7984bcc6e3eac3",
+    "usage": "multi-view SfM / constraints / visual audit"
+  },
+  {
+    "path": "/Users/jingbowen/Downloads/拓境小型实验室/视频图片资源/IMG_3337.JPG",
+    "bytes": 540065,
+    "sha256": "e51f8e06c7953be15ea623d8606fd42cfeaabe96edb27e9a0241f3a7c5e33797",
+    "usage": "multi-view SfM / constraints / visual audit"
+  },
+  {
+    "path": "/Users/jingbowen/Downloads/拓境小型实验室/视频图片资源/IMG_3338.JPG",
+    "bytes": 650423,
+    "sha256": "11cc0c356c2aaa330bd8945792b7825ace0397ea28d2065a762a4acd5f1043be",
+    "usage": "multi-view SfM / constraints / visual audit"
+  },
+  {
+    "path": "/Users/jingbowen/Downloads/拓境小型实验室/视频图片资源/IMG_3339.JPG",
+    "bytes": 509288,
+    "sha256": "e241ec082dcccfdb65141ce3fef16a4809a4d96286e6cba0bfcec7fce0ec3b7d",
+    "usage": "multi-view SfM / constraints / visual audit"
+  },
+  {
+    "path": "/Users/jingbowen/Downloads/拓境小型实验室/视频图片资源/IMG_3340.JPG",
+    "bytes": 553052,
+    "sha256": "b7b75e2c6c320f85137570c22f41b487ec736bbc34ed3ac2ad2b61fbaaa16268",
+    "usage": "multi-view SfM / constraints / visual audit"
+  },
+  {
+    "path": "/Users/jingbowen/Downloads/拓境小型实验室/视频图片资源/IMG_3341.MOV",
+    "bytes": 56943505,
+    "sha256": "83161ec4288cf3959f2310afa41154bf30ecf931500f5bfe3fc18a25a50fe597",
+    "usage": "multi-view SfM / constraints / visual audit"
+  },
+  {
+    "path": "/Users/jingbowen/Downloads/拓境小型实验室/雷达点云资源/2026_9_16 2.zip",
+    "bytes": 8214296,
+    "sha256": "dc29ad8308ff1c29cb37acc18fb5fbf21fde06c5ceceb86c23d876747631ccf9",
+    "usage": "registered fixed shell / scale and structural plan / cross-format geometry check"
+  },
+  {
+    "path": "/Users/jingbowen/Downloads/拓境小型实验室/雷达点云资源/2026_9_16 3.zip",
+    "bytes": 626055,
+    "sha256": "646e9093e3aeb43696ae2f6bc751e240ec8e96079ba24bedb266c8e7401a1d39",
+    "usage": "registered fixed shell / scale and structural plan / cross-format geometry check"
+  },
+  {
+    "path": "/Users/jingbowen/Downloads/拓境小型实验室/雷达点云资源/2026_9_16.mp4",
+    "bytes": 4647422,
+    "sha256": "322f2484f26f350d285967457c6ac045bbbfb89a45ecffeae67730bb60572cef",
+    "usage": "registered fixed shell / scale and structural plan / cross-format geometry check"
+  },
+  {
+    "path": "/Users/jingbowen/Downloads/拓境小型实验室/雷达点云资源/2026_9_16.pdf",
+    "bytes": 920772,
+    "sha256": "62c7672922db0b7891d8b14ea6941512d18de4448c7a5c66caa15c1980483306",
+    "usage": "registered fixed shell / scale and structural plan / cross-format geometry check"
+  },
+  {
+    "path": "/Users/jingbowen/Downloads/拓境小型实验室/雷达点云资源/2026_9_16.usdz",
+    "bytes": 4390211,
+    "sha256": "7690801b42d2b4da59c67e8a0072dec28b4f55e51c745aeaafaea33d54d8bb9b",
+    "usage": "registered fixed shell / scale and structural plan / cross-format geometry check"
+  },
+  {
+    "path": "/Users/jingbowen/Downloads/拓境小型实验室/雷达点云资源/2026_9_16.zip",
+    "bytes": 2532200,
+    "sha256": "130776b7bae99fb055de5a0d4927d3560a5d6f7976cec4cc89d6a32133e9ab9c",
+    "usage": "registered fixed shell / scale and structural plan / cross-format geometry check"
+  },
+  {
+    "path": "/Users/jingbowen/Downloads/摄像头固定座新(1).stp",
+    "bytes": 161176,
+    "sha256": "5b2e7d6fb591022998b13bdfd803204d5500607b26224b4fd542a054d730fba8",
+    "usage": "exact wrist camera mount solid, holes and inclined camera seat; millimetres to metres"
+  }
+]

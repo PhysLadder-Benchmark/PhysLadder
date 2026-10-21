@@ -17,8 +17,37 @@ from pathlib import Path
 from ...paths import PROJECT_ROOT
 
 
+def probe_planner(backend, robot):
+    """Exercise the normal planner from measured state without executing a path."""
+    from ...planning.scene import snapshot
+    from ...types import Action, ArmCommand
+
+    state = robot.state()
+    commands = []
+    for arm in robot.config.command_arms:
+        goal = list(state[arm].tcp_pose_world_wxyz)
+        goal[2] += .01
+        commands.append(ArmCommand(arm, "cartesian_pose", tuple(goal)))
+    result = {
+        "scope": "Normal cuRobo plans a 10 mm upward TCP movement for all permitted arms; no trajectory execution or task-success claim",
+        "no_gpt": True, "passed": False,
+        "commands": [{"arm": c.arm, "pose": list(c.values)} for c in commands],
+    }
+    try:
+        reply = robot.planner.plan(Action(tuple(commands), .5), state, snapshot(backend))
+        if set(reply["paths"]) != {c.arm for c in commands}:
+            raise ValueError("Planner did not return every requested arm")
+        result.update(passed=True,
+            paths={arm: {"points": len(path["positions"]), "duration_s": path["times_s"][-1]}
+                   for arm, path in reply["paths"].items()},
+            diagnostics=reply.get("diagnostics", {}))
+    except Exception as exc:
+        result.update(error=str(exc), diagnostic=getattr(exc, "diagnostic", None))
+    return result
+
+
 def check(task_id, output, *, prepare=True, prop_probe=False, capture_hook=None,
-          capture_before_observations=False, depth=None):
+          capture_before_observations=False, depth=None, plan_probe=False, config_path=None):
     import numpy as np
     from PIL import Image
 
@@ -28,9 +57,11 @@ def check(task_id, output, *, prepare=True, prop_probe=False, capture_hook=None,
     from ...robots.preparation import preparation_action
     from ...types import EvaluationState
 
+    if plan_probe and not prepare:
+        raise ValueError("A planner probe requires normal robot preparation")
     os.environ.setdefault("OMNI_KIT_ACCEPT_EULA", "YES")
     output.mkdir(parents=True, exist_ok=True)
-    spec, config = resolve_task(task_id, depth=depth)
+    spec, config = resolve_task(task_id, config_path=config_path, depth=depth)
     config = spec.factory.prepare_config(config)
     backend, robot, task = IsaacSimBackend(), R5Adapter(), spec.factory()
     backend.run_directory = output
@@ -41,7 +72,14 @@ def check(task_id, output, *, prepare=True, prop_probe=False, capture_hook=None,
         "scope": "scene, physical reset, camera input and initial scoring; not task-solving evidence",
         "observation_modalities": ["rgb", "depth"] if config.include_depth else ["rgb"],
         "preparation_requested": prepare,
+        "initial_layout": config.raw["task"].get("initial_layout"),
     }
+    from ...video_delivery import enabled, scenes
+    if enabled(config):
+        result['runtime_scene_sha256'] = scenes()[config.scene_id]['runtime_sha256']
+        from ...video_delivery import setup_digest, visual_setup
+        result['visual_setup_sha256'] = setup_digest()
+        result['visual_setup_revision'] = visual_setup()['revision']
     try:
         backend.open(config)
         if prepare:
@@ -61,6 +99,10 @@ def check(task_id, output, *, prepare=True, prop_probe=False, capture_hook=None,
         robot.reset(config.seed)
         for _ in range(24):
             backend.step(config.control_dt_s)
+        from .robot_reset_audit import capture as capture_robot_reset
+        result["robot_reset_audit"] = capture_robot_reset(backend, robot)
+        if not result["robot_reset_audit"]["passed"]:
+            raise RuntimeError("Robot reset differs from its configured base/joints or URDF FK")
         if prepare:
             robot.apply(
                 getattr(spec.factory, "preparation_action", preparation_action)(config)
@@ -78,6 +120,14 @@ def check(task_id, output, *, prepare=True, prop_probe=False, capture_hook=None,
                     "Startup preparation failed: " + str(asdict(robot.feedback()))
                 )
         rows = task.scene.measure()
+        from ...tasks.bench.english_reference import initial_state_issue
+        issue = initial_state_issue(task.scene.spec, rows)
+        if issue:
+            raise RuntimeError(issue)
+        if plan_probe:
+            result["planner_probe"] = probe_planner(backend, robot)
+            if not result["planner_probe"]["passed"]:
+                raise RuntimeError("Normal planner request failed: " + result["planner_probe"]["error"])
         # Finish documentation render warm-up before saving the observation views;
         # otherwise newly loaded robot meshes can be absent in the first capture.
         if capture_hook is not None and capture_before_observations:
@@ -102,7 +152,9 @@ def check(task_id, output, *, prepare=True, prop_probe=False, capture_hook=None,
             Image.frombytes("RGB", (frame.width, frame.height), frame.data).save(
                 output / (frame.camera + ".png")
             )
-            if np.frombuffer(frame.data, dtype=np.uint8).std() < 1:
+            pixels = np.frombuffer(frame.data, dtype=np.uint8).reshape(-1, 3)
+            lit_fraction = float(np.mean(pixels.mean(axis=1) > 15))
+            if pixels.std() < 1 or lit_fraction < .05:
                 raise RuntimeError("Blank camera: " + frame.camera)
             result["cameras"].append(frame.camera)
             # Use the same overlay and calibration resizing as the policy, but
@@ -112,6 +164,7 @@ def check(task_id, output, *, prepare=True, prop_probe=False, capture_hook=None,
             if depth_values is not None:
                 np.save(output / (frame.camera + "_depth.npy"), depth_values)
             result["camera_capture"][frame.camera] = {
+                "lit_pixel_fraction": lit_fraction,
                 "calibration": frame.calibration, "preview_calibration": calibration,
                 "preview_resolution": size,
                 "valid_depth_fraction": (float(np.mean(np.isfinite(depth_values) & (depth_values > 0)))
@@ -186,9 +239,13 @@ def main():
     parser.add_argument("--all", action="store_true")
     parser.add_argument("--no-preparation", action="store_true")
     parser.add_argument("--prop-probe", action="store_true")
+    parser.add_argument("--plan-probe", action="store_true",
+                        help="Request a small real cuRobo plan without executing it or calling a model")
     parser.add_argument("--depth", action=argparse.BooleanOptionalAction, default=None)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
+    if args.plan_probe and args.no_preparation:
+        parser.error("--plan-probe requires normal preparation")
     root = args.output or PROJECT_ROOT / "runs" / (
         "scene_smoke_" + datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     )
@@ -198,7 +255,7 @@ def main():
 
         results = []
         for spec in TASKS.values():
-            if not spec.task_id.startswith("L") or not spec.implemented:
+            if not spec.task_id.startswith("L") or not spec.implemented or spec.base_task_id is not None:
                 continue
             command = [
                 sys.executable,
@@ -212,6 +269,8 @@ def main():
                 command.append("--no-preparation")
             if args.prop_probe:
                 command.append("--prop-probe")
+            if args.plan_probe:
+                command.append("--plan-probe")
             if args.depth is not None:
                 command.append("--depth" if args.depth else "--no-depth")
             with (root / (spec.task_id + ".log")).open("w", encoding="utf-8") as log:
@@ -243,7 +302,8 @@ def main():
     if not args.task:
         parser.error("Provide a task ID or --all")
     return check(
-        args.task, root, prepare=not args.no_preparation, prop_probe=args.prop_probe, depth=args.depth
+        args.task, root, prepare=not args.no_preparation, prop_probe=args.prop_probe,
+        depth=args.depth, plan_probe=args.plan_probe
     )
 
 

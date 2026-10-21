@@ -7,7 +7,7 @@ CAD mount are, and belong to the existing link6 body (no extra rigid body).
 import numpy as np
 
 
-def configure_wrist_collisions(stage, profile):
+def configure_wrist_collisions(stage, profile, *, expected_shapes=5):
     from pxr import PhysxSchema, Usd, UsdGeom, UsdPhysics
 
     from ..planning.scene import collider_meshes
@@ -34,7 +34,7 @@ def configure_wrist_collisions(stage, profile):
                 decomp.CreateShrinkWrapAttr(True)
                 decomp.CreateMinThicknessAttr(.0002)
             shapes.append(str(prim.GetPath()))
-        if len(shapes) != 5:
+        if len(shapes) != expected_shapes:
             raise ValueError(f"Audit changed wrist asset before use: {mount.name}, {shapes}")
         # Reuse the same mesh export as fixture planning. Express it in link6,
         # after camera mounting adjustments, rather than assuming URDF includes it.

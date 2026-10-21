@@ -50,7 +50,7 @@ def generation_error(document: dict, event_type: str, secret: str = "") -> Model
     labels = " ".join(details.get(k, "") for k in ("code", "type", "incomplete_reason")).lower()
     # Explicit authorization, quota, refusal and invalid-request failures need
     # a change outside this retry. Unknown gateway generation failures get the
-    # user's fixed three retries; this does not assert they are transient.
+    # user's unlimited retries within episode budgets; this does not assert they are transient.
     permanent = any(code in labels for code in (
         "invalid_api_key", "authentication", "unauthorized", "permission", "access_denied",
         "insufficient_quota", "quota_exceeded", "billing_hard_limit", "subscription_sharing_usage",

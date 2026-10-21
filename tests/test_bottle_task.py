@@ -26,13 +26,13 @@ class BottleTaskTests(unittest.TestCase):
         r["corners"] = (local_corners(self.cap) @ t[:3, :3].T + t[:3, 3]).tolist()
         return r
 
-    def test_native_cap_fits_and_bottle_is_fixed(self):
+    def test_legacy_fixed_geometry_and_current_bimanual_permissions(self):
         _, c = resolve_task("L3-03")
         self.assertLess(
             np.ptp(local_corners(self.cap)[:, 0]), c.robot.gripper.width_limits_m[1]
         )
-        self.assertEqual(c.arms, ("right",))
-        self.assertEqual(c.observation_arms, ("left",))
+        self.assertEqual(c.arms, ("left", "right"))
+        self.assertEqual(c.observation_arms, ())
         item = self.spec.parameters["native_instances"][0]
         self.assertIn("Body", item.get("static", []))
         self.assertAlmostEqual(item["initial_body_transforms"]["Cap"][2], 0.0075)

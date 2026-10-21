@@ -1,12 +1,98 @@
-"""Stable cap/box contacts without changing the native marker fit.
+"""L2-01 contact geometry and passive cap retention.
 
 The cap's 241 small hulls and the box's overlapping rim hulls can form
 contradictory contact constraints after a release. For L2-01 use five solid
-box pieces and a convex cap envelope restricted to cap/box contact. The barrel,
-fingers and spring shoes still interact with the original cap geometry.
+box pieces and separate cap envelopes for support and robot contact. The barrel
+and spring shoes still use the hollow cap; fingers touch a continuous exterior.
 """
 
 import numpy as np
+
+
+def refresh_delivered_groups(stage, marker_path, *, simplify=True):
+    """Keep a saved cap/box envelope filtered from all current robot geometry.
+
+    A snapshot's explicit OtherColliders list predates added wrist detail, so
+    rebuild memberships. The optional baseline is for diagnostics only.
+    """
+    from pxr import UsdPhysics
+    repair = None
+    support_repair = None
+    if simplify:
+        support_repair = configure_marker_box_contacts(stage, marker_path, '/World/L2/support_box')
+        configure_marker_robot_contacts(stage, marker_path)
+        from .marker_fit import simplify_delivered_marker
+        repair = simplify_delivered_marker(stage, marker_path)
+    root = marker_path+'/BoxContactGroups'
+    names = {'Support':[], 'NativeCapAndShoes':[], 'CapEnvelope':[], 'OtherColliders':[],
+             'RobotEnvelope':[], 'RobotColliders':[]}
+    for prim in stage.Traverse():
+        if not prim.HasAPI(UsdPhysics.CollisionAPI) or not UsdPhysics.CollisionAPI(prim).GetCollisionEnabledAttr().Get():
+            continue
+        path = str(prim.GetPath())
+        name = ('CapEnvelope' if path == marker_path+'/Cap/BoxContactEnvelope' else
+                'RobotEnvelope' if path == marker_path+'/Cap/RobotContactEnvelope' else
+                'RobotColliders' if simplify and path.startswith('/World/Robots/') else
+                'NativeCapAndShoes' if path.startswith(marker_path+'/Cap/Colliders/') or path.startswith(marker_path+'/Shoe') else
+                'Support' if path.startswith('/World/L2/support_box/') else 'OtherColliders')
+        names[name].append(prim.GetPath())
+    for name, paths in names.items():
+        group = UsdPhysics.CollisionGroup.Define(stage, root+'/'+name)
+        group.GetCollidersCollectionAPI().CreateIncludesRel().SetTargets(paths)
+    if simplify:
+        UsdPhysics.CollisionGroup(stage.GetPrimAtPath(root+'/NativeCapAndShoes')).CreateFilteredGroupsRel().SetTargets(
+            [root+'/Support', root+'/RobotColliders'])
+        UsdPhysics.CollisionGroup(stage.GetPrimAtPath(root+'/RobotEnvelope')).CreateFilteredGroupsRel().SetTargets(
+            [root+'/'+n for n in ('Support','NativeCapAndShoes','CapEnvelope','OtherColliders')])
+        # Explicit shape filters supplement groups, including newly added wrist
+        # geometry. Interior cap walls must not fight the exterior proxy.
+        for path in names['NativeCapAndShoes']:
+            shape = stage.GetPrimAtPath(path)
+            pairs = UsdPhysics.FilteredPairsAPI.Apply(shape)
+            previous = pairs.GetFilteredPairsRel().GetTargets()
+            pairs.CreateFilteredPairsRel().SetTargets(list(dict.fromkeys(previous + names['RobotColliders'])))
+        robot_proxy = stage.GetPrimAtPath(marker_path+'/Cap/RobotContactEnvelope')
+        UsdPhysics.FilteredPairsAPI.Apply(robot_proxy).CreateFilteredPairsRel().SetTargets(
+            [p for name, paths in names.items() if name not in ('RobotEnvelope','RobotColliders') for p in paths])
+    envelope = stage.GetPrimAtPath(marker_path+'/Cap/BoxContactEnvelope')
+    # Make the saved proxy's intended box-only scope explicit at the shape
+    # level as well. It is solid and must never collide with the inserted barrel
+    # or newly added robot shapes; native hollow-cap contacts stay enabled.
+    UsdPhysics.FilteredPairsAPI.Apply(envelope).CreateFilteredPairsRel().SetTargets(
+        names['OtherColliders']+names['NativeCapAndShoes']+names['RobotColliders']+names['RobotEnvelope'])
+    return {**{name:len(paths) for name,paths in names.items()},
+            'revision': 'l201-contact-roles-v3' if simplify else 'source-contact-groups',
+            'envelope_scope':'source support solids only; explicit filtered pairs',
+            'native_barrel_cap_fit_dimensions_preserved':True,
+            'support_repair': support_repair,
+            'robot_cap_contact': ('continuous outer cylinder; internal fit unchanged; robot cannot enter cap cavity'
+                                  if simplify else 'delivered hollow wall hulls'),
+            'contact_repair': repair}
+
+
+def configure_marker_robot_contacts(stage, marker_path):
+    """A single exterior for gripping, isolated from the inserted barrel.
+
+The hollow 16-sector shell is required for cap/neck fit, but a jaw can contact
+several thin sectors and their inner faces simultaneously. The external grip
+uses the measured outer envelope, with the same mass, material and extent.
+This deliberately omits jaw insertion into the cap mouth.
+"""
+    from pxr import Sdf, UsdGeom, UsdPhysics, UsdShade
+    source = UsdGeom.Cylinder(stage.GetPrimAtPath(marker_path+'/Cap/BoxContactEnvelope'))
+    proxy = UsdGeom.Cylinder.Define(stage, marker_path+'/Cap/RobotContactEnvelope')
+    proxy.CreateAxisAttr(source.GetAxisAttr().Get())
+    proxy.CreateRadiusAttr(source.GetRadiusAttr().Get())
+    proxy.CreateHeightAttr(source.GetHeightAttr().Get())
+    proxy.MakeMatrixXform().Set(source.GetLocalTransformation())
+    proxy.CreateVisibilityAttr('invisible')
+    shape = proxy.GetPrim()
+    UsdPhysics.CollisionAPI.Apply(shape).CreateCollisionEnabledAttr(True)
+    material = UsdShade.MaterialBindingAPI(source).ComputeBoundMaterial('physics')[0]
+    UsdShade.MaterialBindingAPI.Apply(shape).Bind(material, materialPurpose='physics')
+    shape.AddAppliedSchema('PhysxCollisionAPI')
+    shape.CreateAttribute('physxCollision:contactOffset', Sdf.ValueTypeNames.Float).Set(.0002)
+    shape.CreateAttribute('physxCollision:restOffset', Sdf.ValueTypeNames.Float).Set(0.)
 
 
 def support_prisms(points, floor_z, top_z, half_opening):
@@ -51,7 +137,7 @@ def support_prisms(points, floor_z, top_z, half_opening):
 
 
 def configure_marker_box_contacts(stage, marker_path, box_path):
-    from pxr import Gf, PhysxSchema, Usd, UsdGeom, UsdPhysics, UsdShade
+    from pxr import Gf, Sdf, Usd, UsdGeom, UsdPhysics, UsdShade
 
     box = stage.GetPrimAtPath(box_path)
     shell = stage.GetPrimAtPath(box_path + "/Visuals/SteppedMoldedShell")
@@ -61,10 +147,11 @@ def configure_marker_box_contacts(stage, marker_path, box_path):
         raise ValueError("Marker support must be fixed/kinematic")
 
     cap = stage.GetPrimAtPath(marker_path + "/Cap")
-    native = [p for p in Usd.PrimRange(cap)
-              if p.HasAPI(UsdPhysics.CollisionAPI)
-              and UsdPhysics.CollisionAPI(p).GetCollisionEnabledAttr().Get()]
-    if not native or any(not p.IsA(UsdGeom.Mesh) for p in native):
+    # Measure the delivered meshes, including disabled decorative top pieces
+    # on a repeated call. Exclude the existing solid box-only envelope.
+    native = [p for p in Usd.PrimRange(stage.GetPrimAtPath(marker_path + '/Cap/Colliders'))
+              if p.HasAPI(UsdPhysics.CollisionAPI) and p.IsA(UsdGeom.Mesh)]
+    if not native:
         raise ValueError("Unexpected native marker-cap collision geometry")
     transforms = UsdGeom.XformCache()
     cap_inverse = np.linalg.inv(np.asarray(transforms.GetLocalToWorldTransform(cap)).T)
@@ -110,7 +197,7 @@ def configure_marker_box_contacts(stage, marker_path, box_path):
         mesh.CreateFaceVertexIndicesAttr([i for f in faces for i in f])
         mesh.CreateVisibilityAttr("invisible")
         shape = mesh.GetPrim()
-        UsdPhysics.CollisionAPI.Apply(shape)
+        UsdPhysics.CollisionAPI.Apply(shape).CreateCollisionEnabledAttr(True)
         UsdPhysics.MeshCollisionAPI.Apply(shape).CreateApproximationAttr("convexHull")
         UsdShade.MaterialBindingAPI.Apply(shape).Bind(box_material, materialPurpose="physics")
         box_shapes.append(shape)
@@ -119,15 +206,15 @@ def configure_marker_box_contacts(stage, marker_path, box_path):
     envelope.CreateAxisAttr("Z")
     envelope.CreateRadiusAttr(radius)
     envelope.CreateHeightAttr(upper - lower)
-    envelope.AddTranslateOp().Set((0, 0, (lower + upper) / 2))
+    envelope.MakeMatrixXform().Set(Gf.Matrix4d().SetTranslate(Gf.Vec3d(0, 0, (lower + upper) / 2)))
     envelope.CreateVisibilityAttr("invisible")
     proxy = envelope.GetPrim()
-    UsdPhysics.CollisionAPI.Apply(proxy)
+    UsdPhysics.CollisionAPI.Apply(proxy).CreateCollisionEnabledAttr(True)
     UsdShade.MaterialBindingAPI.Apply(proxy).Bind(cap_material, materialPurpose="physics")
     for shape in (*box_shapes, proxy):
-        contact = PhysxSchema.PhysxCollisionAPI.Apply(shape)
-        contact.CreateContactOffsetAttr(0.0002)
-        contact.CreateRestOffsetAttr(0.0)
+        shape.AddAppliedSchema('PhysxCollisionAPI')
+        shape.CreateAttribute('physxCollision:contactOffset', Sdf.ValueTypeNames.Float).Set(.0002)
+        shape.CreateAttribute('physxCollision:restOffset', Sdf.ValueTypeNames.Float).Set(0.)
 
     # Only the cap/box pair uses the envelope. In particular, it must NOT fill
     # the cap cavity against the barrel or change what the robot can grasp.
@@ -163,7 +250,8 @@ def configure_marker_box_contacts(stage, marker_path, box_path):
         "cap_radius_m": radius,
         "cap_axial_bounds_m": [lower, upper],
         "native_cap_shapes_retained": len(native),
-        "native_fit_and_finger_contacts_preserved": True,
+        "native_fit_dimensions_preserved": True,
+        "box_envelope_excludes_robot": True,
         "native_mass_inertia_materials_and_springs_preserved": True,
         "source_assets_modified": False,
         "limitation": "Box decorative grooves/inner corner fillets are simplified. Box edges cannot enter the cap cavity/top recess; native barrel-cap fit is unchanged.",

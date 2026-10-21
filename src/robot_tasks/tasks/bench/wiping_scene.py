@@ -35,9 +35,18 @@ class WipingScene(NativeL2Scene):
 
     def __init__(self, backend, config, spec):
         from isaacsim.core.prims import RigidPrim
-        from pxr import UsdGeom
+        from pxr import UsdGeom, UsdShade, Sdf
 
         super().__init__(backend, config, spec)
+        if spec.parameters.get("whiteboard_surface"):
+            material = UsdShade.Material.Define(self.stage, self.root + "/WhiteboardMaterial")
+            shader = UsdShade.Shader.Define(self.stage, self.root + "/WhiteboardMaterial/Shader")
+            shader.CreateIdAttr("UsdPreviewSurface")
+            shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set((0.92, 0.92, 0.92))
+            shader.CreateInput("roughness", Sdf.ValueTypeNames.Float).Set(0.35)
+            material.CreateSurfaceOutput().ConnectToSource(shader.ConnectableAPI(), "surface")
+            surface = self.stage.GetPrimAtPath(self.root + "/board/Visuals/WritingSurface")
+            UsdShade.MaterialBindingAPI.Apply(surface).Bind(material)
         self.centers, self.weights, self.colors = native_ink(
             self.deliveries["green_board_20261008"][0].parent)
         # Replace only the runtime writing surface with the same delivered mask.

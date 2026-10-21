@@ -16,7 +16,9 @@ from ...robots.transforms import pose_transform
 
 @lru_cache(maxsize=1)
 def catalog():
-    return json.loads((PROJECT_ROOT / 'assets/tuojing/l1_scoring_geometry.json').read_text())['props']
+    legacy = json.loads((PROJECT_ROOT / 'assets/tuojing/l1_scoring_geometry.json').read_text())['props']
+    current = PROJECT_ROOT / 'assets/tuojing/video_scoring_geometry.json'
+    return {**legacy, **(json.loads(current.read_text())['props'] if current.exists() else {})}
 
 
 def shapes(name):
@@ -115,23 +117,42 @@ def cavity_fit(prop, transform, tolerance, *, indices=None, receptacle='ripple_p
     return bool(entered and margin >= -tolerance), margin
 
 
-@lru_cache(maxsize=1)
-def band_opening():
-    """64 native inner edges; the common open band plane is z=35 mm."""
+@lru_cache(maxsize=4)
+def band_opening(prop='yellow_visor'):
+    """Inner polygon from native band sectors, including transformed photo variants."""
+    from scipy.spatial import ConvexHull
     planes=[]
-    for shape in shapes('yellow_visor'):
+    for i,shape in enumerate(shapes(prop)):
         if not shape['name'].startswith('Band_'): continue
-        points=np.asarray(shape['points']); ring=points[np.isclose(points[:,2],points[:,2].min(),atol=1e-9)]
-        a,b=ring[np.argsort(np.linalg.norm(ring[:,:2],axis=1))[:2],:2]
-        n=np.array([b[1]-a[1],a[0]-b[0]]); n/=np.linalg.norm(n)
-        if n@a < 0:n=-n
-        planes.append([*n,n@a])
+        points=polyhedron(prop,i)[0]
+        # A merged sector has several inner vertices, sometimes on the same
+        # radial line at different heights. Its two nearest vertices need not
+        # describe the inner edge. Use the actual projected convex hull's
+        # inward-facing support line furthest from the central opening instead.
+        ring=np.unique(np.round(points[:,:2],9),axis=0)
+        equations=ConvexHull(ring).equations
+        face=equations[np.argmax(equations[:,2])]
+        if face[2] <= 0:
+            raise ValueError('Band collider blocks the central opening: '+shape['name'])
+        planes.append([-face[0],-face[1],face[2]])
     return np.asarray(planes)
 
 
-def hook_geometry(rack_pose):
-    shape=shapes('wooden_rack')[0]
+def hook_geometry(rack_pose, prop='wooden_rack'):
+    shape=shapes(prop)[0]
     transform=pose_transform(rack_pose) @ np.asarray(shape['transform'])
+    if shape['kind'] == 'mesh':
+        points = np.asarray(shape['points'])
+        centre = points.mean(axis=0)
+        _, _, axes = np.linalg.svd(points-centre, full_matrices=False)
+        axis = axes[0]
+        projected = (points-centre) @ axis
+        radius = float(np.linalg.norm((points-centre)-projected[:,None]*axis,axis=1).max())
+        # Rounded rod end centres; retain the actual mesh's length/diameter.
+        ends = [centre + axis*(value + sign*radius)
+                for value, sign in ((projected.min(), 1), (projected.max(), -1))]
+        a, b = [transform[:3,:3] @ point + transform[:3,3] for point in ends]
+        return a, b, radius
     axis=transform[:3,2]; centre=transform[:3,3]
     return centre-axis*shape['height']/2, centre+axis*shape['height']/2, shape['radius']
 

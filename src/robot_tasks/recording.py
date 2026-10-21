@@ -28,7 +28,7 @@ class EpisodeRecorder:
     def __init__(self, root: Path, config: TaskConfig, mode: str, step_limit: int,
                  *, run_directory: Path | None = None):
         name = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-        self.directory = run_directory or root / f"{config.task_id}_{mode}_{name}_{uuid4().hex[:8]}"
+        self.directory = run_directory or root / f"{config.experiment_id}_{mode}_{name}_{uuid4().hex[:8]}"
         self.directory.mkdir(parents=True, exist_ok=run_directory is not None)
         if any(p.name != "process.log" for p in self.directory.iterdir()):
             raise ValueError("Episode output must be a fresh directory")
@@ -43,6 +43,9 @@ class EpisodeRecorder:
         (self.directory / "config.toml").write_bytes(config_bytes)
         # The task file alone no longer describes the effective workflow.
         write_json(self.directory / "effective_config.json", config.raw)
+        if config.raw["task"].get("initial_layout"):
+            from .initial_layout import layout
+            write_json(self.directory / "initial_layout.json", layout(config.raw["task"]))
         if config.workflow_settings is not None:
             write_json(self.directory / "workflow_profile.json", config.workflow_settings)
         robot_profile_bytes = config.robot.source.read_bytes()
@@ -58,7 +61,8 @@ class EpisodeRecorder:
             for p in sorted(package.rglob("*.py"))
         }
         write_json(self.directory / "manifest.json", {
-            "task_id": config.task_id, "mode": mode,
+            "task_id": config.experiment_id, "mode": mode,
+            **({"base_task_id": config.task_id} if config.experiment_id != config.task_id else {}),
             "evidence_type": "framework_dry_run" if mode == "dry_run" else "simulation_attempt",
             "mock": mode == "dry_run", "seed": config.seed, "step_limit": step_limit,
             "config_path": str(config.source), "config_sha256": hashlib.sha256(config_bytes).hexdigest(),

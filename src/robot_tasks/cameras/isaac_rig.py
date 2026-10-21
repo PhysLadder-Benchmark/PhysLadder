@@ -34,11 +34,10 @@ def validate_existing_camera(stage, spec, parent):
     ha, va = camera.GetHorizontalApertureAttr().Get(), camera.GetVerticalApertureAttr().Get()
     if not np.isclose(ha / va, w / h, rtol=1e-4):
         raise ValueError(f"{spec.name}: render resolution must preserve the USD camera aspect ratio")
-    # Delivered pinhole lenses use centred principal points; do not silently
-    # interpret an offset using a different renderer convention.
-    if camera.GetHorizontalApertureOffsetAttr().Get() or camera.GetVerticalApertureOffsetAttr().Get():
-        raise ValueError(f"{spec.name}: offset lenses require an explicit calibration adapter")
-    intrinsic = (w * focal / ha, h * focal / va, w / 2, h / 2)
+    # USD aperture offsets shift the frustum. Pixel y points down while USD
+    # camera y points up; keep this sign when exporting OpenCV intrinsics.
+    ox, oy = camera.GetHorizontalApertureOffsetAttr().Get(), camera.GetVerticalApertureOffsetAttr().Get()
+    intrinsic = (w * focal / ha, h * focal / va, w * (.5-ox/ha), h * (.5+oy/va))
     if not np.allclose(intrinsic, spec.intrinsics, rtol=1e-6, atol=1e-4):
         raise ValueError(f"{spec.name}: camera profile intrinsics differ from the supplied USD")
     cache = UsdGeom.XformCache()

@@ -1,10 +1,10 @@
-"""L1 props in the delivered laboratory, with explicit retained proxy exceptions."""
+"""L1 props in the delivered laboratory."""
 
 import math
 from dataclasses import replace
 
-from ..l1.specs import BLUE, GREEN, GREY, RED, Article, box, pose
-from .geometry import cup_parts, cylinder, design, translated
+from ..l1.specs import BLUE, GREY, Article, box, pose
+from .geometry import cup_parts, design
 from .spec import BenchSpec
 
 
@@ -86,39 +86,6 @@ def plug():
                     "opening": (0.0026, 0.0082), "tongue": (0.0015, 0.0063),
                     "floor": table_z + 0.01315, "rim": table_z + 0.03015,
                     "seat_gap_m": 0.001, "contact_tolerance_m": 0.00015},
-    )
-
-
-def key():
-    parts = (
-        box("blade", (0.010, 0.018, 0.040), (0, 0, 0.020), GREY),
-        box("bow", (0.023, 0.042, 0.032), (0, 0, 0.056), (0.95, 0.65, 0.08)),
-    )
-    # Support blade in a shallow open cradle; bow is exposed, never attached.
-    from ..l1.specs import rectangular_well
-
-    source = translated(
-        rectangular_well((0, 0), (0.017, 0.026), 0.024, 0.004),
-        (-0.10, 1.20, 0.78),
-        "source_",
-    )
-    target = translated(
-        rectangular_well((0, 0), (0.018, 0.028), 0.032, 0.004), (0.07, 1.14, 0.78), "lock_"
-    )
-    a = Article("key", parts, pose(-0.10, 1.20, 0.785), pose(0.07, 1.14, 0.784), 0.028)
-    return BenchSpec(
-        replace(design("L1-05", "钥匙插锁（柄部外露）", [a], source + target, friction=0), version="l1-05-tuojing-layout-proxy-v1"),
-        facts="The yellow key bow protrudes above its grey source cradle. Lift it out, align the flat blade with the fixed target keyway and insert without turning. The bow may remain held at completion.",
-        limitations="Enlarged flat dummy key/keyway; no lock tumblers or unlocking mechanism.",
-        parameters={
-            "table_z": 0.78,
-            "socket_xy": (0.07, 1.14),
-            "opening": (0.018, 0.028),
-            "tongue": (0.010, 0.018),
-            "floor": 0.784,
-            "rim": 0.816,
-            "depth": 0.028,
-        },
     )
 
 
@@ -234,7 +201,6 @@ def flower():
 BUILDERS = {
     "L1-01": marker,
     "L1-03": plug,
-    "L1-05": key,
     "L1-07": hat,
     "L1-08": cups,
     "L1-09": flower,

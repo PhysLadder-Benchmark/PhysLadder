@@ -161,17 +161,18 @@ class PhotoLayoutTests(unittest.TestCase):
         p = np.asarray(point) - eye
         return np.array([p @ right, p @ up]) / (p @ forward)
 
-    def test_triangle_starts_above_right_of_generous_target(self):
+    def test_current_l314_has_two_stacked_books_and_two_active_arms(self):
+        from robot_tasks.tasks.bench.arm_selection import resolve_bench_spec
+
         entry, cfg = resolve_task("L3-14")
         entry.factory.prepare_config(cfg)
-        spec = build_spec(cfg.task_id)
-        a = spec.design.articles[0]
-        self.assertTrue(
-            np.all(self.screen(cfg, a.initial[:3]) > self.screen(cfg, a.goal[:3]))
-        )
-        self.assertEqual(cfg.arms, ("right",))
-        self.assertEqual(cfg.observation_arms, ("left",))
-        self.assertEqual(a.asset, "tuojing:board_eraser")
+        spec = resolve_bench_spec(cfg.raw["task"], cfg.robot)
+        articles = {a.name: a for a in spec.design.articles}
+        self.assertEqual(set(articles), {"lower_book", "upper_book"})
+        self.assertGreater(articles["upper_book"].initial[2], articles["lower_book"].initial[2])
+        self.assertEqual(cfg.arms, ("right", "left"))
+        self.assertEqual(cfg.observation_arms, ())
+        self.assertEqual(spec.parameters["boundary_reference"], "both_books")
 
     def test_pan_mouth_faces_two_blocks_and_brush_on_image_right(self):
         entry, cfg = resolve_task("L3-15")

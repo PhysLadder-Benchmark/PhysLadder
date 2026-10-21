@@ -1,0 +1,32 @@
+{
+  "product": "雅谷 笔王H 成膜白板笔 黑色",
+  "primary_visual_reference": "user_reference.jpg",
+  "web_sources": [
+    {
+      "url": "https://www.jd.com/jiage/670f8d6e64958be316f.html",
+      "evidence": "Search listing names 雅谷成膜白板笔, 雅谷笔王H, 黑色 variants; detailed page fetch unavailable"
+    },
+    {
+      "url": "https://www.jd.com/zuozhe/670ece31bc367fa3b0a.html",
+      "evidence": "Search listing names 雅谷（YAKUDO）成膜白板笔 and black variant"
+    },
+    {
+      "url": "https://tao.hooos.com/goods_mPVNeV02cktJDOVpraDhzzRUot3-4RDrrQFyVvX405YTk.html",
+      "evidence": "Search listing names 雅谷白板笔王成膜型; detailed page fetch unavailable"
+    }
+  ],
+  "search_limitations": "Browser automation timed out. Search image results largely unrelated; no verified complete rear/360-degree photos found. User photo is the principal visual authority.",
+  "texture_method": "Built-in imagegen using product photo and previous UV texture layout; not an official manufacturer texture",
+  "known_approximation": "Rear brand panel and typography placement reconstructed, not verified against rear photograph",
+  "scope": "L1-01 label diffuse texture and RGB gain only; mesh/collision/pose unchanged",
+  "changed_attributes": [
+    "/World/Household/marker/Body/Looks/Label/Texture.inputs:file",
+    "/World/Household/marker/Body/Looks/Label/Texture.inputs:scale"
+  ],
+  "render_fix": {
+    "task": "L1-01",
+    "setting": "/rtx/translucency/worldEps",
+    "value_m": 1e-05,
+    "reason": "40 micrometre gap between opaque PrintedWrap and transparent BarrelSubstrate; larger ray offset skips label"
+  }
+}

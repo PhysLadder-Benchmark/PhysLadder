@@ -154,6 +154,8 @@ def snapshot(backend):
     callback = getattr(backend, "planning_payloads", None)
     return {
         "obstacles": backend._planner_static_scene,
+        "allow_start_collision_retreat": getattr(backend, "environment_report", {}).get("task_id") == "L3-15",
+        "unexpected_contact_blocked": bool(getattr(getattr(backend, "collision_monitor", None), "blocked", None)),
         "payloads": callback() if callback is not None else {},
         "table_surface_z_m": getattr(backend, "environment_report", {}).get("table_surface_z_m", 0.0),
         "information_source": "privileged simulator collision geometry; never task targets or score",

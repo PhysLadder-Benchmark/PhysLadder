@@ -11,6 +11,21 @@ from robot_tasks.runtime import configure_windows_storage, snapshot_storage_conf
 
 
 class RuntimeConfigTests(unittest.TestCase):
+    def test_remote_generated_asset_cache_does_not_change_scene_settings(self):
+        from dataclasses import asdict
+        from robot_tasks.backends.settings import SimulationSettings
+        from robot_tasks.registry import resolve_task
+
+        _, config = resolve_task('L2-03')
+        with patch.dict(os.environ, {}, clear=True):
+            baseline = asdict(SimulationSettings.from_config(config))
+        for machine in ('worker_3', 'worker_7'):
+            cache = self.root / machine / 'generated_assets'
+            with patch.dict(os.environ, {'GPT_BENCHMARK_ASSET_CACHE': str(cache)}):
+                settings = asdict(SimulationSettings.from_config(config))
+            self.assertEqual(settings.pop('asset_directory'), cache)
+            self.assertEqual(settings, {k: v for k, v in baseline.items() if k != 'asset_directory'})
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)

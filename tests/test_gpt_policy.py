@@ -347,6 +347,13 @@ class GPTPolicyTests(unittest.TestCase):
         self.assertEqual(policy.last_exchange["reasoning_summary"], ["Inspect the handle before pulling."])
         self.assertNotIn("Inspect the handle before pulling.", json.dumps(list(policy.history)))
 
+    def test_zero_call_cap_keeps_generating_after_100_calls(self):
+        policy = GPTPolicy(self.config, replace(SETTINGS, max_calls=0), client=self.client)
+        policy.calls = 100
+        policy.act(self.context)
+        self.assertEqual(policy.calls, 101)
+        self.assertEqual(self.client.generate.call_count, 1)
+
     def test_history_bounded_and_reset_clears_budget(self):
         policy = GPTPolicy(self.config, replace(SETTINGS, max_calls=4), client=self.client)
         for _ in range(4):

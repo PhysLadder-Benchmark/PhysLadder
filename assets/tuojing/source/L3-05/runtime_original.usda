@@ -1,0 +1,19 @@
+#usda 1.0
+(
+    subLayers = [
+        @runtime_aligned.usdc@
+    ]
+)
+
+over "World"
+{
+    over "L2"
+    {
+        over "anchor_assembly"
+        {
+            matrix4d xformOp:transform:original_layout = ( (0, -1.734723475976807e-18, -1, 0), (0.01788904572659282, 0.9998399782180106, -1.734723475976807e-18, 0), (0.9998399782180106, -0.01788904572659282, 0, 0), (0.05707198548327019, 1.136351554158607, 0.958805, 1) )
+            uniform token[] xformOpOrder = ["xformOp:transform:original_layout"]
+        }
+    }
+}
+

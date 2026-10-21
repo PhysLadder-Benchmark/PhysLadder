@@ -1,0 +1,37 @@
+[
+  {
+    "case": "motion",
+    "status": "passed",
+    "steps": 240
+  },
+  {
+    "case": "axis51",
+    "status": "passed",
+    "steps": 60
+  },
+  {
+    "case": "fov60",
+    "status": "passed",
+    "steps": 60
+  },
+  {
+    "case": "fov85",
+    "status": "passed",
+    "steps": 60
+  },
+  {
+    "case": "wrist_left",
+    "status": "passed",
+    "steps": 120
+  },
+  {
+    "case": "wrist_right",
+    "status": "passed",
+    "steps": 120
+  },
+  {
+    "case": "main",
+    "status": "passed",
+    "steps": 120
+  }
+]

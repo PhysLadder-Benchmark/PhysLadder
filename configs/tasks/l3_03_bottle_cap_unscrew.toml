@@ -4,12 +4,16 @@ schema_version = 2
 workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
-profile = "../robots/r5_tuojing_lab.toml"
-active_arms = ["right"] # Real skill LEFT (can0) is on overview RIGHT.
+profile = "../robots/r5_video_20261015.toml"
+active_arms = ["left", "right"]
 
-observation_arms = ["left"]
+observation_arms = []
 
 [simulation]
+# Preserve the established L3 controller profile. GPU selection is a launch option.
+robot_gravity_compensation = false
+cartesian_completion_tolerance_m = 0.005
+gpu_dynamics = true
 environment = "tuojing_lab_v4"
 camera_profile = "../cameras/r5_tuojing_lab.toml"
 asset_directory = "../../build/tuojing_lab"
@@ -32,8 +36,14 @@ model_config = "../models/gpt.toml"
 return_home = false
 
 [task]
+scene_delivery = "video_20261015"
+prompt_protocol = "feishu_english_20261015_v1"
+reference_document = "https://my.feishu.cn/docx/QK4EdOD3hotgp4x782ycgoyyn6g"
+reference_sheet_id = "KyMjZ7"
+reference_sheet_revision = 324
+reference_sheet_row = 24
 id = "L3-03"
-name = "固定瓶身旋下瓶盖"
+name = "固定瓶身旋下瓶盖并抬离瓶口"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented_proxy"
@@ -41,13 +51,14 @@ implementation = "household"
 launch_command = "python tools/launch.py run L3-03 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L3-03 --gui"
 instruction = """
-The square Oriental Leaf bottle stands at the centre between both arms and is FIXED to the table. RIGHT unscrews the loose cap counterclockwise as seen from above; LEFT only observes. No support-hand grasp is needed. Body width approximately 52 mm, cap diameter 42 mm. The cap is pre-loosened but still threaded, with 9 mm lead per turn. Complete the task as soon as the cap is fully detached from the neck. Keeping it held is allowed; no additional lift height, placement, release or return home is required. Do not try to move the fixed bottle.
-
-Use current RGB views and measured robot feedback. First identify the objects and make a short plan, then execute and verify each physical subgoal. If an object did not follow the gripper, correct the grasp before continuing. Reobserve after contact; do not infer success from a commanded pose. There is no automatic grasp, reset, release or return-home action.
+The bottle body is fixed to the table. Unscrew the cap with the right arm, then lift the cap 3–5 cm away from the bottle opening.
 """
 
 # Chinese setup/props description; final task attribute.
 description = """
-更新为方形东方树叶空瓶外观资产，竖直放两臂中间，瓶身按本轮要求固定；这是相对真机双臂扶瓶的明确简化。第三视角右臂（对应真机左臂）旋下预松瓶盖，第三视角左臂只观察；确认瓶盖完全脱离瓶口即成功，允许继续夹持，不额外要求提离30 mm或放桌。保持原7.5 mm/300°预松条件，不测试紧盖启动力矩。资产虽是空瓶外观，原生瓶身质量仍358 g，未认作实测空瓶质量。
-确认完全分离即结束，不要求放下、释放或双臂回位。资产来源：飞书《GPT6评测任务及资产管理》2026-10-11下载包。
+Complete 2026-10-15 assets: room, table, robot mounts, lighting and task props. Robot initial joints and gripper openings follow the per-task video-visible setup. All camera views use the shared L3-03 rig. Prop placements follow the delivered video reconstruction. Task left/right use the robot perspective; overview-image left/right are reversed. No older individual prop is imported. Physical parameters remain uncalibrated.
 """
+
+[execution]
+model_budget_basis = "completed_generations"
+retry_model_errors = true

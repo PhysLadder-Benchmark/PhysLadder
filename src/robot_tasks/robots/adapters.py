@@ -71,6 +71,8 @@ class R5Adapter(RobotAdapter):
         self.settling = SettlingWindow()
         self.tracking_time_s = 0.0
         self.collision_stop = None
+        self.gravity_compensation = False
+        self.cartesian_completion_tolerance_m = 0.001
 
     def initialize(self, backend: Backend, config: TaskConfig) -> None:
         from ..backends.isaacsim import IsaacSimBackend
@@ -81,6 +83,7 @@ class R5Adapter(RobotAdapter):
                 "R5Adapter requires IsaacSimBackend; it never connects to real hardware"
             )
         self.config, self.backend = config, backend
+        self.cartesian_completion_tolerance_m = backend.settings.cartesian_completion_tolerance_m
         self.execution = ExecutionSettings.from_config(config)
         from .kinematics import R5Kinematics
         from ..planning.client import PlannerClient
@@ -120,9 +123,17 @@ class R5Adapter(RobotAdapter):
         self.pending_grippers.clear()
         self.motion_arms.clear()
         self.motion_stable_s = 0.0
+        self.gravity_compensation = self.backend.settings.robot_gravity_compensation
+        self.backend.scene_report["arm_tracking"] = {
+            "gravity_compensation": ("live generalized gravity forces on six arm joints only"
+                                     if self.gravity_compensation else "disabled by simulation profile"),
+            "cartesian_completion_tolerance_m": self.backend.settings.cartesian_completion_tolerance_m,
+            "gravity_retained_for_robot_and_objects": True,
+        }
         ordered = profile.joint_names + profile.gripper.joint_names
         limits = {limit.joint: limit for limit in profile.operating_limits}
-        width = sum(profile.gripper.width_limits_m) / 2
+        from ..video_delivery import initial_gripper_width
+
         self.backend.scene_report["gripper_execution"] = {
             "protocol": "rate_limited_drive_reference_v1",
             "joint_reference_speed_m_s": {n: limits[n].velocity for n in profile.gripper.joint_names},
@@ -130,6 +141,8 @@ class R5Adapter(RobotAdapter):
             "scope": "Limits commanded reference speed; contact impulses can cause measured velocity transients.",
         }
         for mount in profile.mounts:
+            width = initial_gripper_width(self.config, mount.name,
+                                          sum(profile.gripper.width_limits_m) / 2)
             arm = self.instances[mount.name]
             actual = tuple(arm.dof_names)
             if len(actual) != len(ordered) or set(actual) != set(ordered):
@@ -288,8 +301,25 @@ class R5Adapter(RobotAdapter):
             raise
         self.collision_stop = None
         monitor = getattr(self.backend, "collision_monitor", None)
+        release_arm = None
+        if (monitor is not None and getattr(monitor, "allow_actor_recovery", False)
+                and monitor.blocked and len(action.commands) == 1):
+            command = action.commands[0]
+            measured = states[command.arm].finger_positions_m
+            goal = planned[command.arm][6:]
+            if (command.kind == 'gripper' and monitor.blocked.get('arm') == command.arm
+                    and all(target >= actual - 1e-5 for target, actual in zip(goal, measured))
+                    and sum(goal) > sum(measured) + .001):
+                release_arm = command.arm
+                # A release exemption never carries a stale Cartesian/joint
+                # demand along with it. Both arm chains hold measured joints.
+                limits = [next(v for v in self.config.robot.operating_limits if v.joint == joint)
+                          for joint in self.config.robot.joint_names]
+                planned = {name: bounded_measured_joints(states[name].joint_positions_rad, limits) + target[6:]
+                           for name, target in planned.items()}
+                cartesian_targets.clear()
         if monitor is not None:
-            monitor.begin_action(allow_retreat=bool(paths))
+            monitor.begin_action(allow_retreat=bool(paths), release_arm=release_arm)
         self.pending_grippers = {}
         self.paths = paths
         self.path_time_s = 0.0
@@ -361,9 +391,23 @@ class R5Adapter(RobotAdapter):
                 measured = self.instances[name].get_joint_positions(joint_indices=self.indices[name])[6:]
                 fingers = self.stable_grips[name].advance(goal[6:], measured, dt_s)
             reference = goal[:6] + fingers
-            if reference != previous:
+            efforts = None
+            if self.gravity_compensation:
+                # Compensate the arm's static sag without disabling gravity or
+                # changing finger contact forces. PhysX supplies torques for
+                # the measured pose, not task/object goals.
+                gravity = self.instances[name]._articulation_view.get_generalized_gravity_forces(
+                    joint_indices=self.indices[name][:6])
+                values = np.asarray(gravity, dtype=float).reshape(-1)
+                if values.shape != (6,) or not np.isfinite(values).all():
+                    raise InvalidSimulationState(f"{name}: invalid gravity compensation")
+                effort_limits = np.array([next(x.effort for x in self.config.robot.operating_limits
+                                              if x.joint == joint) for joint in self.config.robot.joint_names])
+                efforts = np.r_[np.clip(values, -effort_limits, effort_limits), 0., 0.]
+            if reference != previous or efforts is not None:
                 self.instances[name].apply_action(ArticulationAction(
-                    joint_positions=np.array(reference), joint_indices=self.indices[name]))
+                    joint_positions=np.array(reference), joint_efforts=efforts,
+                    joint_indices=self.indices[name]))
                 self.drive_targets[name] = reference
 
     def before_physics_step(self, dt_s: float) -> None:
@@ -538,7 +582,7 @@ class R5Adapter(RobotAdapter):
                 self.tracking_time_s, name, state.joint_positions_rad + state.finger_positions_m)
             arm_settled = all(abs(v) < 0.02 for v in state.joint_velocities_rad_s) or window_arm
             cartesian_reached = name not in tcp_errors or (
-                position_error < 0.005 and orientation_error < 0.02
+                position_error < self.cartesian_completion_tolerance_m and orientation_error < 0.02
             )
             desired_width = joints_to_width(
                 self.config.robot, self.pending_grippers.get(name, target[6:])
