@@ -1,4 +1,4 @@
-"""Opt-in, deterministic prop poses applied once before physics initialization.
+"""Deterministic initial placements and declared physical setup repairs.
 
 The original delivery, robot, cameras, materials and task rules remain intact.
 No pose writes occur during manipulation. Reset and geometric scoring use the
@@ -57,6 +57,9 @@ def scene_record(task):
         from .tasks.bench.initial_placement import scene_record as l1_scene_record
         return l1_scene_record(task)
     original = scenes()[task.get("scene_variant", task["id"])]
+    if task["id"] == "L3-01":
+        from .tasks.bench.bottle_contacts import initial_record
+        return initial_record(original)
     selected = layout(task)
     if selected is None:
         return original
@@ -72,15 +75,19 @@ def scene_record(task):
 
 
 def apply_record_to_stage(stage, task, row):
-    """Apply L1 runtime placement only.
+    """Apply runtime placements and the bottle's declared closure repair.
 
-    L3 records describe transforms already baked into their USD layers. Their
-    provenance uses the same metadata key but is not an L1 runtime move plan.
+    L3 placement perturbations are already baked into their USD layers. Their
+    provenance is not an L1 runtime move plan. Only the bottle closure receives
+    an additional relative transform, shared by both placements.
     L2 placement is applied separately by the backend's apply_stage hook.
     """
     if task["id"].startswith("L1-"):
         from .tasks.bench.initial_placement import apply_to_stage
         apply_to_stage(stage, row)
+    elif task["id"] == "L3-01":
+        from .tasks.bench.bottle_contacts import apply_initial_pose
+        apply_initial_pose(stage, row)
 
 
 def apply_spec(spec, task):

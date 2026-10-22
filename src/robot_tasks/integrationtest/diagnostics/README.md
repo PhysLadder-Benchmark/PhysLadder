@@ -100,6 +100,20 @@ python -m robot_tasks.integrationtest.diagnostics.l3_asset_probe L3-05 --output 
 
 当前 L3-05 接触检查使用固定簸箕，只注入用于检验篮内范围与承托的方块初态；不代表扫入成功。L3-01 的 `l3_asset_probe` 使用临时同轴夹具和有限扭矩/拉力校验盖的物理退出，不会进入生产场景。
 
+L3-01 瓶盖被动接触回归（当前原版和扰动版）：
+
+```bash
+python -m robot_tasks.integrationtest.diagnostics.bottle_contact L3-01 --output build/bottle_contact/original
+python -m robot_tasks.integrationtest.diagnostics.bottle_contact L3-01_variant01 --output build/bottle_contact/variant01
+```
+
+使用 Isaac Python 串行运行，检查 `bottle_contact.json` 和 `result.json` 均为通过。
+前者包含静置、0.05 N 侧推、1/5 N 下压、0.15 N 直接上拉、旋出及瓶口上方 5 cm
+下落的状态；后者检查生产复位、三路图像与初始评分。测试的外力和力矩只存在于
+这个独立诊断中；旋出用的强力矩脉冲不代表真实夹爪动作或实测开盖扭矩。
+诊断没有模型调用，也不证明机器人抓持稳定或任务成功。接触修订说明见
+[瓶盖物理设置](../../../../docs/l3_01_bottle_unscrew.md)。
+
 ### L3-02 原生松螺母（2026-10-09）
 
 当前任务是双臂旋下预松螺母，旧的粗螺丝旋入诊断不再作为任务入口。

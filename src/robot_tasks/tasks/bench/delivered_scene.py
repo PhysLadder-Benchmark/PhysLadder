@@ -54,6 +54,10 @@ class DeliveredScene(NativeL2Scene):
         from ...initial_layout import scene_record, apply_record_to_stage
         row = scene_record(config.raw['task'])
         apply_record_to_stage(self.stage, config.raw['task'], row)
+        bottle_contacts = None
+        if config.task_id == 'L3-01':
+            from .bottle_contacts import configure
+            bottle_contacts = configure(self.stage, self.root + '/bottle_assembly')
         leaf_records = row.get('physical_repairs', {}).get('flower_passive_leaves', {}).get('leaf_bodies', [])
         self.flower_leaf_paths = [part['path'] for part in leaf_records]
         self.flower_leaf_time = None
@@ -159,6 +163,7 @@ class DeliveredScene(NativeL2Scene):
             "arm_roles": config.arm_roles,
             "ground_truth_use": "independent scoring and collision planner; privileged smoke controller only when explicitly invoked",
             "physics_overrides": {"bottle_fixed_by_task_setup": config.task_id == "L3-01",
+                                  "bottle_contacts": bottle_contacts,
                                   "marker_contact_groups_refreshed": marker_filters},
             "reset_auxiliary_dynamic_bodies": [str(body.prim_path) for body,_ in self.aux_bodies],
             "fixture_contact_filters":self.fixture_paths,
