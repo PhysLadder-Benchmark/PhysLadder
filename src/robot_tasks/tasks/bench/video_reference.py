@@ -21,6 +21,8 @@ def apply_delivery(spec, task):
         row = scene_record(task)
     else:
         row = scenes()[task.get("scene_variant", tid)]
+    from .measured_assets import measured_record, marker_axial
+    row = measured_record(row, tid)
     p = {**spec.parameters, "table_z": 0.88, "scene_delivery": DELIVERY,
          "geometry_prefix": "video:", "hold_s": 0.0}
     p.pop("fixed_articles", None)
@@ -84,7 +86,8 @@ def apply_delivery(spec, task):
             p["minimum_travel_m"] = .05
             p["outward_axis_world"] = tuple(pose_transform(row["tracked"]["middle_book"]["pose"])[:3, 0])
         else:
-            p.update(cap_mouth_z=.10625, cap_end_z=.14875)
+            p.update(cap_mouth_z=marker_axial(.10625), cap_end_z=marker_axial(.14875),
+                     body_tip_z=marker_axial(p['body_tip_z']))
     elif tid == "L2-03":
         count = sum(n.startswith('load_') for n in row['tracked'])
         # User acceptance: empty source and at least half received. The English

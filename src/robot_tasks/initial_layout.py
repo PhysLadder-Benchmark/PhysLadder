@@ -56,7 +56,8 @@ def scene_record(task):
     if task["id"].startswith("L1-"):
         from .tasks.bench.initial_placement import scene_record as l1_scene_record
         return l1_scene_record(task)
-    original = scenes()[task.get("scene_variant", task["id"])]
+    from .tasks.bench.measured_assets import measured_record
+    original = measured_record(scenes()[task.get("scene_variant", task["id"])], task["id"])
     if task["id"] == "L3-01":
         from .tasks.bench.bottle_contacts import initial_record
         return initial_record(original)

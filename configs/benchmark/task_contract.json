@@ -109,8 +109,8 @@
       "simulation": "7afa48be88be988c38b419f91c89490485eccd083f272b81cfe84421c67ada42",
       "execution": "6e36701f43b307beb48a41918fa0cae7d74a641d2213df4370458cca624bdfa4",
       "system_instructions": "bac8e972cc42713e4f24d76ae60328b2c41c95edcb49f55092d31d415b1a2a86",
-      "initial_layout": "1d81e73b022b0bbf4fa206e496b223fcdb01d792d2f751b087e9ed1762109e8f",
-      "geometry_and_scoring": "4af58bc0f11c2c8de951940c70fb3caebfad9e813c6926c9f50b443d86cec72f"
+      "initial_layout": "7f747365ae1dd18c094a3511fc2dd53b726b61027849aac35193a8c8c9cdf85e",
+      "geometry_and_scoring": "bcba15ae9ce15915c43661b6f2e6adf4c6aafd1f728909d6ae5b935259766253"
     },
     "L2-01_v3": {
       "configuration": "69d95c9d0fc0726d5f5d775f94f447ec5bd0810d9f270cdc387adca64e87d0e8",
@@ -119,8 +119,8 @@
       "simulation": "7afa48be88be988c38b419f91c89490485eccd083f272b81cfe84421c67ada42",
       "execution": "6e36701f43b307beb48a41918fa0cae7d74a641d2213df4370458cca624bdfa4",
       "system_instructions": "bac8e972cc42713e4f24d76ae60328b2c41c95edcb49f55092d31d415b1a2a86",
-      "initial_layout": "c481bdb9864d677e0b356aa601e2ee359afae042d798e0da85e53ab8f7d6e267",
-      "geometry_and_scoring": "2438bd2d9a879c16488005b3ea99fd2e555e60823418309819938676bf57d5ae"
+      "initial_layout": "03f23f0d7d13ee6939258855d89ae01669966b7d6eb4018d5853bf05d64bb247",
+      "geometry_and_scoring": "d59579b1e690ed671b8d907b9da3d88ff601cf7dcc45c03c093cf29cbf0535c1"
     },
     "L2-02": {
       "configuration": "1ef674391807d81578a4709482b05d571dab0fa6ac573a0c036aadbe218671b5",
@@ -209,8 +209,8 @@
       "simulation": "1c821d6e0e60727030020bfbb7989b2daf90783b6e6cf57cd2dddd515cb35f0b",
       "execution": "6e36701f43b307beb48a41918fa0cae7d74a641d2213df4370458cca624bdfa4",
       "system_instructions": "6029e8e28ef19055e9b31ba200189cf503eaa970244ed3a6843603fe6a027863",
-      "initial_layout": "34ceeee89a10d2ae62e48ffb7c776b0cef19390984986849473b1282d85c4a73",
-      "geometry_and_scoring": "ca2405515cfd4d1b7b3d1c6ba20963dce4b84ee040d592d083009df2e33a1787"
+      "initial_layout": "6843dc3c6e2187e2279939c2057bd1bafcfa1e082f32c4c2fcd86d638658b7ca",
+      "geometry_and_scoring": "9cf38fa16f85d1dd0cb479339917dcc1d10f864e89760ca74dfd9bc1b210c4db"
     },
     "L2-06_v3": {
       "configuration": "62c4ff6949d176c09b11eaaf7cff0ac6407b8ff9bb656d9dcfc47b24a6d7a53d",
@@ -219,8 +219,8 @@
       "simulation": "1c821d6e0e60727030020bfbb7989b2daf90783b6e6cf57cd2dddd515cb35f0b",
       "execution": "6e36701f43b307beb48a41918fa0cae7d74a641d2213df4370458cca624bdfa4",
       "system_instructions": "6029e8e28ef19055e9b31ba200189cf503eaa970244ed3a6843603fe6a027863",
-      "initial_layout": "88223828b4f250de67086423f5a0351aacec37080ceabec471d5c1291847d407",
-      "geometry_and_scoring": "425d40e8b28c53ba2726ea168ed6bd9e124cd1e319ef26c88c7c75e35f11407d"
+      "initial_layout": "1a0d6e503da8e59343009262bfdf592e67d0d02593be2da37d026442cd167216",
+      "geometry_and_scoring": "604066f5114367f4830e4e46ccc263e7ab60d567fc36fda6ca63aa5a2efda5e4"
     },
     "L3-01": {
       "configuration": "b25d2e2d680fd97b50074cf2a206dcb382bd3830b6dd5dcf8367d74af0d239f1",
@@ -328,12 +328,12 @@
     "src/robot_tasks/tasks/bench/__init__.py": "a851f86d44b516359aadbda7ed758e55c37a8d7eb5e74c9a6a1bdd1a2f9e6472",
     "src/robot_tasks/tasks/bench/arm_selection.py": "274fab2fada3f45da9376debbea310a81feb9ac3e9575464b24cb5a8d88aa276",
     "src/robot_tasks/tasks/bench/bottle_contacts.py": "9b5efb2861c1bdec1ca965997c9f388eb9acb4595b380c0e1c9b0284c683ad1c",
-    "src/robot_tasks/tasks/bench/delivered_scene.py": "d9994ac4d567e5d37b8338fb8d2a4e17527bce6cd559059725e590154087b719",
+    "src/robot_tasks/tasks/bench/delivered_scene.py": "a3473a5ebb5824346d44037e7d27571a856a389bb1c7897ef1316683bfe1b20e",
     "src/robot_tasks/tasks/bench/english_reference.py": "51983c831298ca03ea23d004b8fa4abedab49054eedc9bf07b94895e441ce0e8",
     "src/robot_tasks/tasks/bench/evaluation.py": "47dc150f3681b81caecca6147239d74abcae63c6314a84370349f6f99cfda922",
     "src/robot_tasks/tasks/bench/geometry.py": "73d5b756a194458991e5af8a2428754b0c729a0549a5ea57911b8b9d4b6c76a6",
     "src/robot_tasks/tasks/bench/initial_placement.py": "c85d13ca31317af2271a1b16309ed930a07c3758d9c6cf0fb80780945831f5c5",
-    "src/robot_tasks/tasks/bench/jelly.py": "3fe69dedbc26eca8098ce473dc31dd5049e5c8e6dec8ccc63932a6866a81c6c3",
+    "src/robot_tasks/tasks/bench/jelly.py": "e2990ccf0a858e1a3899cbd13886291d661072a002a25940fde9dfbc64d56ab8",
     "src/robot_tasks/tasks/bench/l1.py": "7f3808cee05cbf8ce7b5cba21061807da96377a2b9e5ca323ce12a5dd1cecfe5",
     "src/robot_tasks/tasks/bench/l2.py": "3255759f9489ca7741d110b37815c7b1a49154c9c2aec499fa8ee51f52df6f7a",
     "src/robot_tasks/tasks/bench/l2_protocol.py": "b59ac26d1d26199f59acc45f8da3098d9ba53474b5ff9efafbb08c42857a7c30",
@@ -342,6 +342,7 @@
     "src/robot_tasks/tasks/bench/l3_sweep_physics.py": "689ed4fdc7b206eaf9d04f9437979e233cd13ba888023efe4688bd672f202a47",
     "src/robot_tasks/tasks/bench/marker_contacts.py": "7b6b9462720e4d63a3ed11e24e7ed329c8de42bc637829ecc3b344e224fa3612",
     "src/robot_tasks/tasks/bench/marker_fit.py": "34ddf3bff751c8eb5e40e8ead6c383d6b4884acba9316d9a207cfc43071683ce",
+    "src/robot_tasks/tasks/bench/measured_assets.py": "b2d09c1114d10db0fe3f462df17a20d2bbccd83a702a15efd8c91b551522080a",
     "src/robot_tasks/tasks/bench/native_geometry.py": "e6b5a78099ca2bb3cf18afc180d303e6d06c2eb86defe473a6fee0be5f9666dc",
     "src/robot_tasks/tasks/bench/native_l2.py": "de0da33035298441b4bb588fdb80a961763c0c7f90052974b508fe070342928b",
     "src/robot_tasks/tasks/bench/native_l2_specs.py": "95e31c62fb2658e10a81020f0c1bca6291d49cdd4d5fd10c9ee63a22359789de",
@@ -362,7 +363,7 @@
     "src/robot_tasks/tasks/bench/startup_settling.py": "c772b23270eda4401f98d72e557305c7bc1ddae7233c8dc6be23ee22aef7ff0b",
     "src/robot_tasks/tasks/bench/surface_distance.py": "449ea5cc7c360eeeedb989c564e8cab3447038fdb882fe81b4f85aa5dcba79bf",
     "src/robot_tasks/tasks/bench/task.py": "e6f1aecbf47e93c35f3d5555e3845b9a05422dd2849850c2f1b99685140d425a",
-    "src/robot_tasks/tasks/bench/video_reference.py": "e5616c4f343d28c0a163c627644edac4cb03325f26b46414528316a864a4ee33",
+    "src/robot_tasks/tasks/bench/video_reference.py": "18a34ae12b9d6df9aa2c0b94cf7a99253b36fb75ad67c721cf95a620aac7864e",
     "src/robot_tasks/tasks/bench/wiping.py": "8f516f4c2a51904ae645e9bdeddfe72e3b17bdb1847003a38738b628c575e79d",
     "src/robot_tasks/tasks/bench/wiping_scene.py": "6d1f8caaf9a172066ad8482f9c4f8c6267000a17ab4cd02cfacb65f4c326bc3c",
     "src/robot_tasks/tasks/completion.py": "88ecfd9308a29c74740f06d26e1d1682282f6795b872d838792d41a26e48c78f",
@@ -566,7 +567,7 @@
     "configs/task_references/video_visual_setup_history/facdfbae425162b38982aeb33c9dc636ff205d3c00c14b67662d930a572cc0d9.json": "facdfbae425162b38982aeb33c9dc636ff205d3c00c14b67662d930a572cc0d9",
     "configs/task_references/video_visual_setup_history/fbc74493ce9b43df7af2bdc7813d9dc466b4bee0839bbe9506b1c64c7595a0b5.json": "fbc74493ce9b43df7af2bdc7813d9dc466b4bee0839bbe9506b1c64c7595a0b5",
     "configs/task_references/view_pose_landmarks_20261015.json": "a2cb0bf282b8ac98104f23696eb01dd3a0a40f6d53729acdb902a07c3901d653",
-    "src/robot_tasks/initial_layout.py": "77079396ac97336d39db4d8177c6d2bacbca8e9c2824d554864a5bdc93e57724",
+    "src/robot_tasks/initial_layout.py": "87993ccb5f004711c4945367ddc99574d357daabba6c245ddda1714bc2d2741b",
     "src/robot_tasks/config.py": "55660e284af7d4f1cc5061f74378b084eab7c782fc7dbccd57d196b1868c87b3",
     "src/robot_tasks/execution.py": "7bdd0c862cf33c26967db2918dd0c69ffc27000fb03793127bf8beee6eca590f",
     "src/robot_tasks/runner.py": "72491ed8af42f30da8b77b7338ab1f3b3b44226233171901e1211edcfebfd873",

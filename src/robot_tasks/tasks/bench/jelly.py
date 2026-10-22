@@ -11,6 +11,7 @@ from ...video_delivery import scenes
 from .native_l2_specs import orange
 from .orange_scene import OrangeScene
 from .orange_evaluation import FINGER_ARM_ORDER
+from .measured_assets import JELLY_MASS_KG, calibrate_jelly
 
 
 @lru_cache(maxsize=1)
@@ -26,13 +27,13 @@ def jelly():
     prop, support, pedestal = row['jelly'], row['l2_support_measurement'], row['fixtures'][0]
     article = replace(base.design.articles[0], name='jelly', initial=tuple(prop['pose']),
                       goal=tuple(prop['pose']), asset='delivery:jelly',
-                      asset_bounds=tuple(map(tuple, prop['bounds'])), mass=prop['mass'])
+                      asset_bounds=tuple(map(tuple, prop['bounds'])), mass=JELLY_MASS_KG)
     instruction = reference['simulation_prompt_en']
     return replace(base, design=replace(base.design, task_id='L2-06',
         name='果冻抬升并放回', articles=(article,), fixtures=(),
         instruction=instruction, version='l2-08-feishu-lift-return-v2'),
         mechanism='native_fem_jelly_lift', facts='',
-        limitations='Supplied gelatin mesh and PhysX FEM material: E=3 kPa, Poisson ratio 0.45, density 1030 kg/m3, friction 0.6. Grasp, lift and placement are geometric proxies. Deformation is diagnostic; the source English goal does not require a damage measurement. No grasp attachment or forced pose changes.',
+        limitations='Supplied gelatin mesh and PhysX FEM material: E=3 kPa, Poisson ratio 0.45, friction 0.6. Total FEM mass is calibrated to the user-confirmed 26.4 g net weighing, overriding density-derived mass. Grasp, lift and placement are geometric proxies. Deformation is diagnostic; the source English goal does not require a damage measurement. No grasp attachment or forced pose changes.',
         parameters={**base.parameters, 'soft_object_name':'jelly',
             'soft_asset':'gelatin_cup_jelly', 'scoring_protocol':reference['protocol'],
             'lift_m':goal['minimum_lift_m'], 'max_lift_m':goal['maximum_lift_m'],
@@ -57,6 +58,7 @@ class JellyScene(OrangeScene):
         self.visual = self.collision = self.stage.GetPrimAtPath(self.path+'/Jelly')
         if not self.visual:
             raise ValueError('Supplied red jelly mesh is missing')
+        measurement = calibrate_jelly(self.stage)
         self.initial = {'jelly': self.design.articles[0].initial}
         self.placement = self.design.articles[0].initial
         self.previous = self.cached = None
@@ -91,6 +93,7 @@ class JellyScene(OrangeScene):
             'initial_poses':self.initial,'object_attachment':False,
             'assets':[scenes()['L2-06']['derived_contents']],
             'native_physical_material_preserved':True,
+            'measurement_calibration': measurement,
             'render_material_adapter':scenes()['L2-06']['jelly']['render_adapter'],
             'soft_contact_measurement':'FEM collision vertices to finger triangle surfaces; proximity, not force',
             'deformation':'95th-percentile principal element strain; diagnostic only'}
