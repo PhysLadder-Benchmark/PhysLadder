@@ -61,15 +61,17 @@ def main():
                     name == path or name.startswith(path + "/") or path.startswith(name + "/")):
                 UsdGeom.Imageable(prim).MakeInvisible()
         root = UsdGeom.Xformable(stage.GetPrimAtPath(path))
-        matrix = Gf.Matrix4d(1.)
+        native = np.asarray(root.GetLocalTransformation()).T
+        native_scale = np.linalg.norm(native[:3, :3], axis=0)
+        matrix = Gf.Matrix4d().SetScale(Gf.Vec3d(*map(float, native_scale)))
         if args.asset == "marker":
-            matrix.SetRotate(Gf.Rotation(Gf.Vec3d(0, 1, 0), 90))
+            matrix = matrix * Gf.Matrix4d().SetRotate(Gf.Rotation(Gf.Vec3d(0, 1, 0), 90))
         root.MakeMatrixXform().Set(matrix)
         bounds = UsdGeom.BBoxCache(0., ["default", "render"]).ComputeWorldBound(root.GetPrim()).ComputeAlignedRange()
         lo, hi = np.array(bounds.GetMin()), np.array(bounds.GetMax())
         target = (lo + hi) / 2
         span = float(np.linalg.norm(hi-lo))
-        evidence.update(bounds_m=[lo.tolist(), hi.tolist()])
+        evidence.update(bounds_m=[lo.tolist(), hi.tolist()], preserved_asset_scale=native_scale.tolist())
         floor = UsdGeom.Cube.Define(stage, "/Studio/Floor")
         floor.CreateSizeAttr(1.)
         xf = UsdGeom.Xformable(floor)
@@ -115,7 +117,7 @@ def main():
                     prim=stage.GetPrimAtPath(path+'/'+name)
                     if not prim: continue
                     xf=UsdGeom.Xformable(prim);m=xf.GetLocalTransformation()
-                    t=m.ExtractTranslation();m.SetTranslateOnly(t+Gf.Vec3d(0,-.05,0))
+                    t=m.ExtractTranslation();m.SetTranslateOnly(t+Gf.Vec3d(0,-.05/float(native_scale[1]),0))
                     xf.MakeMatrixXform().Set(m)
             for _ in range(30):
                 app.update()
