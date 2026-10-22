@@ -16,7 +16,9 @@ from robot_tasks.registry import resolve_task
 @unittest.skipIf(Usd is None, "Optional usd-core")
 class CombinedPlacementDispatchTests(unittest.TestCase):
     def test_l3_baked_variants_keep_their_transforms_and_layers(self):
-        for tid in ("L3-01_v3", "L3-02_v3", "L3-03_v3"):
+        # The bottle's separate physical closure repair is covered in
+        # test_bottle_contacts; it intentionally changes the cap's relative pose.
+        for tid in ("L3-02_v3", "L3-03_v3"):
             with self.subTest(task=tid):
                 _, config = resolve_task(tid)
                 row = scene_record(config.raw["task"])

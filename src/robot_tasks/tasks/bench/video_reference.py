@@ -16,6 +16,9 @@ def apply_delivery(spec, task):
     if tid.startswith("L1-"):
         from .initial_placement import scene_record
         row = scene_record(task)
+    elif tid == 'L3-01':
+        from ...initial_layout import scene_record
+        row = scene_record(task)
     else:
         row = scenes()[task.get("scene_variant", tid)]
     p = {**spec.parameters, "table_z": 0.88, "scene_delivery": DELIVERY,
@@ -112,6 +115,9 @@ def apply_delivery(spec, task):
     elif tid == "L3-01":
         p.update(neck_top_z=.1565, cap_bottom_z=.1442, cap_top_z=.1600,
                  body_fixed=True, body_arm="right", cap_arm="left")
+        repair = row['physical_repairs']['bottle_closure']
+        p.update(initial_cap_lift_m=repair['initial_cap_lift_m'],
+                 closure_contact_revision=repair['revision'])
     elif tid == "L3-02":
         body = pose_transform(row["tracked"]["anchor"]["pose"])
         relative = np.linalg.inv(body) @ pose_transform(row["tracked"]["nut"]["pose"])

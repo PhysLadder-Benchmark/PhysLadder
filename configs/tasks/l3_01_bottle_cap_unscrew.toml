@@ -35,6 +35,10 @@ model_config = "../models/gpt.toml"
 [completion]
 return_home = false
 
+[runtime]
+# Resolve the thin closure threads; control and camera cadence stay at 12 Hz.
+physics_dt_s = 0.0005208333333333333
+
 [task]
 scene_delivery = "video_20261015"
 prompt_protocol = "feishu_english_20261015_v1"

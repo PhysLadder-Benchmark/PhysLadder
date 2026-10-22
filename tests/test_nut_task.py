@@ -65,8 +65,11 @@ class NutTaskTests(unittest.TestCase):
         self.assertEqual(cfg.robot.gripper.width_limits_m, (0.0, 0.070))
         self.assertEqual(cfg.grasp_check_mode, "contact_inspection")
         _, other = resolve_task("L3-01")
-        self.assertAlmostEqual(other.physics_dt_s, 1 / 240)
+        # The bottle closure now independently needs small thread-contact steps.
+        self.assertAlmostEqual(other.physics_dt_s, 1 / 1920)
         self.assertEqual(other.robot.gripper.width_limits_m, (0.0, 0.070))
+        _, ordinary = resolve_task("L3-04")
+        self.assertAlmostEqual(ordinary.physics_dt_s, 1 / 240)
         with self.assertRaises(ValueError):
             NutTask.prepare_config(replace(cfg, physics_dt_s=1 / 240))
         with self.assertRaises(ValueError):
