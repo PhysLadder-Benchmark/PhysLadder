@@ -16,7 +16,7 @@ def apply_delivery(spec, task):
     if tid.startswith("L1-"):
         from .initial_placement import scene_record
         row = scene_record(task)
-    elif tid == 'L3-01':
+    elif tid in ('L3-01', 'L3-04'):
         from ...initial_layout import scene_record
         row = scene_record(task)
     else:

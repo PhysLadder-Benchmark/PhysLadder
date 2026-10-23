@@ -58,6 +58,9 @@ def scene_record(task):
         return l1_scene_record(task)
     from .tasks.bench.measured_assets import measured_record
     original = measured_record(scenes()[task.get("scene_variant", task["id"])], task["id"])
+    if task["id"] == "L3-04":
+        from .tasks.bench.stacked_book_layout import initial_record
+        return initial_record(original, task)
     if task["id"] == "L3-01":
         from .tasks.bench.bottle_contacts import initial_record
         return initial_record(original)
@@ -78,9 +81,9 @@ def scene_record(task):
 def apply_record_to_stage(stage, task, row):
     """Apply runtime placements and the bottle's declared closure repair.
 
-    L3 placement perturbations are already baked into their USD layers. Their
-    provenance is not an L1 runtime move plan. Only the bottle closure receives
-    an additional relative transform, shared by both placements.
+    Most L3 placement perturbations are baked into their USD layers. Their
+    provenance is not an L1 runtime move plan. Bottle closure alignment and
+    explicitly configured stacked-book translations use session-layer changes.
     L2 placement is applied separately by the backend's apply_stage hook.
     """
     if task["id"].startswith("L1-"):
@@ -88,6 +91,9 @@ def apply_record_to_stage(stage, task, row):
         apply_to_stage(stage, row)
     elif task["id"] == "L3-01":
         from .tasks.bench.bottle_contacts import apply_initial_pose
+        apply_initial_pose(stage, row)
+    elif task["id"] == "L3-04":
+        from .tasks.bench.stacked_book_layout import apply_initial_pose
         apply_initial_pose(stage, row)
 
 
