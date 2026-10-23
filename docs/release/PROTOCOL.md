@@ -30,12 +30,18 @@ robot, simulation, execution, layout, instruction and scoring fingerprints.
 | L1 (5 tasks) | Original placement and fixed selected P03 placement. The stored selection indices are 3, 3, 2, 1, 1 in task-ID order. |
 | L2 (6 tasks) | Original placement and fixed P01 placement; existing task rules are retained. |
 | L3-01 / L3-02 / L3-03 | Separate delivered scene settings, with their existing prompts, cameras and implementations. |
-| L3-04 | Original scores containment of both books; alternative uses the lower book boundary. This is a protocol difference, not just a pose change. |
+| L3-04 | Original and alternative use the same prompt and require containment of both books. The alternative translates the aligned stack and both rectangles by -0.10 m along world X. |
 | L3-05 | Separate delivered alternative scene. Existing success criterion requires all three blocks. |
 
 L2-03 requires the source cup to be empty and at least **6 of 12** beads to be in
 the receiving cup. It does not succeed merely because six beads have arrived
 while others are still in the source cup.
+
+From 2026-10-23, the L3-04 alternative matches the paper's two-book containment
+criterion instead of its earlier lower-book-only rule. Both settings require a
+full turn during transfer, continuous stacking and tabletop support, and no
+grasping or lifting. Historical runs retain their recorded prompts and scoring
+rules; this update does not rescore them. Per-setting budgets below are unchanged.
 
 L1 and L3 retain gravity compensation disabled and Cartesian completion tolerance
 0.005 m; L2 retains gravity compensation enabled and tolerance 0.001 m. These are
