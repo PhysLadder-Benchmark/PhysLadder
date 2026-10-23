@@ -66,6 +66,12 @@ class DeliveredScene(NativeL2Scene):
         self.initial = {n: tuple(record["pose"]) for n, record in row["tracked"].items()}
         self.bounds = {n: np.array(list(product(*zip(*record["bounds"]))))
                        for n, record in row["tracked"].items()}
+        marker_filters = None
+        if config.task_id == 'L2-01':
+            from .marker_contacts import refresh_delivered_groups
+            from .measured_assets import calibrate_marker
+            marker_filters = refresh_delivered_groups(self.stage, self.root+'/marker')
+            marker_filters['measurement_calibration'] = calibrate_marker(self.stage)
         self.bodies, self.fixed_names = {}, set()
         self.cached_time = self.cached_rows = None
         self.load_names, self.load_view = [], None
@@ -97,10 +103,6 @@ class DeliveredScene(NativeL2Scene):
             body = backend.world.scene.add(SingleRigidPrim(str(prim.GetPath()),
                   name='delivered_aux_'+str(len(self.aux_bodies)), **options))
             self.aux_bodies.append((body,transform_pose(matrix)))
-        marker_filters = None
-        if config.task_id == 'L2-01':
-            from .marker_contacts import refresh_delivered_groups
-            marker_filters = refresh_delivered_groups(self.stage,self.root+'/marker')
         self.manipulated = list(self.paths)
         filters = list(self.paths.values())
         self.arm_contacts = {

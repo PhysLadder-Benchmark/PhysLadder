@@ -38,9 +38,26 @@ class InitialLayoutTests(unittest.TestCase):
                                  entry.factory.prepare_config(before).instruction)
                 spec = resolve_bench_spec(before.raw['task'], before.robot)
                 self.assertIs(apply_spec(spec, before.raw['task']), spec)
-                self.assertIs(scene_record(before.raw['task']), scenes()[before.task_id])
+                base_record = scene_record(before.raw['task'])
+                source = scenes()[before.task_id]
+                if before.task_id in ('L2-01', 'L2-06'):
+                    # The original and variant both inherit the confirmed
+                    # asset calibration; placement opt-in must add no other
+                    # changes and must never mutate the historical delivery.
+                    restored = deepcopy(base_record)
+                    if before.task_id == 'L2-01':
+                        for name in ('body', 'cap'):
+                            restored['tracked'][name]['bounds'] = source['tracked'][name]['bounds']
+                    else:
+                        restored['jelly']['mass'] = source['jelly']['mass']
+                    self.assertEqual(restored, source)
+                else:
+                    self.assertIs(base_record, source)
                 changed = resolve_bench_spec(after.raw['task'], after.robot)
                 self.assertEqual(spec.arms, changed.arms)
+                for original_article, variant_article in zip(spec.design.articles, changed.design.articles):
+                    self.assertEqual(original_article.asset_bounds, variant_article.asset_bounds)
+                    self.assertEqual(original_article.mass, variant_article.mass)
                 for key, value in spec.parameters.items():
                     if key not in ('outward_axis_world', 'closed_pose'):
                         self.assertEqual(value, changed.parameters[key], key)

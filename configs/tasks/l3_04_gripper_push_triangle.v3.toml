@@ -44,6 +44,8 @@ reference_sheet_row = 30
 id = "L3-04"
 variant_id = "L3-04_v3"
 scene_variant = "L3-04_v3"
+# Restore the original aligned stack and shift both books/rectangles together.
+stacked_book_offset_x_m = -0.10
 boundary_reference = "lower_book"
 name = "双臂推叠书旋转360度移框"
 execution_target = "simulation_and_real"

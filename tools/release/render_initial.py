@@ -8,6 +8,7 @@ p.add_argument("--output", required=True, type=Path)
 p.add_argument("--gpu", required=True, type=int)
 p.add_argument("--reset-only", action="store_true")
 p.add_argument("--plan-probe", action="store_true")
+p.add_argument("--config", type=Path, help="Explicit initial-state preview configuration")
 a = p.parse_args()
 
 # CUDA_VISIBLE_DEVICES selects PhysX/planner GPU 0, while Vulkan enumerates the
@@ -43,5 +44,6 @@ raise SystemExit(
         capture_hook=initialize,
         capture_before_observations=True,
         plan_probe=a.plan_probe,
+        config_path=a.config,
     )
 )
