@@ -319,7 +319,7 @@
       "sheet_row": 30,
       "source_setting_zh": "双臂协作推叠书转移。两本书叠放在桌面的一个黑色矩形框内，另一个黑色矩形框为目标区域。左右臂使用夹爪共同推动整叠书，从起始框移至目标框，并在移动过程中使整叠书沿桌面旋转一整圈（360°）。全程保持两本书叠放且由桌面承托，禁止抓取或抬起。最终两本书均完全进入目标框，不要求居中或固定朝向。",
       "source_prompt_en": "Use both grippers to push the two stacked books from one black rectangle fully into the other, rotating the stack one full turn along the way. Keep the books stacked on the table without grasping or lifting them.",
-      "simulation_prompt_en": "Use both grippers to push the two stacked books from one black rectangle to the other, rotating the stack one full turn along the way. Judge containment in the starting and target rectangles by the lower book only: the lower book must lie fully inside the rectangle; the upper book may overhang its boundary while remaining stacked and supported by the lower book. Keep both books stacked on the table without grasping or lifting them.",
+      "simulation_prompt_en": "Use both grippers to push the two stacked books from one black rectangle fully into the other, rotating the stack one full turn along the way. Keep the books stacked on the table without grasping or lifting them.",
       "active_arms": [
         "right",
         "left"

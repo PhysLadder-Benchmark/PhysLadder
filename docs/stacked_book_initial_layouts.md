@@ -13,10 +13,15 @@ The rendered rectangle transforms, reset poses, and scoring polygons receive
 the same translation. Heights, dimensions, materials, cameras, robot initial
 states, and relative book/rectangle orientations are preserved from the original.
 
-This changes placement only. The original task still requires both books in
-the target; the existing variant still judges containment by the lower book.
-Both require a full 360-degree stack rotation during tabletop transfer, with
-the existing support and no-grasp/no-lift constraints.
+The translation changes placement only. As of 2026-10-23, the original and
+variant use the same prompt and require both books completely inside the
+starting and target rectangles. Both require a full 360-degree stack rotation
+during tabletop transfer, with the existing support and no-grasp/no-lift
+constraints. An upper book overhanging the target cannot complete the task.
+
+Earlier variant runs used a lower-book-only boundary rule. Their saved
+configurations and outcomes retain that rule; this alignment applies to new
+runs. The existing per-configuration call and time budgets are unchanged.
 
 In an installed Isaac environment, render the centered variant without a
 model request:

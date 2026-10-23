@@ -293,14 +293,14 @@
       "geometry_and_scoring": "d5afead050db320d942e213599a82a88f540ed1b57c93b2e7445ef0ed1e4bbe2"
     },
     "L3-04_v3": {
-      "configuration": "22af2726add17cc4f91085bc28c577eadd3d03a3456275ad3beaebe633fe7019",
-      "instruction": "ab57263b036f0c928636865b6b474a87661bd12def63dc20adea790257dc6f8b",
+      "configuration": "809cf8b014208101c26469bde50258560f2a86e9d60bbe1317bd49b6d87f0c78",
+      "instruction": "ecb6f636bb3c8d4d10dd04c0173cc434bb889b8dfb718ade4040b854f5219227",
       "robot": "32f28ff5ef54c6e3e46b0c6b130c864a737e1afa30fef66f47404656f96aec56",
       "simulation": "57e58bda8e70c64c0ffd9274ade3040935a4d3d723b078fd47a14f5bc986f539",
       "execution": "d41224ab72b72719ee7ffe3e0152be840d2c92380a5c2b503496df11224421c4",
       "system_instructions": "963e18d7eb3d2e82a2ccae3491f5566fd99acfbf02647d779315e3ecd2431b65",
       "initial_layout": "7a597cc4326115bf3cfa639bb671782bd713c5777db796162ca2190d31d15b89",
-      "geometry_and_scoring": "78fddc4783dcb1fc94e9ac539d677e55f920c33ac298a84b444392732494a1be"
+      "geometry_and_scoring": "de527f4628f49b48dae94871f8a83c1bb104ccbf64aff01f4a1f4b12c40456ac"
     },
     "L3-05": {
       "configuration": "f87cc06fccdbf8305372ef84e50253dc08b937be5d5ed6c921478f2824695e98",
@@ -463,7 +463,7 @@
     "configs/tasks/l3_03_board_wiping.toml": "d2871b546760a90f4649ed7ce573546f86efc1de64c63682876944a9929a5c53",
     "configs/tasks/l3_03_board_wiping.v3.toml": "f0edec7c705d4e495ef7e6f815e85af2796267febadd103532bdc57de6a5e41c",
     "configs/tasks/l3_04_gripper_push_triangle.toml": "63ceab4641a7ee9105d24bc9872c130e85be2a4517101a5a29f79ba14c86b9f2",
-    "configs/tasks/l3_04_gripper_push_triangle.v3.toml": "f5cbcfb1157bcaf028a1f51abad04e77b2684b428a4d615aa7de6c923c1e9c24",
+    "configs/tasks/l3_04_gripper_push_triangle.v3.toml": "c3ef5aa0a855a2992695fe839d7963e1eb67b9b2add2b6cdbc344179f2cf97fb",
     "configs/tasks/l3_05_bimanual_sweep_blocks.toml": "734fdfe0093e5aa4fdb4a805f592740f7836d07ed9d7eaf20dbfaec8ea648bfb",
     "configs/tasks/l3_05_bimanual_sweep_blocks.v3.toml": "94399634c11e95548a8f40822e696f10f0ee6d073d25ca518b6bf4473a996ae9",
     "configs/robots/r5.toml": "1929ccbbdfb685d5d39e6208f604607f7f82364ae3cd6ee427bfc7611c3b2560",
@@ -475,7 +475,7 @@
     "configs/cameras/r5_tuojing_lab.toml": "61e0d17f743946b47ca0c40c4bab5082f8bb2853f1b72f044e0e3fa986bb6735",
     "configs/workflows/gpt_default.toml": "69ac7eea6352d7b345bae3a9eb86dc8002457b8bccfc74d53f7442a588d2a63e",
     "configs/task_references/combined_sources.json": "f3ded451b5412db04f579cb03e57c0101928136251e7e7de79ee1189e40d1e13",
-    "configs/task_references/feishu_20261015.json": "80c8469af4ba7414f8eb3293addd756c1a134159b42e2e21e248759bbf8649ae",
+    "configs/task_references/feishu_20261015.json": "531324553623b00a2d353c2659f70ee06aebe143e23425819a4d3e9550d58804",
     "configs/task_references/feishu_jelly_20261016.json": "9b5cb485868ebc2a541836f18124b2c6704180ab953f6137d368c547693eead7",
     "configs/task_references/l1_position_perturbations_20261018.json": "6b42ca4b2fdc408f88273d773a7cd9e1096da924a26de0d4a3a988482ec89891",
     "configs/task_references/l1_position_perturbations_p02_20261018.json": "662bff22d20fa128e239d9d7f4bcd9c91d25847b0b42257a0537fd2e3aa5e145",

@@ -46,7 +46,7 @@ variant_id = "L3-04_v3"
 scene_variant = "L3-04_v3"
 # Restore the original aligned stack and shift both books/rectangles together.
 stacked_book_offset_x_m = -0.10
-boundary_reference = "lower_book"
+boundary_reference = "both_books"
 name = "双臂推叠书旋转360度移框"
 execution_target = "simulation_and_real"
 simulation_enabled = true
@@ -55,12 +55,12 @@ implementation = "household"
 launch_command = "python tools/launch.py run L3-04_v3 --gui"
 launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L3-04_v3 --gui"
 instruction = """
-Use both grippers to push the two stacked books from one black rectangle to the other, rotating the stack one full turn along the way. Judge containment in the starting and target rectangles by the lower book only: the lower book must lie fully inside the rectangle; the upper book may overhang its boundary while remaining stacked and supported by the lower book. Keep both books stacked on the table without grasping or lifting them.
+Use both grippers to push the two stacked books from one black rectangle fully into the other, rotating the stack one full turn along the way. Keep the books stacked on the table without grasping or lifting them.
 """
 
 # Chinese setup/props description; final task attribute.
 description = """
-双臂协作推叠书转移。两本书叠放在桌面的一个黑色矩形框内，另一个黑色矩形框为目标区域。左右臂使用夹爪共同推动整叠书，从起始框移至目标框，并在移动过程中使整叠书沿桌面旋转一整圈（360°）。全程保持两本书叠放且由桌面承托，禁止抓取或抬起。起始框和目标框的边界均以下层书的完整投影为准；上层书可伸出框边界，但必须保持叠放并由下层书承托。不要求居中或固定朝向。
+双臂协作推叠书转移。两本书叠放在桌面的一个黑色矩形框内，另一个黑色矩形框为目标区域。左右臂使用夹爪共同推动整叠书，从起始框移至目标框，并在移动过程中使整叠书沿桌面旋转一整圈（360°）。全程保持两本书叠放且由桌面承托，禁止抓取或抬起。最终两本书均完全进入目标框，不要求居中或固定朝向。
 """
 
 # Time-only experiment budget: zero disables the decision/request-count cap.

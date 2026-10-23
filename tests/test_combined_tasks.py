@@ -16,6 +16,8 @@ from robot_tasks.registry import TASKS, resolve_task
 from robot_tasks.tasks.bench.arm_selection import resolve_bench_spec
 from robot_tasks.tasks.bench.evaluation import BenchEvaluator
 from robot_tasks.tasks.bench.stacked_books import score
+from robot_tasks.tasks.l1.specs import local_corners, pose
+from robot_tasks.robots.transforms import pose_transform
 from robot_tasks.video_delivery import effective_cameras, scenes
 from test_household_tasks import measurement
 
@@ -101,13 +103,13 @@ class CombinedTaskTests(unittest.TestCase):
             self.assertEqual(spec.parameters["required_received"], 6)
             self.assertEqual(spec.parameters["pouring_success_rule"], "empty_source_half_received_v1")
 
-    def test_stacked_books_boundary_rules_belong_to_their_versions(self):
-        for tid, lower_only in (("L3-04", False), ("L3-04_v3", True)):
+    def test_stacked_books_original_and_variant_share_paper_goal(self):
+        original_prompt = resolve_task("L3-04")[1].instruction
+        for tid in ("L3-04", "L3-04_v3", "L3-04_variant01"):
             _, cfg = resolve_task(tid)
             spec = resolve_bench_spec(cfg.raw["task"], cfg.robot)
-            self.assertEqual(spec.parameters["boundary_reference"],
-                             "lower_book" if lower_only else "both_books")
-            self.assertEqual("lower book only" in cfg.instruction, lower_only)
+            self.assertEqual(spec.parameters["boundary_reference"], "both_books")
+            self.assertEqual(cfg.instruction, original_prompt)
             rows = measurement(spec)
             for name, row in rows.items():
                 row["finger_force_vectors"] = {a: [[0., 0., 0.], [0., 0., 0.]] for a in spec.arms}
@@ -120,7 +122,50 @@ class CombinedTaskTests(unittest.TestCase):
             self.assertFalse(done)
             self.assertFalse(reason)
             self.assertTrue(details["started_in_start_rectangle"])
-            self.assertEqual(details["upper_book_containment_required"], not lower_only)
+            self.assertTrue(details["upper_book_containment_required"])
+
+    def test_stacked_book_transfer_requires_full_turn_and_both_footprints(self):
+        # Synthetic contact/pose streams exercise scoring, not robot feasibility.
+        for tid in ("L3-04", "L3-04_v3", "L3-04_variant01"):
+            _, cfg = resolve_task(tid)
+            spec = resolve_bench_spec(cfg.raw["task"], cfg.robot)
+            articles = spec.design.articles
+            start = np.asarray(spec.parameters["start_centre_xy"])
+            target = np.asarray(articles[0].goal[:2])
+            initial = pose_transform(articles[0].initial)
+            yaw = np.arctan2(initial[1, 0], initial[0, 0])
+            for turns, overhang, expected in ((1., 0., True), (1., .04, False),
+                                               (.5, 0., False)):
+                with self.subTest(task=tid, turns=turns, overhang=overhang):
+                    rows = measurement(spec)
+                    evaluator = BenchEvaluator(spec, {a.name: a.initial for a in articles})
+                    for step in range(73):
+                        fraction = step / 72
+                        xy = start + fraction * (target - start)
+                        for article in articles:
+                            row = rows[article.name]
+                            offset = overhang if step == 72 and article.name == "upper_book" else 0.
+                            row["pose"] = list(pose(xy[0] + offset, xy[1], article.initial[2],
+                                                    yaw=yaw + 2*np.pi*turns*fraction))
+                            transform = pose_transform(row["pose"])
+                            row["corners"] = (local_corners(article) @ transform[:3, :3].T
+                                              + transform[:3, 3]).tolist()
+                            row["finger_force_vectors"] = {
+                                arm: [[.1, 0., 0.], [0., 0., 0.]] for arm in spec.arms}
+                            row["fingers"] = {arm: [.1, 0.] for arm in spec.arms}
+                        rows["lower_book"]["bench_force_n"] = .4
+                        rows["upper_book"]["pair_forces"]["lower_book"] = .2
+                        rows["lower_book"]["pair_forces"]["upper_book"] = .2
+                        evaluator.last_time = step / 12
+                        done, details, reason = score(evaluator, rows)
+                    self.assertFalse(reason)
+                    self.assertTrue(details["upper_book_supported_by_lower"])
+                    self.assertTrue(details["simultaneous_push_witness"])
+                    self.assertEqual(details["full_turn_observed"], turns == 1.)
+                    self.assertEqual(done, expected)
+                    if overhang:
+                        self.assertTrue(details["lower_book_in_target"])
+                        self.assertEqual(details["books_in_target"], 1)
 
     def test_sweeping_requires_all_three_blocks(self):
         for tid in ("L3-05", "L3-05_v3"):
