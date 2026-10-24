@@ -1,4 +1,4 @@
-"""Contact-distance ink wear for the delivered L3-03 asset only."""
+"""Contact-distance ink wear for the delivered L2-07 asset only."""
 import numpy as np
 
 from .wiping import WipeLedger

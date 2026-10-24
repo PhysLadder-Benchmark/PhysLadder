@@ -221,5 +221,7 @@ def drawer(e, rows):
 
 
 from .pearl_pouring import score as pearl_pouring
+from .wiping import score as wiping
 
-RULES = {"L2-01": marker, "L2-02": books, "L2-03": pearl_pouring, "L2-05": drawer}
+RULES = {"L2-01": marker, "L2-02": books, "L2-03": pearl_pouring,
+         "L2-05": drawer, "L2-07": wiping}

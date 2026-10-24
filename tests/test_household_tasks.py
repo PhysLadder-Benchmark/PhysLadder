@@ -38,7 +38,7 @@ def measurement(spec):
                 b.name: 0.0 for b in spec.design.articles if b.name != a.name and (not a.name.startswith("load_") or b.name in spec.parameters.get("load_container_names", ()))
             },
         }
-    if spec.design.task_id == "L3-03":
+    if spec.design.task_id == "L2-07":
         from robot_tasks.tasks.bench.wiping import WipeLedger
         result["eraser"]["wiping"] = WipeLedger(spec.parameters["board_pose"]).metrics()
     return result
@@ -66,7 +66,7 @@ class HouseholdTests(unittest.TestCase):
                 )
                 self.assertFalse(prepared.include_depth)
                 self.assertTrue(prepared.raw["task"]["description"])
-        self.assertTrue(resolve_task("L3-03")[0].implemented)
+        self.assertTrue(resolve_task("L2-07")[0].implemented)
         self.assertNotIn("L3-16", TASKS)
         with self.assertRaises(ValueError):
             resolve_task("L3-16")

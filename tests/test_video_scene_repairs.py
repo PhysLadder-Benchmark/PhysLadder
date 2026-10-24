@@ -236,7 +236,7 @@ class VideoSceneRepairs(unittest.TestCase):
     def test_whiteboard_scoring_uses_rotated_physical_fixture(self):
         from test_video_delivery import scene
         from robot_tasks.robots.transforms import pose_transform
-        spec,_,_=scene('L3-03');row=scenes()['L3-03']['fixtures'][0]
+        spec,_,_=scene('L2-07');row=scenes()['L2-07']['fixtures'][0]
         np.testing.assert_allclose(spec.parameters['board_pose'],row['pose'])
         self.assertGreater(pose_transform(row['pose'])[0,0],.99)
 

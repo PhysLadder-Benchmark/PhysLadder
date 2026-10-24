@@ -188,7 +188,7 @@ def apply(stage, tid, row):
     if tid == 'L3-01':
         UsdPhysics.RigidBodyAPI(stage.GetPrimAtPath(row['tracked']['bottle']['path'])).CreateKinematicEnabledAttr(True)
         result['bottle_fixed'] = True
-    if tid == 'L3-03':
+    if tid == 'L2-07':
         rotate_about_origin(stage,row['fixtures'][0]['path'],np.pi)
         rotate_about_origin(stage,row['tracked']['eraser']['path'],np.pi/2)
         result['video_orientation'] = {'board_yaw_delta_rad': float(np.pi), 'eraser_yaw_delta_rad': float(np.pi/2),

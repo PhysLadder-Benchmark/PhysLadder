@@ -429,6 +429,45 @@
     }
   },
   {
+    "id": "L2-07",
+    "title": "Wipe a whiteboard",
+    "level": "L2",
+    "settings": {
+      "original": {
+        "id": "L2-07",
+        "record_id": "L2-07",
+        "instruction": "Pick up the board eraser with the left arm and erase the writing on the whiteboard.\n",
+        "images": {
+          "overview": "media/L2-07-original-overview.webp",
+          "left_wrist": "media/L2-07-original-left_wrist.webp",
+          "right_wrist": "media/L2-07-original-right_wrist.webp"
+        },
+        "config": "configs/tasks/l2_07_board_wiping.toml",
+        "seed": 0,
+        "max_calls": 100,
+        "wall_time_s": 0.0,
+        "counter": "completed_generations",
+        "evidence": "native_contact_wiping; Latest complete 2026-10-15 source assets with declared runtime binding/orientation repairs. L2-01 uses the latest measured exterior with the supplied hollow cap and passive retention mechanism fitted axially. Geometry, lighting and materials are video/photo estimates; unobservable physical parameters are not measured. No pose writes, object attachments or forced success during manipulation."
+      },
+      "variant01": {
+        "id": "L2-07_variant01",
+        "record_id": "L2-07_v3",
+        "instruction": "Pick up the board eraser with the left arm and erase the writing on the whiteboard.\n",
+        "images": {
+          "overview": "media/L2-07-variant01-overview.webp",
+          "left_wrist": "media/L2-07-variant01-left_wrist.webp",
+          "right_wrist": "media/L2-07-variant01-right_wrist.webp"
+        },
+        "config": "configs/tasks/l2_07_board_wiping.v3.toml",
+        "seed": 0,
+        "max_calls": 100,
+        "wall_time_s": 0.0,
+        "counter": "completed_generations",
+        "evidence": "native_contact_wiping; Latest complete 2026-10-15 source assets with declared runtime binding/orientation repairs. L2-01 uses the latest measured exterior with the supplied hollow cap and passive retention mechanism fitted axially. Geometry, lighting and materials are video/photo estimates; unobservable physical parameters are not measured. No pose writes, object attachments or forced success during manipulation."
+      }
+    }
+  },
+  {
     "id": "L3-01",
     "title": "Unscrew a bottle cap",
     "level": "L3",
@@ -503,45 +542,6 @@
         "wall_time_s": 0.0,
         "counter": "completed_generations",
         "evidence": "Local physical scene; independent measured scoring"
-      }
-    }
-  },
-  {
-    "id": "L3-03",
-    "title": "Wipe a whiteboard",
-    "level": "L3",
-    "settings": {
-      "original": {
-        "id": "L3-03",
-        "record_id": "L3-03",
-        "instruction": "Pick up the board eraser with the left arm and erase the writing on the whiteboard.\n",
-        "images": {
-          "overview": "media/L3-03-original-overview.webp",
-          "left_wrist": "media/L3-03-original-left_wrist.webp",
-          "right_wrist": "media/L3-03-original-right_wrist.webp"
-        },
-        "config": "configs/tasks/l3_03_board_wiping.toml",
-        "seed": 0,
-        "max_calls": 100,
-        "wall_time_s": 0.0,
-        "counter": "completed_generations",
-        "evidence": "native_contact_wiping; Latest complete 2026-10-15 source assets with declared runtime binding/orientation repairs. L2-01 uses the latest measured exterior with the supplied hollow cap and passive retention mechanism fitted axially. Geometry, lighting and materials are video/photo estimates; unobservable physical parameters are not measured. No pose writes, object attachments or forced success during manipulation."
-      },
-      "variant01": {
-        "id": "L3-03_variant01",
-        "record_id": "L3-03_v3",
-        "instruction": "Pick up the board eraser with the left arm and erase the writing on the whiteboard.\n",
-        "images": {
-          "overview": "media/L3-03-variant01-overview.webp",
-          "left_wrist": "media/L3-03-variant01-left_wrist.webp",
-          "right_wrist": "media/L3-03-variant01-right_wrist.webp"
-        },
-        "config": "configs/tasks/l3_03_board_wiping.v3.toml",
-        "seed": 0,
-        "max_calls": 100,
-        "wall_time_s": 0.0,
-        "counter": "completed_generations",
-        "evidence": "native_contact_wiping; Latest complete 2026-10-15 source assets with declared runtime binding/orientation repairs. L2-01 uses the latest measured exterior with the supplied hollow cap and passive retention mechanism fitted axially. Geometry, lighting and materials are video/photo estimates; unobservable physical parameters are not measured. No pose writes, object attachments or forced success during manipulation."
       }
     }
   },

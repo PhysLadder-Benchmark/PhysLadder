@@ -164,13 +164,13 @@ def load_config(path: Path, *, depth: bool | None = None) -> TaskConfig:
     if "variant_id" in task:
         l1 = task["id"] in {"L1-01", "L1-02", "L1-03", "L1-04", "L1-05"}
         l2 = task["id"] in {"L2-01", "L2-02", "L2-03", "L2-04", "L2-05", "L2-06"}
-        l3 = task["id"] in {"L3-01", "L3-02", "L3-03", "L3-04", "L3-05"}
+        versioned_scene = task["id"] in {"L2-07", "L3-01", "L3-02", "L3-04", "L3-05"}
         if (task["variant_id"] != task["id"] + "_v3"
                 or task.get("scene_delivery") != "video_20261015"
                 or not ((l1 and task.get("initial_placement_profile") == "l1_xy_random_p03_20261018")
                         or (l2 and task.get("initial_layout") == "l2_p01")
-                        or (l3 and task.get("scene_variant") == task["variant_id"]))):
-            raise ValueError("variant_id requires a matching L1/L2 layout or L3 versioned scene")
+                        or (versioned_scene and task.get("scene_variant") == task["variant_id"]))):
+            raise ValueError("variant_id requires a matching initial layout or versioned scene")
     if "scene_variant" in task:
         from .video_delivery import scenes
         if (task["scene_variant"] != task.get("variant_id")

@@ -2,8 +2,8 @@
 
 The software contains 16 task families and 32 independently selectable settings.
 A new public suffix, `_variant01`, names the previously registered `_v3` setting.
-Resolution returns the same setting for either suffix. Tasks use consecutive
-numbers as listed in the [numbering map](TASK_NUMBERING.md); configuration names
+Resolution returns the same setting for either suffix. Tasks use the current
+numbers listed in the [numbering map](TASK_NUMBERING.md); configuration names
 and public media follow those numbers. Delivered asset directories, historical
 run IDs and recorded snapshots retain their original identities. Selecting both
 suffix aliases of one current task in the same batch is rejected as a duplicate.
@@ -15,7 +15,7 @@ task parameters, scene/texture/mesh bytes, physical
 material, collision geometry, initial pose, camera calibration/appearance,
 scoring behavior and controller settings. After comparing the full effective
 values against the preceding revision, `configs/benchmark/task_contract.json`
-pins 32 configurations and 253 protected files under their current names.
+pins all 32 configurations and their protected files under their current names.
 Derived numeric fingerprints use 12 significant digits (magnitudes below 1e-12 treated as zero) to
 avoid Python/NumPy last-bit differences; the protected source/configuration
 files still require exact SHA-256 equality. This normalization is only in the
@@ -28,8 +28,8 @@ robot, simulation, execution, layout, instruction and scoring fingerprints.
 | Task group | Original / alternative relationship |
 |---|---|
 | L1 (5 tasks) | Original placement and fixed selected P03 placement. The stored selection indices are 3, 3, 2, 1, 1 in task-ID order. |
-| L2 (6 tasks) | Original placement and fixed P01 placement; existing task rules are retained. |
-| L3-01 / L3-02 / L3-03 | Separate delivered scene settings, with their existing prompts, cameras and implementations. |
+| L2-01–L2-06 | Original placement and fixed P01 placement; existing task rules are retained. |
+| L2-07 / L3-01 / L3-02 | Separate delivered scene settings, with their existing prompts, cameras and implementations. |
 | L3-04 | Original and alternative use the same prompt and require containment of both books. The alternative translates the aligned stack and both rectangles by -0.10 m along world X. |
 | L3-05 | Separate delivered alternative scene. Existing success criterion requires all three blocks. |
 
@@ -43,8 +43,8 @@ full turn during transfer, continuous stacking and tabletop support, and no
 grasping or lifting. Historical runs retain their recorded prompts and scoring
 rules; this update does not rescore them. Per-setting budgets below are unchanged.
 
-L1 and L3 retain gravity compensation disabled and Cartesian completion tolerance
-0.005 m; L2 retains gravity compensation enabled and tolerance 0.001 m. These are
+L1, L2-07 and L3 retain gravity compensation disabled and Cartesian completion tolerance
+0.005 m; L2-01–L2-06 retain gravity compensation enabled and tolerance 0.001 m. These are
 existing settings, not newly recommended universal values.
 
 ## Budgets
@@ -55,8 +55,8 @@ this software version, not reconstructed historical records.
 | Settings | Effective call cap | Wall-time cap | Call accounting |
 |---|---:|---:|---|
 | L1 originals / variants | 100 | disabled | all requests |
-| L2 originals / variants | 100 | disabled | all requests |
-| L3-01 / L3-02 / L3-03 originals / variants | 100 | disabled | completed generations |
+| L2-01–L2-06 originals / variants | 100 | disabled | all requests |
+| L2-07 / L3-01 / L3-02 originals / variants | 100 | disabled | completed generations |
 | L3-04 / L3-05 originals | disabled | 18,000 s | completed generations |
 | L3-04 / L3-05 alternatives | 150 | 18,000 s | completed generations |
 

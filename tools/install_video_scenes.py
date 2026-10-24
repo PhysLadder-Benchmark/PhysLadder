@@ -23,7 +23,7 @@ ROOTS = {
     "L2-05": {"drawer": "/World/L2/organizer/Drawer1"},
     "L3-01": {"bottle": "/World/L2/bottle_assembly/Body", "cap": "/World/L2/bottle_assembly/Cap"},
     "L3-02": {"anchor": "/World/L2/anchor_assembly/AnchorBody", "nut": "/World/L2/anchor_assembly/Nut"},
-    "L3-03": {"eraser": "/World/L3Wiping/eraser"},
+    "L2-07": {"eraser": "/World/L3Wiping/eraser"},
     "L3-04": {"eraser": "/World/L2/eraser"},
     "L3-05": {n: "/World/L2/" + n for n in ("dustpan", "broom", "block_0", "block_1")},
 }
@@ -34,7 +34,7 @@ FIXTURES = {
     **{t: ["/World/L2/support_box"] for t in ("L2-01", "L2-02", "L3-02", "L3-05")},
     "L2-03": [], "L2-04": ["/World/L2/Pedestal"],
     "L2-05": ["/World/L2/organizer/Body", "/World/L2/organizer/Drawer0", "/World/L2/support_box"],
-    "L3-01": [], "L3-03": ["/World/L3Wiping/board"], "L3-04": [],
+    "L3-01": [], "L2-07": ["/World/L3Wiping/board"], "L3-04": [],
 }
 
 

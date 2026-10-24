@@ -19,7 +19,7 @@ BASES = ('L2-01', 'L2-02', 'L2-03', 'L2-04', 'L2-05', 'L2-06')
 class TaskVariantTests(unittest.TestCase):
     def test_registration_and_original_rules_are_preserved(self):
         self.assertEqual({s.base_task_id for s in TASKS.values()
-                          if s.base_task_id and s.base_task_id.startswith('L2-')}, set(BASES))
+                          if s.base_task_id and s.base_task_id.startswith('L2-')}, set(BASES) | {'L2-07'})
         for base in BASES:
             with self.subTest(base=base):
                 _, original = resolve_task(base)

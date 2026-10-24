@@ -9,7 +9,7 @@ active_arms = ["right"]
 observation_arms = ["left"]
 
 [simulation]
-# Preserve the established L3 controller profile. GPU selection is a launch option.
+# Preserve the established wiping controller profile. GPU selection is a launch option.
 robot_gravity_compensation = false
 cartesian_completion_tolerance_m = 0.005
 environment = "tuojing_lab_v4"
@@ -40,16 +40,16 @@ reference_document = "https://my.feishu.cn/docx/QK4EdOD3hotgp4x782ycgoyyn6g"
 reference_sheet_id = "KyMjZ7"
 reference_sheet_revision = 324
 reference_sheet_row = 28
-id = "L3-03"
-variant_id = "L3-03_v3"
-scene_variant = "L3-03_v3"
+id = "L2-07"
+variant_id = "L2-07_v3"
+scene_variant = "L2-07_v3"
 name = "抓板擦擦除白板字迹"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented_proxy"
 implementation = "household"
-launch_command = "python tools/launch.py run L3-03_v3 --gui"
-launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L3-03_v3 --gui"
+launch_command = "python tools/launch.py run L2-07_v3 --gui"
+launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L2-07_v3 --gui"
 instruction = """
 Pick up the board eraser with the left arm and erase the writing on the whiteboard.
 """

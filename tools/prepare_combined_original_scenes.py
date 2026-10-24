@@ -25,7 +25,7 @@ def main():
     visual = json.loads(visual_path.read_text())
     roots = {"L3-01": "/World/L2/bottle_assembly",
              "L3-02": "/World/L2/anchor_assembly",
-             "L3-03": "/World/L3Wiping/board"}
+             "L2-07": "/World/L3Wiping/board"}
     for tid, prim_path in roots.items():
         variant = data["tasks"][tid + "_v3"]
         change = variant["initial_placement_perturbation"]

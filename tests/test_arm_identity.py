@@ -98,7 +98,7 @@ class ArmIdentityTests(unittest.TestCase):
                 decode_sparse_action(json.dumps({"commands": [{**row, "arm": wrong}], "request_stop": False}), config, observation)
 
     def test_observer_does_not_inherit_real_working_arm_permission(self):
-        config = self.config("L3-03")
+        config = self.config("L2-07")
         row = {"arm": "left", **dict.fromkeys(FIELDS), "gripper": 0.}
         with self.assertRaisesRegex(ValueError, "Observation arm left"):
             decode_sparse_action(json.dumps({"commands": [row], "request_stop": False}), config,

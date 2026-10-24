@@ -191,7 +191,7 @@ def hook(backend, task, output):
         return nut_hook(backend, task, output)
     result = {
         "L3-01": bottle_probe,
-        "L3-03": wipe_probe,
+        "L2-07": wipe_probe,
         "L3-05": sweep_probe,
     }[task.scene.config.task_id](task.scene)
     (output / "contact_probe.json").write_text(
@@ -206,7 +206,7 @@ def hook(backend, task, output):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("task", choices=("L3-01", "L3-02", "L3-03", "L3-05"))
+    parser.add_argument("task", choices=("L3-01", "L3-02", "L2-07", "L3-05"))
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     return check(args.task, args.output, prepare=False, capture_hook=hook)

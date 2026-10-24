@@ -132,7 +132,7 @@ class EnglishReferenceTests(unittest.TestCase):
         self.assertFalse(bottle(e, rows)[0])
 
     def test_wiping_one_mark_is_not_erasing_the_writing(self):
-        spec, rows, e = scene('L3-03')
+        spec, rows, e = scene('L2-07')
         self.assertTrue(spec.parameters['whiteboard_surface'])
         m = rows['eraser']['wiping']; m['remaining_cells'] = m['initial_cells'] - 1
         self.assertFalse(wiping(e, rows)[0])

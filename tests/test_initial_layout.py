@@ -18,6 +18,8 @@ class InitialLayoutTests(unittest.TestCase):
     def configs(self):
         for path in sorted((PROJECT_ROOT / "configs/tasks").glob("l2*.v3.toml")):
             entry, after = resolve_task(config_path=path)
+            if after.raw['task'].get('initial_layout') != 'l2_p01':
+                continue
             _, before = resolve_task(after.task_id)
             yield before, after, entry
 

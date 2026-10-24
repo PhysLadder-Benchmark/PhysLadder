@@ -223,6 +223,26 @@
       "counter": "all_requests"
     },
     {
+      "id": "L2-07",
+      "record_id": "L2-07",
+      "instruction": "Pick up the board eraser with the left arm and erase the writing on the whiteboard.\n",
+      "config": "configs/tasks/l2_07_board_wiping.toml",
+      "seed": 0,
+      "max_calls": 100,
+      "wall_time_s": 0.0,
+      "counter": "completed_generations"
+    },
+    {
+      "id": "L2-07_variant01",
+      "record_id": "L2-07_v3",
+      "instruction": "Pick up the board eraser with the left arm and erase the writing on the whiteboard.\n",
+      "config": "configs/tasks/l2_07_board_wiping.v3.toml",
+      "seed": 0,
+      "max_calls": 100,
+      "wall_time_s": 0.0,
+      "counter": "completed_generations"
+    },
+    {
       "id": "L3-01",
       "record_id": "L3-01",
       "instruction": "The bottle body is fixed to the table. Unscrew the cap with the right arm, then lift the cap 3–5 cm away from the bottle opening.\n",
@@ -257,26 +277,6 @@
       "record_id": "L3-02_v3",
       "instruction": "Pick up and hold the threaded rod steady with the right arm, then unscrew the hex nut counterclockwise with the left arm until it comes off.\n",
       "config": "configs/tasks/l3_02_coarse_screw.v3.toml",
-      "seed": 0,
-      "max_calls": 100,
-      "wall_time_s": 0.0,
-      "counter": "completed_generations"
-    },
-    {
-      "id": "L3-03",
-      "record_id": "L3-03",
-      "instruction": "Pick up the board eraser with the left arm and erase the writing on the whiteboard.\n",
-      "config": "configs/tasks/l3_03_board_wiping.toml",
-      "seed": 0,
-      "max_calls": 100,
-      "wall_time_s": 0.0,
-      "counter": "completed_generations"
-    },
-    {
-      "id": "L3-03_variant01",
-      "record_id": "L3-03_v3",
-      "instruction": "Pick up the board eraser with the left arm and erase the writing on the whiteboard.\n",
-      "config": "configs/tasks/l3_03_board_wiping.v3.toml",
       "seed": 0,
       "max_calls": 100,
       "wall_time_s": 0.0,

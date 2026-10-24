@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "numbering": "sequential_20261021",
-  "previous_commit": "6adaa49b8b7a2986b469df451716350f34de0aa8",
+  "numbering": "level_reclassification_20261024",
+  "previous_commit": "7d6281971677b1429c757c8023630f834ab1825f",
   "tasks": [
     {
       "legacy_id": "L1-01",
@@ -59,6 +59,11 @@
       "title": "Lift a jelly"
     },
     {
+      "legacy_id": "L3-11",
+      "id": "L2-07",
+      "title": "Wipe a whiteboard"
+    },
+    {
       "legacy_id": "L3-03",
       "id": "L3-01",
       "title": "Unscrew a bottle cap"
@@ -67,11 +72,6 @@
       "legacy_id": "L3-05",
       "id": "L3-02",
       "title": "Thread a nut"
-    },
-    {
-      "legacy_id": "L3-11",
-      "id": "L3-03",
-      "title": "Wipe a whiteboard"
     },
     {
       "legacy_id": "L3-14",
@@ -83,5 +83,11 @@
       "id": "L3-05",
       "title": "Bimanual sweeping"
     }
-  ]
+  ],
+  "previous_numbering": "sequential_20261021",
+  "changes_from_previous": {
+    "L3-03": "L2-07"
+  },
+  "legacy_numbering": "original_delivery",
+  "legacy_commit": "6adaa49b8b7a2986b469df451716350f34de0aa8"
 }

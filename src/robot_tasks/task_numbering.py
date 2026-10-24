@@ -9,7 +9,9 @@ import re
 
 from .paths import PROJECT_ROOT
 
-SCHEME = "sequential_20261021"
+SCHEME = "level_reclassification_20261024"
+PREVIOUS_SCHEME = "sequential_20261021"
+RECLASSIFIED = {"L3-03": "L2-07"}
 
 
 @lru_cache(maxsize=1)
@@ -37,14 +39,24 @@ def to_legacy(task_id):
     return _translate(task_id, {r["id"]: r["legacy_id"] for r in numbering()["tasks"]})
 
 
-def historical_setup_record(record):
+def previous_task_id(task_id):
+    """Resolve a current ID in the explicitly identified 2026-10-21 scheme."""
+    return _translate(task_id, {
+        row["id"]: next((old for old, new in RECLASSIFIED.items()
+                         if new == row["id"]), row["id"])
+        for row in numbering()["tasks"]
+    })
+
+
+def historical_setup_record(record, scheme=None):
     """Translate identity annotations after verifying the archived byte hash."""
     if isinstance(record, dict):
-        return {k: historical_setup_record(v) for k, v in record.items()}
+        return {k: historical_setup_record(v, scheme) for k, v in record.items()}
     if isinstance(record, list):
-        return [historical_setup_record(v) for v in record]
+        return [historical_setup_record(v, scheme) for v in record]
     if isinstance(record, str):
-        ids = {r["legacy_id"]: r["id"] for r in numbering()["tasks"]}
+        ids = (RECLASSIFIED if scheme == PREVIOUS_SCHEME else
+               {r["legacy_id"]: r["id"] for r in numbering()["tasks"]})
         return re.sub(r"(?<![\w/-])L[123]-\d{2}(?!\d)",
                       lambda m: ids.get(m[0], m[0]), record)
     return record

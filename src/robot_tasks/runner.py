@@ -82,7 +82,7 @@ def run_episode(config: TaskConfig, backend: Backend, robot: Robot, task: Task,
     if dry_run and not limit:
         raise ValueError("Dry-run requires a finite step_limit")
     options = ExecutionSettings() if dry_run else ExecutionSettings.from_config(config)
-    legacy_persistent = (not dry_run and config.task_id.startswith("L3-")
+    legacy_persistent = (not dry_run and (config.task_id.startswith("L3-") or config.task_id == "L2-07")
                          and os.environ.get("GPT_BENCHMARK_PERSISTENT_MODEL_RETRY") == "1")
     completed_budget = options.model_budget_basis == "completed_generations" or legacy_persistent
     retry_model_errors = options.retry_model_errors or legacy_persistent

@@ -72,7 +72,7 @@ class BatchTests(unittest.TestCase):
         with patch.object(batch, "load_runtime", return_value=self.runtime), redirect_stdout(io.StringIO()):
             return batch.main(list(args))
 
-    def dry_batch(self, name="batch", tasks=("L1-01", "L3-03")):
+    def dry_batch(self, name="batch", tasks=("L1-01", "L2-07")):
         root = self.root / name
         self.assertEqual(self.main("--tasks", *tasks, "--output", str(root), "--model-config", str(self.model),
                                   "--dry-run", "--max-calls", "7", "--wall-time-s", "30"), 0)
@@ -148,8 +148,8 @@ class BatchTests(unittest.TestCase):
 
     def test_dry_batch_snapshots_overrides_and_skips_real_only(self):
         from dataclasses import replace
-        real_only = replace(batch.TASKS["L3-03"], implemented=False, evidence="real_only")
-        with patch.dict(batch.TASKS, {"L3-03": real_only}):
+        real_only = replace(batch.TASKS["L2-07"], implemented=False, evidence="real_only")
+        with patch.dict(batch.TASKS, {"L2-07": real_only}):
             root = self.dry_batch()
         config = load_config(root / "configs/L1-01.toml")
         self.assertEqual(config.max_wall_time_s, 30)
