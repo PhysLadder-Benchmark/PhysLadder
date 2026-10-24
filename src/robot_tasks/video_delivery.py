@@ -51,9 +51,14 @@ def _recorded_task_setup(task_id, recorded_digest):
     if hashlib.sha256(contents).hexdigest() != recorded_digest:
         raise ValueError('Modified historical visual setup: ' + str(path))
     record = json.loads(contents)
-    from .task_numbering import SCHEME, historical_setup_record, to_legacy
+    from .task_numbering import (
+        SCHEME, PREVIOUS_SCHEME, historical_setup_record, previous_task_id, to_legacy,
+    )
     if record.get('task_numbering') == SCHEME:
         return record.get('tasks', {}).get(task_id)
+    if record.get('task_numbering') == PREVIOUS_SCHEME:
+        return historical_setup_record(
+            record.get('tasks', {}).get(previous_task_id(task_id)), PREVIOUS_SCHEME)
     return historical_setup_record(record.get('tasks', {}).get(to_legacy(task_id)))
 
 

@@ -88,9 +88,9 @@ L2-04 物性对照沿用 `l2_execution_probe`：`--soft-physics <JSON>` 只覆�
 所有诊断都不调用模型，结果不要并入 GPT 成功率。`initial_gallery` 检查场景、RGB-D 和未完成初态；运行它可查看新摆放。
 
 ```bash
-python -m robot_tasks.integrationtest.diagnostics.initial_gallery L3-03 --output reports/l3_assets_20261008/L3-03
+python -m robot_tasks.integrationtest.diagnostics.initial_gallery L2-07 --output reports/asset_checks/L2-07
 python -m robot_tasks.integrationtest.diagnostics.l3_asset_probe L3-02 --output reports/l3_assets_20261008/L3-02-contact
-python -m robot_tasks.integrationtest.diagnostics.l3_asset_probe L3-03 --output reports/l3_assets_20261008/L3-03-contact
+python -m robot_tasks.integrationtest.diagnostics.l3_asset_probe L2-07 --output reports/asset_checks/L2-07-contact
 python -m robot_tasks.integrationtest.diagnostics.l3_asset_probe L3-05 --output reports/l3_assets_20261008/L3-05-contact
 ```
 

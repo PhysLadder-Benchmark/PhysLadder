@@ -16,7 +16,7 @@ from .l2_clearance import solve_clear
 
 def check():
     result = []
-    for task_id in ("L3-03", "L3-05"):
+    for task_id in ("L2-07", "L3-05"):
         _, config = resolve_task(task_id)
         spec = build_spec(task_id)
         geometry = Geometry(config)
@@ -34,7 +34,7 @@ def check():
             if p.collision
         ]
         samples = []
-        if task_id == "L3-03":
+        if task_id == "L2-07":
             a = articles["eraser"]
             t = pose_transform(a.initial)
             center = t[:3, 3] + t[:3, :3] @ [0, 0, -0.001]
@@ -73,7 +73,7 @@ def check():
                 geometry,
                 origin_transform(
                     xyz,
-                    (0, math.pi / 2, -math.pi / 2 if task_id == "L3-03" else math.pi),
+                    (0, math.pi / 2, -math.pi / 2 if task_id == "L2-07" else math.pi),
                 ),
                 seed,
                 width,

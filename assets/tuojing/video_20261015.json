@@ -10006,7 +10006,7 @@
         }
       ]
     },
-    "L3-03": {
+    "L2-07": {
       "path": "source/L3-11/scene.usdz",
       "bytes": 67188416,
       "sha256": "56c64d6604ec5769e037e5bc7b97f3f314df13ffcc0fbcc3ab0fab0317dfc475",
@@ -10474,7 +10474,7 @@
             1.0
           ]
         ],
-        "source_variant": "L3-03_v3"
+        "source_variant": "L2-07_v3"
       },
       "runtime_dependencies": [
         {
@@ -13791,7 +13791,7 @@
         ]
       }
     },
-    "L3-03_v3": {
+    "L2-07_v3": {
       "path": "source/L3-11/scene.usdz",
       "bytes": 67188416,
       "sha256": "56c64d6604ec5769e037e5bc7b97f3f314df13ffcc0fbcc3ab0fab0317dfc475",

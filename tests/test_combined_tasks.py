@@ -23,13 +23,14 @@ from test_household_tasks import measurement
 
 L1 = ("L1-01", "L1-02", "L1-03", "L1-04", "L1-05")
 L2 = ("L2-01", "L2-02", "L2-03", "L2-04", "L2-05", "L2-06")
-L3 = ("L3-01", "L3-02", "L3-03", "L3-04", "L3-05")
+L3 = ("L3-01", "L3-02", "L3-04", "L3-05")
+VERSIONED_SCENES = ("L2-07",) + L3
 
 
 class CombinedTaskTests(unittest.TestCase):
     def test_all_originals_and_variants_are_independent_registered_tasks(self):
-        self.assertEqual({s.base_task_id for s in TASKS.values() if s.base_task_id}, set(L1 + L2 + L3))
-        for tid in L1 + L2 + L3:
+        self.assertEqual({s.base_task_id for s in TASKS.values() if s.base_task_id}, set(L1 + L2 + VERSIONED_SCENES))
+        for tid in L1 + L2 + VERSIONED_SCENES:
             original, a = resolve_task(tid)
             variant, b = resolve_task(tid + "_v3")
             self.assertEqual(original.factory, variant.factory)
@@ -64,8 +65,8 @@ class CombinedTaskTests(unittest.TestCase):
                 _, frozen = resolve_task(tid + "_v3", path)
                 self.assertEqual(scene_record(frozen.raw["task"]), scene_record(b.raw["task"]))
 
-    def test_l3_scene_selection_and_shared_camera_are_not_overwritten(self):
-        for tid in L3:
+    def test_versioned_scene_selection_and_shared_camera_are_not_overwritten(self):
+        for tid in VERSIONED_SCENES:
             _, a = resolve_task(tid)
             _, b = resolve_task(tid + "_v3")
             self.assertEqual(a.scene_id, tid)
@@ -84,16 +85,16 @@ class CombinedTaskTests(unittest.TestCase):
         self.assertEqual(settings.application_config()["physics_gpu"], 7)
 
     def test_controller_and_budget_profiles_are_explicit(self):
-        for tid in L2 + L3:
+        for tid in L2 + VERSIONED_SCENES:
             for suffix in ("", "_v3"):
                 _, cfg = resolve_task(tid + suffix)
                 sim = SimulationSettings.from_config(cfg)
                 execution = ExecutionSettings.from_config(cfg)
-                self.assertEqual(sim.robot_gravity_compensation, tid.startswith("L2"))
+                self.assertEqual(sim.robot_gravity_compensation, tid in L2)
                 self.assertEqual(sim.cartesian_completion_tolerance_m,
-                                 .001 if tid.startswith("L2") else .005)
+                                 .001 if tid in L2 else .005)
                 self.assertEqual(execution.model_budget_basis,
-                                 "all_requests" if tid.startswith("L2") else "completed_generations")
+                                 "all_requests" if tid in L2 else "completed_generations")
 
     def test_l2_pouring_retains_empty_source_and_half_received(self):
         for tid in ("L2-03", "L2-03_v3"):
@@ -102,6 +103,15 @@ class CombinedTaskTests(unittest.TestCase):
             self.assertEqual(spec.parameters["count"], 12)
             self.assertEqual(spec.parameters["required_received"], 6)
             self.assertEqual(spec.parameters["pouring_success_rule"], "empty_source_half_received_v1")
+
+    def test_wiping_reclassification_preserves_its_scoring_protocol(self):
+        for tid in ("L2-07", "L2-07_variant01"):
+            _, cfg = resolve_task(tid)
+            spec = resolve_bench_spec(cfg.raw["task"], cfg.robot)
+            evaluator = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
+            result = evaluator.update(0., measurement(spec))
+            self.assertEqual(result.status, "running")
+            self.assertEqual(result.metrics["scoring_protocol"], "feishu_english_20261015_v1")
 
     def test_stacked_books_original_and_variant_share_paper_goal(self):
         original_prompt = resolve_task("L3-04")[1].instruction
@@ -175,9 +185,9 @@ class CombinedTaskTests(unittest.TestCase):
             self.assertEqual(sum(a.name.startswith("block_") for a in spec.design.articles), 3)
             self.assertFalse(spec.parameters["require_brush_release"])
 
-    def test_frozen_l3_variants_keep_their_identity_and_rules(self):
+    def test_frozen_versioned_scenes_keep_their_identity_and_rules(self):
         with tempfile.TemporaryDirectory() as tmp:
-            for tid in L3:
+            for tid in VERSIONED_SCENES:
                 variant = tid + "_v3"
                 path = Path(tmp) / (variant + ".toml")
                 freeze_config(variant, path, PROJECT_ROOT / "configs/models/gpt.toml",

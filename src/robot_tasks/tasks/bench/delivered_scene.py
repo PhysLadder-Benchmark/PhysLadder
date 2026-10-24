@@ -49,7 +49,7 @@ class DeliveredScene(NativeL2Scene):
         self.backend, self.config, self.spec, self.design = backend, config, spec, spec.design
         self.stage = backend.world.stage
         self.root = ("/World/Household" if config.task_id.startswith("L1-") else
-                     "/World/L3Wiping" if config.task_id == "L3-03" else "/World/L2")
+                     "/World/L3Wiping" if config.task_id == "L2-07" else "/World/L2")
         self.bench = bench_geometry(config)
         from ...initial_layout import scene_record, apply_record_to_stage
         row = scene_record(config.raw['task'])
@@ -323,7 +323,7 @@ class DeliveredWipingScene(DeliveredScene):
         self.centers = centres
         resistance = json.loads((PROJECT_ROOT / "configs/task_references/l3_wiping_resistance.json").read_text())
         self.wiping_revision = resistance.pop("revision")
-        backend.scene_report["l3_03_ink_wear"] = {"revision": self.wiping_revision, **resistance}
+        backend.scene_report["l2_07_ink_wear"] = {"revision": self.wiping_revision, **resistance}
         self.ledger = ResistantWipeLedger(spec.parameters["board_pose"], centres,
                                  pad_z=spec.parameters["pad_z"],
                                  half_extents=spec.parameters["pad_half_extents"], weights=weights,

@@ -3,6 +3,7 @@
 from dataclasses import replace
 
 from .arm_selection import resolve_bench_spec
+from .l2_protocol import uses_native_l2_protocol
 
 
 class BenchTask:
@@ -26,12 +27,12 @@ class BenchTask:
         reference = (uses_reference(config.raw["task"])
                      or config.raw["task"].get("prompt_protocol") in {
                          "user_jelly_variant_20261016_v1", "feishu_jelly_20261016_v1"})
-        if config.task_id.startswith("L2-") and not reference:
+        if uses_native_l2_protocol(config.task_id) and not reference:
             from .l2_protocol import OPERATING_NOTES
 
             notes = OPERATING_NOTES
         if (
-            config.task_id.startswith(("L1-", "L2-"))
+            (config.task_id.startswith("L1-") or uses_native_l2_protocol(config.task_id))
             and config.raw.get("simulation", {}).get("environment") != "tuojing_lab_v4"
         ):
             raise ValueError(
@@ -48,8 +49,8 @@ class BenchTask:
             "L2-04",
             "L2-05",
             "L2-06",
+            "L2-07",
             "L3-01",
-            "L3-03",
             "L3-04",
             "L3-05",
         }
@@ -76,7 +77,7 @@ class BenchTask:
             self.scene = JellyScene(backend, config, self.spec)
         elif enabled(config) and self.spec.mechanism != "native_fem_orange_lift":
             from .delivered_scene import DeliveredScene, DeliveredWipingScene
-            cls = DeliveredWipingScene if config.task_id == "L3-03" else DeliveredScene
+            cls = DeliveredWipingScene if config.task_id == "L2-07" else DeliveredScene
             self.scene = cls(backend, config, self.spec)
         elif self.spec.mechanism == "native_fem_orange_lift":
             from .orange_scene import OrangeScene
@@ -92,7 +93,7 @@ class BenchTask:
             self.scene = NativeL2Scene(backend, config, self.spec)
         else:
             self.scene = BenchScene(backend, config, self.spec)
-        if config.task_id.startswith("L2-"):
+        if uses_native_l2_protocol(config.task_id):
             from .l2_protocol import PROTOCOL, protocol_metadata
 
             backend.scene_report["household"]["test_protocol"] = {

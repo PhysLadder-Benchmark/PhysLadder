@@ -490,7 +490,7 @@
       "template_correlation": 0.9002857208251953,
       "visual_findings": "真机两侧开度不同；视角和静态背景仍需标定。"
     },
-    "L3-03": {
+    "L2-07": {
       "source_video": "real_videos/L3-03/real_L3-03.mp4",
       "source_video_sha256": "4c0d98953d4ac2407066ae558df834aa191544525e813c0425e5018bd236bcbc",
       "source_resolution": [

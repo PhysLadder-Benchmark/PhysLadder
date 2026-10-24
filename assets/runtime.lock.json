@@ -217,7 +217,7 @@
     },
     "assets/tuojing/README.md": {
       "bytes": 30698,
-      "sha256": "8d43cac57404598d29d56aec8e7c7ce8dd2e737f800266301c2426791600f9b6"
+      "sha256": "c21cb1b970932cc668cf4cbc13f0862ccc887fe52c839d8d72b79ae666688fdd"
     },
     "assets/tuojing/appearance/l1_01_yagu/USAGE_video_v2.txt": {
       "bytes": 1065,
@@ -1189,11 +1189,11 @@
     },
     "assets/tuojing/task_assets.json": {
       "bytes": 4544,
-      "sha256": "42b4b1c1660597f3a3e85929644835c652a157708ae71e9c7e2ac14940be9a42"
+      "sha256": "8bf961d0a023274c7a886ba5eca460e44337c9db46b1de975809fc7035256781"
     },
     "assets/tuojing/video_20261015.json": {
       "bytes": 434579,
-      "sha256": "9052849fc56bc33de28f2fe445111e8cdd0b1adcd1815a43724c31dc51f36e37"
+      "sha256": "f86aad1c2c75da42b2e1fb83dd0c3e43b0f3f48674569ba114c02265bc84f21f"
     },
     "assets/tuojing/video_scoring_geometry.json": {
       "bytes": 1061490,

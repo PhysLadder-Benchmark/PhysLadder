@@ -320,9 +320,9 @@ Adjust local grasp locations, stretching direction, and pressing points accordin
 Inspect the full circumference for unseated sections, changing the viewing direction when needed. Do not assume an unseen region is seated. Gradually release external support and check that the ring remains in the groove, with complete seating and preserved integrity.
 ```
 
-### L3-11 板擦擦除绿板字迹
+### L2-07 板擦擦除绿板字迹（历史编号 L3-11）
 
-现行版本见[任务配置](../../configs/tasks/l3_11_board_wiping.toml)：固定绿板在桌面内转 180°，书写面朝上，黑色 GPT6 字迹从公共第三视角看上下颠倒。板擦置于右侧被动支座上，两手初始空置；右臂抓取和擦拭，左臂观察。真实板擦接触和横向移动擦除至少 90% 初始字迹即可，不要求放回、松手或额外等待；属于接触清洁代理。
+现行版本见[任务配置](../../configs/tasks/l2_07_board_wiping.toml)：固定绿板在桌面内转 180°，书写面朝上，黑色 GPT6 字迹从公共第三视角看上下颠倒。板擦置于右侧被动支座上，两手初始空置；右臂抓取和擦拭，左臂观察。真实板擦接触和横向移动擦除至少 90% 初始字迹即可，不要求放回、松手或额外等待；属于接触清洁代理。
 
 ### L3-14 夹爪推三角块入目标区
 

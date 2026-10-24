@@ -58,10 +58,12 @@ class ForceWearTests(unittest.TestCase):
 
 
 class UnlimitedBudgetTests(unittest.TestCase):
-    def run_budget(self, *, fail=False, external=False):
+    def run_budget(self, *, fail=False, external=False, legacy_retry=False):
         cfg=robot_config()
-        cfg=replace(cfg,task_id='L3-03',max_steps=0,max_wall_time_s=18000,
+        cfg=replace(cfg,task_id='L2-07',max_steps=0,max_wall_time_s=18000,
             raw={**cfg.raw,'execution':{'max_decisions':0,'max_action_steps':1,'completion_samples':1}})
+        if legacy_retry:
+            cfg.raw['execution']['retry_model_errors']=False
         self.assertEqual(ExecutionSettings.from_config(cfg).max_decisions,0)
         clock=[0.]
         settings=GPTSettings('https://example.invalid','fixture',max_calls=0,history_steps=0)
@@ -90,6 +92,9 @@ class UnlimitedBudgetTests(unittest.TestCase):
     def test_retries_are_unlimited_until_deadline(self):self.run_budget(fail=True)
     def test_startup_included_in_external_deadline(self):self.run_budget(external=True)
 
+    def test_reclassified_wiping_retains_legacy_persistent_retry(self):
+        self.run_budget(fail=True,legacy_retry=True)
+
     def test_policy_has_no_thousand_request_cap(self):
         cfg=robot_config();client=Mock()
         client.generate.return_value=ModelReply(json.dumps(decision_document(commands=[])),'fixture','offline',{},0.)
@@ -106,11 +111,11 @@ class UnlimitedBudgetTests(unittest.TestCase):
             root=Path(d); model=root/'model.toml'
             model.write_text('[gpt]\nbase_url="https://example.invalid"\nmodel="fixture"\n')
             runtime=RuntimeConfig('/unused',root,root,root/'runtime.toml',True)
-            args=Mock(tasks=['L3-03'],max_calls=0,wall_time_s=18000,startup_grace_s=120,
+            args=Mock(tasks=['L2-07'],max_calls=0,wall_time_s=18000,startup_grace_s=120,
                       seed=0,reasoning_effort='xhigh',dry_run=False,gui=False,depth=None)
             manifest,_=batch.create_batch(root/'batch',args,model,runtime)
             self.assertEqual(manifest['options']['max_calls'],0)
-            cfg=load_config(root/'batch/configs/L3-03.toml')
+            cfg=load_config(root/'batch/configs/L2-07.toml')
             self.assertEqual(cfg.max_wall_time_s,18000)
             self.assertEqual(ExecutionSettings.from_config(cfg).max_decisions,0)
             self.assertEqual(load_gpt_settings(root/'batch/configs/model.toml').max_calls,0)
@@ -120,7 +125,7 @@ class UnlimitedBudgetTests(unittest.TestCase):
             root=Path(d)
             manifest={'python':'unused','options':{'max_calls':0,'wall_time_s':18000.,
                 'startup_grace_s':60.,'dry_run':False,'gui':False},
-                'tasks':[{'id':'L3-03','config':'unused','cameras':[]}]}
+                'tasks':[{'id':'L2-07','config':'unused','cameras':[]}]}
             environment={'KEPT':'yes'}
             captured={}
             def job(command,directory,env,timeout,started):

@@ -13,7 +13,7 @@ IDS = ("L2-02", "L2-03", "L2-04", "L2-05", "L3-02", "L3-04", "L3-05")
 
 class CompletionTests(unittest.TestCase):
     def test_immediate_goal_tasks_do_not_wait_for_release_or_home(self):
-        for task_id in ("L2-01", "L3-01", "L3-03"):
+        for task_id in ("L2-01", "L3-01", "L2-07"):
             with self.subTest(task=task_id):
                 entry, config = resolve_task(task_id)
                 prepared = entry.factory.prepare_config(config)

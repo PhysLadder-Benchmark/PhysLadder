@@ -1,10 +1,15 @@
 # Task numbering
 
-The public catalogue uses consecutive IDs: L1-01–L1-05, L2-01–L2-06, and
-L3-01–L3-05. Each has an independent `_variant01` setting; `_v3` remains a
+The public catalogue uses L1-01–L1-05, L2-01–L2-07, and
+L3-01, L3-02, L3-04, L3-05. Each has an independent `_variant01` setting; `_v3` remains a
 suffix alias with the same **current** task number.
 
-| Previous ID | Current ID | Task |
+On 2026-10-24, whiteboard wiping moved from L3-03 to L2-07, including its
+alternative setting. Other current IDs did not change. This classification
+change preserves the wiping task's existing execution, budget and scoring
+profile. The table below maps the original, pre-2026-10-21 delivery IDs.
+
+| Original delivery ID | Current ID | Task |
 | --- | --- | --- |
 | L1-01 | L1-01 | Cylinder insertion |
 | L1-03 | L1-02 | Plug alignment |
@@ -19,7 +24,7 @@ suffix alias with the same **current** task number.
 | L2-08 | L2-06 | Lift a jelly |
 | L3-03 | L3-01 | Unscrew a bottle cap |
 | L3-05 | L3-02 | Thread a nut |
-| L3-11 | L3-03 | Wipe a whiteboard |
+| L3-11 | L2-07 | Wipe a whiteboard |
 | L3-14 | L3-04 | Push stacked books |
 | L3-15 | L3-05 | Bimanual sweeping |
 
@@ -35,3 +40,7 @@ recorded source revision to reproduce or resume a pre-renumbering experiment.
 An archived asset directory such as `assets/tuojing/source/L3-15/` retains its
 original delivery name and bytes; the current manifest maps L3-05 to that scene.
 The content-addressed visual-setup history is also immutable.
+
+For records from the `sequential_20261021` scheme, translate only L3-03 to
+L2-07. In that scheme L3-03 means wiping; in the original delivery scheme it
+means bottle-cap removal. Always select the mapping using the source revision.

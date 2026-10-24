@@ -1,4 +1,14 @@
-"""Declared assistance and measurement boundaries shared by the five native L2 tasks."""
+"""Declared assistance and measurement boundaries for the original six L2 tasks."""
+
+# Level classification does not select execution or scoring semantics. Wiping
+# moved to L2-07 while retaining its existing contact-wear protocol.
+NATIVE_PROTOCOL_TASKS = frozenset({
+    "L2-01", "L2-02", "L2-03", "L2-04", "L2-05", "L2-06",
+})
+
+
+def uses_native_l2_protocol(task_id):
+    return task_id in NATIVE_PROTOCOL_TASKS
 
 PROTOCOL = {
     "prompt_version": "guided_visual_l2_v3",

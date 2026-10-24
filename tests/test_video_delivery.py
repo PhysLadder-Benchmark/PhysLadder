@@ -40,7 +40,7 @@ class VideoDeliveryTests(unittest.TestCase):
             ['/World/Mug/Floor','/World/Mug/Wall','/World/Box'])
 
     def test_every_current_task_selects_its_complete_scene_and_source_prompt_frame(self):
-        self.assertEqual(len(scenes()), 21)  # 16 base scenes and five L3 v3 scenes.
+        self.assertEqual(len(scenes()), 21)  # 16 base scenes and five delivered alternative scenes.
         for tid, row in scenes().items():
             with self.subTest(task=tid):
                 entry, cfg = resolve_task(tid)

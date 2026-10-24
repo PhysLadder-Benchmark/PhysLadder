@@ -83,7 +83,7 @@ def wiping():
     a = _article("eraser", "board_eraser", eraser, 0.0154,
                  ((-0.06, -0.03, 0), (0.06, 0.03, 0.020)))
     return BenchSpec(
-        replace(design("L3-03", "抓板擦擦除原生字迹", [a]),
+        replace(design("L2-07", "抓板擦擦除原生字迹", [a]),
                 version="l3-11-any-ink-removal-v6", release=False),
         arms=("right",), mechanism="native_contact_wiping",
         limitations="Original photo-derived GPT6 mask, rigid eraser and contact-driven single-pass removal. Cleaning proxy, not real ink chemistry. No scripted grasp or automatic cleaning motion.",

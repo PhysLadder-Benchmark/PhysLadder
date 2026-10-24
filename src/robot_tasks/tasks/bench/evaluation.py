@@ -6,6 +6,7 @@ import numpy as np
 
 from ...robots.transforms import pose_transform
 from ...types import Assessment, InvalidSimulationState
+from .l2_protocol import uses_native_l2_protocol
 
 SCORING_PROTOCOL = "recoverable_progress_v1"
 
@@ -115,7 +116,7 @@ class BenchEvaluator:
         duration = 0 if self.stable_since is None else now - self.stable_since
         metrics = {
             "task_version": self.spec.design.version,
-            "scoring_protocol": self.spec.parameters.get("scoring_protocol", "native_l2_validity_v2" if self.spec.design.task_id.startswith("L2-") else SCORING_PROTOCOL),
+            "scoring_protocol": self.spec.parameters.get("scoring_protocol", "native_l2_validity_v2" if uses_native_l2_protocol(self.spec.design.task_id) else SCORING_PROTOCOL),
             "mechanism": self.spec.mechanism,
             "limitations": self.spec.limitations,
             "criteria": details,
@@ -141,7 +142,7 @@ class BenchEvaluator:
         if self.spec.design.task_id == "L2-05" and failure.startswith("Drawer"):
             metrics["invalid_reason"] = "simulation_invalid"
             return Assessment("invalid", failure + "; this fixture has no modeled breakage", metrics)
-        if self.spec.design.task_id.startswith("L2-") and (failure or violations):
+        if uses_native_l2_protocol(self.spec.design.task_id) and (failure or violations):
             metrics["failure_category"] = "process_constraint" if violations else "task_failure"
             return Assessment("failed", failure or "; ".join(violations), metrics)
         if failure:

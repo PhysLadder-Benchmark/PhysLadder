@@ -126,7 +126,7 @@ def apply_delivery(spec, task):
         relative = np.linalg.inv(body) @ pose_transform(row["tracked"]["nut"]["pose"])
         p.update(shaft_tip_z=.120, initial_nut_bottom_z=float(relative[2, 3]),
                  nut_height_m=.0105, support_z=.955, thread_pitch_m=.0015)
-    elif tid == "L3-03":
+    elif tid == "L2-07":
         p.update(board_pose=fixture_pose, pad_z=0., pad_half_extents=(.059, .029))
     elif tid == "L3-04":
         centre = row["target_centre_xy"]

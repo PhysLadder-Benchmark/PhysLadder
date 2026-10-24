@@ -34,7 +34,7 @@ def physical_signature(stage, ignore_roots=()):
 
 
 def apply(stage, bundle, tid, assets_root):
-    if tid == 'L3-03':
+    if tid == 'L2-07':
         return {'revision':'visual_alignment_r3_20261014','applied':False,'reason':'Explicitly excluded by PR #19'}
     before = physical_signature(stage)
     tray_path = '/World/Household/plug_storage_base'

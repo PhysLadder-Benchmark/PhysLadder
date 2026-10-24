@@ -180,7 +180,7 @@
       "real_prompt_en": "Pick up and hold the threaded rod steady with the right arm, then unscrew the hex nut counterclockwise with the left arm until it comes off."
     },
     {
-      "task_id": "L3-03",
+      "task_id": "L2-07",
       "sheet_row": 28,
       "source_setting_zh": "带字黑板和蓝色硬质板擦。故障恢复后人工将板擦预置于左爪，左臂接触擦拭，右臂观察。用户将目标从擦除字迹改为只需有擦拭动作。",
       "source_prompt_en": "Pick up the board eraser with the left arm and erase the writing on the whiteboard.",
@@ -301,7 +301,7 @@
       "real_prompt_en": "Pick up and hold the threaded rod steady with the right arm, then unscrew the hex nut counterclockwise with the left arm until it comes off."
     },
     {
-      "task_id": "L3-03_v3",
+      "task_id": "L2-07_v3",
       "sheet_row": 28,
       "source_setting_zh": "带字黑板和蓝色硬质板擦。故障恢复后人工将板擦预置于左爪，左臂接触擦拭，右臂观察。用户将目标从擦除字迹改为只需有擦拭动作。",
       "source_prompt_en": "Pick up the board eraser with the left arm and erase the writing on the whiteboard.",

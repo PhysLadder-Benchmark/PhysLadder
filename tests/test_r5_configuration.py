@@ -225,7 +225,7 @@ class R5ConfigurationTests(unittest.TestCase):
     def test_run_rejects_unimplemented_task_before_creating_simulator_or_policy(self):
         with tempfile.TemporaryDirectory() as folder:
             path = Path(folder) / "real_only.toml"
-            path.write_text('schema_version = 2\n[task]\nid = "L3-03"\n'
+            path.write_text('schema_version = 2\n[task]\nid = "L2-07"\n'
                             'name = "offline real-only fixture"\nsimulation_enabled = false\n', encoding="utf-8")
             with patch("robot_tasks.execution.IsaacSimBackend") as backend, \
                     patch("robot_tasks.execution.GPTPolicy") as policy, redirect_stderr(io.StringIO()) as error:

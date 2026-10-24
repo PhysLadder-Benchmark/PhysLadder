@@ -112,7 +112,7 @@ def apply_reference(spec, task):
     elif tid == "L3-02":
         p["release_required"] = False
         d = replace(d, release=False)
-    elif tid == "L3-03":
+    elif tid == "L2-07":
         p.update(whiteboard_surface=True, require_all_writing=True)
         d = replace(d, name="抓板擦擦除白板字迹")
         limitations += " Runtime whiteboard appearance uses the existing board geometry and removable ink mask; it is a cleaning proxy, not a newly calibrated whiteboard asset."

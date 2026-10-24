@@ -494,7 +494,7 @@ def execute(c):
             pos=c.tcp(right)[:3,3].copy();c.goto(right,matrix(pos,jaw=jaw));c.grip(right,.010)
             c.holds["nut"]=(right,np.linalg.inv(c.tcp(right))@c.object("nut"))
         goal=c.object("nut");goal[:3,3]+=axis*.015;c.move_object("nut",goal)
-    elif tid == "L3-03":
+    elif tid == "L2-07":
         jaw=initial["eraser"][:3,1]
         c.pick("eraser",right,(0,0,.023),jaw=jaw,width=.070,close=.035,lift=.08)
         c.phase("wipe_all_native_ink")

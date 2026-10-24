@@ -6,7 +6,7 @@ configuration.
 
 - Original and variant experiments are independent configurations sharing code.
   Public `_variant01` aliases map to `_v3` settings with the same current number.
-  Use sequential task IDs from `configs/benchmark/task_numbering.json`.
+  Use current task IDs from `configs/benchmark/task_numbering.json`.
   Historical runs and delivered asset directories retain their source IDs;
   never automatically interpret an old unqualified ID as a current task.
 - Preserve prompts, scoring, physics, cameras, and initial layouts during

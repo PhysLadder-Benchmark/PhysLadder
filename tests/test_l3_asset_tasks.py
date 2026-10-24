@@ -57,7 +57,7 @@ class CleaningTests(unittest.TestCase):
         self.assertEqual(self.ledger.metrics()["remaining_cells"], 2)
 
     def test_one_removed_cell_succeeds_while_eraser_is_still_held(self):
-        spec = build_spec("L3-03")
+        spec = build_spec("L2-07")
         rows = measurement(spec)
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
         rows["eraser"]["fingers"]["right"] = [1, 1]
@@ -197,7 +197,7 @@ class PhotoLayoutTests(unittest.TestCase):
     def test_ink_rotation_keeps_face_up_and_contact_map_on_visible_board(self):
         from robot_tasks.tasks.bench.wiping import INK_TEXT, INK_COLOR, ink_centers
 
-        entry, cfg = resolve_task("L3-03")
+        entry, cfg = resolve_task("L2-07")
         entry.factory.prepare_config(cfg)
         spec = build_spec(cfg.task_id)
         self.assertEqual(cfg.arms, ("right",))
