@@ -12,7 +12,7 @@ window.BENCHMARK_FILMS = [
   {id:'L2-05',title:'Drawer pull & return',short:'Drawer',line:'Sustain the grasp through a pull and a return.',outcome:'Success'},
   {id:'L2-06',title:'Jelly handling',short:'Jelly',line:'A small, compliant object tests grip regulation.',outcome:'Failure'},
   {id:'L2-07',title:'Whiteboard wiping',short:'Wiping',line:'Contact must produce an effect on the surface.',outcome:'Success'},
-  {id:'L3-01',title:'Bottle Cap Unscrewing',short:'Bottle cap',line:'A local turn does not always become a complete removal.',outcome:'Failure'},
+  {id:'L3-01',title:'Bottle Cap Removal',short:'Bottle cap',line:'A local turn does not always become a complete removal.',outcome:'Failure'},
   {id:'L3-02',title:'Nut removal',short:'Nut',line:'Maintaining contact through repeated turns.',outcome:'Failure'},
   {id:'L3-04',title:'Stacked-book pushing',short:'Book pushing',line:'Coordinate both arms to rotate and move a stack into the target.',outcome:'Failure'},
   {id:'L3-05',title:'Block sweeping',short:'Sweeping',line:'Use a tool to gather three blocks into a fixed dustpan.',outcome:'Failure'}
