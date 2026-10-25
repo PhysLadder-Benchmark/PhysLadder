@@ -6,7 +6,7 @@
   const nav=document.querySelector('.nav-shell');
   const updateNav=()=>nav.classList.toggle('scrolled',scrollY>30);
   addEventListener('scroll',updateNav,{passive:true});updateNav();
-  const titles={'L1-01':'Marker insertion','L1-02':'Charger alignment','L1-03':'Hat hanging','L1-04':'Cup nesting','L1-05':'Flower transfer','L2-01':'Marker Cap Removal','L2-02':'Book pulling','L2-03':'Marble pouring','L2-04':'Orange handling','L2-05':'Drawer pull & return','L2-06':'Jelly handling','L2-07':'Whiteboard wiping','L3-01':'Bottle Cap Removal','L3-02':'Nut removal','L3-04':'Stacked-book pushing','L3-05':'Block sweeping'};
+  const titles={'L1-01':'Marker insertion','L1-02':'Charger alignment','L1-03':'Hat hanging','L1-04':'Cup nesting','L1-05':'Flower transfer','L2-01':'Marker Cap Removal','L2-02':'Book pulling','L2-03':'Marble pouring','L2-04':'Orange handling','L2-05':'Drawer pull & return','L2-06':'Jelly handling','L2-07':'Whiteboard wiping','L3-01':'Bottle Cap Removal','L3-02':'Nut Removal','L3-04':'Stacked-book pushing','L3-05':'Block sweeping'};
   let selected=tasks.find(t=>t.id==='L2-02'),view='overview',setting='original',level='all';
   let filmIndex=-1,filmVisible=false,filmPaused=false,motionPaused=reduced.matches,manualFilmPlay=false,progressFrame=0;
   const videos=[$('film-sim'),$('film-real')],reel=$('film-reel');
