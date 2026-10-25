@@ -11,6 +11,12 @@ license = {file = "LICENSE"}
 requires-python = ">=3.11"
 dependencies = ["numpy>=1.26,<3", "Pillow>=10,<12", "scipy>=1.11,<2"]
 
+[project.urls]
+Homepage = "https://physladder-benchmark.github.io/PhysLadder/"
+Repository = "https://github.com/PhysLadder-Benchmark/PhysLadder"
+Issues = "https://github.com/PhysLadder-Benchmark/PhysLadder/issues"
+Documentation = "https://github.com/PhysLadder-Benchmark/PhysLadder/blob/master/docs/release/INSTALL.md"
+
 [project.optional-dependencies]
 # CPU geometry/asset checks; Isaac and cuRobo remain separately configured runtimes.
 test = ["usd-core>=25.5,<27", "trimesh>=4,<5", "rtree>=1,<2", "networkx>=3,<4"]

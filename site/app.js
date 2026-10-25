@@ -43,7 +43,7 @@
     }
     const config=selected.settings[setting];$('task-prompt').textContent=config.instruction;$('task-command').textContent=`python tools/reproduce.py --tasks ${config.id}`;
     $('budget').textContent=`Seed ${config.seed} · ${config.max_calls||'Uncapped'} calls · ${config.wall_time_s?config.wall_time_s/3600+' h':'No time cap'}`;
-    $('config-link').href=`https://github.com/TuojingAI/GPT_Benchmark/blob/master/${config.config}`;$('comparison').style.aspectRatio=view==='overview'?'1100/820':'4/3';
+    $('config-link').href=`https://github.com/PhysLadder-Benchmark/PhysLadder/blob/master/${config.config}`;$('comparison').style.aspectRatio=view==='overview'?'1100/820':'4/3';
   }
   document.querySelectorAll('[data-level]').forEach(button=>button.addEventListener('click',()=>{
     level=button.dataset.level;document.querySelectorAll('[data-level]').forEach(b=>{b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button));});
