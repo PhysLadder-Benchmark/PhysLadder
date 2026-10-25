@@ -1,0 +1,150 @@
+{
+  "source": "Paper title page, current compiled PDF from the authors’ Overleaf project, accessed 2026-10-25. Original institution marks rendered without restyling.",
+  "paper_sha256": "46f4b3933402725288b0a319a52187d163373f6d25ab91335ca48aff3f8d8802",
+  "meaning": "Author affiliations; not a statement of institutional endorsement.",
+  "marks": [
+    {
+      "file": "tuojing.webp",
+      "institution": "Tuojing Intelligence",
+      "pdf_page": 1,
+      "pdf_clip_points": [
+        84,
+        211,
+        151,
+        238
+      ]
+    },
+    {
+      "file": "hku.webp",
+      "institution": "The University of Hong Kong",
+      "pdf_page": 1,
+      "pdf_clip_points": [
+        178,
+        208,
+        207,
+        241
+      ]
+    },
+    {
+      "file": "cas.webp",
+      "institution": "Chinese Academy of Sciences",
+      "pdf_page": 1,
+      "pdf_clip_points": [
+        252,
+        208,
+        285,
+        241
+      ]
+    },
+    {
+      "file": "ntu.webp",
+      "institution": "Nanyang Technological University",
+      "pdf_page": 1,
+      "pdf_clip_points": [
+        331,
+        208,
+        358,
+        241
+      ]
+    },
+    {
+      "file": "michigan.webp",
+      "institution": "University of Michigan, Ann Arbor",
+      "pdf_page": 1,
+      "pdf_clip_points": [
+        402,
+        211,
+        437,
+        238
+      ]
+    },
+    {
+      "file": "seu.webp",
+      "institution": "Southeast University",
+      "pdf_page": 1,
+      "pdf_clip_points": [
+        478,
+        208,
+        511,
+        241
+      ]
+    },
+    {
+      "file": "sapient.webp",
+      "institution": "Sapient Intelligence",
+      "pdf_page": 1,
+      "pdf_clip_points": [
+        104,
+        245,
+        130,
+        276
+      ]
+    },
+    {
+      "file": "simpleai.webp",
+      "institution": "SimpleAI",
+      "pdf_page": 1,
+      "pdf_clip_points": [
+        146,
+        253,
+        215,
+        267
+      ]
+    },
+    {
+      "file": "mbzuai.webp",
+      "institution": "Mohamed bin Zayed University of Artificial Intelligence",
+      "pdf_page": 1,
+      "pdf_clip_points": [
+        225,
+        245,
+        262,
+        277
+      ]
+    },
+    {
+      "file": "stanford.webp",
+      "institution": "Stanford University",
+      "pdf_page": 1,
+      "pdf_clip_points": [
+        294,
+        244,
+        318,
+        278
+      ]
+    },
+    {
+      "file": "imperial.webp",
+      "institution": "Imperial College London",
+      "pdf_page": 1,
+      "pdf_clip_points": [
+        331,
+        253,
+        406,
+        267
+      ]
+    },
+    {
+      "file": "tsinghua.webp",
+      "institution": "Tsinghua University",
+      "pdf_page": 1,
+      "pdf_clip_points": [
+        416,
+        245,
+        448,
+        276
+      ]
+    },
+    {
+      "file": "cmu.webp",
+      "institution": "Carnegie Mellon University",
+      "pdf_page": 1,
+      "pdf_clip_points": [
+        480,
+        244,
+        510,
+        276
+      ]
+    }
+  ]
+}
