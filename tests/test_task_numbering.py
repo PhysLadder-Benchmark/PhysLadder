@@ -53,8 +53,13 @@ class TaskNumberingTests(unittest.TestCase):
                 for image in setting["images"].values():
                     self.assertTrue((ROOT / "site" / image).is_file(), image)
         html = (ROOT / "site/index.html").read_text(encoding="utf-8")
-        self.assertIn('data-select="L3-05"', html)
-        self.assertIn('media/L3-05-original-overview.webp', html)
+        self.assertIn('id="task-list"', html)
+        self.assertIn('src="tasks.js"', html)
+        self.assertIn('src="app.js"', html)
+        exported = (ROOT / "site/tasks.js").read_text(encoding="utf-8")
+        prefix = "window.BENCHMARK_TASKS = "
+        self.assertTrue(exported.startswith(prefix))
+        self.assertEqual(json.loads(exported[len(prefix):].strip().removesuffix(";")), rows)
 
     def test_pre_reclassification_visual_setup_is_still_compatible(self):
         digest = "e9fcc542e1686b725f1e74f7e572e314982f0aed83dd0bb5d876e57dda61f03c"
