@@ -196,7 +196,7 @@
   },
   {
     "id": "L2-01",
-    "title": "Uncap a marker",
+    "title": "Marker Cap Removal",
     "level": "L2",
     "settings": {
       "original": {
@@ -469,7 +469,7 @@
   },
   {
     "id": "L3-01",
-    "title": "Unscrew a bottle cap",
+    "title": "Bottle Cap Unscrewing",
     "level": "L3",
     "settings": {
       "original": {
