@@ -20,7 +20,7 @@ class L2LayoutTests(unittest.TestCase):
             "L2-01": ("left", "right"), "L2-02": ("left", "right"),
             "L2-03": ("right",), "L2-04": ("right",), "L2-05": ("right",),
             "L3-01": ("left", "right"), "L3-02": ("left", "right"),
-            "L2-07": ("right",), "L3-04": ("right", "left"), "L3-05": ("right",),
+            "L2-07": ("right",), "L3-03": ("right", "left"), "L3-04": ("right",),
         }
         for task_id, expected in operators.items():
             with self.subTest(task=task_id):

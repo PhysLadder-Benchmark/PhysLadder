@@ -546,20 +546,20 @@
     }
   },
   {
-    "id": "L3-04",
+    "id": "L3-03",
     "title": "Push stacked books",
     "level": "L3",
     "settings": {
       "original": {
-        "id": "L3-04",
-        "record_id": "L3-04",
+        "id": "L3-03",
+        "record_id": "L3-03",
         "instruction": "Use both grippers to push the two stacked books from one black rectangle fully into the other, rotating the stack one full turn along the way. Keep the books stacked on the table without grasping or lifting them.\n",
         "images": {
-          "overview": "media/L3-04-original-overview.webp",
-          "left_wrist": "media/L3-04-original-left_wrist.webp",
-          "right_wrist": "media/L3-04-original-right_wrist.webp"
+          "overview": "media/L3-03-original-overview.webp",
+          "left_wrist": "media/L3-03-original-left_wrist.webp",
+          "right_wrist": "media/L3-03-original-right_wrist.webp"
         },
-        "config": "configs/tasks/l3_04_gripper_push_triangle.toml",
+        "config": "configs/tasks/l3_03_gripper_push_triangle.toml",
         "seed": 0,
         "max_calls": 0,
         "wall_time_s": 18000.0,
@@ -567,15 +567,15 @@
         "evidence": "independent_stacked_book_pushing; Latest complete 2026-10-15 source assets with declared runtime binding/orientation repairs. L2-01 uses the latest measured exterior with the supplied hollow cap and passive retention mechanism fitted axially. Geometry, lighting and materials are video/photo estimates; unobservable physical parameters are not measured. No pose writes, object attachments or forced success during manipulation."
       },
       "variant01": {
-        "id": "L3-04_variant01",
-        "record_id": "L3-04_v3",
+        "id": "L3-03_variant01",
+        "record_id": "L3-03_v3",
         "instruction": "Use both grippers to push the two stacked books from one black rectangle fully into the other, rotating the stack one full turn along the way. Keep the books stacked on the table without grasping or lifting them.\n",
         "images": {
-          "overview": "media/L3-04-variant01-overview.webp",
-          "left_wrist": "media/L3-04-variant01-left_wrist.webp",
-          "right_wrist": "media/L3-04-variant01-right_wrist.webp"
+          "overview": "media/L3-03-variant01-overview.webp",
+          "left_wrist": "media/L3-03-variant01-left_wrist.webp",
+          "right_wrist": "media/L3-03-variant01-right_wrist.webp"
         },
-        "config": "configs/tasks/l3_04_gripper_push_triangle.v3.toml",
+        "config": "configs/tasks/l3_03_gripper_push_triangle.v3.toml",
         "seed": 0,
         "max_calls": 150,
         "wall_time_s": 18000.0,
@@ -585,20 +585,20 @@
     }
   },
   {
-    "id": "L3-05",
+    "id": "L3-04",
     "title": "Bimanual sweeping",
     "level": "L3",
     "settings": {
       "original": {
-        "id": "L3-05",
-        "record_id": "L3-05",
+        "id": "L3-04",
+        "record_id": "L3-04",
         "instruction": "Pick up the brush next to the green box with the left arm and use it to sweep all three blue blocks into the fixed dustpan. The right arm observes. All three blocks must be inside the pan and supported by it. Keep the dustpan fixed and do not manipulate blocks directly with the grippers. Setting down the brush is not required.\n",
         "images": {
-          "overview": "media/L3-05-original-overview.webp",
-          "left_wrist": "media/L3-05-original-left_wrist.webp",
-          "right_wrist": "media/L3-05-original-right_wrist.webp"
+          "overview": "media/L3-04-original-overview.webp",
+          "left_wrist": "media/L3-04-original-left_wrist.webp",
+          "right_wrist": "media/L3-04-original-right_wrist.webp"
         },
-        "config": "configs/tasks/l3_05_bimanual_sweep_blocks.toml",
+        "config": "configs/tasks/l3_04_bimanual_sweep_blocks.toml",
         "seed": 0,
         "max_calls": 0,
         "wall_time_s": 18000.0,
@@ -606,15 +606,15 @@
         "evidence": "native_rigid_brush_sweeping; Latest complete 2026-10-15 source assets with declared runtime binding/orientation repairs. L2-01 uses the latest measured exterior with the supplied hollow cap and passive retention mechanism fitted axially. Geometry, lighting and materials are video/photo estimates; unobservable physical parameters are not measured. No pose writes, object attachments or forced success during manipulation."
       },
       "variant01": {
-        "id": "L3-05_variant01",
-        "record_id": "L3-05_v3",
+        "id": "L3-04_variant01",
+        "record_id": "L3-04_v3",
         "instruction": "Pick up the brush next to the green box with the left arm and use it to sweep all three blue blocks into the fixed dustpan. The right arm observes. All three blocks must be inside the pan and supported by it. Keep the dustpan fixed and do not manipulate blocks directly with the grippers. Setting down the brush is not required.\n",
         "images": {
-          "overview": "media/L3-05-variant01-overview.webp",
-          "left_wrist": "media/L3-05-variant01-left_wrist.webp",
-          "right_wrist": "media/L3-05-variant01-right_wrist.webp"
+          "overview": "media/L3-04-variant01-overview.webp",
+          "left_wrist": "media/L3-04-variant01-left_wrist.webp",
+          "right_wrist": "media/L3-04-variant01-right_wrist.webp"
         },
-        "config": "configs/tasks/l3_05_bimanual_sweep_blocks.v3.toml",
+        "config": "configs/tasks/l3_04_bimanual_sweep_blocks.v3.toml",
         "seed": 0,
         "max_calls": 150,
         "wall_time_s": 18000.0,

@@ -78,7 +78,7 @@ class CleaningTests(unittest.TestCase):
 
 class SweepingTests(unittest.TestCase):
     def setUp(self):
-        self.spec = build_spec("L3-05")
+        self.spec = build_spec("L3-04")
         self.rows = measurement(self.spec)
         self.e = BenchEvaluator(
             self.spec, {a.name: a.initial for a in self.spec.design.articles}
@@ -164,7 +164,7 @@ class PhotoLayoutTests(unittest.TestCase):
     def test_current_l314_has_two_stacked_books_and_two_active_arms(self):
         from robot_tasks.tasks.bench.arm_selection import resolve_bench_spec
 
-        entry, cfg = resolve_task("L3-04")
+        entry, cfg = resolve_task("L3-03")
         entry.factory.prepare_config(cfg)
         spec = resolve_bench_spec(cfg.raw["task"], cfg.robot)
         articles = {a.name: a for a in spec.design.articles}
@@ -175,7 +175,7 @@ class PhotoLayoutTests(unittest.TestCase):
         self.assertEqual(spec.parameters["boundary_reference"], "both_books")
 
     def test_pan_mouth_faces_two_blocks_and_brush_on_image_right(self):
-        entry, cfg = resolve_task("L3-05")
+        entry, cfg = resolve_task("L3-04")
         entry.factory.prepare_config(cfg)
         spec = build_spec(cfg.task_id)
         articles = {a.name: a for a in spec.design.articles}

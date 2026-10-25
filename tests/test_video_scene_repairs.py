@@ -91,7 +91,7 @@ class VideoSceneRepairs(unittest.TestCase):
                          scenes()['L1-01']['runtime_sha256'])
 
     def test_latest_boxes_are_the_only_active_fixed_supports(self):
-        for task in ['L2-01','L2-02','L2-04','L2-05','L3-02','L3-05']:
+        for task in ['L2-01','L2-02','L2-04','L2-05','L3-02','L3-04']:
             with self.subTest(task=task):
                 stage=self.stage(task)
                 self.assertFalse(stage.GetPrimAtPath('/World/ReviewAssets/MeasuredBox'))

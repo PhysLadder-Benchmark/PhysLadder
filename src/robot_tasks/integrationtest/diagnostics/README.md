@@ -91,14 +91,14 @@ L2-04 物性对照沿用 `l2_execution_probe`：`--soft-physics <JSON>` 只覆�
 python -m robot_tasks.integrationtest.diagnostics.initial_gallery L2-07 --output reports/asset_checks/L2-07
 python -m robot_tasks.integrationtest.diagnostics.l3_asset_probe L3-02 --output reports/l3_assets_20261008/L3-02-contact
 python -m robot_tasks.integrationtest.diagnostics.l3_asset_probe L2-07 --output reports/asset_checks/L2-07-contact
-python -m robot_tasks.integrationtest.diagnostics.l3_asset_probe L3-05 --output reports/l3_assets_20261008/L3-05-contact
+python -m robot_tasks.integrationtest.diagnostics.l3_asset_probe L3-04 --output reports/l3_assets_20261008/L3-05-contact
 ```
 
 `l3_asset_probe` 只做隔离部件诊断：螺丝用额外同轴导向和外力矩验证真实旋转推进；板擦通过测试速度和单独的抓持标志检查接触擦除，生产评分的未抓持状态仍不得擦除；簸箕预置方块验证承托/篮内判定，不代替扫入过程。正式任务中没有这些诊断导向、速度或标志。
 
 规划器 Python 可运行 `nut_clearance` 和 `l3_tool_clearance`，检查若干夹爪/相机包围盒候选姿态与固定物的间隙；它们不生成供 GPT 使用的目标，不证明连续无碰撞轨迹或稳定抓持。
 
-当前 L3-05 接触检查使用固定簸箕，只注入用于检验篮内范围与承托的方块初态；不代表扫入成功。L3-01 的 `l3_asset_probe` 使用临时同轴夹具和有限扭矩/拉力校验盖的物理退出，不会进入生产场景。
+当前 L3-04 接触检查使用固定簸箕，只注入用于检验篮内范围与承托的方块初态；不代表扫入成功。L3-01 的 `l3_asset_probe` 使用临时同轴夹具和有限扭矩/拉力校验盖的物理退出，不会进入生产场景。
 
 L3-01 瓶盖被动接触回归（当前原版和扰动版）：
 

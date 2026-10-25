@@ -194,7 +194,7 @@
       "real_prompt_en": "Pick up the board eraser with the left arm and erase the writing on the whiteboard."
     },
     {
-      "task_id": "L3-04",
+      "task_id": "L3-03",
       "sheet_row": 30,
       "source_setting_zh": "双臂协作推叠书转移。两本书叠放在桌面的一个黑色矩形框内，另一个黑色矩形框为目标区域。左右臂使用夹爪共同推动整叠书，从起始框移至目标框，并在移动过程中使整叠书沿桌面旋转一整圈（360°）。全程保持两本书叠放且由桌面承托，禁止抓取或抬起。最终两本书均完全进入目标框，不要求居中或固定朝向。",
       "source_prompt_en": "Use both grippers to push the two stacked books from one black rectangle fully into the other, rotating the stack one full turn along the way. Keep the books stacked on the table without grasping or lifting them.",
@@ -238,7 +238,7 @@
       }
     },
     {
-      "task_id": "L3-05",
+      "task_id": "L3-04",
       "sheet_row": 32,
       "source_setting_zh": "三块蓝色方块呈三角形分布于固定簸箕与绿色支撑盒之间。左臂持刷扫三块全部入簸箕并由其承托，右臂观察，不要求放刷。",
       "source_prompt_en": "Pick up the brush next to the green box with the left arm, sweep both blue blocks into the dustpan, then set the brush down.",
@@ -315,7 +315,7 @@
       "real_prompt_en": "Pick up the board eraser with the left arm and erase the writing on the whiteboard."
     },
     {
-      "task_id": "L3-04_v3",
+      "task_id": "L3-03_v3",
       "sheet_row": 30,
       "source_setting_zh": "双臂协作推叠书转移。两本书叠放在桌面的一个黑色矩形框内，另一个黑色矩形框为目标区域。左右臂使用夹爪共同推动整叠书，从起始框移至目标框，并在移动过程中使整叠书沿桌面旋转一整圈（360°）。全程保持两本书叠放且由桌面承托，禁止抓取或抬起。最终两本书均完全进入目标框，不要求居中或固定朝向。",
       "source_prompt_en": "Use both grippers to push the two stacked books from one black rectangle fully into the other, rotating the stack one full turn along the way. Keep the books stacked on the table without grasping or lifting them.",
@@ -360,7 +360,7 @@
       "trial3_user_clarification": "Frame boundary judged by lower book; upper book initially rotated 20 degrees"
     },
     {
-      "task_id": "L3-05_v3",
+      "task_id": "L3-04_v3",
       "sheet_row": 32,
       "source_setting_zh": "三块蓝色方块呈三角形分布于固定簸箕与绿色支撑盒之间。左臂持刷扫三块全部入簸箕并由其承托，右臂观察，不要求放刷。",
       "source_prompt_en": "Pick up the brush next to the green box with the left arm, sweep both blue blocks into the dustpan, then set the brush down.",

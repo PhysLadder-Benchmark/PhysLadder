@@ -10484,7 +10484,7 @@
         }
       ]
     },
-    "L3-04": {
+    "L3-03": {
       "path": "source/L3-14/scene.usdz",
       "bytes": 79254994,
       "sha256": "56b16d3b56845d1afa1b9adf96b284e754e2cfdebce17259394e1937865d0815",
@@ -11089,7 +11089,7 @@
           },
           "camera_unchanged": true,
           "book_source": "L2-02",
-          "validation": "Passed Isaac Sim 5.1 GPU scene/reset, three cameras, initial nonterminal scoring and settling/support checks; L3-04 also passed dual-arm cuRobo planning. Model task success not established."
+          "validation": "Passed Isaac Sim 5.1 GPU scene/reset, three cameras, initial nonterminal scoring and settling/support checks; L3-03 also passed dual-arm cuRobo planning. Model task success not established."
         },
         "real_prompt_20261020": {
           "two_rectangles": true,
@@ -11140,7 +11140,7 @@
         "shared_edge_length_m": 0.12983459118664073
       }
     },
-    "L3-05": {
+    "L3-04": {
       "path": "source/L3-15/scene.usdz",
       "bytes": 77846690,
       "sha256": "c25b0a9d14c965241953bbc4cbf459ec55213c37b26c6a7060d124771e138d10",
@@ -11990,7 +11990,7 @@
           },
           "camera_unchanged": true,
           "book_source": null,
-          "validation": "Passed Isaac Sim 5.1 GPU scene/reset, three cameras, initial nonterminal scoring and settling/support checks; L3-04 also passed dual-arm cuRobo planning. Model task success not established."
+          "validation": "Passed Isaac Sim 5.1 GPU scene/reset, three cameras, initial nonterminal scoring and settling/support checks; L3-03 also passed dual-arm cuRobo planning. Model task success not established."
         }
       }
     },
@@ -14263,7 +14263,7 @@
         ]
       }
     },
-    "L3-04_v3": {
+    "L3-03_v3": {
       "path": "source/L3-14/scene.usdz",
       "bytes": 79254994,
       "sha256": "56b16d3b56845d1afa1b9adf96b284e754e2cfdebce17259394e1937865d0815",
@@ -14868,7 +14868,7 @@
           },
           "camera_unchanged": true,
           "book_source": "L2-02",
-          "validation": "Passed Isaac Sim 5.1 GPU scene/reset, three cameras, initial nonterminal scoring and settling/support checks; L3-04 also passed dual-arm cuRobo planning. Model task success not established."
+          "validation": "Passed Isaac Sim 5.1 GPU scene/reset, three cameras, initial nonterminal scoring and settling/support checks; L3-03 also passed dual-arm cuRobo planning. Model task success not established."
         },
         "real_prompt_20261020": {
           "two_rectangles": true,
@@ -14919,7 +14919,7 @@
         "shared_edge_length_m": 0.12983459118664073
       },
       "trial3_initial_perturbation": {
-        "task": "L3-04",
+        "task": "L3-03",
         "changed_body": "upper_book",
         "old_pose": [
           0.20075249752150406,
@@ -14954,7 +14954,7 @@
         "boundary_rule": "Lower-book footprint determines start and target rectangle containment; upper-book overhang is diagnostic only; stacking and support still required"
       }
     },
-    "L3-05_v3": {
+    "L3-04_v3": {
       "path": "source/L3-15/scene.usdz",
       "bytes": 77846690,
       "sha256": "c25b0a9d14c965241953bbc4cbf459ec55213c37b26c6a7060d124771e138d10",
@@ -15804,11 +15804,11 @@
           },
           "camera_unchanged": true,
           "book_source": null,
-          "validation": "Passed Isaac Sim 5.1 GPU scene/reset, three cameras, initial nonterminal scoring and settling/support checks; L3-04 also passed dual-arm cuRobo planning. Model task success not established."
+          "validation": "Passed Isaac Sim 5.1 GPU scene/reset, three cameras, initial nonterminal scoring and settling/support checks; L3-03 also passed dual-arm cuRobo planning. Model task success not established."
         }
       },
       "trial3_initial_perturbation": {
-        "task": "L3-05",
+        "task": "L3-04",
         "changed_body": "block_0",
         "old_pose": [
           0.09539826138296495,

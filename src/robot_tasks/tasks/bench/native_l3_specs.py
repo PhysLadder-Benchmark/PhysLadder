@@ -122,7 +122,7 @@ def sweeping():
         instances.append({"name": a.name, "asset": "blue_square", "pose": a.initial,
                           "tracked": {a.name: ""}})
     return BenchSpec(
-        replace(design("L3-05", "持刷扫两块入固定簸箕", articles),
+        replace(design("L3-04", "持刷扫两块入固定簸箕", articles),
                 version="l3-15-overview-right-brush-v6", release=True),
         arms=("right",), mechanism="native_rigid_brush_sweeping",
         limitations="Rigid native bristle contact, not flexible fibers. Pan/green box anchored. Brush is free and rests against the box, no attachment. Real setup's pan fixation was not measured.",

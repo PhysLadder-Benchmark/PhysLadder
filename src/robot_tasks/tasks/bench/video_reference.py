@@ -16,7 +16,7 @@ def apply_delivery(spec, task):
     if tid.startswith("L1-"):
         from .initial_placement import scene_record
         row = scene_record(task)
-    elif tid in ('L3-01', 'L3-04'):
+    elif tid in ('L3-01', 'L3-03'):
         from ...initial_layout import scene_record
         row = scene_record(task)
     else:
@@ -128,7 +128,7 @@ def apply_delivery(spec, task):
                  nut_height_m=.0105, support_z=.955, thread_pitch_m=.0015)
     elif tid == "L2-07":
         p.update(board_pose=fixture_pose, pad_z=0., pad_half_extents=(.059, .029))
-    elif tid == "L3-04":
+    elif tid == "L3-03":
         centre = row["target_centre_xy"]
         # Native outline is rotated. Derive its frame and sizes at scene bind.
         articles = [replace(a, goal=tuple(centre)+(0.88, 1., 0., 0., 0.)) for a in d.articles]
@@ -152,7 +152,7 @@ def apply_delivery(spec, task):
         else:
             lo, hi = row["tracked"]["eraser"]["bounds"]
             p["block_vertices"] = tuple(product(*zip(lo,hi)))
-    elif tid == 'L3-05':
+    elif tid == 'L3-04':
         count = sum(n.startswith('block_') for n in row['tracked'])
         p.update(count=count, required=count, require_brush_release=False)
         d = replace(d, name="持刷扫三块入固定簸箕", release=False)
