@@ -1,0 +1,31 @@
+{
+  "source": "Paper Figure 5, PDF page 10, Section 4.3. Embedded source images extracted; no generated imagery.",
+  "paper_sha256": "46f4b3933402725288b0a319a52187d163373f6d25ab91335ca48aff3f8d8802",
+  "images": {
+    "workspace-sim": 133,
+    "workspace-real": 134,
+    "engagement-sim": 135,
+    "engagement-real": 136,
+    "geometry-sim": 137,
+    "geometry-real": 138,
+    "mass-sim": 141,
+    "mass-real": 142,
+    "robot-sim": 147,
+    "robot-real": 148,
+    "gripper-sim": 149,
+    "gripper-real": 150,
+    "overview-sim": 151,
+    "overview-real": 152,
+    "left-sim": 153,
+    "left-real": 154,
+    "right-sim": 155,
+    "right-real": 156
+  },
+  "timing": "External views and simulated left-wrist view show initial state. Real left wrist: 16:40.5; real right wrist: 28:18, selected during execution for comparable geometry. Views are not synchronized.",
+  "measurements": {
+    "capped_marker_length_mm": 150,
+    "jelly_mass_g": 26.4
+  },
+  "camera_note": "Image-guided viewpoint matching. Repository camera intrinsics are provisional, not a calibrated reconstruction.",
+  "excluded": "Figure 5(b3) AI-generated appearance composites are not included."
+}

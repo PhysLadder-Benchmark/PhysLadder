@@ -1,0 +1,32 @@
+{
+  "description": "Stylized point-and-line illustration sampled from the existing ARX R5a manufacturer meshes. Presentation only; not an experimental capture or a calibrated hardware measurement.",
+  "repository": "https://github.com/ARXroboticsX/ARX_Model",
+  "commit": "74386441845f12af4da203843b6400951d6c5530",
+  "original_license": "BSD, as declared in the retained manufacturer package.xml",
+  "generator": "tools/site/build_gripper_art.py",
+  "urdf_sha256": "600c945f2a631d10beb6473892818325ce40ad03d80f29517f2692eaaa008f36",
+  "sources": [
+    {
+      "path": "assets/r5/R5a/meshes/link6.STL",
+      "sha256": "6e33442021162b8e2d035cd6a1700184280118a10e85519264d402bcb94bac12",
+      "triangles": 12874,
+      "sampled_points": 3800,
+      "feature_edges": 1696
+    },
+    {
+      "path": "assets/r5/R5a/meshes/link7.STL",
+      "sha256": "cf13153c5a4058980a472983b80ce73fb0cb7c10a0ff9b7107b88c72b6e6766f",
+      "triangles": 1978,
+      "sampled_points": 1800,
+      "feature_edges": 384
+    },
+    {
+      "path": "assets/r5/R5a/meshes/link8.STL",
+      "sha256": "19d1dcc773a32f003d9b9d8794f7f821661b5488f35198028db5d1885ca7cc8b",
+      "triangles": 1978,
+      "sampled_points": 1800,
+      "feature_edges": 384
+    }
+  ],
+  "articulation": "Joint origins, axes and exported limits retained from URDF. UI opening is a normalized illustration control, not a measured fingertip width."
+}
