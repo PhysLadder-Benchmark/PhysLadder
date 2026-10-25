@@ -6,7 +6,7 @@
   const nav=document.querySelector('.nav-shell');
   const updateNav=()=>nav.classList.toggle('scrolled',scrollY>30);
   addEventListener('scroll',updateNav,{passive:true});updateNav();
-  const titles={'L1-01':'Marker insertion','L1-02':'Charger alignment','L1-03':'Hat hanging','L1-04':'Cup nesting','L1-05':'Flower transfer','L2-01':'Marker Cap Removal','L2-02':'Book pulling','L2-03':'Marble pouring','L2-04':'Orange handling','L2-05':'Drawer pull & return','L2-06':'Jelly handling','L2-07':'Whiteboard wiping','L3-01':'Bottle Cap Removal','L3-02':'Nut Removal','L3-04':'Stacked-book pushing','L3-05':'Block sweeping'};
+  const titles={'L1-01':'Marker insertion','L1-02':'Charger alignment','L1-03':'Hat hanging','L1-04':'Cup nesting','L1-05':'Flower transfer','L2-01':'Marker Cap Removal','L2-02':'Book pulling','L2-03':'Marble pouring','L2-04':'Orange handling','L2-05':'Drawer pull & return','L2-06':'Jelly handling','L2-07':'Whiteboard wiping','L3-01':'Bottle Cap Removal','L3-02':'Nut Removal','L3-03':'Stacked-book pushing','L3-04':'Block sweeping'};
   let selected=tasks.find(t=>t.id==='L2-02'),view='overview',setting='original',level='all';
   let filmIndex=-1,filmVisible=false,filmPaused=false,motionPaused=reduced.matches,manualFilmPlay=false,progressFrame=0;
   const videos=[$('film-sim'),$('film-real')],reel=$('film-reel');
@@ -43,7 +43,7 @@
     }
     const config=selected.settings[setting];$('task-prompt').textContent=config.instruction;$('task-command').textContent=`python tools/reproduce.py --tasks ${config.id}`;
     $('budget').textContent=`Seed ${config.seed} · ${config.max_calls||'Uncapped'} calls · ${config.wall_time_s?config.wall_time_s/3600+' h':'No time cap'}`;
-    $('config-link').href=`https://github.com/TuojingAI/GPT_Benchmark/blob/master/${config.config}`;$('comparison').style.aspectRatio=view==='overview'?'1100/820':'4/3';
+    $('config-link').href=`https://github.com/PhysLadder-Benchmark/PhysLadder/blob/master/${config.config}`;$('comparison').style.aspectRatio=view==='overview'?'1100/820':'4/3';
   }
   document.querySelectorAll('[data-level]').forEach(button=>button.addEventListener('click',()=>{
     level=button.dataset.level;document.querySelectorAll('[data-level]').forEach(b=>{b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',String(b===button));});

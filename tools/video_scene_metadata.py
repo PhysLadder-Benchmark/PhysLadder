@@ -75,7 +75,7 @@ def enrich(stage, task, tid):
         # values describe this hash-locked scene, not a hardware measurement.
         task["slot_centres"] = [[-.01, -.05735], [-.01, -.04365]]
         task["socket_frame_z"] = .02215
-    if tid == "L3-04":
+    if tid == "L3-03":
         cache = UsdGeom.XformCache()
         lines = []
         for i in range(4):
@@ -89,7 +89,7 @@ def enrich(stage, task, tid):
         task["target_vertices_world"] = vertices
         task["target_centre_xy"] = np.mean(vertices,axis=0).tolist()
         task["target_outline_centres"] = [point.tolist() for point,_ in lines]
-    if tid == 'L3-05':
+    if tid == 'L3-04':
         from scipy.spatial import ConvexHull
         from robot_tasks.robots.transforms import pose_transform
         pan=task['tracked']['dustpan'];inverse=np.linalg.inv(pose_transform(pan['pose']))

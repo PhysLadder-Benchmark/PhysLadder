@@ -125,7 +125,7 @@ class VideoDeliveryTests(unittest.TestCase):
         self.assertAlmostEqual(scenes()['L1-01']['cameras']['overview']['intrinsics'][2],738.,places=3)
 
     def test_current_push_measurements_keep_full_3d_footprint(self):
-        spec, rows, evaluator = scene('L3-04')
+        spec, rows, evaluator = scene('L3-03')
         from robot_tasks.tasks.bench.scoring_l3 import pushing
         for vertices in spec.parameters['book_vertices'].values():
             self.assertEqual(np.asarray(vertices).shape, (8, 3))
@@ -140,7 +140,7 @@ class VideoDeliveryTests(unittest.TestCase):
     def test_current_dustpan_basket_accepts_new_width_but_rejects_the_handle(self):
         from itertools import product
         from robot_tasks.tasks.bench.scoring_l3 import sweeping
-        spec,rows,evaluator=scene('L3-05')
+        spec,rows,evaluator=scene('L3-04')
         pan=pose_transform(rows['dustpan']['pose'])
         def place(name,centre):
             local=np.array(list(product([-.003,.003],repeat=3)))+centre

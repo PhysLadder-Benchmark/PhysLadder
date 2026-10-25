@@ -281,7 +281,7 @@ class HouseholdTests(unittest.TestCase):
         self.assertEqual(e.update(.4, rows).status, "invalid")
 
     def test_sweeping_allows_incidental_touch_but_not_direct_block_manipulation(self):
-        spec = build_spec("L3-05")
+        spec = build_spec("L3-04")
         rows = measurement(spec)
         e = BenchEvaluator(spec, {a.name: a.initial for a in spec.design.articles})
         block = rows["block_0"]

@@ -283,10 +283,30 @@
       "counter": "completed_generations"
     },
     {
+      "id": "L3-03",
+      "record_id": "L3-03",
+      "instruction": "Use both grippers to push the two stacked books from one black rectangle fully into the other, rotating the stack one full turn along the way. Keep the books stacked on the table without grasping or lifting them.\n",
+      "config": "configs/tasks/l3_03_gripper_push_triangle.toml",
+      "seed": 0,
+      "max_calls": 0,
+      "wall_time_s": 18000.0,
+      "counter": "completed_generations"
+    },
+    {
+      "id": "L3-03_variant01",
+      "record_id": "L3-03_v3",
+      "instruction": "Use both grippers to push the two stacked books from one black rectangle fully into the other, rotating the stack one full turn along the way. Keep the books stacked on the table without grasping or lifting them.\n",
+      "config": "configs/tasks/l3_03_gripper_push_triangle.v3.toml",
+      "seed": 0,
+      "max_calls": 150,
+      "wall_time_s": 18000.0,
+      "counter": "completed_generations"
+    },
+    {
       "id": "L3-04",
       "record_id": "L3-04",
-      "instruction": "Use both grippers to push the two stacked books from one black rectangle fully into the other, rotating the stack one full turn along the way. Keep the books stacked on the table without grasping or lifting them.\n",
-      "config": "configs/tasks/l3_04_gripper_push_triangle.toml",
+      "instruction": "Pick up the brush next to the green box with the left arm and use it to sweep all three blue blocks into the fixed dustpan. The right arm observes. All three blocks must be inside the pan and supported by it. Keep the dustpan fixed and do not manipulate blocks directly with the grippers. Setting down the brush is not required.\n",
+      "config": "configs/tasks/l3_04_bimanual_sweep_blocks.toml",
       "seed": 0,
       "max_calls": 0,
       "wall_time_s": 18000.0,
@@ -295,28 +315,8 @@
     {
       "id": "L3-04_variant01",
       "record_id": "L3-04_v3",
-      "instruction": "Use both grippers to push the two stacked books from one black rectangle fully into the other, rotating the stack one full turn along the way. Keep the books stacked on the table without grasping or lifting them.\n",
-      "config": "configs/tasks/l3_04_gripper_push_triangle.v3.toml",
-      "seed": 0,
-      "max_calls": 150,
-      "wall_time_s": 18000.0,
-      "counter": "completed_generations"
-    },
-    {
-      "id": "L3-05",
-      "record_id": "L3-05",
       "instruction": "Pick up the brush next to the green box with the left arm and use it to sweep all three blue blocks into the fixed dustpan. The right arm observes. All three blocks must be inside the pan and supported by it. Keep the dustpan fixed and do not manipulate blocks directly with the grippers. Setting down the brush is not required.\n",
-      "config": "configs/tasks/l3_05_bimanual_sweep_blocks.toml",
-      "seed": 0,
-      "max_calls": 0,
-      "wall_time_s": 18000.0,
-      "counter": "completed_generations"
-    },
-    {
-      "id": "L3-05_variant01",
-      "record_id": "L3-05_v3",
-      "instruction": "Pick up the brush next to the green box with the left arm and use it to sweep all three blue blocks into the fixed dustpan. The right arm observes. All three blocks must be inside the pan and supported by it. Keep the dustpan fixed and do not manipulate blocks directly with the grippers. Setting down the brush is not required.\n",
-      "config": "configs/tasks/l3_05_bimanual_sweep_blocks.v3.toml",
+      "config": "configs/tasks/l3_04_bimanual_sweep_blocks.v3.toml",
       "seed": 0,
       "max_calls": 150,
       "wall_time_s": 18000.0,

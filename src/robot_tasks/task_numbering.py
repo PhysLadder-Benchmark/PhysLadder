@@ -9,9 +9,11 @@ import re
 
 from .paths import PROJECT_ROOT
 
-SCHEME = "level_reclassification_20261024"
+SCHEME = "paper_alignment_20261026"
 PREVIOUS_SCHEME = "sequential_20261021"
-RECLASSIFIED = {"L3-03": "L2-07"}
+RECLASSIFIED_SCHEME = "level_reclassification_20261024"
+PAPER_RENUMBERED = {"L3-04": "L3-03", "L3-05": "L3-04"}
+RECLASSIFIED = {"L3-03": "L2-07", **PAPER_RENUMBERED}
 
 
 @lru_cache(maxsize=1)
@@ -39,10 +41,13 @@ def to_legacy(task_id):
     return _translate(task_id, {r["id"]: r["legacy_id"] for r in numbering()["tasks"]})
 
 
-def previous_task_id(task_id):
-    """Resolve a current ID in the explicitly identified 2026-10-21 scheme."""
+def previous_task_id(task_id, scheme=PREVIOUS_SCHEME):
+    """Resolve a current ID in an explicitly identified prior numbering scheme."""
+    if scheme not in (PREVIOUS_SCHEME, RECLASSIFIED_SCHEME):
+        raise ValueError(f"Unsupported prior numbering scheme: {scheme}")
+    changes = RECLASSIFIED if scheme == PREVIOUS_SCHEME else PAPER_RENUMBERED
     return _translate(task_id, {
-        row["id"]: next((old for old, new in RECLASSIFIED.items()
+        row["id"]: next((old for old, new in changes.items()
                          if new == row["id"]), row["id"])
         for row in numbering()["tasks"]
     })
@@ -56,6 +61,7 @@ def historical_setup_record(record, scheme=None):
         return [historical_setup_record(v, scheme) for v in record]
     if isinstance(record, str):
         ids = (RECLASSIFIED if scheme == PREVIOUS_SCHEME else
+               PAPER_RENUMBERED if scheme == RECLASSIFIED_SCHEME else
                {r["legacy_id"]: r["id"] for r in numbering()["tasks"]})
         return re.sub(r"(?<![\w/-])L[123]-\d{2}(?!\d)",
                       lambda m: ids.get(m[0], m[0]), record)

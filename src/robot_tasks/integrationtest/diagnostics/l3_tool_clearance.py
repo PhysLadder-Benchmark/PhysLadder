@@ -16,7 +16,7 @@ from .l2_clearance import solve_clear
 
 def check():
     result = []
-    for task_id in ("L2-07", "L3-05"):
+    for task_id in ("L2-07", "L3-04"):
         _, config = resolve_task(task_id)
         spec = build_spec(task_id)
         geometry = Geometry(config)

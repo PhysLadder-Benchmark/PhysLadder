@@ -30,14 +30,14 @@ robot, simulation, execution, layout, instruction and scoring fingerprints.
 | L1 (5 tasks) | Original placement and fixed selected P03 placement. The stored selection indices are 3, 3, 2, 1, 1 in task-ID order. |
 | L2-01–L2-06 | Original placement and fixed P01 placement; existing task rules are retained. |
 | L2-07 / L3-01 / L3-02 | Separate delivered scene settings, with their existing prompts, cameras and implementations. |
-| L3-04 | Original and alternative use the same prompt and require containment of both books. The alternative translates the aligned stack and both rectangles by -0.10 m along world X. |
-| L3-05 | Separate delivered alternative scene. Existing success criterion requires all three blocks. |
+| L3-03 | Original and alternative use the same prompt and require containment of both books. The alternative translates the aligned stack and both rectangles by -0.10 m along world X. |
+| L3-04 | Separate delivered alternative scene. Existing success criterion requires all three blocks. |
 
 L2-03 requires the source cup to be empty and at least **6 of 12** beads to be in
 the receiving cup. It does not succeed merely because six beads have arrived
 while others are still in the source cup.
 
-From 2026-10-23, the L3-04 alternative matches the paper's two-book containment
+From 2026-10-23, the L3-03 alternative matches the paper's two-book containment
 criterion instead of its earlier lower-book-only rule. Both settings require a
 full turn during transfer, continuous stacking and tabletop support, and no
 grasping or lifting. Historical runs retain their recorded prompts and scoring
@@ -57,8 +57,8 @@ this software version, not reconstructed historical records.
 | L1 originals / variants | 100 | disabled | all requests |
 | L2-01–L2-06 originals / variants | 100 | disabled | all requests |
 | L2-07 / L3-01 / L3-02 originals / variants | 100 | disabled | completed generations |
-| L3-04 / L3-05 originals | disabled | 18,000 s | completed generations |
-| L3-04 / L3-05 alternatives | 150 | 18,000 s | completed generations |
+| L3-03 / L3-04 originals | disabled | 18,000 s | completed generations |
+| L3-03 / L3-04 alternatives | 150 | 18,000 s | completed generations |
 
 A zero cap means disabled. `tools/reproduce.py` passes the preserved per-task
 limits explicitly so that `batch_run.py` defaults cannot replace them. CLI

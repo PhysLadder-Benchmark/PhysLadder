@@ -52,13 +52,15 @@ def _recorded_task_setup(task_id, recorded_digest):
         raise ValueError('Modified historical visual setup: ' + str(path))
     record = json.loads(contents)
     from .task_numbering import (
-        SCHEME, PREVIOUS_SCHEME, historical_setup_record, previous_task_id, to_legacy,
+        SCHEME, PREVIOUS_SCHEME, RECLASSIFIED_SCHEME,
+        historical_setup_record, previous_task_id, to_legacy,
     )
     if record.get('task_numbering') == SCHEME:
         return record.get('tasks', {}).get(task_id)
-    if record.get('task_numbering') == PREVIOUS_SCHEME:
+    scheme = record.get('task_numbering')
+    if scheme in (PREVIOUS_SCHEME, RECLASSIFIED_SCHEME):
         return historical_setup_record(
-            record.get('tasks', {}).get(previous_task_id(task_id)), PREVIOUS_SCHEME)
+            record.get('tasks', {}).get(previous_task_id(task_id, scheme)), scheme)
     return historical_setup_record(record.get('tasks', {}).get(to_legacy(task_id)))
 
 
@@ -329,7 +331,7 @@ def configure_stage(stage, task_id):
             'mode': 'PathTracing', 'samples_per_pixel': 16,
             'max_bounces': 12, 'max_specular_transmission_bounces': 16,
         }
-    if base_task_id == 'L3-05':
+    if base_task_id == 'L3-04':
         from .tasks.bench.l3_sweep_physics import apply as apply_sweep_box
         report['l3_05_box_collision'] = apply_sweep_box(stage)
         from .tasks.bench.l3_brush_handle import apply as apply_brush_handle

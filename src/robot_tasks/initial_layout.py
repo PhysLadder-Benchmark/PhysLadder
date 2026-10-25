@@ -58,7 +58,7 @@ def scene_record(task):
         return l1_scene_record(task)
     from .tasks.bench.measured_assets import measured_record
     original = measured_record(scenes()[task.get("scene_variant", task["id"])], task["id"])
-    if task["id"] == "L3-04":
+    if task["id"] == "L3-03":
         from .tasks.bench.stacked_book_layout import initial_record
         return initial_record(original, task)
     if task["id"] == "L3-01":
@@ -92,7 +92,7 @@ def apply_record_to_stage(stage, task, row):
     elif task["id"] == "L3-01":
         from .tasks.bench.bottle_contacts import apply_initial_pose
         apply_initial_pose(stage, row)
-    elif task["id"] == "L3-04":
+    elif task["id"] == "L3-03":
         from .tasks.bench.stacked_book_layout import apply_initial_pose
         apply_initial_pose(stage, row)
 

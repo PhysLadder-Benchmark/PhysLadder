@@ -506,7 +506,7 @@ def execute(c):
             for x in np.linspace(*xs,12):
                 goal=board.copy();goal[:3,3]=board[:3,:3]@np.array([x,y,.01005])+board[:3,3]
                 c.move_object("eraser",goal)
-    elif tid == "L3-04":
+    elif tid == "L3-03":
         c.phase("push_eraser_with_gripper_edge")
         row=c.read()["eraser"];start=c.object("eraser")[:3,3]
         goal=np.asarray(c.task.spec.design.articles[0].goal[:3])
@@ -521,7 +521,7 @@ def execute(c):
         for d in np.linspace(0,distance+.018,16)[1:]:
             c.goto(right,matrix(contact+direction*d,approach,jaw),minimum_s=.25)
         retreat=c.tcp(right);retreat[2,3]+=.08;c.goto(right,retreat)
-    elif tid == "L3-05":
+    elif tid == "L3-04":
         c.pick("broom",right,(0,-.055,.003),width=.035,close=.010,lift=.10)
         pan=c.object("dustpan")
         c.phase("sweep_two_blocks_through_native_pan_lip")

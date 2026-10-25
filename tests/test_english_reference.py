@@ -177,7 +177,7 @@ class EnglishReferenceTests(unittest.TestCase):
         self.assertFalse(result.metrics['criteria']['parts_released_supported'])
 
     def test_push_target_uses_one_rectangle_for_geometry_and_outline(self):
-        spec, _, _ = scene('L3-04')
+        spec, _, _ = scene('L3-03')
         self.assertEqual(len(spec.parameters['target_vertices']), 4)
         self.assertEqual(len(spec.design.fixtures), 4)
         self.assertTrue(all(not p.collision for p in spec.design.fixtures))

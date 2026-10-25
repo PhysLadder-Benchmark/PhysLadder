@@ -1,4 +1,4 @@
-"""L3-05 support-box collision only: body plus four raised rim boxes."""
+"""L3-04 support-box collision only: body plus four raised rim boxes."""
 import numpy as np
 
 
@@ -8,7 +8,7 @@ def apply(stage):
     root_path = '/World/L2/support_box'
     root = stage.GetPrimAtPath(root_path)
     if not root:
-        raise ValueError('Missing L3-05 support box')
+        raise ValueError('Missing L3-04 support box')
     source = root_path + '/Colliders'
     cache = UsdGeom.BBoxCache(Usd.TimeCode.Default(), ['default', 'proxy', 'render'])
 
@@ -31,7 +31,7 @@ def apply(stage):
     if not (body_lo[2] < floor_z < top_z and
             np.all(outer_lo[:2] < inset_lo[:2]) and
             np.all(inset_hi[:2] < outer_hi[:2])):
-        raise ValueError('Unexpected L3-05 box axes/geometry')
+        raise ValueError('Unexpected L3-04 box axes/geometry')
     # Preserve the central recessed top. Do not turn the whole raised rim into
     # one solid lid at the rim's highest elevation.
     body_hi[2] = floor_z

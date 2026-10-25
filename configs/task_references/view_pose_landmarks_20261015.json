@@ -531,7 +531,7 @@
       "template_correlation": 0.9113110899925232,
       "visual_findings": "真机控制 ID left 接近闭合；right 张开。该任务未采用 PR #19 外观覆盖。"
     },
-    "L3-04": {
+    "L3-03": {
       "source_video": "real_videos/L3-04/real_L3-04.mp4",
       "source_video_sha256": "242e38844935dce1b2dc937713dbca9f5fa104e0065bc05c19a4553d2ce69ac9",
       "source_resolution": [
@@ -572,7 +572,7 @@
       "template_correlation": 0.9152146577835083,
       "visual_findings": "真机两侧夹爪接近闭合，仿真统一 35 mm 张开。"
     },
-    "L3-05": {
+    "L3-04": {
       "source_video": "real_videos/L3-05/real_L3-05.mp4",
       "source_video_sha256": "9bd7caa5230917c901fd7079de8ffe907889edf19b6132d05ed3f1401566ea03",
       "source_resolution": [

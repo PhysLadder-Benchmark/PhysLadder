@@ -14,7 +14,7 @@ from robot_tasks.video_delivery import scenes
 
 class StackedBookLayoutTests(unittest.TestCase):
     def configurations(self):
-        config = resolve_task("L3-04_v3")[1]
+        config = resolve_task("L3-03_v3")[1]
         yield config
         # Exercise another translation without depending on an unapproved
         # paper-preview configuration or introducing another benchmark task.
@@ -23,9 +23,9 @@ class StackedBookLayoutTests(unittest.TestCase):
         yield replace(config, raw=raw)
 
     def test_original_alignment_and_relative_geometry_are_preserved(self):
-        baseline = deepcopy(scenes()["L3-04"])
-        _, original = resolve_task("L3-04")
-        self.assertIs(scene_record(original.raw["task"]), scenes()["L3-04"])
+        baseline = deepcopy(scenes()["L3-03"])
+        _, original = resolve_task("L3-03")
+        self.assertIs(scene_record(original.raw["task"]), scenes()["L3-03"])
         for config in self.configurations():
             row = scene_record(config.raw["task"])
             dx = config.raw["task"]["stacked_book_offset_x_m"]
@@ -46,12 +46,12 @@ class StackedBookLayoutTests(unittest.TestCase):
                                            row[key+"_vertices_world"])
             for a in spec.design.articles:
                 np.testing.assert_allclose(a.initial, row["tracked"][a.name]["pose"])
-        self.assertEqual(baseline, scenes()["L3-04"])
+        self.assertEqual(baseline, scenes()["L3-03"])
 
     def test_usd_books_and_all_eight_lines_match_scoring_shift_and_are_idempotent(self):
         from pxr import Usd, UsdGeom
         baseline = Usd.Stage.Open(str(PROJECT_ROOT / "assets/tuojing" /
-                                     scenes()["L3-04"]["runtime_path"]))
+                                     scenes()["L3-03"]["runtime_path"]))
         for config in self.configurations():
             row = scene_record(config.raw["task"])
             stage = Usd.Stage.Open(str(PROJECT_ROOT / "assets/tuojing" / row["runtime_path"]))

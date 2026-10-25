@@ -23,7 +23,7 @@ from test_household_tasks import measurement
 
 L1 = ("L1-01", "L1-02", "L1-03", "L1-04", "L1-05")
 L2 = ("L2-01", "L2-02", "L2-03", "L2-04", "L2-05", "L2-06")
-L3 = ("L3-01", "L3-02", "L3-04", "L3-05")
+L3 = ("L3-01", "L3-02", "L3-03", "L3-04")
 VERSIONED_SCENES = ("L2-07",) + L3
 
 
@@ -114,8 +114,8 @@ class CombinedTaskTests(unittest.TestCase):
             self.assertEqual(result.metrics["scoring_protocol"], "feishu_english_20261015_v1")
 
     def test_stacked_books_original_and_variant_share_paper_goal(self):
-        original_prompt = resolve_task("L3-04")[1].instruction
-        for tid in ("L3-04", "L3-04_v3", "L3-04_variant01"):
+        original_prompt = resolve_task("L3-03")[1].instruction
+        for tid in ("L3-03", "L3-03_v3", "L3-03_variant01"):
             _, cfg = resolve_task(tid)
             spec = resolve_bench_spec(cfg.raw["task"], cfg.robot)
             self.assertEqual(spec.parameters["boundary_reference"], "both_books")
@@ -136,7 +136,7 @@ class CombinedTaskTests(unittest.TestCase):
 
     def test_stacked_book_transfer_requires_full_turn_and_both_footprints(self):
         # Synthetic contact/pose streams exercise scoring, not robot feasibility.
-        for tid in ("L3-04", "L3-04_v3", "L3-04_variant01"):
+        for tid in ("L3-03", "L3-03_v3", "L3-03_variant01"):
             _, cfg = resolve_task(tid)
             spec = resolve_bench_spec(cfg.raw["task"], cfg.robot)
             articles = spec.design.articles
@@ -178,7 +178,7 @@ class CombinedTaskTests(unittest.TestCase):
                         self.assertEqual(details["books_in_target"], 1)
 
     def test_sweeping_requires_all_three_blocks(self):
-        for tid in ("L3-05", "L3-05_v3"):
+        for tid in ("L3-04", "L3-04_v3"):
             _, cfg = resolve_task(tid)
             spec = resolve_bench_spec(cfg.raw["task"], cfg.robot)
             self.assertEqual(spec.parameters["required"], 3)

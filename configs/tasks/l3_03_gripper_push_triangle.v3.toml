@@ -5,8 +5,8 @@ workflow_profile = "../workflows/gpt_default.toml"
 
 [robot]
 profile = "../robots/r5_video_20261015.toml"
-active_arms = ["right"]
-observation_arms = ["left"]
+active_arms = ["right", "left"]
+observation_arms = []
 
 [simulation]
 # Preserve the established L3 controller profile. GPU selection is a launch option.
@@ -40,24 +40,27 @@ prompt_protocol = "feishu_english_20261015_v1"
 reference_document = "https://my.feishu.cn/docx/QK4EdOD3hotgp4x782ycgoyyn6g"
 reference_sheet_id = "KyMjZ7"
 reference_sheet_revision = 324
-reference_sheet_row = 32
-id = "L3-05"
-variant_id = "L3-05_v3"
-scene_variant = "L3-05_v3"
-name = "持刷扫三块入固定簸箕"
+reference_sheet_row = 30
+id = "L3-03"
+variant_id = "L3-03_v3"
+scene_variant = "L3-03_v3"
+# Restore the original aligned stack and shift both books/rectangles together.
+stacked_book_offset_x_m = -0.10
+boundary_reference = "both_books"
+name = "双臂推叠书旋转360度移框"
 execution_target = "simulation_and_real"
 simulation_enabled = true
 status = "implemented_proxy"
 implementation = "household"
-launch_command = "python tools/launch.py run L3-05_v3 --gui"
-launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L3-05_v3 --gui"
+launch_command = "python tools/launch.py run L3-03_v3 --gui"
+launch_command_conda = "conda run --no-capture-output -n isaac51 python tools/launch.py run L3-03_v3 --gui"
 instruction = """
-Pick up the brush next to the green box with the left arm and use it to sweep all three blue blocks into the fixed dustpan. The right arm observes. All three blocks must be inside the pan and supported by it. Keep the dustpan fixed and do not manipulate blocks directly with the grippers. Setting down the brush is not required.
+Use both grippers to push the two stacked books from one black rectangle fully into the other, rotating the stack one full turn along the way. Keep the books stacked on the table without grasping or lifting them.
 """
 
 # Chinese setup/props description; final task attribute.
 description = """
-Complete 2026-10-15 assets: room, table, robot mounts, lighting and task props. Robot initial joints and gripper openings follow the per-task video-visible setup. All camera views use the shared L3-01 rig. Prop placements follow the delivered video reconstruction. Task left/right use the robot perspective; overview-image left/right are reversed. L3-04 reuses two independent book bodies from L2-02; L3-05 uses three blocks and a fixed pan. Initial prop poses follow the supplied 2026-10-19 real videos. Physical parameters remain uncalibrated.
+双臂协作推叠书转移。两本书叠放在桌面的一个黑色矩形框内，另一个黑色矩形框为目标区域。左右臂使用夹爪共同推动整叠书，从起始框移至目标框，并在移动过程中使整叠书沿桌面旋转一整圈（360°）。全程保持两本书叠放且由桌面承托，禁止抓取或抬起。最终两本书均完全进入目标框，不要求居中或固定朝向。
 """
 
 # Time-only experiment budget: zero disables the decision/request-count cap.

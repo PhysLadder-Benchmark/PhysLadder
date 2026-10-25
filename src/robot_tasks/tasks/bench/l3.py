@@ -5,6 +5,6 @@ from .push_triangle import build as pushing
 
 BUILDERS = {
     "L3-01": bottle,
-    "L3-04": pushing,
-    "L3-05": sweeping,
+    "L3-03": pushing,
+    "L3-04": sweeping,
 }

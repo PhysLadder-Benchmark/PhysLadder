@@ -44,7 +44,7 @@ class ReleaseToolTests(unittest.TestCase):
             self.assertFalse(set(private) & selected)
 
     def test_reproduction_preserves_nonuniform_budgets(self):
-        rows = reproduce.plan(["L2-03_variant01", "L3-04", "L3-04_variant01"],
+        rows = reproduce.plan(["L2-03_variant01", "L3-03", "L3-03_variant01"],
                               ROOT / "configs/models/gpt.toml")
         self.assertEqual([(r["max_calls"], r["wall_time_s"]) for r in rows],
                          [(100, 0), (0, 18000), (150, 18000)])

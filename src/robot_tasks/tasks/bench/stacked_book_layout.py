@@ -22,7 +22,7 @@ def initial_record(original, task):
     if (isinstance(dx, bool) or not isinstance(dx, (int, float))
             or not math.isfinite(dx) or abs(dx) > .30):
         raise ValueError("Stacked-book offset must be finite and within +/- 30 cm")
-    baseline = scenes()["L3-04"]
+    baseline = scenes()["L3-03"]
     row = deepcopy(original)
     delta = np.array([dx, 0., 0.])
     for name in ("lower_book", "upper_book"):
@@ -67,7 +67,7 @@ def apply_initial_pose(stage, row):
     # the original stage explicitly so even prior preview rotations cannot leak
     # into this placement or disagree with the scoring polygon.
     from ...video_delivery import verified_scene
-    baseline = Usd.Stage.Open(str(verified_scene("L3-04")))
+    baseline = Usd.Stage.Open(str(verified_scene("L3-03")))
     source_cache = UsdGeom.XformCache()
     for kind in ("start", "target"):
         for i in range(4):

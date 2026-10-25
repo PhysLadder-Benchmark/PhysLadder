@@ -1,82 +1,93 @@
-# General-Purpose Foundation Models for Contact-Rich Manipulation
-### A Paired Sim–Real Evaluation of GPT-6 Astra
+<div align="center">
 
-Research software for contact-rich tabletop manipulation on the ARX R5.
-The maintained benchmark contains **16 tasks** across L1–L3, each with an
-independently selectable original setting and a fixed **variant01** setting.
+# PhysLadder
 
-[Interactive project page](https://tuojingai.github.io/GPT_Benchmark/) · [Installation](docs/release/INSTALL.md) ·
-[Evaluation protocol](docs/release/PROTOCOL.md) · [Release guide](docs/release/RELEASE.md) ·
-[Asset notices](NOTICE) · [Validation report](docs/release/VALIDATION.md)
+**How High Can GPT-6 Astra Climb in Contact-Rich Manipulation?**
 
-![Initial simulation scene](site/media/L2-02-original-overview.webp)
+A Hierarchical, Matched Sim–Real Benchmark for Physical Interaction
+
+[Project Page](https://physladder-benchmark.github.io/PhysLadder/) · [Quick Start](#quick-start) · [Benchmark](#benchmark) · [Documentation](#documentation) · [Citation](#citation)
+
+![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
+![Isaac Sim](https://img.shields.io/badge/Isaac_Sim-5.1-76B900?logo=nvidia&logoColor=white)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue)](LICENSE)
+
+<a href="https://physladder-benchmark.github.io/PhysLadder/">
+  <img src="site/media/loops/overview.gif" width="960" alt="Paired simulation and real-world recordings across the PhysLadder task suite">
+</a>
+
+*Explore paired recordings, task instructions, and scene comparisons on the [interactive project page](https://physladder-benchmark.github.io/PhysLadder/).*
+
+</div>
+
+## Overview
+
+PhysLadder evaluates contact-rich manipulation across **16 tasks**, **three levels** of interaction difficulty, and matched simulation and real-world setups on the **ARX R5 (方舟)** dual-arm platform.
+
+This repository provides the simulation framework, task assets, configurations, and automatic evaluators. Each task has an independently selectable original and fixed alternative configuration, giving **32 runnable settings**. The project page brings together paired recordings, sim–real matching details, and an interactive task explorer.
+
+## Benchmark
+
+| Level | Interaction requirement | Tasks |
+| --- | --- | --- |
+| **L1** | Contact selection and geometric alignment | Marker Placement · Charger Alignment · Hat Hanging · Cup Nesting · Flower Transfer |
+| **L2** | Force regulation during sustained contact | Marker Cap Removal · Book Pulling · Marble Pouring · Orange Handling · Drawer Pull & Return · Jelly Handling · Whiteboard Wiping |
+| **L3** | Coordinated contact reconfiguration and force regulation | Bottle Cap Removal · Nut Removal · Stacked-Book Pushing & Rotation · Block Sweeping |
+
+Current task IDs and historical mappings are documented in the [task numbering guide](docs/release/TASK_NUMBERING.md). Original and `variant01` settings are separate experiments; alternative settings are not uniformly position-only changes. Some L3 variants also differ in scoring or budget. See the [evaluation protocol](docs/release/PROTOCOL.md) for the exact settings.
 
 ## Quick start
 
-Use an editable checkout with Python 3.11. Simulation additionally requires
-NVIDIA Isaac Sim 5.1, an NVIDIA GPU and the separate pinned cuRobo environment.
+### 1. Install the framework
+
+Use Python 3.11 and an editable source checkout:
 
 ```bash
-python -m venv .venv
+git clone https://github.com/PhysLadder-Benchmark/PhysLadder.git
+cd PhysLadder
+python3.11 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e '.[test]'
-# If using the source-only archive, restore its matching asset bundle first:
-# python tools/release/install_assets.py /path/to/r5-benchmark-assets.tar.gz
+```
+
+On Windows, create the environment with `py -3.11 -m venv .venv` and activate it with `.venv\Scripts\Activate.ps1` in PowerShell.
+
+### 2. Verify assets and inspect an experiment
+
+These checks and execution plans run on a CPU without calling a model:
+
+```bash
 python tools/verify_runtime_assets.py --usd
 python tools/release/check_task_contract.py
 python tools/launch.py list
 python tools/reproduce.py --tasks L2-02 L2-02_variant01
 ```
 
-The last command prints an execution plan. It does **not** call a model.
-Configure the simulator, planner and model as described in [Installation](docs/release/INSTALL.md),
-then add `--execute` to run that plan. Use `--dry-run` for an offline lifecycle
-check. It does not run physics or demonstrate task success.
+A full clone includes the locked runtime assets. If using a source-only release archive, first restore its matching asset bundle as described in [Installation](docs/release/INSTALL.md).
 
-The default workflow runs locally. Machine paths belong in ignored
-`configs/runtime/local.toml`; the optional Windows storage template defaults to
-D: and accepts another drive or directory. SSH and a cluster are not required.
-For remote deployment, readers or coding agents can follow the optional
-[remote-deployment skill](skills/r5-remote-deploy/SKILL.md), which contains its
-own examples and helpers. This deployment skill is not supplied to the robot's
-decision model and does not change the evaluation protocol.
+### 3. Run in simulation
 
-## Task configurations
-
-| Level | Tasks | Fixed alternative settings |
-|---|---|---|
-| L1 | L1-01, L1-02, L1-03, L1-04, L1-05 | Selected initial placement variants |
-| L2 | L2-01, L2-02, L2-03, L2-04, L2-05, L2-06, L2-07 | P01 arrangements for L2-01–L2-06; delivered alternative scene for whiteboard wiping (L2-07) |
-| L3 | L3-01, L3-02, L3-04, L3-05 | Preserved alternative scene/protocol configurations |
-
-For example, `L2-03` and `L2-03_variant01` are separate experiments.
-See the [task numbering map](docs/release/TASK_NUMBERING.md) when comparing historical records.
-The suffix alias `L2-03_v3` selects the current `L2-03_variant01` setting.
-Old task numbers are not aliases: historical runs retain their source numbering
-and revision. The former key task is excluded; current L1-05 is flower insertion.
-
-**Alternative settings are not uniformly position-only perturbations.** Some
-L3 settings also differ in scoring or budget. See the [protocol table](docs/release/PROTOCOL.md).
-Task parameters, asset bytes, controller settings and existing prompts are preserved.
-
-## Reproduction and records
+Simulation requires **NVIDIA Isaac Sim 5.1**, a compatible **NVIDIA GPU**, the separate pinned **cuRobo** environment, and model access. Follow [Installation](docs/release/INSTALL.md) to configure these runtimes and the ignored `configs/runtime/local.toml` file.
 
 ```bash
-python tools/reproduce.py --suite original           # show all original settings
-python tools/reproduce.py --suite variant01          # show alternative settings
-python tools/reproduce.py --tasks L2-03_variant01 --execute
+python tools/reproduce.py --tasks L2-02_variant01 --execute
 python tools/batch_run.py --summarize runs/PATH_TO_BATCH
 ```
 
-`reproduce.py` passes each task's existing seed, time and call limits explicitly.
-The general-purpose `batch_run.py` has its own CLI defaults; do not assume they
-are the paper's settings. Set every override explicitly for a new experiment.
+Without `--execute`, `reproduce.py` prints a plan. It passes each configuration's existing seed, time limit, and call limit explicitly. Use `--suite original`, `--suite variant01`, or `--suite all` to select a complete suite. Offline dry runs check the execution lifecycle; they do not run physics or measure task success.
 
-Runs retain configuration snapshots, model requests/replies, observations,
-actions, scoring and videos. Summaries separate task failures, interruptions,
-timeouts and infrastructure errors. This repository does not invent missing
-paper results, real-robot logs or model access rights. Real-robot operating
-conditions and skill/history access must be reported separately from simulation.
+## Documentation
+
+| Guide | Contents |
+| --- | --- |
+| [Installation](docs/release/INSTALL.md) | Python, Isaac Sim, cuRobo, model access, and local paths |
+| [Evaluation protocol](docs/release/PROTOCOL.md) | Task configurations, prompts, budgets, scoring, and recorded outputs |
+| [Task numbering](docs/release/TASK_NUMBERING.md) | Current IDs and mappings for historical records |
+| [Validation](docs/release/VALIDATION.md) | Asset and software checks, with their scope and limitations |
+| [Release guide](docs/release/RELEASE.md) | Source and asset packaging, project page, and provenance |
+| [Optional remote deployment](skills/r5-remote-deploy/SKILL.md) | SSH deployment, fleet examples, and verification |
+
+Runs retain configuration snapshots, model requests and replies, observations, actions, scores, and videos. Summaries distinguish task failures, timeouts, interruptions, and infrastructure errors. Real-robot operating conditions and records are documented separately from the simulation runtime.
 
 ## Development
 
@@ -84,20 +95,32 @@ conditions and skill/history access must be reported separately from simulation.
 python -m unittest discover -s tests -v
 python tools/release/check_task_contract.py
 python tools/verify_runtime_assets.py --check-git --usd
-python tools/release/package.py --output dist
 ```
 
-- `src/robot_tasks/`: shared execution, policies, planning, tasks and evaluators.
-- `configs/tasks/`: independent original and alternative configurations.
-- `assets/runtime.lock.json`: complete runtime input inventory and SHA-256 hashes.
-- `tools/release/`: behavior/asset checks, packaging and initial-state rendering.
-- `skills/r5-remote-deploy/`: optional SSH deployment guide and helpers.
-- `site/`: responsive, buildless project page; GitHub Pages workflow included.
-- `runs/`, `reports/`, caches and private host settings remain unversioned.
+| Directory | Purpose |
+| --- | --- |
+| `src/robot_tasks/` | Shared execution, policies, planning, tasks, and evaluators |
+| `configs/tasks/` | Original and alternative task configurations |
+| `assets/runtime.lock.json` | Runtime asset inventory and SHA-256 hashes |
+| `tools/release/` | Verification, packaging, and initial-state rendering |
+| `site/` | Static project page and presentation media |
 
-## License and citation
+For bug reports, include the task ID, commit, runtime versions, and relevant logs in a [GitHub issue](https://github.com/PhysLadder-Benchmark/PhysLadder/issues). Keep credentials, machine settings, and run outputs out of commits. Changes to prompts, scoring, physics, or initial conditions should be identified explicitly so results remain comparable.
 
-Team-owned code: [Apache-2.0](LICENSE). Third-party material retains its original
-terms; see [NOTICE](NOTICE) and the [permission manifest](docs/release/asset_permissions.json).
-Use [CITATION.bib](CITATION.bib) for the software. Author and paper publication
-metadata will be added when finalized.
+## Citation
+
+Use [CITATION.bib](CITATION.bib) to cite the software. Paper publication metadata will be added when finalized.
+
+```bibtex
+@misc{physladder2026,
+  title = {How High Can GPT-6 Astra Climb in Contact-Rich Manipulation? PhysLadder: A Hierarchical, Matched Sim--Real Benchmark for Physical Interaction},
+  year = {2026},
+  howpublished = {Research software},
+  url = {https://github.com/PhysLadder-Benchmark/PhysLadder},
+  note = {Software citation. Paper authors, venue and persistent identifier will be added when finalized.}
+}
+```
+
+## License
+
+Team-owned code is released under [Apache-2.0](LICENSE). Third-party material retains its original terms; see [NOTICE](NOTICE) and the [asset permission manifest](docs/release/asset_permissions.json).

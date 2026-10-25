@@ -116,7 +116,7 @@ def apply_reference(spec, task):
         p.update(whiteboard_surface=True, require_all_writing=True)
         d = replace(d, name="抓板擦擦除白板字迹")
         limitations += " Runtime whiteboard appearance uses the existing board geometry and removable ink mask; it is a cleaning proxy, not a newly calibrated whiteboard asset."
-    elif tid == "L3-04":
+    elif tid == "L3-03":
         target = ((-0.16, -0.14), (0.16, -0.14), (0.16, 0.14), (-0.16, 0.14))
         a = d.articles[0]
         outline = []

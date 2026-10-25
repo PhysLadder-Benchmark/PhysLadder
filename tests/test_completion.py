@@ -8,7 +8,7 @@ from robot_tasks.registry import resolve_task
 from robot_tasks.tasks.completion import completion_instruction, require_home
 from robot_tasks.types import ArmState, Assessment
 
-IDS = ("L2-02", "L2-03", "L2-04", "L2-05", "L3-02", "L3-04", "L3-05")
+IDS = ("L2-02", "L2-03", "L2-04", "L2-05", "L3-02", "L3-03", "L3-04")
 
 
 class CompletionTests(unittest.TestCase):

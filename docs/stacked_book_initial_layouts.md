@@ -1,7 +1,7 @@
-# L3-04 initial-state translations
+# L3-03 initial-state translations
 
 The original task retains its delivered initial state. The default
-`L3-04_variant01` (`L3-04_v3`) restores the original aligned two-book stack and
+`L3-03_variant01` (`L3-03_v3`) restores the original aligned two-book stack and
 translates both books, the starting rectangle, and the target rectangle by
 `-0.10 m` along world X, placing the stack in the middle of the fixed overview.
 
@@ -27,7 +27,7 @@ In an installed Isaac environment, render the centered variant without a
 model request:
 
 ```bash
-python tools/release/render_initial.py L3-04_variant01 --gpu 0 --reset-only \
+python tools/release/render_initial.py L3-03_variant01 --gpu 0 --reset-only \
   --output build/stacked_book_center_preview
 ```
 

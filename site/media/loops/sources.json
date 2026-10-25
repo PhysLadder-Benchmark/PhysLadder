@@ -53,7 +53,7 @@
       "source_trial": "charger_alignment_trial02_20261016",
       "source_outcome": "成功",
       "source_speed": "原视频（未再加速）",
-      "selection_note": "Representative recorded real trial; not necessarily one of the three episodes scored in the paper. Task matched by semantic name; archive L3-03 maps to current L3-04, archive L3-04 maps to current L3-05."
+      "selection_note": "Representative recorded real trial; not necessarily one of the three episodes scored in the paper. Task matched by semantic name; archive L3-03 and L3-04 match the current stacked-book and sweeping task IDs."
     },
     {
       "task_id": "L1-03",
@@ -84,7 +84,7 @@
       "source_trial": "hat_hanging_trial13_20261011",
       "source_outcome": "失败",
       "source_speed": "原视频（未再加速）",
-      "selection_note": "Representative recorded real trial; not necessarily one of the three episodes scored in the paper. Task matched by semantic name; archive L3-03 maps to current L3-04, archive L3-04 maps to current L3-05."
+      "selection_note": "Representative recorded real trial; not necessarily one of the three episodes scored in the paper. Task matched by semantic name; archive L3-03 and L3-04 match the current stacked-book and sweeping task IDs."
     },
     {
       "task_id": "L1-04",
@@ -137,7 +137,7 @@
       "source_trial": "flower_transfer_trial02_20261017",
       "source_outcome": "成功",
       "source_speed": "原视频（未再加速）",
-      "selection_note": "Representative recorded real trial; not necessarily one of the three episodes scored in the paper. Task matched by semantic name; archive L3-03 maps to current L3-04, archive L3-04 maps to current L3-05."
+      "selection_note": "Representative recorded real trial; not necessarily one of the three episodes scored in the paper. Task matched by semantic name; archive L3-03 and L3-04 match the current stacked-book and sweeping task IDs."
     },
     {
       "task_id": "L2-01",
@@ -168,7 +168,7 @@
       "source_trial": "pen_uncapping_trial05_20261011",
       "source_outcome": "失败",
       "source_speed": "原视频（未再加速）",
-      "selection_note": "Representative recorded real trial; not necessarily one of the three episodes scored in the paper. Task matched by semantic name; archive L3-03 maps to current L3-04, archive L3-04 maps to current L3-05."
+      "selection_note": "Representative recorded real trial; not necessarily one of the three episodes scored in the paper. Task matched by semantic name; archive L3-03 and L3-04 match the current stacked-book and sweeping task IDs."
     },
     {
       "task_id": "L2-02",
@@ -199,7 +199,7 @@
       "source_trial": "withskills_book_extraction_20261020_135443",
       "source_outcome": "失败",
       "source_speed": "原视频（未再加速）",
-      "selection_note": "Representative recorded real trial; not necessarily one of the three episodes scored in the paper. Task matched by semantic name; archive L3-03 maps to current L3-04, archive L3-04 maps to current L3-05."
+      "selection_note": "Representative recorded real trial; not necessarily one of the three episodes scored in the paper. Task matched by semantic name; archive L3-03 and L3-04 match the current stacked-book and sweeping task IDs."
     },
     {
       "task_id": "L2-03",
@@ -253,7 +253,7 @@
       "source_trial": "orange_pick_place_trial01_20261005",
       "source_outcome": "成功",
       "source_speed": "原速 15.2 分钟 → 匀速加速 7.7×",
-      "selection_note": "Representative recorded real trial; not necessarily one of the three episodes scored in the paper. Task matched by semantic name; archive L3-03 maps to current L3-04, archive L3-04 maps to current L3-05."
+      "selection_note": "Representative recorded real trial; not necessarily one of the three episodes scored in the paper. Task matched by semantic name; archive L3-03 and L3-04 match the current stacked-book and sweeping task IDs."
     },
     {
       "task_id": "L2-05",
@@ -284,7 +284,7 @@
       "source_trial": "drawer_push_pull_trial04_20261017",
       "source_outcome": "成功",
       "source_speed": "原视频（未再加速）",
-      "selection_note": "Representative recorded real trial; not necessarily one of the three episodes scored in the paper. Task matched by semantic name; archive L3-03 maps to current L3-04, archive L3-04 maps to current L3-05."
+      "selection_note": "Representative recorded real trial; not necessarily one of the three episodes scored in the paper. Task matched by semantic name; archive L3-03 and L3-04 match the current stacked-book and sweeping task IDs."
     },
     {
       "task_id": "L2-06",
@@ -315,7 +315,7 @@
       "source_trial": "jelly_pick_place_trial01_20261016",
       "source_outcome": "失败",
       "source_speed": "原视频（未再加速）",
-      "selection_note": "Representative recorded real trial; not necessarily one of the three episodes scored in the paper. Task matched by semantic name; archive L3-03 maps to current L3-04, archive L3-04 maps to current L3-05."
+      "selection_note": "Representative recorded real trial; not necessarily one of the three episodes scored in the paper. Task matched by semantic name; archive L3-03 and L3-04 match the current stacked-book and sweeping task IDs."
     },
     {
       "task_id": "L2-07",
@@ -384,66 +384,66 @@
       "output_sha256": "06c9104f2598682c2bfcff6a0c6aad87bbe4a3c4cbb0ef404488961899a088c1"
     },
     {
-      "task_id": "L3-04",
+      "task_id": "L3-03",
       "domain": "sim",
       "source_filename": "L3-04_第一次实验_三视角合成.mp4",
       "source_sha256": "4a3d648dbb93f2e23495a980499fe2abfe36260ed97d5b2ded7687bebb0b00f6",
       "source_start_seconds": 25,
       "excerpt_seconds": 8,
       "crop": "crop=iw*0.58:ih*0.48:iw*0.21:ih*0.45",
-      "output": "L3-04-sim.mp4",
+      "output": "L3-03-sim.mp4",
       "output_sha256": "9362fa02a834ab83589a68cf266b786111e79eeaa087d259e9d2ee4b8fd252a0",
       "source_document": "https://my.feishu.cn/docx/ZoJldLYM3onU51xWYDvc9qX7nxg",
       "source_block": "DBtud8Emgoq19DxXDL0cKQWSnVh",
       "selection_note": "第一次未成功。已经完成部分双臂推转，但在规划起点碰撞后未能有效退出恢复，随后长期等待，最终耗尽调用预算；360°旋转和两本书全部入框均未完成。"
     },
     {
-      "task_id": "L3-04",
+      "task_id": "L3-03",
       "domain": "real",
       "source_filename": "L3-03_旋转推两本叠书入框_失败_双爪推叠书并旋转一圈-20261020_113632-withskills-b460d8d0.mp4",
       "source_sha256": "f6750336007bd246dffb43746a900b67736d25d94e3ab397569319259f8f12c5",
       "source_start_seconds": 46,
       "excerpt_seconds": 8,
       "crop": "crop=640:480:320:512",
-      "output": "L3-04-real.mp4",
+      "output": "L3-03-real.mp4",
       "output_sha256": "5e290271def836c7552c711cb3d3b729b7e7973cb763c72800bda5a3d0745a5a",
       "source_archive": "真机任务视频_2分钟内.zip",
       "archive_entry": "真机任务视频_2分钟内/L3-03_旋转推两本叠书入框_失败_双爪推叠书并旋转一圈-20261020_113632-withskills-b460d8d0.mp4",
       "source_trial": "双爪推叠书并旋转一圈-20261020_113632-withskills-b460d8d0",
       "source_outcome": "失败",
       "source_speed": "原视频（未再加速）",
-      "selection_note": "Representative recorded real trial; not necessarily one of the three episodes scored in the paper. Task matched by semantic name; archive L3-03 maps to current L3-04, archive L3-04 maps to current L3-05."
+      "selection_note": "Representative recorded real trial; not necessarily one of the three episodes scored in the paper. Task matched by semantic name; archive L3-03 and L3-04 match the current stacked-book and sweeping task IDs."
     },
     {
-      "task_id": "L3-05",
+      "task_id": "L3-04",
       "domain": "sim",
       "source_filename": "L3-05_第一次_三视角合成.mp4",
       "source_sha256": "25ad9259bf4435d9c0bb548863c3e61e73beabbd9cae440b5e200e311a585a4b",
       "source_start_seconds": 44,
       "excerpt_seconds": 8,
       "crop": "crop=iw*0.58:ih*0.48:iw*0.21:ih*0.45",
-      "output": "L3-05-sim.mp4",
+      "output": "L3-04-sim.mp4",
       "output_sha256": "2260c1a470f8a01fdb848c2cb68a1ceb1bc3afe690eeff1143d20166c1dcc557",
       "source_document": "https://my.feishu.cn/docx/ZoJldLYM3onU51xWYDvc9qX7nxg",
       "source_block": "O1vqdm1QUoEAJ6xea7KcyNDnnab",
       "selection_note": "未成功。L3-05 扫三块入固定簸箕第一次仿真实验超时未成功。任务运行约5小时，获得165次有效GPT回复。执行过程中刷子曾接触一块方块，但未完成扫入目标；最后可用评分记录显示，入簸箕数量为0/3，簸箕保持固定，刷子已不在夹持状态。"
     },
     {
-      "task_id": "L3-05",
+      "task_id": "L3-04",
       "domain": "real",
       "source_filename": "L3-04_扫积木入簸箕_失败_independent_brush_20261018_183232.mp4",
       "source_sha256": "12101b89136ff71a65694fe8709bf7ea09aa6f5b5d632f9a8f998f460305f5c6",
       "source_start_seconds": 48,
       "excerpt_seconds": 8,
       "crop": "crop=704:528:288:432",
-      "output": "L3-05-real.mp4",
+      "output": "L3-04-real.mp4",
       "output_sha256": "d76f38fe54af4b177c27e637c81c19fe5eabecaf3f6304cde5b33505894c4f7d",
       "source_archive": "真机任务视频_2分钟内.zip",
       "archive_entry": "真机任务视频_2分钟内/L3-04_扫积木入簸箕_失败_independent_brush_20261018_183232.mp4",
       "source_trial": "independent_brush_20261018_183232",
       "source_outcome": "失败",
       "source_speed": "原视频（实验时导出的 90 秒合成视频）",
-      "selection_note": "Representative recorded real trial; not necessarily one of the three episodes scored in the paper. Task matched by semantic name; archive L3-03 maps to current L3-04, archive L3-04 maps to current L3-05."
+      "selection_note": "Representative recorded real trial; not necessarily one of the three episodes scored in the paper. Task matched by semantic name; archive L3-03 and L3-04 match the current stacked-book and sweeping task IDs."
     }
   ],
   "montage": "All 16 tasks / 32 excerpts in task order. Each pair has simulation left / real right. Desktop: four task columns by four rows (1920 × 720). Mobile: two task columns by eight rows (960 × 1440). GIF uses the desktop composition.",
@@ -462,7 +462,7 @@
     "L2-07",
     "L3-01",
     "L3-02",
-    "L3-04",
-    "L3-05"
+    "L3-03",
+    "L3-04"
   ]
 }
