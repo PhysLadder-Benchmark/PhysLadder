@@ -20,20 +20,33 @@
 <a class="skip" href="#main">Skip to content</a>
 <header class="nav-shell">
   <a class="wordmark" href="#" aria-label="PhysLadder home"><svg viewBox="0 0 30 34" aria-hidden="true"><path d="M7 27V10L23 3v17L7 27m0-9 16-7M7 34v-7m16-7v7"/><circle cx="7" cy="10" r="2"/><circle cx="23" cy="20" r="2"/></svg>PhysLadder<span class="brand-dot">.</span></a>
-  <nav aria-label="Main navigation"><a href="#experiments">Experiments</a><a href="#alignment">Sim ↔ Real</a><a href="#levels">The ladder</a><a href="#explore">Task explorer</a></nav>
+  <nav aria-label="Main navigation"><a href="#overview">Overview</a><a href="#experiments">Experiments</a><a href="#alignment">Sim ↔ Real</a><a href="#levels">The ladder</a><a href="#explore">Task explorer</a></nav>
   <a class="nav-code" href="https://github.com/PhysLadder-Benchmark/PhysLadder" target="_blank" rel="noopener">Code <span>↗</span></a>
 </header>
 <main id="main">
-  <section class="hero" aria-labelledby="hero-title">
+  <section class="hero hero--overview" aria-labelledby="hero-title">
     <canvas id="constellation" aria-hidden="true"></canvas><div class="hero-haze" aria-hidden="true"></div>
     <div class="hero-orbit orbit-one" aria-hidden="true"></div><div class="hero-orbit orbit-two" aria-hidden="true"></div>
     <div class="hero-content">
-      <p class="eyebrow"><span class="live-dot"></span> A FRONTIER MODEL. A PHYSICAL WORLD.</p>
+      <p class="eyebrow"><span class="live-dot"></span> PHYSLADDER / MATCHED SIM–REAL EVALUATION</p>
       <h1 id="hero-title" class="paper-title"><span class="title-line">How High Can</span> <span class="title-line title-accent">GPT-6 Astra Climb</span> <span class="title-line title-final">in Contact-Rich Manipulation?</span></h1>
       <p class="paper-subtitle"><strong>PhysLadder:</strong> A Hierarchical, Matched Sim–Real Benchmark<br class="subtitle-break"> for Physical Interaction</p>
-      <p class="hero-description">Sixteen everyday tasks. Three levels of physical interaction.<br>A paired simulation and real-world benchmark on <strong>ARX R5 (方舟)</strong>.</p>
-      <div class="hero-actions"><a class="button primary" href="#experiments">See it in motion <span>↗</span></a><a class="button ghost" href="#explore">Explore the benchmark <span>↓</span></a></div>
+      <p class="hero-description">16 paired tasks <span aria-hidden="true">·</span> 3 interaction levels <span aria-hidden="true">·</span> <strong>ARX R5 (方舟)</strong></p>
+      <div class="hero-actions"><a class="button primary" href="https://github.com/PhysLadder-Benchmark/PhysLadder" target="_blank" rel="noopener">Explore the code <span>↗</span></a><a class="button ghost" href="#experiments">Watch experiments <span>↓</span></a></div>
     </div>
+    <figure class="paper-overview" id="overview" aria-labelledby="overview-title">
+      <div class="figure-toolbar">
+        <p id="overview-title"><span class="figure-number">FIGURE 1</span> PhysLadder at a glance</p>
+        <div class="figure-links"><a href="media/paper/figure1.png" target="_blank" rel="noopener">View full-size <span aria-hidden="true">↗</span></a><a href="media/paper/figure1.pdf" target="_blank" rel="noopener" aria-label="Open Figure 1 as a vector PDF">PDF <span aria-hidden="true">↗</span></a></div>
+      </div>
+      <a class="paper-figure-link" href="media/paper/figure1.png" target="_blank" rel="noopener" aria-label="Open the complete Figure 1 at full resolution">
+        <picture>
+          <source type="image/webp" srcset="media/paper/figure1-960.webp 960w, media/paper/figure1-1600.webp 1600w, media/paper/figure1-2400.webp 2400w" sizes="(max-width: 760px) 92vw, (max-width: 1100px) 88vw, 960px">
+          <img src="media/paper/figure1.png" width="2400" height="1385" fetchpriority="high" alt="Figure 1. Matched simulation and real-world evaluation of GPT-6 Astra; three levels of increasing contact demands; success decreases across levels, with no L3 task completed in either environment.">
+        </picture>
+      </a>
+      <figcaption>Sixteen matched tasks. Three levels of contact-rich manipulation. <span>GPT-6 Astra’s success declines as interaction demands increase, with no L3 task completed.</span></figcaption>
+    </figure>
     <div class="hero-foot"><span class="micro">REASONING MEETS RESISTANCE</span><button class="motion-button" id="motion-toggle" aria-pressed="false"><span class="motion-icon">Ⅱ</span><span class="motion-label">Pause motion</span></button><span class="micro pointer-hint"><span class="tiny-cross">✧</span> MOVE TO CONNECT</span></div>
   </section>
 

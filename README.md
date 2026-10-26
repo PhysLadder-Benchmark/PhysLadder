@@ -12,11 +12,13 @@ A Hierarchical, Matched Sim–Real Benchmark for Physical Interaction
 ![Isaac Sim](https://img.shields.io/badge/Isaac_Sim-5.1-76B900?logo=nvidia&logoColor=white)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue)](LICENSE)
 
-<a href="https://physladder-benchmark.github.io/PhysLadder/">
-  <img src="site/media/loops/overview.gif" width="960" alt="Paired simulation and real-world recordings across the PhysLadder task suite">
+<a href="site/media/paper/figure1.png">
+  <img src="site/media/paper/figure1.png" width="1040" alt="Figure 1: matched sim–real evaluation, the three-level PhysLadder, and GPT-6 Astra’s success by level">
 </a>
 
-*Explore paired recordings, task instructions, and scene comparisons on the [interactive project page](https://physladder-benchmark.github.io/PhysLadder/).*
+*Figure 1. Matched sim–real evaluation, increasing interaction demands, and observed performance across three levels.*
+
+[View full-size figure](site/media/paper/figure1.png) · [Figure PDF](site/media/paper/figure1.pdf) · [Explore the interactive project page](https://physladder-benchmark.github.io/PhysLadder/)
 
 </div>
 
@@ -25,6 +27,17 @@ A Hierarchical, Matched Sim–Real Benchmark for Physical Interaction
 PhysLadder evaluates contact-rich manipulation across **16 tasks**, **three levels** of interaction difficulty, and matched simulation and real-world setups on the **ARX R5 (方舟)** dual-arm platform.
 
 This repository provides the simulation framework, task assets, configurations, and automatic evaluators. Each task has an independently selectable original and fixed alternative configuration, giving **32 runnable settings**. The project page brings together paired recordings, sim–real matching details, and an interactive task explorer.
+
+<details>
+<summary><strong>Watch paired experiment recordings</strong></summary>
+
+<a href="https://physladder-benchmark.github.io/PhysLadder/#experiments">
+  <img src="site/media/loops/overview.gif" width="900" alt="Recordings of all 16 tasks, with simulation on the left and the real robot on the right of each pair">
+</a>
+
+Explore individual clips, outcomes, and sim–real matching details on the [project page](https://physladder-benchmark.github.io/PhysLadder/#experiments).
+
+</details>
 
 ## Benchmark
 
