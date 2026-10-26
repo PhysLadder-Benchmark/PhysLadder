@@ -40,9 +40,10 @@ full episodes under the stated budgets.
 `site/` is buildless HTML/CSS/JavaScript. Its actual simulator images are local
 WebP derivatives; source assets and simulation rendering remain untouched.
 
-The unchanged paper Figure 1 leads the homepage and README. It is exported from
-the fixed paper PDF, with lossless responsive WebP previews and full-resolution
-PNG and vector PDF links. `site/media/paper/source.json` records its source hash,
+The unchanged paper Figure 1 sits between the homepage cover and affiliation
+logos, and leads the README. It is exported from the fixed paper PDF, with lossless
+responsive WebP previews and full-resolution PNG and vector PDF links.
+`site/media/paper/source.json` records its source hash,
 page crop and verification against the current paper.
 
 ```bash
