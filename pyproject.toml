@@ -12,7 +12,7 @@ requires-python = ">=3.11"
 dependencies = ["numpy>=1.26,<3", "Pillow>=10,<12", "scipy>=1.11,<2"]
 
 [project.urls]
-Homepage = "https://physladder-benchmark.github.io/PhysLadder/"
+Homepage = "https://physladder-benchmark.com/"
 Repository = "https://github.com/PhysLadder-Benchmark/PhysLadder"
 Issues = "https://github.com/PhysLadder-Benchmark/PhysLadder/issues"
 Documentation = "https://github.com/PhysLadder-Benchmark/PhysLadder/blob/master/docs/release/INSTALL.md"

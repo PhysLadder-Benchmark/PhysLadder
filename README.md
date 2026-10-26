@@ -6,7 +6,7 @@
 
 A Hierarchical, Matched Sim–Real Benchmark for Physical Interaction
 
-[Project Page](https://physladder-benchmark.github.io/PhysLadder/) · [Quick Start](#quick-start) · [Benchmark](#benchmark) · [Documentation](#documentation) · [Citation](#citation)
+[Project Page](https://physladder-benchmark.com/) · [Quick Start](#quick-start) · [Benchmark](#benchmark) · [Documentation](#documentation) · [Citation](#citation)
 
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
 ![Isaac Sim](https://img.shields.io/badge/Isaac_Sim-5.1-76B900?logo=nvidia&logoColor=white)
@@ -18,7 +18,7 @@ A Hierarchical, Matched Sim–Real Benchmark for Physical Interaction
 
 *Figure 1. Matched sim–real evaluation, increasing interaction demands, and observed performance across three levels.*
 
-[View full-size figure](site/media/paper/figure1.png) · [Figure PDF](site/media/paper/figure1.pdf) · [Explore the interactive project page](https://physladder-benchmark.github.io/PhysLadder/)
+[View full-size figure](site/media/paper/figure1.png) · [Figure PDF](site/media/paper/figure1.pdf) · [Explore the interactive project page](https://physladder-benchmark.com/)
 
 </div>
 
@@ -31,11 +31,11 @@ This repository provides the simulation framework, task assets, configurations, 
 <details>
 <summary><strong>Watch paired experiment recordings</strong></summary>
 
-<a href="https://physladder-benchmark.github.io/PhysLadder/#experiments">
+<a href="https://physladder-benchmark.com/#experiments">
   <img src="site/media/loops/overview.gif" width="900" alt="Recordings of all 16 tasks, with simulation on the left and the real robot on the right of each pair">
 </a>
 
-Explore individual clips, outcomes, and sim–real matching details on the [project page](https://physladder-benchmark.github.io/PhysLadder/#experiments).
+Explore individual clips, outcomes, and sim–real matching details on the [project page](https://physladder-benchmark.com/#experiments).
 
 </details>
 

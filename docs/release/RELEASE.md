@@ -70,8 +70,9 @@ reduced-motion preferences disable automatic animation and playback. The task ca
 The manual `.github/workflows/pages.yml` publishes only `site/` using GitHub
 Pages. Select **GitHub Actions** in the repository's Pages settings, then run
 **Publish project page** after pushing the reviewed release. The project page is hosted at
-<https://physladder-benchmark.github.io/PhysLadder/>; repository and configuration
-links target `PhysLadder-Benchmark/PhysLadder`. No custom domain is required.
+<https://physladder-benchmark.com/>; repository and configuration
+links target `PhysLadder-Benchmark/PhysLadder`. The custom domain is configured in
+the repository's Pages settings; DNS is managed separately by the domain provider.
 No empty paper/PDF link is shown. The title uses the supplied paper title; author,
 venue and paper URL metadata have not been invented.
 
