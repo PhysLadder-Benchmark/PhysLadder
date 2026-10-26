@@ -44,14 +44,21 @@ body.motion-paused .level-card .point-art *{transition:none}body.motion-paused *
 .figure-links a > span { color: #b7a9ee; margin-left: 3px; }
 .paper-figure-link {
   display: block;
-  background: #fff;
-  padding: 15px;
-  border: 1px solid #c9c1f540;
-  border-radius: 16px;
-  box-shadow: 0 20px 65px #03050b60;
+  background: linear-gradient(135deg, #aaa1ee0a, #7bbbd006);
+  padding: 10px;
+  border: 1px solid #c9c1f526;
+  border-radius: 18px;
+  box-shadow: 0 18px 60px #03050b40;
   cursor: zoom-in;
 }
 .paper-figure-link picture, .paper-figure-link img { display: block; width: 100%; height: auto; }
+.paper-figure-link img {
+  border-radius: 9px;
+  opacity: .82;
+  transition: opacity .25s ease;
+}
+.paper-figure-link:hover img,
+.paper-figure-link:focus-visible img { opacity: 1; }
 .paper-overview figcaption {
   max-width: 960px;
   margin: 14px auto 0;
@@ -74,3 +81,42 @@ body.motion-paused .level-card .point-art *{transition:none}body.motion-paused *
   .paper-overview figcaption { font-size: 10px; line-height: 1.65; margin-top: 12px; padding: 0 8px; }
   .paper-overview figcaption > span { display: block; margin-top: 3px; }
 }
+
+/* Quiet monochrome marks blend into the same surface as the cover. */
+.affiliation-sheet {
+  background: var(--bg);
+  border-top: 1px solid #b5b0d51c;
+  border-bottom: 1px solid #b5b0d51c;
+  border-radius: 0;
+  padding: 30px 12px 28px;
+  isolation: isolate;
+  scrollbar-color: #55536b transparent;
+}
+.affiliation-grid { row-gap: 30px; }
+.affiliation { --mark-brightness: 1.75; }
+.affiliation[title="University of Michigan, Ann Arbor"] { --mark-brightness: 8.5; }
+.affiliation img {
+  filter: grayscale(1) invert(1) contrast(1.35) brightness(var(--mark-brightness));
+  mix-blend-mode: screen;
+  opacity: .74;
+  transition: opacity .2s ease, transform .2s ease;
+}
+.affiliation span { color: #9a9fb6; transition: color .2s ease; }
+.affiliation:hover img { opacity: 1; transform: translateY(-2px); }
+.affiliation:hover span { color: #e0ddef; }
+@media (max-width: 760px) {
+  .affiliation-sheet { padding: 24px 0 22px; }
+  .paper-figure-link img { border-radius: 5px; }
+}
+@media (hover: none) {
+  .paper-figure-link img { opacity: .92; }
+  .affiliation img { opacity: .86; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .paper-figure-link img, .affiliation img, .affiliation span { transition: none; }
+  .affiliation:hover img { transform: none; }
+}
+body.motion-paused .paper-figure-link img,
+body.motion-paused .affiliation img,
+body.motion-paused .affiliation span { transition: none; }
+body.motion-paused .affiliation:hover img { transform: none; }
