@@ -1,0 +1,135 @@
+{
+  "description": "SVG display masks for original paper logo images. Source RGB pixels and image files are unchanged. Neutral exterior background is hidden; enclosed white emblem details are retained. No generated or recolored marks.",
+  "masks": [
+    {
+      "image": "cas.webp",
+      "image_sha256": "a642431c7f1b528e9104793637d65a875399d5a549391a05b58d33b0b5122f2e",
+      "mask": "cas.svg",
+      "method": "border-connected-background",
+      "width": 132,
+      "height": 132,
+      "backgroundPixels": 6694,
+      "edgeTreatment": "One-pixel neutral fringe feather, source RGB unchanged"
+    },
+    {
+      "image": "cmu.webp",
+      "image_sha256": "1e073b4ffee80325621c82f1b9c53974cb7516683cc277279bda9e193c04aef6",
+      "mask": "cmu.svg",
+      "method": "border-connected-background",
+      "width": 120,
+      "height": 128,
+      "backgroundPixels": 3696,
+      "edgeTreatment": "One-pixel neutral fringe feather, source RGB unchanged"
+    },
+    {
+      "image": "hku.webp",
+      "image_sha256": "9536987f3e28072c62fc0c27463e8b26055ffd34f0387b47494ce4ed221ea5ec",
+      "mask": "hku.svg",
+      "method": "border-connected-background",
+      "width": 116,
+      "height": 132,
+      "backgroundPixels": 4953,
+      "edgeTreatment": "One-pixel neutral fringe feather, source RGB unchanged"
+    },
+    {
+      "image": "imperial.webp",
+      "image_sha256": "6484c93c1b5ff841267515248f0767c2e36913024c8f941230e678dcf37d2885",
+      "mask": "imperial.svg",
+      "method": "all-neutral-background",
+      "width": 300,
+      "height": 56,
+      "backgroundPixels": 13055,
+      "edgeTreatment": "One-pixel neutral fringe feather, source RGB unchanged"
+    },
+    {
+      "image": "mbzuai.webp",
+      "image_sha256": "5d8629b96041263d0daf2b7f23ee517bd99794c2a4d78d37078f0272d927b806",
+      "mask": "mbzuai.svg",
+      "method": "all-neutral-background",
+      "width": 148,
+      "height": 128,
+      "backgroundPixels": 14026,
+      "edgeTreatment": "One-pixel neutral fringe feather, source RGB unchanged"
+    },
+    {
+      "image": "michigan.webp",
+      "image_sha256": "8f369b8521191a47ea7e22ddce7510ccdc7a7f571229e963b667b969f9353411",
+      "mask": "michigan.svg",
+      "method": "all-neutral-background",
+      "width": 140,
+      "height": 108,
+      "backgroundPixels": 6168,
+      "edgeTreatment": "One-pixel neutral fringe feather, source RGB unchanged"
+    },
+    {
+      "image": "ntu.webp",
+      "image_sha256": "c8b8aa5a8d637d2109ce3163588193cebc32bfb6c970ee065be0b8d61eebe199",
+      "mask": "ntu.svg",
+      "method": "border-connected-background",
+      "width": 108,
+      "height": 132,
+      "backgroundPixels": 4503,
+      "edgeTreatment": "One-pixel neutral fringe feather, source RGB unchanged"
+    },
+    {
+      "image": "sapient.webp",
+      "image_sha256": "ef1fdf2039f842f6758639b6e6fa2eb355dc7f675d16e95040fbffc77abffca9",
+      "mask": "sapient.svg",
+      "method": "all-neutral-background",
+      "width": 104,
+      "height": 124,
+      "backgroundPixels": 8630,
+      "edgeTreatment": "One-pixel neutral fringe feather, source RGB unchanged"
+    },
+    {
+      "image": "seu.webp",
+      "image_sha256": "3af94a09246817412ac4a78bae4e1160547cf787635fe780ceade6599a31b6ac",
+      "mask": "seu.svg",
+      "method": "border-connected-background",
+      "width": 132,
+      "height": 132,
+      "backgroundPixels": 6770,
+      "edgeTreatment": "One-pixel neutral fringe feather, source RGB unchanged"
+    },
+    {
+      "image": "simpleai.webp",
+      "image_sha256": "74522c8bd973c00f968c4280b32c4cafdaa91db6d3a65e3e6c2ed523a551c508",
+      "mask": "simpleai.svg",
+      "method": "all-neutral-background",
+      "width": 276,
+      "height": 56,
+      "backgroundPixels": 11939,
+      "edgeTreatment": "One-pixel neutral fringe feather, source RGB unchanged"
+    },
+    {
+      "image": "stanford.webp",
+      "image_sha256": "4de6209e77e263201f1c003cc897311d45095bb2af75e1dc91d4187e818d2012",
+      "mask": "stanford.svg",
+      "method": "border-connected-background",
+      "width": 96,
+      "height": 136,
+      "backgroundPixels": 3315,
+      "edgeTreatment": "One-pixel neutral fringe feather, source RGB unchanged"
+    },
+    {
+      "image": "tsinghua.webp",
+      "image_sha256": "68ef8e68791968ee0371831d2bd121b6c57df2068b507fa14e22c761c48fa7cd",
+      "mask": "tsinghua.svg",
+      "method": "border-connected-background",
+      "width": 128,
+      "height": 124,
+      "backgroundPixels": 5997,
+      "edgeTreatment": "One-pixel neutral fringe feather, source RGB unchanged"
+    },
+    {
+      "image": "tuojing.webp",
+      "image_sha256": "81989bbf376106be2b0ab2ca47fb5b155bb7b1be8624808eff971ea0b9ca9c0f",
+      "mask": "tuojing.svg",
+      "method": "all-neutral-background",
+      "width": 268,
+      "height": 108,
+      "backgroundPixels": 21240,
+      "edgeTreatment": "One-pixel neutral fringe feather, source RGB unchanged"
+    }
+  ]
+}

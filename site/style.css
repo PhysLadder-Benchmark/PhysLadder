@@ -44,7 +44,7 @@ body.motion-paused .level-card .point-art *{transition:none}body.motion-paused *
 .figure-links a > span { color: #b7a9ee; margin-left: 3px; }
 .paper-figure-link {
   display: block;
-  background: linear-gradient(135deg, #aaa1ee0a, #7bbbd006);
+  background: radial-gradient(ellipse at 15% 10%, #9180cf35, transparent 65%), radial-gradient(ellipse at 85% 90%, #6ba4c328, transparent 65%), #10131d;
   padding: 10px;
   border: 1px solid #c9c1f526;
   border-radius: 18px;
@@ -54,7 +54,7 @@ body.motion-paused .level-card .point-art *{transition:none}body.motion-paused *
 .paper-figure-link picture, .paper-figure-link img { display: block; width: 100%; height: auto; }
 .paper-figure-link img {
   border-radius: 9px;
-  opacity: .82;
+  opacity: .72;
   transition: opacity .25s ease;
 }
 .paper-figure-link:hover img,
@@ -82,41 +82,120 @@ body.motion-paused .level-card .point-art *{transition:none}body.motion-paused *
   .paper-overview figcaption > span { display: block; margin-top: 3px; }
 }
 
-/* Quiet monochrome marks blend into the same surface as the cover. */
+/* Original-color marks float over a shared, softly lit cloud. */
 .affiliation-sheet {
-  background: var(--bg);
-  border-top: 1px solid #b5b0d51c;
-  border-bottom: 1px solid #b5b0d51c;
+  position: relative;
+  background: transparent;
+  border: 0;
   border-radius: 0;
-  padding: 30px 12px 28px;
+  padding: 38px 12px 28px;
+  overflow: visible;
   isolation: isolate;
   scrollbar-color: #55536b transparent;
 }
-.affiliation-grid { row-gap: 30px; }
-.affiliation { --mark-brightness: 1.75; }
-.affiliation[title="University of Michigan, Ann Arbor"] { --mark-brightness: 8.5; }
-.affiliation img {
-  filter: grayscale(1) invert(1) contrast(1.35) brightness(var(--mark-brightness));
-  mix-blend-mode: screen;
-  opacity: .74;
-  transition: opacity .2s ease, transform .2s ease;
+.affiliation-sheet::before,
+.affiliation-sheet::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  z-index: -1;
+  inset: 4% -5% 0;
+  background: radial-gradient(ellipse at 20% 40%, #9babdc25, transparent 37%), radial-gradient(ellipse at 65% 65%, #83b8d72c, transparent 42%), radial-gradient(ellipse at 90% 25%, #a290d326, transparent 32%);
+  filter: blur(22px);
+  animation: affiliation-cloud 18s ease-in-out infinite alternate;
 }
-.affiliation span { color: #9a9fb6; transition: color .2s ease; }
-.affiliation:hover img { opacity: 1; transform: translateY(-2px); }
+.affiliation-sheet::after {
+  inset: 30% 10% -12%;
+  background: radial-gradient(ellipse at 40% 50%, #b9c9e529, transparent 58%);
+  animation-duration: 23s;
+  animation-delay: -8s;
+}
+.affiliation-grid { position: relative; row-gap: 12px; }
+.affiliation {
+  position: relative;
+  padding: 20px 10px 25px;
+  gap: 18px;
+  --float-time: 7.4s;
+  --float-delay: -1s;
+  --mist-opacity: .6;
+}
+.affiliation:nth-child(2n) { --float-time: 8.8s; --float-delay: -3.5s; }
+.affiliation:nth-child(3n) { --float-time: 9.6s; --float-delay: -6s; }
+.affiliation::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  width: 130px;
+  max-width: 115%;
+  height: 98px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse, #eef3ff9c, #b0c9e842 36%, #8caddc0a 60%, transparent 72%);
+  filter: blur(9px);
+  opacity: var(--mist-opacity);
+  transition: opacity .3s ease;
+  pointer-events: none;
+  z-index: -1;
+}
+.affiliation[title="Sapient Intelligence"],
+.affiliation[title="SimpleAI"],
+.affiliation[title="Imperial College London"] { --mist-opacity: 1; }
+.affiliation img {
+  position: relative;
+  height: 52px;
+  filter: none;
+  mix-blend-mode: normal;
+  opacity: 1;
+  mask-image: var(--mark-mask);
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  animation: affiliation-float var(--float-time) ease-in-out var(--float-delay) infinite;
+}
+.affiliation span { position: relative; color: #a5aec5; transition: color .2s ease; }
+.affiliation:hover::before { opacity: 1; }
+.affiliation:hover img { animation-play-state: paused; }
 .affiliation:hover span { color: #e0ddef; }
+@keyframes affiliation-float {
+  0%, 100% { transform: translateY(2px); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes affiliation-cloud {
+  from { transform: translate3d(-2%, -3px, 0); }
+  to { transform: translate3d(2%, 5px, 0); }
+}
 @media (max-width: 760px) {
-  .affiliation-sheet { padding: 24px 0 22px; }
+  .affiliation-sheet { padding: 28px 0 20px; overflow-x: auto; overflow-y: hidden; }
+  .affiliation { padding: 17px 8px 23px; gap: 17px; }
+  .affiliation img { height: 48px; }
+  .affiliation::before { width: 112px; height: 88px; }
   .paper-figure-link img { border-radius: 5px; }
 }
 @media (hover: none) {
-  .paper-figure-link img { opacity: .92; }
-  .affiliation img { opacity: .86; }
+  .paper-figure-link img { opacity: .9; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .paper-figure-link img, .affiliation img, .affiliation span { transition: none; }
-  .affiliation:hover img { transform: none; }
+  .paper-figure-link img, .affiliation span, .affiliation::before { transition: none; }
+  .affiliation img, .affiliation-sheet::before, .affiliation-sheet::after { animation: none; transform: none; }
 }
 body.motion-paused .paper-figure-link img,
+body.motion-paused .affiliation span,
+body.motion-paused .affiliation::before { transition: none; }
 body.motion-paused .affiliation img,
-body.motion-paused .affiliation span { transition: none; }
-body.motion-paused .affiliation:hover img { transform: none; }
+body.motion-paused .affiliation-sheet::before,
+body.motion-paused .affiliation-sheet::after { animation-play-state: paused; }
+
+/* Masks hide only the paper background; the original RGB images stay intact. */
+.affiliation img[src$="/cas.webp"] { --mark-mask: url("media/affiliations/masks/cas.svg"); }
+.affiliation img[src$="/cmu.webp"] { --mark-mask: url("media/affiliations/masks/cmu.svg"); }
+.affiliation img[src$="/hku.webp"] { --mark-mask: url("media/affiliations/masks/hku.svg"); }
+.affiliation img[src$="/imperial.webp"] { --mark-mask: url("media/affiliations/masks/imperial.svg"); }
+.affiliation img[src$="/mbzuai.webp"] { --mark-mask: url("media/affiliations/masks/mbzuai.svg"); }
+.affiliation img[src$="/michigan.webp"] { --mark-mask: url("media/affiliations/masks/michigan.svg"); }
+.affiliation img[src$="/ntu.webp"] { --mark-mask: url("media/affiliations/masks/ntu.svg"); }
+.affiliation img[src$="/sapient.webp"] { --mark-mask: url("media/affiliations/masks/sapient.svg"); }
+.affiliation img[src$="/seu.webp"] { --mark-mask: url("media/affiliations/masks/seu.svg"); }
+.affiliation img[src$="/simpleai.webp"] { --mark-mask: url("media/affiliations/masks/simpleai.svg"); }
+.affiliation img[src$="/stanford.webp"] { --mark-mask: url("media/affiliations/masks/stanford.svg"); }
+.affiliation img[src$="/tsinghua.webp"] { --mark-mask: url("media/affiliations/masks/tsinghua.svg"); }
+.affiliation img[src$="/tuojing.webp"] { --mark-mask: url("media/affiliations/masks/tuojing.svg"); }
