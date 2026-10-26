@@ -1,0 +1,44 @@
+{
+  "source_document": "GPT_6_Astra_Evaluation_V1.pdf",
+  "source_sha256": "d89c131e93852f30d2cd297161c9cc3195cc123d37b772e22217ebe08cf35076",
+  "page": 1,
+  "clip_points": [
+    66.0,
+    318.0,
+    546.0,
+    595.0
+  ],
+  "description": "Complete Figure 1, with surrounding page whitespace cropped. No figure content, colors, labels, data or experiment images were edited. WebP previews are lossless rasterizations. The PDF preserves the source vector text and graphics within the Figure 1 CropBox.",
+  "cross_check": {
+    "comparison_document": "Current compiled Overleaf PDF, read on 2026-10-26",
+    "comparison_sha256": "a8e3cc9a4f8cff210e3db89a191325b55869a80c36e64c9b28d59e95fdf1a17a",
+    "source_figure_rendering_pixel_identical_at_scale": 3,
+    "exported_pdf_mean_rgb_absolute_difference_at_scale_3": [
+      1.671346436689397e-05,
+      8.356732183446986e-06,
+      1.5042117930204572e-05
+    ]
+  },
+  "files": {
+    "figure1-960.webp": {
+      "bytes": 194054,
+      "sha256": "df1e6c347316b3d6cbdae64495996bd9ac8769a40dc104c9bf8122c1e0532718"
+    },
+    "figure1-1600.webp": {
+      "bytes": 414010,
+      "sha256": "56174830eff1c9db8d46086abbb495bdd40dbf9ae742ef3b11fc40c0e76287f6"
+    },
+    "figure1.pdf": {
+      "bytes": 2425841,
+      "sha256": "6ab97ea01a720a5139d14dc6fe1b87f672d31fe45091cbb44bf1605b1fdc825a"
+    },
+    "figure1.png": {
+      "bytes": 1497283,
+      "sha256": "bec1e5947964a0201920b95d65230730d2f2f921c84f5c9860616f271cf1cbae"
+    },
+    "figure1-2400.webp": {
+      "bytes": 736302,
+      "sha256": "b2a34fe64339e983bbe51e36ee876b7eab6816c6aa25a514637338e333acc895"
+    }
+  }
+}
