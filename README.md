@@ -1,3 +1,9 @@
+> **PhysLadder is now LLM4Robot-Bench, part of the LLM4Robot series.**
+>
+> Maintained code: [LLM4Robot/LLM4Robot-Bench](https://github.com/LLM4Robot/LLM4Robot-Bench) · [Project website](https://llm4robot.github.io/bench/) · [Paper](https://arxiv.org/abs/2610.34527)
+>
+> This repository is retained for historical source and asset releases. For current installation and experiments, use the maintained repository above.
+
 <div align="center">
 
 # PhysLadder
